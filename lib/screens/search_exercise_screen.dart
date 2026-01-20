@@ -13,6 +13,10 @@ class SearchExerciseScreen extends StatefulWidget {
 class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
 
+  // Cache for Fuzzy instance to avoid rebuilding index on every keystroke
+  List<LibraryExercise>? _cachedExercises;
+  Fuzzy<LibraryExercise>? _cachedFuzzy;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +29,26 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Fuzzy<LibraryExercise> _getFuzzy(List<LibraryExercise> exercises) {
+    // Only rebuild Fuzzy index if the exercises list reference has changed
+    if (_cachedExercises != exercises || _cachedFuzzy == null) {
+      _cachedExercises = exercises;
+      _cachedFuzzy = Fuzzy(
+        exercises,
+        options: FuzzyOptions(
+          keys: [
+            WeightedKey(
+              name: 'name',
+              getter: (LibraryExercise x) => x.name,
+              weight: 1,
+            ),
+          ],
+        ),
+      );
+    }
+    return _cachedFuzzy!;
   }
 
   @override
@@ -64,18 +88,8 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                 if (query.isEmpty) {
                   displayedExercises = exercises;
                 } else {
-                  final fuse = Fuzzy(
-                    exercises,
-                    options: FuzzyOptions(
-                      keys: [
-                        WeightedKey(
-                          name: 'name',
-                          getter: (LibraryExercise x) => x.name,
-                          weight: 1,
-                        ),
-                      ],
-                    ),
-                  );
+                  // Use cached Fuzzy instance
+                  final fuse = _getFuzzy(exercises);
                   displayedExercises = fuse.search(query).map((r) => r.item).toList();
                 }
 
