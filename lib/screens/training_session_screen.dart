@@ -262,9 +262,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
 
     return Container(
-      color: Theme.of(context).cardColor,
+      // CORRECCIÓN: El color debe estar dentro de BoxDecoration si se usa un border
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         border: Border(top: BorderSide(color: Colors.redAccent[700]!, width: 2)),
       ),
       child: SafeArea(
