@@ -17,53 +17,19 @@ class TrainingSessionScreen extends ConsumerStatefulWidget {
 }
 
 class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
-  final Map<String, TextEditingController> _controllers = {};
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    final state = ref.read(trainingSessionProvider);
-    _initializeControllers(state);
-  }
-
-  void _initializeControllers(TrainingState state) {
-    if (state.exercises.isEmpty) return;
-
     // Discovery Tooltip Check (First 3 sessions)
-    // We check this once on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDiscoveryTooltip();
     });
-
-    for (int i = 0; i < state.exercises.length; i++) {
-      final exercise = state.exercises[i];
-      for (int j = 0; j < exercise.logs.length; j++) {
-        final log = exercise.logs[j];
-        // Use keys that won't collide easily
-        final wKey = '${i}_${j}_weight';
-        final rKey = '${i}_${j}_reps';
-
-        if (!_controllers.containsKey(wKey)) {
-          _controllers[wKey] = TextEditingController(text: log.peso > 0 ? log.peso.toString() : '');
-        } else if (_controllers[wKey]!.text.isEmpty && log.peso > 0) {
-           _controllers[wKey]!.text = log.peso.toString();
-        }
-
-        if (!_controllers.containsKey(rKey)) {
-          _controllers[rKey] = TextEditingController(text: log.reps > 0 ? log.reps.toString() : '');
-        } else if (_controllers[rKey]!.text.isEmpty && log.reps > 0) {
-           _controllers[rKey]!.text = log.reps.toString();
-        }
-      }
-    }
   }
 
   @override
   void dispose() {
-    for (var controller in _controllers.values) {
-      controller.dispose();
-    }
     _scrollController.dispose();
     super.dispose();
   }
@@ -72,20 +38,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final navigator = Navigator.of(context);
     await ref.read(trainingSessionProvider.notifier).finishSession();
     navigator.pop();
-  }
-
-  void _openPlateCalc(String controllerKey, Function(double) onSelected) {
-    final currentVal = double.tryParse(_controllers[controllerKey]?.text ?? '0') ?? 0.0;
-    showDialog(
-      context: context,
-      builder: (_) => PlateCalculatorDialog(
-        currentWeight: currentVal,
-        onWeightSelected: (val) {
-          _controllers[controllerKey]?.text = val.toString();
-          onSelected(val);
-        },
-      ),
-    );
   }
 
   void _showAdvancedOptions(BuildContext context, int exerciseIndex, int setIndex) {
@@ -107,9 +59,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(trainingSessionProvider);
     final notifier = ref.read(trainingSessionProvider.notifier);
-
-    // Ensure controllers exist for any new state (though strictly speaking in this app structure logs list size is fixed per exercise)
-    _initializeControllers(state);
 
     return Scaffold(
       appBar: AppBar(
@@ -218,12 +167,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               final log = exercise.logs[setIndex];
               final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
 
-              return _SetRow(
+              return SessionSetRow(
                 index: setIndex,
                 log: log,
                 prevLog: prevLog,
-                weightController: _controllers['${exerciseIndex}_${setIndex}_weight']!,
-                repsController: _controllers['${exerciseIndex}_${setIndex}_reps']!,
                 onWeightChanged: (val) => notifier.updateLog(exerciseIndex, setIndex, peso: double.tryParse(val)),
                 onRepsChanged: (val) => notifier.updateLog(exerciseIndex, setIndex, reps: int.tryParse(val)),
                 onCompleted: (val) {
@@ -234,9 +181,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                      if (!state.isRestActive) notifier.startRest();
                   }
                 },
-                onPlateCalc: () => _openPlateCalc('${exerciseIndex}_${setIndex}_weight', (val) {
-                   notifier.updateLog(exerciseIndex, setIndex, peso: val);
-                }),
+                onPlateCalc: (val) => notifier.updateLog(exerciseIndex, setIndex, peso: val),
                 onLongPress: () => _showAdvancedOptions(context, exerciseIndex, setIndex),
                 showAdvanced: state.showAdvancedOptions,
               );
@@ -401,25 +346,22 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   }
 }
 
-class _SetRow extends StatelessWidget {
+class SessionSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
   final SerieLog? prevLog;
-  final TextEditingController weightController;
-  final TextEditingController repsController;
   final Function(String) onWeightChanged;
   final Function(String) onRepsChanged;
   final Function(bool?) onCompleted;
-  final VoidCallback onPlateCalc;
+  final Function(double) onPlateCalc;
   final VoidCallback onLongPress;
   final bool showAdvanced;
 
-  const _SetRow({
+  const SessionSetRow({
+    super.key,
     required this.index,
     required this.log,
     required this.prevLog,
-    required this.weightController,
-    required this.repsController,
     required this.onWeightChanged,
     required this.onRepsChanged,
     required this.onCompleted,
@@ -429,12 +371,75 @@ class _SetRow extends StatelessWidget {
   });
 
   @override
+  State<SessionSetRow> createState() => _SessionSetRowState();
+}
+
+class _SessionSetRowState extends State<SessionSetRow> {
+  late TextEditingController _weightController;
+  late TextEditingController _repsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _weightController = TextEditingController(text: widget.log.peso > 0 ? widget.log.peso.toString() : '');
+    _repsController = TextEditingController(text: widget.log.reps > 0 ? widget.log.reps.toString() : '');
+  }
+
+  @override
+  void didUpdateWidget(SessionSetRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check for weight changes from external source (e.g. copy previous set)
+    final double currentWeight = double.tryParse(_weightController.text) ?? 0.0;
+    if (widget.log.peso != currentWeight && widget.log.peso != 0.0) {
+      // Avoid resetting if difference is just parsing (e.g. "10." vs 10.0)
+      // But here we generally want to update if model changed significantly
+      if (_weightController.text.isNotEmpty && double.tryParse(_weightController.text) == widget.log.peso) {
+         // Identical value, don't mess with text (cursor)
+      } else {
+         _weightController.text = widget.log.peso.toString();
+      }
+    }
+
+    // Check for reps changes
+    final int currentReps = int.tryParse(_repsController.text) ?? 0;
+    if (widget.log.reps != currentReps && widget.log.reps != 0) {
+      if (_repsController.text.isNotEmpty && int.tryParse(_repsController.text) == widget.log.reps) {
+         // Identical
+      } else {
+         _repsController.text = widget.log.reps.toString();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _repsController.dispose();
+    super.dispose();
+  }
+
+  void _openPlateCalc() {
+    final currentVal = double.tryParse(_weightController.text) ?? 0.0;
+    showDialog(
+      context: context,
+      builder: (_) => PlateCalculatorDialog(
+        currentWeight: currentVal,
+        onWeightSelected: (val) {
+          _weightController.text = val.toString();
+          widget.onPlateCalc(val);
+        },
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: onLongPress,
+      onLongPress: widget.onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        color: log.completed ? Colors.red[900]!.withValues(alpha: 0.1) : Colors.transparent,
+        color: widget.log.completed ? Colors.red[900]!.withValues(alpha: 0.1) : Colors.transparent,
         child: Column(
           children: [
             Row(
@@ -445,8 +450,8 @@ class _SetRow extends StatelessWidget {
                   child: Center(
                     child: CircleAvatar(
                       radius: 10,
-                      backgroundColor: log.completed ? Colors.redAccent[700] : Colors.grey[800],
-                      child: Text('${index + 1}', style: const TextStyle(fontSize: 10, color: Colors.white)),
+                      backgroundColor: widget.log.completed ? Colors.redAccent[700] : Colors.grey[800],
+                      child: Text('${widget.index + 1}', style: const TextStyle(fontSize: 10, color: Colors.white)),
                     ),
                   ),
                 ),
@@ -455,7 +460,7 @@ class _SetRow extends StatelessWidget {
                   width: 50,
                   child: Center(
                     child: Text(
-                      prevLog != null ? '${prevLog!.peso}x${prevLog!.reps}' : '-',
+                      widget.prevLog != null ? '${widget.prevLog!.peso}x${widget.prevLog!.reps}' : '-',
                       style: TextStyle(color: Colors.grey[600], fontSize: 10),
                     ),
                   ),
@@ -468,11 +473,11 @@ class _SetRow extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       children: [
                         _AggressiveTextField(
-                          controller: weightController,
-                          onChanged: onWeightChanged,
+                          controller: _weightController,
+                          onChanged: widget.onWeightChanged,
                         ),
                         GestureDetector(
-                          onTap: onPlateCalc,
+                          onTap: _openPlateCalc,
                           child: Container(
                             margin: const EdgeInsets.only(right: 2),
                             padding: const EdgeInsets.all(4),
@@ -488,8 +493,8 @@ class _SetRow extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: _AggressiveTextField(
-                      controller: repsController,
-                      onChanged: onRepsChanged,
+                      controller: _repsController,
+                      onChanged: widget.onRepsChanged,
                       isInteger: true,
                     ),
                   ),
@@ -500,9 +505,9 @@ class _SetRow extends StatelessWidget {
                   child: Transform.scale(
                     scale: 1.3,
                     child: Checkbox(
-                      value: log.completed,
+                      value: widget.log.completed,
                       activeColor: Colors.redAccent[700],
-                      onChanged: onCompleted,
+                      onChanged: widget.onCompleted,
                       side: const BorderSide(color: Colors.grey, width: 2),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
@@ -510,17 +515,17 @@ class _SetRow extends StatelessWidget {
                 ),
               ],
             ),
-            if (showAdvanced || (log.rpe != null || (log.notas != null && log.notas!.isNotEmpty)))
+            if (widget.showAdvanced || (widget.log.rpe != null || (widget.log.notas != null && widget.log.notas!.isNotEmpty)))
                Padding(
                  padding: const EdgeInsets.only(left: 80, right: 40, top: 4),
                  child: Row(
                    children: [
-                     if (log.rpe != null)
-                       _Tag(text: 'RPE ${log.rpe}', color: Colors.orange),
-                     if (log.isFailure)
+                     if (widget.log.rpe != null)
+                       _Tag(text: 'RPE ${widget.log.rpe}', color: Colors.orange),
+                     if (widget.log.isFailure)
                        const _Tag(text: 'FAIL', color: Colors.red),
-                     if (log.notas != null && log.notas!.isNotEmpty)
-                       Expanded(child: Text(log.notas!, style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic), overflow: TextOverflow.ellipsis)),
+                     if (widget.log.notas != null && widget.log.notas!.isNotEmpty)
+                       Expanded(child: Text(widget.log.notas!, style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic), overflow: TextOverflow.ellipsis)),
                    ],
                  ),
                )

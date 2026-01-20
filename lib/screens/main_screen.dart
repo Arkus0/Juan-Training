@@ -16,7 +16,7 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   bool _isFirstLoad = true;
 
   @override
@@ -34,13 +34,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     super.dispose();
   }
 
-  void _handleConnectivityChange(ConnectivityResult result) {
+  void _handleConnectivityChange(List<ConnectivityResult> results) {
     if (_isFirstLoad) {
       _isFirstLoad = false;
       return;
     }
 
-    final hasConnection = result != ConnectivityResult.none;
+    // Check if there is any active connection (mobile, wifi, ethernet, vpn, bluetooth, etc.)
+    // If the list contains .none, it usually means no connection, but we check for presence of ANY valid connection.
+    final hasConnection = results.any((result) => result != ConnectivityResult.none);
+
     _showSnackBar(hasConnection ? 'Conexión recuperada.' : 'Conexión perdida.');
 
     if (hasConnection) {
