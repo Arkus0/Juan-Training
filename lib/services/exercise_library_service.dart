@@ -248,4 +248,7 @@ class ExerciseLibraryService {
   List<LibraryExercise> getExercises() {
     return _box.values.toList();
   }
+
+  /// Getter alias for exercises to support property access
+  List<LibraryExercise> get exercises => _box.values.toList();
 }

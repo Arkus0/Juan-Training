@@ -87,7 +87,7 @@ class EjercicioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Lookup library exercise for Web URLs
-    final libraryExercise = ExerciseLibraryService.instance.getExercises().cast<LibraryExercise?>().firstWhere(
+    final libraryExercise = ExerciseLibraryService.instance.exercises.cast<LibraryExercise?>().firstWhere(
       (e) => e?.name == ejercicio.nombre,
       orElse: () => null,
     );
