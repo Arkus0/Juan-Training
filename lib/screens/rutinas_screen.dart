@@ -14,23 +14,31 @@ class RutinasScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Rutinas'),
+        centerTitle: false,
       ),
       body: ValueListenableBuilder(
         valueListenable: rutinasBox.listenable(),
         builder: (context, Box<Rutina> box, _) {
           if (box.isEmpty) {
-            return const Center(
-              child: Text(
-                'No hay rutinas creadas.\n¡Crea la primera!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.fitness_center, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No hay rutinas creadas.\n¡Empieza hoy!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
 
-          // Convert values to list to sort or display
+          // Convert values to list to sort
           final rutinas = box.values.toList();
-          // Optional: Sort by date descending
+          // Sort by date descending (newest first)
           rutinas.sort((a, b) => b.creada.compareTo(a.creada));
 
           return ListView.builder(
@@ -40,36 +48,73 @@ class RutinasScreen extends StatelessWidget {
               final rutina = rutinas[index];
               return Card(
                 elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 margin: const EdgeInsets.only(bottom: 12.0),
-                child: ListTile(
-                  title: Text(
-                    rutina.nombre,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    '${rutina.ejercicios.length} ejercicios • ${_formatDate(rutina.creada)}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () {
-                    // TODO: Navigate to details or edit
-                    // For now we might want to edit it.
-                    // The prompt says: "Al pulsar FAB -> navega a CreateEditRoutineScreen".
-                    // It doesn't explicitly say what happens on tapping a list item,
-                    // but usually it opens details. I'll leave it as TODO or navigate to edit.
-                    // Let's navigate to edit for convenience as "CreateEditRoutineScreen" implies both.
+                    // Navigate to Edit screen for details/editing
                      Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => CreateEditRoutineScreen(rutina: rutina),
                       ),
                     );
                   },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                rutina.nombre,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.format_list_bulleted, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${rutina.ejercicios.length} ejercicios',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDate(rutina.creada),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -77,12 +122,13 @@ class RutinasScreen extends StatelessWidget {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Nueva Rutina'),
       ),
     );
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
