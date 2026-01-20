@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/sesion.dart';
 import '../models/rutina.dart';
 import 'session_detail_screen.dart';
+import '../providers/training_provider.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
+    final rutinasAsync = ref.watch(rutinasStreamProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LEGADO DE BATALLA'), // More aggressive title
+        title: const Text('LEGADO DE BATALLA'),
       ),
-      body: ValueListenableBuilder(
-        valueListenable: Hive.box<Sesion>('sesiones').listenable(),
-        builder: (context, Box<Sesion> box, _) {
-          if (box.isEmpty) {
+      body: sessionsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        data: (sessions) {
+          if (sessions.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -39,15 +44,20 @@ class HistoryScreen extends StatelessWidget {
             );
           }
 
-          final sessions = box.values.toList();
-          sessions.sort((a, b) => b.fecha.compareTo(a.fecha));
+          return rutinasAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('Error rutinas: $err')),
+            data: (rutinas) {
+              final rutinasMap = {for (var r in rutinas) r.id: r};
 
-          return ListView.builder(
-            itemCount: sessions.length,
-            padding: const EdgeInsets.only(top: 16, bottom: 16),
-            itemBuilder: (context, index) {
-              final session = sessions[index];
-              return _SessionTile(session: session);
+              return ListView.builder(
+                itemCount: sessions.length,
+                padding: const EdgeInsets.only(top: 16, bottom: 16),
+                itemBuilder: (context, index) {
+                  final session = sessions[index];
+                  return _SessionTile(session: session, rutinasMap: rutinasMap);
+                },
+              );
             },
           );
         },
@@ -58,13 +68,13 @@ class HistoryScreen extends StatelessWidget {
 
 class _SessionTile extends StatelessWidget {
   final Sesion session;
+  final Map<String, Rutina> rutinasMap;
 
-  const _SessionTile({required this.session});
+  const _SessionTile({required this.session, required this.rutinasMap});
 
   @override
   Widget build(BuildContext context) {
-    final rutinaBox = Hive.box<Rutina>('rutinas');
-    final rutina = rutinaBox.get(session.rutinaId);
+    final rutina = rutinasMap[session.rutinaId];
     final rutinaName = rutina?.nombre ?? 'RUTINA ELIMINADA';
 
     final dateStr = DateFormat('d MMM', 'es_ES').format(session.fecha).toUpperCase();

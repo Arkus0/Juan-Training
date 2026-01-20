@@ -12,6 +12,8 @@ import 'models/ejercicio_en_rutina.dart';
 import 'models/library_exercise.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
+import 'repositories/hive_training_repository.dart';
+import 'providers/training_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,20 +46,33 @@ void main() async {
   Hive.registerAdapter(LibraryExerciseAdapter()); // Type 6
 
   // Open Boxes
-  await Hive.openBox<Rutina>('rutinas');
-  await Hive.openBox<Sesion>('sesiones');
+  final rutinasBox = await Hive.openBox<Rutina>('rutinas');
+  final sesionesBox = await Hive.openBox<Sesion>('sesiones');
   // library_exercises box will be managed by Service or opened here?
   // Let's open it here to ensure it's ready.
   await Hive.openBox<LibraryExercise>('library_exercises');
-  await Hive.openBox('active_session');
-  await Hive.openBox('exercise_notes');
+  final activeSessionBox = await Hive.openBox('active_session');
+  final exerciseNotesBox = await Hive.openBox('exercise_notes');
 
   // Load Library (Service will use the already opened box)
   await ExerciseLibraryService.instance.loadLibrary();
 
+  // Initialize Repository
+  final repository = HiveTrainingRepository(
+    rutinasBox: rutinasBox,
+    sesionesBox: sesionesBox,
+    activeSessionBox: activeSessionBox,
+    exerciseNotesBox: exerciseNotesBox,
+  );
+
   await initializeDateFormatting('es_ES', null);
 
-  runApp(const ProviderScope(child: JuanTrainingApp()));
+  runApp(ProviderScope(
+    overrides: [
+       trainingRepositoryProvider.overrideWithValue(repository),
+    ],
+    child: const JuanTrainingApp(),
+  ));
 }
 
 class JuanTrainingApp extends StatelessWidget {

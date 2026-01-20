@@ -1,13 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
-import 'package:hive/hive.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/sesion.dart';
 import '../models/serie_log.dart';
 import 'main_provider.dart';
+import '../repositories/i_training_repository.dart';
+
+final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
+  throw UnimplementedError('trainingRepositoryProvider not overridden');
+});
+
+final rutinasStreamProvider = StreamProvider<List<Rutina>>((ref) {
+  final repo = ref.watch(trainingRepositoryProvider);
+  return repo.watchRutinas();
+});
+
+final sesionesHistoryStreamProvider = StreamProvider<List<Sesion>>((ref) {
+  final repo = ref.watch(trainingRepositoryProvider);
+  return repo.watchSesionesHistory();
+});
+
+final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
+  final repo = ref.watch(trainingRepositoryProvider);
+  return repo.watchActiveSession();
+});
 
 class TrainingState {
   final Rutina? activeRutina;
@@ -57,8 +76,9 @@ class TrainingState {
 
 class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   final Ref ref;
+  final ITrainingRepository _repository;
 
-  TrainingSessionNotifier(this.ref) : super(TrainingState());
+  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState());
 
   void startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises) {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
@@ -79,17 +99,18 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     }).toList();
 
     // Build History Map
-    final box = Hive.box<Sesion>('sesiones');
-    final sessions = box.values.toList()..sort((a, b) => b.fecha.compareTo(a.fecha));
     final Map<String, List<SerieLog>> historyMap = {};
 
     for (var ex in sessionExercises) {
-       // Find last session that had this exercise
-       for (var s in sessions) {
-         final match = s.ejerciciosCompletados.where((e) => e.nombre == ex.nombre);
-         if (match.isNotEmpty) {
-           historyMap[ex.nombre] = match.first.logs;
-           break; // Found latest
+       final historyList = _repository.getHistoryForExercise(ex.nombre);
+       if (historyList.isNotEmpty) {
+         // getHistoryForExercise returns sorted list (newest first)
+         final lastSession = historyList.first;
+         try {
+           final match = lastSession.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);
+           historyMap[ex.nombre] = match.logs;
+         } catch (e) {
+           // Should not happen if filtered correctly, but safety first
          }
        }
     }
@@ -195,9 +216,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       durationSeconds: durationSeconds,
     );
 
-    final box = Hive.box<Sesion>('sesiones');
-    await box.add(sesion);
-
+    await _repository.saveSesion(sesion);
     await clearStorage();
 
     state = TrainingState();
@@ -209,56 +228,35 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   void _saveState() async {
     if (state.activeRutina == null) return;
 
-    final box = Hive.box('active_session');
-    await box.put('activeRutina', state.activeRutina);
-    await box.put('exercises', state.exercises);
-    await box.put('targets', state.targets);
-    await box.put('startTime', state.startTime);
-    await box.put('defaultRestSeconds', state.defaultRestSeconds);
-    // Hive cannot save Map<String, List<Object>> easily if types are mixed or generic
-    // We cast to ensure it's compatible or wrap.
-    // However, Hive supports Map. Let's try direct put.
-    await box.put('history', state.history);
+    final data = ActiveSessionData(
+      activeRutina: state.activeRutina,
+      exercises: state.exercises,
+      targets: state.targets,
+      startTime: state.startTime,
+      defaultRestSeconds: state.defaultRestSeconds,
+      history: state.history,
+    );
+
+    await _repository.saveActiveSession(data);
   }
 
   Future<void> clearStorage() async {
-    final box = Hive.box('active_session');
-    await box.clear();
+    await _repository.clearActiveSession();
   }
 
   Future<void> restoreFromStorage() async {
-    final box = Hive.box('active_session');
-    if (box.isEmpty) return;
-
     try {
-      final activeRutina = box.get('activeRutina') as Rutina?;
-      final exercisesList = box.get('exercises') as List?;
-      final targetsList = box.get('targets') as List?;
-      final startTime = box.get('startTime') as DateTime?;
-      final defaultRestSeconds = box.get('defaultRestSeconds') as int? ?? 90;
-      final historyMapRaw = box.get('history') as Map?;
+      final data = await _repository.getActiveSession();
 
-      if (activeRutina != null && exercisesList != null) {
-        final exercises = exercisesList.cast<Ejercicio>();
-        final targets = targetsList?.cast<Ejercicio>() ?? [];
-
-        final Map<String, List<SerieLog>> history = {};
-        if (historyMapRaw != null) {
-          historyMapRaw.forEach((key, value) {
-            if (key is String && value is List) {
-              history[key] = value.cast<SerieLog>();
-            }
-          });
-        }
-
+      if (data != null && data.activeRutina != null) {
         state = TrainingState(
-          activeRutina: activeRutina,
-          exercises: exercises,
-          targets: targets,
-          startTime: startTime ?? DateTime.now(),
-          defaultRestSeconds: defaultRestSeconds,
+          activeRutina: data.activeRutina,
+          exercises: data.exercises,
+          targets: data.targets,
+          startTime: data.startTime ?? DateTime.now(),
+          defaultRestSeconds: data.defaultRestSeconds,
           isRestActive: false, // Do not restore timer state for now
-          history: history,
+          history: data.history,
           showAdvancedOptions: false,
         );
       }
@@ -270,5 +268,6 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 }
 
 final trainingSessionProvider = StateNotifierProvider<TrainingSessionNotifier, TrainingState>((ref) {
-  return TrainingSessionNotifier(ref);
+  final repo = ref.watch(trainingRepositoryProvider);
+  return TrainingSessionNotifier(ref, repo);
 });

@@ -1,20 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:hive/hive.dart';
 import '../models/rutina.dart';
 import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/library_exercise.dart';
+import '../repositories/i_training_repository.dart';
+import 'training_provider.dart';
 
 // Provider family to initialize with existing routine or null
 final createRoutineProvider = StateNotifierProvider.family<CreateRoutineNotifier, Rutina, Rutina?>(
   (ref, existingRutina) {
-    return CreateRoutineNotifier(existingRutina);
+    final repository = ref.watch(trainingRepositoryProvider);
+    return CreateRoutineNotifier(repository, existingRutina);
   },
 );
 
 class CreateRoutineNotifier extends StateNotifier<Rutina> {
-  CreateRoutineNotifier(Rutina? existingRutina)
+  final ITrainingRepository _repository;
+
+  CreateRoutineNotifier(this._repository, Rutina? existingRutina)
       : super(existingRutina != null
             ? _deepCopy(existingRutina)
             : _createEmptyRoutine());
@@ -144,22 +148,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       return 'Una rutina vacía es debilidad. Añade ejercicios.';
     }
 
-    final box = Hive.box<Rutina>('rutinas');
-
-    int? keyToUpdate;
-    for (var key in box.keys) {
-      final r = box.get(key);
-      if (r?.id == state.id) {
-        keyToUpdate = key;
-        break;
-      }
-    }
-
-    if (keyToUpdate != null) {
-      await box.put(keyToUpdate, state);
-    } else {
-      await box.add(state);
-    }
+    await _repository.saveRutina(state);
 
     return null;
   }

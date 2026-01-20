@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
@@ -23,8 +22,8 @@ class ExerciseCardContainer extends ConsumerStatefulWidget {
 
 class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   void _showNotesDialog(BuildContext context, String exerciseName) {
-    final box = Hive.box('exercise_notes');
-    final String currentNote = box.get(exerciseName, defaultValue: '') as String;
+    final repo = ref.read(trainingRepositoryProvider);
+    final String currentNote = repo.getNote(exerciseName);
     final controller = TextEditingController(text: currentNote);
 
     showDialog(
@@ -49,9 +48,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
             child: const Text('CANCELAR'),
           ),
           TextButton(
-            onPressed: () {
-              box.put(exerciseName, controller.text);
-              Navigator.pop(ctx);
+            onPressed: () async {
+              await repo.saveNote(exerciseName, controller.text);
+              if (mounted) Navigator.pop(ctx);
             },
             child: const Text('GUARDAR', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
