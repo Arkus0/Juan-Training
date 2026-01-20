@@ -20,19 +20,37 @@ class SerieLogAdapter extends TypeAdapter<SerieLog> {
       peso: fields[0] as double,
       reps: fields[1] as int,
       completed: fields[2] as bool,
+      rpe: fields[3] as int?,
+      notas: fields[4] as String?,
+      restSeconds: fields[5] as int?,
+      isFailure: fields[6] as bool? ?? false,
+      isDropset: fields[7] as bool? ?? false,
+      isWarmup: fields[8] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, SerieLog obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.peso)
       ..writeByte(1)
       ..write(obj.reps)
       ..writeByte(2)
-      ..write(obj.completed);
+      ..write(obj.completed)
+      ..writeByte(3)
+      ..write(obj.rpe)
+      ..writeByte(4)
+      ..write(obj.notas)
+      ..writeByte(5)
+      ..write(obj.restSeconds)
+      ..writeByte(6)
+      ..write(obj.isFailure)
+      ..writeByte(7)
+      ..write(obj.isDropset)
+      ..writeByte(8)
+      ..write(obj.isWarmup);
   }
 
   @override
