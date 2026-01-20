@@ -141,7 +141,7 @@ class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
                 Text('Barra: ${_barWeight}kg', style: const TextStyle(color: Colors.white70)),
                 Switch(
                   value: _barWeight == 20.0,
-                  activeColor: Colors.redAccent[700],
+                  activeThumbColor: Colors.redAccent[700],
                   onChanged: (val) {
                     setState(() {
                       _barWeight = val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
@@ -185,12 +185,12 @@ class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
     Color color = Colors.grey;
 
     // Standard Plate Colors & Sizes
-    if (weight >= 25) { height = 90; color: Colors.red; }
-    else if (weight >= 20) { height = 90; color: Colors.blue; }
-    else if (weight >= 15) { height = 80; color: Colors.yellow; }
-    else if (weight >= 10) { height = 70; color: Colors.green; }
-    else if (weight >= 5) { height = 55; color: Colors.white; }
-    else { height = 40; color: Colors.grey; }
+    if (weight >= 25) { height = 90; color = Colors.red; }
+    else if (weight >= 20) { height = 90; color = Colors.blue; }
+    else if (weight >= 15) { height = 80; color = Colors.yellow; }
+    else if (weight >= 10) { height = 70; color = Colors.green; }
+    else if (weight >= 5) { height = 55; color = Colors.white; }
+    else { height = 40; color = Colors.grey; }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),

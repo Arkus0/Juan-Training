@@ -89,7 +89,7 @@ class SessionDetailScreen extends StatelessWidget {
                     ? _findExerciseById(previousSession.ejerciciosCompletados, ejercicio.id)
                     : null,
               );
-            }).toList(),
+            }),
 
             if (sesion.ejerciciosCompletados.isEmpty)
                const Padding(

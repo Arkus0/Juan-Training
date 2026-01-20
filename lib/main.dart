@@ -103,7 +103,7 @@ class JuanTrainingApp extends StatelessWidget {
         ),
 
         // Cards
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: bgGrey,
           elevation: 4,
           shadowColor: primaryRed.withValues(alpha: 0.4),
