@@ -40,36 +40,46 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     navigator.pop();
   }
 
-  void _showAdvancedOptions(BuildContext context, int exerciseIndex, int setIndex) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: _AdvancedOptionsModal(exerciseIndex: exerciseIndex, setIndex: setIndex),
-        );
-      },
-    );
+  void _checkDiscoveryTooltip() async {
+     // Ideally check Hive box count, simplified here
+     await Future.delayed(const Duration(seconds: 1));
+     if (!mounted) return;
+
+     ScaffoldMessenger.of(context).showSnackBar(
+       SnackBar(
+         content: const Text('💡 Tip: Mantén pulsada una serie para opciones PRO (RPE, Fallo, Notas)'),
+         backgroundColor: Colors.grey[900],
+         behavior: SnackBarBehavior.floating,
+         duration: const Duration(seconds: 4),
+         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.redAccent[700]!)),
+       ),
+     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(trainingSessionProvider);
+    // ⚡ Bolt Optimization: Use select to only rebuild on specific changes
+    // This prevents the entire screen from rebuilding when a single text field changes
+    final activeRutinaName = ref.watch(trainingSessionProvider.select((s) => s.activeRutina?.nombre));
+    final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
+    final exercisesLength = ref.watch(trainingSessionProvider.select((s) => s.exercises.length));
+
+    // Timer specific selectors
+    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
+    final defaultRestSeconds = ref.watch(trainingSessionProvider.select((s) => s.defaultRestSeconds));
+
     final notifier = ref.read(trainingSessionProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          (state.activeRutina?.nombre ?? 'Entrenando').toUpperCase(),
+          (activeRutinaName ?? 'Entrenando').toUpperCase(),
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
         ),
         actions: [
           IconButton(
-            icon: Icon(state.showAdvancedOptions ? Icons.settings_input_component : Icons.settings_input_component_outlined),
-            onPressed: () => notifier.toggleAdvancedOptions(!state.showAdvancedOptions),
+            icon: Icon(showAdvanced ? Icons.settings_input_component : Icons.settings_input_component_outlined),
+            onPressed: () => notifier.toggleAdvancedOptions(!showAdvanced),
             tooltip: 'Opciones Avanzadas',
           ),
           Padding(
@@ -96,20 +106,188 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 120), // Space for timer
-              itemCount: state.exercises.length,
+              itemCount: exercisesLength,
               itemBuilder: (context, index) {
-                return _buildExerciseCard(context, index, state.exercises[index], notifier, state);
+                // ⚡ Bolt Optimization: Extracted to smart widget
+                return SessionExerciseCard(exerciseIndex: index);
               },
             ),
           ),
-          _buildTimerPanel(context, state, notifier),
+          _buildTimerPanel(context, isRestActive, defaultRestSeconds, notifier),
         ],
       ),
     );
   }
 
-  Widget _buildExerciseCard(BuildContext context, int exerciseIndex, Ejercicio exercise, TrainingSessionNotifier notifier, TrainingState state) {
-    final historyLogs = state.history[exercise.nombre];
+  Widget _buildTimerPanel(BuildContext context, bool isRestActive, int defaultRestSeconds, TrainingSessionNotifier notifier) {
+    if (isRestActive) {
+      return Container(
+        color: Colors.black.withValues(alpha: 0.95),
+        height: 250,
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Countdown(
+                seconds: defaultRestSeconds,
+                build: (BuildContext context, double time) {
+                  return _AggressiveTimerDisplay(seconds: time);
+                },
+                interval: const Duration(milliseconds: 100),
+                onFinished: () {
+                  _notifyTimerFinished();
+                  notifier.stopRest();
+                },
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => notifier.stopRest(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.red[900],
+                minimumSize: const Size(200, 50),
+              ),
+              child: const Text('¡A LA CARGA! (SALTAR)'),
+            )
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(top: BorderSide(color: Colors.redAccent[700]!, width: 2)),
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('DESCANSO', style: Theme.of(context).textTheme.labelSmall),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle, color: Colors.grey),
+                      onPressed: () {
+                        if (defaultRestSeconds > 10) {
+                          notifier.setRestDuration(defaultRestSeconds - 10);
+                        }
+                      },
+                    ),
+                    Text(
+                      '${defaultRestSeconds}s',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.add_circle, color: Colors.redAccent[700]),
+                      onPressed: () {
+                        notifier.setRestDuration(defaultRestSeconds + 10);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            ElevatedButton(
+              onPressed: () => notifier.startRest(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent[700],
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('DESCANSAR'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _notifyTimerFinished() async {
+    Vibrate.vibrate();
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('sounds/beep.mp3'));
+    } catch (_) {}
+  }
+}
+
+class SessionExerciseCard extends ConsumerStatefulWidget {
+  final int exerciseIndex;
+
+  const SessionExerciseCard({
+    super.key,
+    required this.exerciseIndex,
+  });
+
+  @override
+  ConsumerState<SessionExerciseCard> createState() => _SessionExerciseCardState();
+}
+
+class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
+  void _showAdvancedOptions(BuildContext context, int exerciseIndex, int setIndex) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: _AdvancedOptionsModal(exerciseIndex: exerciseIndex, setIndex: setIndex),
+        );
+      },
+    );
+  }
+
+  void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
+    // Basic completion feedback
+    if (await Vibrate.canVibrate) {
+      Vibrate.vibrate();
+    }
+
+    // Check for "PR" or better performance
+    if (previous != null) {
+      bool improved = false;
+      if (current.peso > previous.peso) improved = true;
+      if (current.peso == previous.peso && current.reps > previous.reps) improved = true;
+
+      if (improved) {
+        // Play success sound
+        try {
+           final player = AudioPlayer();
+           await player.play(AssetSource('sounds/success.mp3'));
+        } catch (_) {}
+
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(
+               content: const Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', style: TextStyle(fontWeight: FontWeight.bold)),
+               backgroundColor: Colors.red[900],
+               behavior: SnackBarBehavior.floating,
+             ),
+           );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // ⚡ Bolt Optimization: Only rebuild this specific card when this exercise changes
+    final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex]));
+    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.nombre]));
+    final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
+    // Need isRestActive to check for auto-advance
+    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
+
+    final notifier = ref.read(trainingSessionProvider.notifier);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -171,179 +349,25 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 index: setIndex,
                 log: log,
                 prevLog: prevLog,
-                onWeightChanged: (val) => notifier.updateLog(exerciseIndex, setIndex, peso: double.tryParse(val)),
-                onRepsChanged: (val) => notifier.updateLog(exerciseIndex, setIndex, reps: int.tryParse(val)),
+                onWeightChanged: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
+                onRepsChanged: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
                 onCompleted: (val) {
-                  notifier.updateLog(exerciseIndex, setIndex, completed: val);
+                  notifier.updateLog(widget.exerciseIndex, setIndex, completed: val);
                   if (val == true) {
                      _triggerCompletionFeedback(log, prevLog);
                      // Auto-advance rest
-                     if (!state.isRestActive) notifier.startRest();
+                     if (!isRestActive) notifier.startRest();
                   }
                 },
-                onPlateCalc: (val) => notifier.updateLog(exerciseIndex, setIndex, peso: val),
-                onLongPress: () => _showAdvancedOptions(context, exerciseIndex, setIndex),
-                showAdvanced: state.showAdvancedOptions,
+                onPlateCalc: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+                onLongPress: () => _showAdvancedOptions(context, widget.exerciseIndex, setIndex),
+                showAdvanced: showAdvanced,
               );
             }),
           ],
         ),
       ),
     );
-  }
-
-  void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
-    // Basic completion feedback
-    if (await Vibrate.canVibrate) {
-      Vibrate.vibrate();
-    }
-
-    // Check for "PR" or better performance
-    if (previous != null) {
-      bool improved = false;
-      if (current.peso > previous.peso) improved = true;
-      if (current.peso == previous.peso && current.reps > previous.reps) improved = true;
-
-      if (improved) {
-        // Play success sound
-        try {
-           final player = AudioPlayer();
-           await player.play(AssetSource('sounds/success.mp3')); // Assuming we have one, or stick to beep
-        } catch (_) {}
-
-        if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(
-               content: const Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', style: TextStyle(fontWeight: FontWeight.bold)),
-               backgroundColor: Colors.red[900],
-               behavior: SnackBarBehavior.floating,
-             ),
-           );
-        }
-      }
-    }
-  }
-
-  Widget _buildTimerPanel(BuildContext context, TrainingState state, TrainingSessionNotifier notifier) {
-    if (state.isRestActive) {
-      return Container(
-        color: Colors.black.withValues(alpha: 0.95),
-        height: 250,
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Countdown(
-                seconds: state.defaultRestSeconds,
-                build: (BuildContext context, double time) {
-                  return _AggressiveTimerDisplay(seconds: time);
-                },
-                interval: const Duration(milliseconds: 100),
-                onFinished: () {
-                  _notifyTimerFinished();
-                  notifier.stopRest();
-                },
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => notifier.stopRest(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.red[900],
-                minimumSize: const Size(200, 50),
-              ),
-              child: const Text('¡A LA CARGA! (SALTAR)'),
-            )
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      // CORRECCIÓN: El color debe estar dentro de BoxDecoration si se usa un border
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(top: BorderSide(color: Colors.redAccent[700]!, width: 2)),
-      ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('DESCANSO', style: Theme.of(context).textTheme.labelSmall),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle, color: Colors.grey),
-                      onPressed: () {
-                        if (state.defaultRestSeconds > 10) {
-                          notifier.setRestDuration(state.defaultRestSeconds - 10);
-                        }
-                      },
-                    ),
-                    Text(
-                      '${state.defaultRestSeconds}s',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.add_circle, color: Colors.redAccent[700]),
-                      onPressed: () {
-                        notifier.setRestDuration(state.defaultRestSeconds + 10);
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            ElevatedButton(
-              onPressed: () => notifier.startRest(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent[700],
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-              child: const Text('DESCANSAR'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _notifyTimerFinished() async {
-    Vibrate.vibrate();
-    try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('sounds/beep.mp3'));
-    } catch (_) {}
-  }
-
-  void _checkDiscoveryTooltip() async {
-     // Ideally check Hive box count, simplified here
-     // If this is one of the first sessions, show a tooltip
-     // Since we don't have easy access to Hive count here without provider,
-     // we can just show a temporary snackbar hint if it's the very start of session.
-
-     // Note: Real implementation would check Hive.box<Sesion>('sesiones').length < 3
-
-     // For now, let's just show it briefly on entry
-     await Future.delayed(const Duration(seconds: 1));
-     if (!mounted) return;
-
-     ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(
-         content: const Text('💡 Tip: Mantén pulsada una serie para opciones PRO (RPE, Fallo, Notas)'),
-         backgroundColor: Colors.grey[900],
-         behavior: SnackBarBehavior.floating,
-         duration: const Duration(seconds: 4),
-         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.redAccent[700]!)),
-       ),
-     );
   }
 }
 
@@ -393,10 +417,8 @@ class _SessionSetRowState extends State<SessionSetRow> {
     // Check for weight changes from external source (e.g. copy previous set)
     final double currentWeight = double.tryParse(_weightController.text) ?? 0.0;
     if (widget.log.peso != currentWeight && widget.log.peso != 0.0) {
-      // Avoid resetting if difference is just parsing (e.g. "10." vs 10.0)
-      // But here we generally want to update if model changed significantly
       if (_weightController.text.isNotEmpty && double.tryParse(_weightController.text) == widget.log.peso) {
-         // Identical value, don't mess with text (cursor)
+         // Identical
       } else {
          _weightController.text = widget.log.peso.toString();
       }
