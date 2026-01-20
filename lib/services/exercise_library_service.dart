@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
@@ -106,22 +107,14 @@ class ExerciseLibraryService {
 
   /// returns true if sync was successful, false otherwise.
   Future<bool> syncLibrary() async {
-    try {
-      // Wger API: Language 4 is Spanish.
-      // We assume /exercise endpoint returns 'images' list if configured or we might need to fetch separate /exerciseimage
-      // Standard Wger API v2 /exercise/ endpoint usually does NOT include images inline. We need to fetch /exerciseimage/
-      // But for this MVP, let's try to hit the main endpoint and see if we can get data.
-      // If we need images, we might need a separate call.
-      // Strategy: Fetch exercises, then fetch images for them? Or just fetch exercises and rely on whatever data we have.
-      // User said: "Extend existing Wger fetch service... When fetching/caching exercises... For each exercise with imageUrls.isNotEmpty"
-      // This implies the exercise object has image urls.
-      // I will assume we use an endpoint that provides this, or we construct it.
-      // Standard wger public API might separate them.
-      // For simplicity/robustness, I will stick to what the user implies: The exercise data contains images.
-      // If standard Wger doesn't, I'll simulate or try to find a parameter. '&limit=100'
-      // I'll add 'expand=images' if supported, or similar.
-      // Actually, let's just fetch exercises and if 'images' field is missing, we just don't get images.
+    // ⚡ Check Connectivity First
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (!connectivityResult.any((r) => r != ConnectivityResult.none)) {
+      _logger.w('Skipping sync: No internet connection.');
+      return false;
+    }
 
+    try {
       String url = 'https://wger.de/api/v2/exercise/?language=4&limit=50'; // Limit 50 for MVP speed
 
       final directory = await getApplicationDocumentsDirectory();
@@ -130,8 +123,11 @@ class ExerciseLibraryService {
         await imagesDir.create(recursive: true);
       }
 
+      List<({LibraryExercise exercise, String imageUrl})> pendingDownloads = [];
+
+      // Phase 1: Fetch Text Data
       while (url.isNotEmpty) {
-        final response = await http.get(Uri.parse(url));
+        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {
           final data = jsonDecode(utf8.decode(response.bodyBytes));
           final results = data['results'] as List;
@@ -146,10 +142,6 @@ class ExerciseLibraryService {
             final muscles = (item['muscles'] as List?)?.map((id) => _muscleMap[id] ?? 'Músculo $id').toList() ?? [];
             final secondaryMuscles = (item['muscles_secondary'] as List?)?.map((id) => _muscleMap[id] ?? 'Músculo $id').toList() ?? [];
 
-            // Attempt to find image in input (if API provided it)
-            // If not, we might be out of luck for images unless we query /exerciseimage
-            // For MVP, we'll proceed with empty images if not present.
-
             final exercise = LibraryExercise.fromApi(
               item,
               _categoryMap[categoryId] ?? 'Otro',
@@ -158,21 +150,18 @@ class ExerciseLibraryService {
               List<String>.from(secondaryMuscles),
             );
 
-            // Logic to download image if URL exists
-            // Since Wger base endpoint might not return images, we might need to fetch /exerciseimage/ filtered by exercise ID.
-            // But let's assume if 'imageUrls' is populated by our fromApi (which checks json['images']), we use it.
-
-            if (exercise.imageUrls.isNotEmpty) {
-               final imageUrl = exercise.imageUrls.first;
-               final localPath = await _downloadImage(imageUrl, exercise.id.toString(), imagesDir.path);
-               exercise.localImagePath = localPath;
+            // Check if we already have this exercise and it has a local path
+            final existing = _box.get('exercise_${exercise.id}');
+            if (existing?.localImagePath != null) {
+              exercise.localImagePath = existing!.localImagePath;
             }
 
-            // Save/Update in Hive
-            // We use put with ID as key? Or just add?
-            // LibraryExercise uses int ID.
-            // We'll use 'exercise_${exercise.id}' as key to update existing.
+            // Save/Update in Hive (Text only first)
             await _box.put('exercise_${exercise.id}', exercise);
+
+            if (exercise.imageUrls.isNotEmpty) {
+              pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));
+            }
           }
 
           if (data['next'] != null) {
@@ -186,12 +175,33 @@ class ExerciseLibraryService {
         }
       }
 
+      // Phase 2: Parallel Image Downloads
+      if (pendingDownloads.isNotEmpty) {
+        await _processImageDownloads(pendingDownloads, imagesDir.path);
+      }
+
       await _updateLastSyncDate();
       _updateNotifier();
       return true;
     } catch (e) {
       _logger.e('Sync Error', error: e);
       return false;
+    }
+  }
+
+  Future<void> _processImageDownloads(List<({LibraryExercise exercise, String imageUrl})> items, String dirPath) async {
+    const int batchSize = 10;
+    for (var i = 0; i < items.length; i += batchSize) {
+      final end = (i + batchSize < items.length) ? i + batchSize : items.length;
+      final batch = items.sublist(i, end);
+
+      await Future.wait(batch.map((item) async {
+        final localPath = await _downloadImage(item.imageUrl, item.exercise.id.toString(), dirPath);
+        if (localPath != null) {
+          item.exercise.localImagePath = localPath;
+          await _box.put('exercise_${item.exercise.id}', item.exercise);
+        }
+      }));
     }
   }
 
@@ -203,13 +213,13 @@ class ExerciseLibraryService {
         return filePath; // Already exists
       }
 
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
         return filePath;
       }
     } catch (e) {
-      _logger.e('Error downloading image for $id', error: e);
+      _logger.w('Error downloading image for $id: $e');
     }
     return null;
   }
