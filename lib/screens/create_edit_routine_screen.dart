@@ -60,6 +60,24 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     );
 
     if (result != null && result is LibraryExercise) {
+      // Check if the last exercise is empty (placeholder), if so, fill it instead of adding new
+      if (_exerciseControllers.isNotEmpty) {
+        final lastCtrl = _exerciseControllers.last;
+        final isEmpty = lastCtrl.nameController.text.trim().isEmpty &&
+            (lastCtrl.seriesController.text.trim().isEmpty || lastCtrl.seriesController.text == '0') &&
+            (lastCtrl.repsController.text.trim().isEmpty || lastCtrl.repsController.text == '0');
+
+        if (isEmpty) {
+          // Fill the existing empty controller
+          lastCtrl.nameController.text = result.name;
+          // Set default values if they were empty
+          if (lastCtrl.seriesController.text.isEmpty) lastCtrl.seriesController.text = '3';
+          if (lastCtrl.repsController.text.isEmpty) lastCtrl.repsController.text = '10';
+          if (lastCtrl.pesoController.text.isEmpty) lastCtrl.pesoController.text = '0.0';
+          return;
+        }
+      }
+
       final newExercise = Ejercicio(
         id: _uuid.v4(),
         nombre: result.name,
