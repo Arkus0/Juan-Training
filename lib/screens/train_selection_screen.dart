@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/rutina.dart';
-// import '../providers/training_provider.dart';
-// import 'training_session_screen.dart';
+import '../providers/training_provider.dart';
+import 'training_session_screen.dart';
 
 class TrainSelectionScreen extends ConsumerWidget {
   const TrainSelectionScreen({super.key});
@@ -49,20 +49,53 @@ class TrainSelectionScreen extends ConsumerWidget {
               return Card(
                 child: InkWell(
                   onTap: () {
-                    // Initialize session - DISABLED FOR MVP BETA REFACTOR
-                    // ref.read(trainingSessionProvider.notifier).startSession(rutina);
-                    // Navigate to session screen
-                    /*
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TrainingSessionScreen(),
-                      ),
-                    );
-                    */
-                    ScaffoldMessenger.of(context).showSnackBar(
-                       const SnackBar(content: Text('Modo Entrenamiento en mantenimiento. Usa "Crear Rutina".')),
-                    );
+                    if (rutina.dias.isEmpty) return;
+
+                    if (rutina.dias.length == 1) {
+                      ref
+                          .read(trainingSessionProvider.notifier)
+                          .startSession(rutina, rutina.dias.first.ejercicios);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TrainingSessionScreen(),
+                        ),
+                      );
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (context) => SimpleDialog(
+                          title: Text('ELIGE DÍA',
+                              style: TextStyle(
+                                  color: Colors.red[900],
+                                  fontWeight: FontWeight.w900)),
+                          backgroundColor: Colors.grey[900],
+                          children: rutina.dias.map((d) {
+                            return SimpleDialogOption(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(d.nombre,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold)),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                ref
+                                    .read(trainingSessionProvider.notifier)
+                                    .startSession(rutina, d.ejercicios);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TrainingSessionScreen(),
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    }
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(

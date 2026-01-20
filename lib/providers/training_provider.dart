@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:hive/hive.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
+import '../models/ejercicio_en_rutina.dart';
 import '../models/sesion.dart';
 import '../models/serie_log.dart';
 import 'main_provider.dart';
@@ -58,38 +59,48 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   TrainingSessionNotifier(this.ref) : super(TrainingState());
 
-  void startSession(Rutina rutina) {
-    // DISABLED FOR MVP BETA REFACTOR (New Models)
-    // Needs update to support Dia -> EjercicioEnRutina mapping to Ejercicio (Session)
-
-    /*
-    final now = DateTime.now();
-    final box = Hive.box<Sesion>('sesiones');
-    // Sort sessions descending by date
-    final sessions = box.values.toList()..sort((a, b) => b.fecha.compareTo(a.fecha));
-
-    final Map<String, List<SerieLog>> historyMap = {};
+  void startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises) {
+    // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
+    final sessionExercises = routineExercises.map((e) {
+      return Ejercicio(
+        id: e.instanceId,
+        nombre: e.nombre,
+        series: e.series,
+        reps: int.tryParse(e.repsRange.split('-').first) ?? 0, // Best effort parse
+        peso: 0.0,
+        notas: e.notas,
+        logs: List.generate(e.series, (_) => SerieLog(
+          peso: 0.0,
+          reps: 0,
+          completed: false,
+        )),
+      );
+    }).toList();
 
     // Build History Map
-    // Fails because rutina.ejercicios doesn't exist anymore (now it's dias)
-    /*
-    for (var ex in rutina.ejercicios) {
-       ...
+    final box = Hive.box<Sesion>('sesiones');
+    final sessions = box.values.toList()..sort((a, b) => b.fecha.compareTo(a.fecha));
+    final Map<String, List<SerieLog>> historyMap = {};
+
+    for (var ex in sessionExercises) {
+       // Find last session that had this exercise
+       for (var s in sessions) {
+         final match = s.ejerciciosCompletados.where((e) => e.nombre == ex.nombre);
+         if (match.isNotEmpty) {
+           historyMap[ex.nombre] = match.first.logs;
+           break; // Found latest
+         }
+       }
     }
-    */
 
-    // ...
-    */
-
-    // Set empty state to avoid crashes if accessed
     state = TrainingState(
       activeRutina: rutina,
-      exercises: [],
-      targets: [],
+      exercises: sessionExercises,
+      targets: sessionExercises.map((e) => e.copyWith()).toList(), // Snapshot targets
       startTime: DateTime.now(),
       defaultRestSeconds: 90,
       isRestActive: false,
-      history: {},
+      history: historyMap,
       showAdvancedOptions: false,
     );
   }
