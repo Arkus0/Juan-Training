@@ -188,22 +188,23 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                   ),
 
                 // Exercises List
-                ReorderableColumn(
-                  onReorder: widget.onReorderExercises,
-                  children: widget.dia.ejercicios.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final ex = entry.value;
-                    return Container(
-                      key: Key(ex.instanceId),
-                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      child: EjercicioCard(
-                        ejercicio: ex,
-                        onRemove: () => widget.onRemoveExercise(index),
-                        onUpdate: (updated) => widget.onUpdateExercise(index, updated),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                if (widget.dia.ejercicios.isNotEmpty)
+                  ReorderableColumn(
+                    onReorder: widget.onReorderExercises,
+                    children: widget.dia.ejercicios.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final ex = entry.value;
+                      return Container(
+                        key: Key(ex.instanceId),
+                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        child: EjercicioCard(
+                          ejercicio: ex,
+                          onRemove: () => widget.onRemoveExercise(index),
+                          onUpdate: (updated) => widget.onUpdateExercise(index, updated),
+                        ),
+                      );
+                    }).toList(),
+                  ),
 
                 const SizedBox(height: 12),
                 Center(
