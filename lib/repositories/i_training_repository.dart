@@ -30,7 +30,7 @@ abstract class ITrainingRepository {
   // Sesiones
   Stream<List<Sesion>> watchSesionesHistory();
   Future<void> saveSesion(Sesion sesion);
-  List<Sesion> getHistoryForExercise(String exerciseName);
+  Future<List<Sesion>> getHistoryForExercise(String exerciseName);
 
   // Active Session
   Future<void> saveActiveSession(ActiveSessionData data);
@@ -39,6 +39,6 @@ abstract class ITrainingRepository {
   Future<void> clearActiveSession();
 
   // Notes
-  String getNote(String exerciseName);
+  Future<String> getNote(String exerciseName);
   Future<void> saveNote(String exerciseName, String note);
 }
