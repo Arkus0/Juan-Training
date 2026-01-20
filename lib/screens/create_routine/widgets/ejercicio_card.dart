@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/ejercicio_en_rutina.dart';
+import '../../../models/library_exercise.dart';
+import '../../../services/exercise_library_service.dart';
 
 class EjercicioCard extends StatelessWidget {
   final EjercicioEnRutina ejercicio;
@@ -83,21 +86,13 @@ class EjercicioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageWidget = (ejercicio.localImagePath != null && File(ejercicio.localImagePath!).existsSync())
-        ? Image.file(
-            File(ejercicio.localImagePath!),
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
-          )
-        : Image.asset(
-            'assets/img/placeholder_exercise.png',
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
-          );
+    // Lookup library exercise for Web URLs
+    final libraryExercise = ExerciseLibraryService.instance.getExercises().cast<LibraryExercise?>().firstWhere(
+      (e) => e?.name == ejercicio.nombre,
+      orElse: () => null,
+    );
+
+    final imageWidget = _buildImage(libraryExercise);
 
     return GestureDetector(
       onLongPress: () => _showProOptions(context),
@@ -190,6 +185,44 @@ class EjercicioCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildImage(LibraryExercise? libExercise) {
+    if (kIsWeb) {
+      if (libExercise != null && libExercise.imageUrls.isNotEmpty) {
+        return Image.network(
+          libExercise.imageUrls.first,
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+        );
+      }
+      return Image.asset(
+        'assets/img/placeholder_exercise.png',
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+      );
+    }
+
+    if (ejercicio.localImagePath != null && File(ejercicio.localImagePath!).existsSync()) {
+      return Image.file(
+        File(ejercicio.localImagePath!),
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+      );
+    }
+    return Image.asset(
+      'assets/img/placeholder_exercise.png',
+      width: 60,
+      height: 60,
+      fit: BoxFit.cover,
+      errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
     );
   }
 }

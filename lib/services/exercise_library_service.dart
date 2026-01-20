@@ -117,10 +117,14 @@ class ExerciseLibraryService {
     try {
       String url = 'https://wger.de/api/v2/exercise/?language=4&limit=50'; // Limit 50 for MVP speed
 
-      final directory = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${directory.path}/ejercicios_images');
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
+      String? imagesDirPath;
+      if (!kIsWeb) {
+        final directory = await getApplicationDocumentsDirectory();
+        final imagesDir = Directory('${directory.path}/ejercicios_images');
+        if (!await imagesDir.exists()) {
+          await imagesDir.create(recursive: true);
+        }
+        imagesDirPath = imagesDir.path;
       }
 
       List<({LibraryExercise exercise, String imageUrl})> pendingDownloads = [];
@@ -159,7 +163,7 @@ class ExerciseLibraryService {
             // Save/Update in Hive (Text only first)
             await _box.put('exercise_${exercise.id}', exercise);
 
-            if (exercise.imageUrls.isNotEmpty) {
+            if (!kIsWeb && exercise.imageUrls.isNotEmpty) {
               pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));
             }
           }
@@ -176,8 +180,8 @@ class ExerciseLibraryService {
       }
 
       // Phase 2: Parallel Image Downloads
-      if (pendingDownloads.isNotEmpty) {
-        await _processImageDownloads(pendingDownloads, imagesDir.path);
+      if (!kIsWeb && pendingDownloads.isNotEmpty && imagesDirPath != null) {
+        await _processImageDownloads(pendingDownloads, imagesDirPath);
       }
 
       await _updateLastSyncDate();
