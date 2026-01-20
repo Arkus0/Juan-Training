@@ -23,13 +23,14 @@ class EjercicioAdapter extends TypeAdapter<Ejercicio> {
       reps: fields[3] as int,
       peso: fields[4] as double,
       notas: fields[5] as String?,
+      logs: (fields[6] as List?)?.cast<SerieLog>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Ejercicio obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class EjercicioAdapter extends TypeAdapter<Ejercicio> {
       ..writeByte(4)
       ..write(obj.peso)
       ..writeByte(5)
-      ..write(obj.notas);
+      ..write(obj.notas)
+      ..writeByte(6)
+      ..write(obj.logs);
   }
 
   @override

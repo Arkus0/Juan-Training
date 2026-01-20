@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'models/ejercicio.dart';
 import 'models/rutina.dart';
 import 'models/sesion.dart';
+import 'models/serie_log.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
 
@@ -18,6 +20,7 @@ void main() async {
   Hive.registerAdapter(EjercicioAdapter());
   Hive.registerAdapter(RutinaAdapter());
   Hive.registerAdapter(SesionAdapter());
+  Hive.registerAdapter(SerieLogAdapter());
 
   // Open Boxes
   await Hive.openBox<Rutina>('rutinas');
@@ -29,7 +32,7 @@ void main() async {
 
   await initializeDateFormatting('es_ES', null);
 
-  runApp(const JuanTrainingApp());
+  runApp(const ProviderScope(child: JuanTrainingApp()));
 }
 
 class JuanTrainingApp extends StatelessWidget {
