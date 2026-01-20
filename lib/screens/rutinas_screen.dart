@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/rutina.dart';
 import 'create_edit_routine_screen.dart';
 

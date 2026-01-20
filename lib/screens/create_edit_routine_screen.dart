@@ -42,6 +42,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     // Attempt Save
     final error = await notifier.saveRoutine();
 
+    if (!mounted) return;
+
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

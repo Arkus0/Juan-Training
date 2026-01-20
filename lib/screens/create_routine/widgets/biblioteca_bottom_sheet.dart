@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Just in case, but we use callbacks/service
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
