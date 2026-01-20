@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fuzzy/fuzzy.dart';
@@ -192,17 +193,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                           Expanded(
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              child: (ex.localImagePath != null && File(ex.localImagePath!).existsSync())
-                                  ? Image.file(
-                                      File(ex.localImagePath!),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
-                                    )
-                                  : Image.asset(
-                                      'assets/img/placeholder_exercise.png',
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
-                                    ),
+                              child: _buildImage(ex),
                             ),
                           ),
                           Padding(
@@ -254,5 +245,37 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
         ],
       ),
     );
+  }
+
+  Widget _buildImage(LibraryExercise ex) {
+    if (kIsWeb) {
+      if (ex.imageUrls.isNotEmpty) {
+        return Image.network(
+          ex.imageUrls.first,
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
+        );
+      } else {
+        return Image.asset(
+          'assets/img/placeholder_exercise.png',
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
+        );
+      }
+    } else {
+      if (ex.localImagePath != null && File(ex.localImagePath!).existsSync()) {
+        return Image.file(
+          File(ex.localImagePath!),
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
+        );
+      } else {
+        return Image.asset(
+          'assets/img/placeholder_exercise.png',
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
+        );
+      }
+    }
   }
 }
