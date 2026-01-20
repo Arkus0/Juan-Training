@@ -13,10 +13,11 @@ class TrainingState {
   final List<Ejercicio> targets; // Snapshot of targets
   final DateTime? startTime;
   final int defaultRestSeconds;
-
-  // We can track specific timer state if needed, but often UI handles the ticker.
-  // We will track if a rest is requested to trigger the UI overlay/widget.
   final bool isRestActive;
+
+  // New State Fields
+  final Map<String, List<SerieLog>> history; // Key: Exercise Name, Value: Last Session Logs
+  final bool showAdvancedOptions;
 
   TrainingState({
     this.activeRutina,
@@ -25,6 +26,8 @@ class TrainingState {
     this.startTime,
     this.defaultRestSeconds = 90,
     this.isRestActive = false,
+    this.history = const {},
+    this.showAdvancedOptions = false,
   });
 
   TrainingState copyWith({
@@ -34,6 +37,8 @@ class TrainingState {
     DateTime? startTime,
     int? defaultRestSeconds,
     bool? isRestActive,
+    Map<String, List<SerieLog>>? history,
+    bool? showAdvancedOptions,
   }) {
     return TrainingState(
       activeRutina: activeRutina ?? this.activeRutina,
@@ -42,6 +47,8 @@ class TrainingState {
       startTime: startTime ?? this.startTime,
       defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
       isRestActive: isRestActive ?? this.isRestActive,
+      history: history ?? this.history,
+      showAdvancedOptions: showAdvancedOptions ?? this.showAdvancedOptions,
     );
   }
 }
@@ -53,21 +60,53 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   void startSession(Rutina rutina) {
     final now = DateTime.now();
+    final box = Hive.box<Sesion>('sesiones');
+    // Sort sessions descending by date
+    final sessions = box.values.toList()..sort((a, b) => b.fecha.compareTo(a.fecha));
 
-    // Create working copies for logging
-    // We strictly assume Ejercicio has summary fields 'series', 'reps', 'peso'
+    final Map<String, List<SerieLog>> historyMap = {};
+
+    // Build History Map
+    for (var ex in rutina.ejercicios) {
+      // Find latest session with this exercise
+      for (var s in sessions) {
+        try {
+          // Look for exercise by name
+          final histEx = s.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);
+          historyMap[ex.nombre] = histEx.logs;
+          break; // Found latest, move to next exercise
+        } catch (_) {
+          // Not found in this session, continue to older sessions
+        }
+      }
+    }
+
+    // Create working copies with Auto-Suggest
     final workingExercises = rutina.ejercicios.map((e) {
-      // Create 'logs' based on target series
-      // Default to target values
+      final historyLogs = historyMap[e.nombre];
+
       final logs = List.generate(e.series, (index) {
+        double suggestedWeight = e.peso;
+        int suggestedReps = e.reps;
+
+        // Auto-Suggest from history
+        if (historyLogs != null && index < historyLogs.length) {
+          suggestedWeight = historyLogs[index].peso;
+          // Logic: If they did the target reps last time, suggest same weight.
+          // Or we could implement +2.5kg if completed.
+          // For "Juan Training", let's suggest the last used weight for that set.
+        } else if (historyLogs != null && historyLogs.isNotEmpty) {
+           // If we have more sets now than last time, use the last set's weight
+           suggestedWeight = historyLogs.last.peso;
+        }
+
         return SerieLog(
-          peso: e.peso,
-          reps: e.reps,
-          completed: false, // Default not completed
+          peso: suggestedWeight,
+          reps: suggestedReps,
+          completed: false,
         );
       });
 
-      // Create a detached copy (not in Hive box yet)
       return Ejercicio(
         id: e.id,
         nombre: e.nombre,
@@ -79,10 +118,6 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       );
     }).toList();
 
-    // Snapshot of targets (without logs, or logs ignored)
-    // We just clone the original exercise list from routine
-    // Since Rutina.ejercicios are HiveObjects, we should probably create detached copies
-    // to avoid modifying the routine definition by accident if we ever touch them.
     final targetExercises = rutina.ejercicios.map((e) => e.copyWith()).toList();
 
     state = TrainingState(
@@ -92,47 +127,65 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       startTime: now,
       defaultRestSeconds: 90,
       isRestActive: false,
+      history: historyMap,
+      showAdvancedOptions: false,
     );
   }
 
-  void updateLog(int exerciseIndex, int setIndex, {double? peso, int? reps, bool? completed}) {
+  void updateLog(int exerciseIndex, int setIndex, {
+    double? peso,
+    int? reps,
+    bool? completed,
+    int? rpe,
+    String? notas,
+    int? restSeconds,
+    bool? isFailure,
+    bool? isDropset,
+    bool? isWarmup
+  }) {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
     final logs = [...exercise.logs];
     final log = logs[setIndex];
 
-    // Create new log instance (immutable style usually better for Riverpod,
-    // but HiveObject is mutable. We'll replace the object in the list)
-    // Since SerieLog is HiveObject, we can just mutate it IF it was just a local object.
-    // But to trigger Riverpod update, we need to reassign to state.
-
-    // Mutate the log object directly?
-    // Since these objects are not in a box yet, they are just Dart objects.
-    if (peso != null) {
-      // We can't change final fields of SerieLog easily if they are final.
-      // Let's check SerieLog definition.
-    }
-
-    // Check SerieLog definition: fields are final (peso, reps) except completed?
-    // In my generated file: final double peso; final int reps; bool completed;
-    // So I must replace the SerieLog object.
-
     final newLog = SerieLog(
       peso: peso ?? log.peso,
       reps: reps ?? log.reps,
       completed: completed ?? log.completed,
+      rpe: rpe ?? log.rpe,
+      notas: notas ?? log.notas,
+      restSeconds: restSeconds ?? log.restSeconds,
+      isFailure: isFailure ?? log.isFailure,
+      isDropset: isDropset ?? log.isDropset,
+      isWarmup: isWarmup ?? log.isWarmup,
     );
 
     logs[setIndex] = newLog;
-
-    // We also need to update the exercise object because 'logs' is final in Ejercicio
-    // "final List<SerieLog> logs;"
-    // So we need to replace the exercise object.
-
     final newExercise = exercise.copyWith(logs: logs);
     exercises[exerciseIndex] = newExercise;
 
     state = state.copyWith(exercises: exercises);
+  }
+
+  void copyPreviousSet(int exerciseIndex, int setIndex) {
+    if (setIndex == 0) return; // Cannot copy for first set
+
+    final exercise = state.exercises[exerciseIndex];
+    final prevLog = exercise.logs[setIndex - 1];
+
+    updateLog(
+      exerciseIndex,
+      setIndex,
+      peso: prevLog.peso,
+      reps: prevLog.reps,
+      rpe: prevLog.rpe,
+      notas: prevLog.notas,
+      // Don't copy completed status usually
+    );
+  }
+
+  void toggleAdvancedOptions(bool show) {
+    state = state.copyWith(showAdvancedOptions: show);
   }
 
   void setRestDuration(int seconds) {
@@ -165,11 +218,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final box = Hive.box<Sesion>('sesiones');
     await box.add(sesion);
 
-    // Reset state? Or let the UI dispose/navigate away.
-    // Usually good to reset.
     state = TrainingState();
-
-    // Navigate to History (Index 2)
     ref.read(bottomNavIndexProvider.notifier).state = 2;
   }
 }
