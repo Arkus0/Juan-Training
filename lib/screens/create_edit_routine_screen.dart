@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/ejercicio.dart';
 import '../models/rutina.dart';
@@ -31,10 +31,7 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
         _addExercise(ejercicio: ex);
       }
     } else {
-      // Add one empty exercise by default for convenience?
-      // Prompt says: "Lista dinámica de ejercicios (botón + para añadir nuevo)"
-      // and "ejercicios al menos 1".
-      // Let's start empty or with one. Start with one to make it obvious.
+      // Start with one empty exercise for convenience
       _addExercise();
     }
   }
@@ -62,6 +59,9 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
   }
 
   void _saveRoutine() {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -80,7 +80,7 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
         nombre: c.nameController.text.trim(),
         series: int.parse(c.seriesController.text),
         reps: int.parse(c.repsController.text),
-        peso: double.tryParse(c.pesoController.text) ?? 0.0,
+        peso: double.tryParse(c.pesoController.text.replaceAll(',', '.')) ?? 0.0,
         notas: c.notesController.text.trim().isEmpty ? null : c.notesController.text.trim(),
       );
     }).toList();
@@ -95,14 +95,7 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
         ejercicios: ejercicios,
         creada: widget.rutina!.creada, // Keep original creation date
       );
-      // Since we are using HiveObject, we could call widget.rutina!.save(),
-      // but we need to update the fields.
-      // Ideally with Hive, we replace the object in the box using the key (id usually, or auto-increment int key).
-      // Wait, Hive keys. If I used `put(id, object)`, then key is id.
-      // If I used `add(object)`, key is int.
-      // I should check how I save it. I haven't saved any yet.
-      // I will use `box.put(rutina.id, rutina)`.
-
+      // Ensure we use the same ID as key
       box.put(updatedRutina.id, updatedRutina);
     } else {
       // Create new
@@ -118,67 +111,98 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     Navigator.of(context).pop();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.rutina != null ? 'Editar Rutina' : 'Crear Rutina'),
+  void _deleteRoutine() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Rutina'),
+        content: const Text('¿Estás seguro de que quieres eliminar esta rutina? Esta acción no se puede deshacer.'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveRoutine,
-          )
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre de la Rutina',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'El nombre es obligatorio';
-                  }
-                  return null;
-                },
+    );
+
+    if (confirmed == true && widget.rutina != null) {
+      final box = Hive.box<Rutina>('rutinas');
+      await box.delete(widget.rutina!.id);
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap outside
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.rutina != null ? 'Editar Rutina' : 'Crear Rutina'),
+          actions: [
+            if (widget.rutina != null)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: _deleteRoutine,
+                tooltip: 'Eliminar',
               ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: _exerciseControllers.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  return _ExerciseFormCard(
-                    index: index,
-                    controller: _exerciseControllers[index],
-                    onRemove: () => _removeExercise(index),
-                  );
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _addExercise(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Añadir Ejercicio'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ),
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _saveRoutine,
+              tooltip: 'Guardar',
+            )
           ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre de la Rutina',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.edit),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'El nombre es obligatorio';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), // Extra padding for FAB/Button
+                  itemCount: _exerciseControllers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    return _ExerciseFormCard(
+                      index: index,
+                      controller: _exerciseControllers[index],
+                      onRemove: () => _removeExercise(index),
+                      isLast: index == _exerciseControllers.length - 1,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _addExercise(),
+          icon: const Icon(Icons.add),
+          label: const Text('Ejercicio'),
         ),
       ),
     );
@@ -189,17 +213,20 @@ class _ExerciseFormCard extends StatelessWidget {
   final int index;
   final _ExerciseControllers controller;
   final VoidCallback onRemove;
+  final bool isLast;
 
   const _ExerciseFormCard({
     required this.index,
     required this.controller,
     required this.onRemove,
+    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -208,32 +235,56 @@ class _ExerciseFormCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Ejercicio ${index + 1}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ejercicio ${index + 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: onRemove,
+                  tooltip: 'Quitar ejercicio',
                 ),
               ],
             ),
             TextFormField(
               controller: controller.nameController,
-              decoration: const InputDecoration(labelText: 'Nombre del Ejercicio'),
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del Ejercicio',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
               validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: controller.seriesController,
-                    decoration: const InputDecoration(labelText: 'Series'),
+                    decoration: const InputDecoration(
+                      labelText: 'Series',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Req';
-                      if (int.tryParse(value) == null) return 'Num';
+                      if (value == null || value.isEmpty) return 'Requerido';
+                      if (int.tryParse(value) == null) return 'Número';
                       return null;
                     },
                   ),
@@ -242,11 +293,16 @@ class _ExerciseFormCard extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.repsController,
-                    decoration: const InputDecoration(labelText: 'Reps'),
+                    decoration: const InputDecoration(
+                      labelText: 'Reps',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Req';
-                      if (int.tryParse(value) == null) return 'Num';
+                      if (value == null || value.isEmpty) return 'Requerido';
+                      if (int.tryParse(value) == null) return 'Número';
                       return null;
                     },
                   ),
@@ -255,19 +311,29 @@ class _ExerciseFormCard extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.pesoController,
-                    decoration: const InputDecoration(labelText: 'Peso (kg)'),
+                    decoration: const InputDecoration(
+                      labelText: 'Peso (kg)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    // Peso es opcional, default 0
+                    textInputAction: TextInputAction.next,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             TextFormField(
               controller: controller.notesController,
-              decoration: const InputDecoration(labelText: 'Notas (opcional)'),
+              decoration: const InputDecoration(
+                labelText: 'Notas (opcional)',
+                border: OutlineInputBorder(),
+                isDense: true,
+                alignLabelWithHint: true,
+              ),
               maxLines: 2,
               minLines: 1,
+              textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
             ),
           ],
         ),
@@ -289,7 +355,7 @@ class _ExerciseControllers {
     nameController = TextEditingController(text: ejercicio?.nombre ?? '');
     seriesController = TextEditingController(text: ejercicio?.series.toString() ?? '');
     repsController = TextEditingController(text: ejercicio?.reps.toString() ?? '');
-    pesoController = TextEditingController(text: ejercicio?.peso.toString() ?? '');
+    pesoController = TextEditingController(text: ejercicio?.peso == 0.0 ? '' : ejercicio?.peso.toString());
     notesController = TextEditingController(text: ejercicio?.notas ?? '');
   }
 
