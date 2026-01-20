@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'models/ejercicio.dart';
 import 'models/rutina.dart';
 import 'models/sesion.dart';
@@ -20,6 +21,8 @@ void main() async {
   // Open Boxes
   await Hive.openBox<Rutina>('rutinas');
   await Hive.openBox<Sesion>('sesiones');
+
+  await initializeDateFormatting('es_ES', null);
 
   runApp(const JuanTrainingApp());
 }

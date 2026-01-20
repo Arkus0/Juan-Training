@@ -17,10 +17,18 @@ class Sesion extends HiveObject {
   @HiveField(3)
   final List<Ejercicio> ejerciciosCompletados;
 
+  @HiveField(4)
+  final List<Ejercicio> ejerciciosObjetivo;
+
+  @HiveField(5)
+  final int? durationSeconds;
+
   Sesion({
     required this.id,
     required this.rutinaId,
     required this.fecha,
     required this.ejerciciosCompletados,
+    required this.ejerciciosObjetivo,
+    this.durationSeconds,
   });
 }
