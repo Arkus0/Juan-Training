@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rutina.dart';
 import 'create_edit_routine_screen.dart';
+import '../providers/training_provider.dart';
 
-class RutinasScreen extends StatelessWidget {
+class RutinasScreen extends ConsumerWidget {
   const RutinasScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Access the already opened box
-    final rutinasBox = Hive.box<Rutina>('rutinas');
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rutinasAsync = ref.watch(rutinasStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('MIS RUTINAS'),
       ),
-      body: ValueListenableBuilder(
-        valueListenable: rutinasBox.listenable(),
-        builder: (context, Box<Rutina> box, _) {
-          if (box.isEmpty) {
+      body: rutinasAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        data: (rutinas) {
+          if (rutinas.isEmpty) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -45,11 +46,6 @@ class RutinasScreen extends StatelessWidget {
               ),
             );
           }
-
-          // Convert values to list to sort
-          final rutinas = box.values.toList();
-          // Sort by date descending (newest first)
-          rutinas.sort((a, b) => b.creada.compareTo(a.creada));
 
           return ListView.builder(
             itemCount: rutinas.length,
