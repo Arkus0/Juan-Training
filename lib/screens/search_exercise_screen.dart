@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fuzzy/fuzzy.dart';
 import '../models/library_exercise.dart';
 import '../services/exercise_library_service.dart';
 
@@ -11,34 +12,13 @@ class SearchExerciseScreen extends StatefulWidget {
 
 class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<LibraryExercise> _allExercises = [];
-  List<LibraryExercise> _filteredExercises = [];
 
   @override
   void initState() {
     super.initState();
-    _loadExercises();
-    _searchController.addListener(_filterExercises);
-  }
-
-  void _loadExercises() {
-    // Get exercises from service (already loaded/synced/fallback)
-    setState(() {
-      _allExercises = ExerciseLibraryService.instance.getExercises();
-      _filteredExercises = _allExercises;
-    });
-  }
-
-  void _filterExercises() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredExercises = _allExercises;
-      } else {
-        _filteredExercises = _allExercises.where((ex) {
-          return ex.name.toLowerCase().contains(query);
-        }).toList();
-      }
+    // Trigger rebuild on text change to re-filter the list inside the ValueListenableBuilder
+    _searchController.addListener(() {
+      setState(() {});
     });
   }
 
@@ -71,7 +51,6 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          // Listener triggers filter
                         },
                       )
                     : null,
@@ -79,22 +58,50 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
             ),
           ),
           Expanded(
-            child: _filteredExercises.isEmpty
-                ? const Center(child: Text('No se encontraron ejercicios'))
-                : ListView.builder(
-                    itemCount: _filteredExercises.length,
-                    itemBuilder: (context, index) {
-                      final exercise = _filteredExercises[index];
-                      return ListTile(
-                        title: Text(exercise.name),
-                        subtitle: Text('${exercise.muscleGroup} • ${exercise.equipment}'),
-                        trailing: const Icon(Icons.add_circle_outline),
-                        onTap: () {
-                          Navigator.of(context).pop(exercise);
-                        },
-                      );
-                    },
-                  ),
+            child: ValueListenableBuilder<List<LibraryExercise>>(
+              valueListenable: ExerciseLibraryService.instance.exercisesNotifier,
+              builder: (context, exercises, child) {
+                List<LibraryExercise> displayedExercises;
+                final query = _searchController.text;
+
+                if (query.isEmpty) {
+                  displayedExercises = exercises;
+                } else {
+                  final fuse = Fuzzy(
+                    exercises,
+                    options: FuzzyOptions(
+                      keys: [
+                        WeightedKey(
+                          name: 'name',
+                          getter: (LibraryExercise x) => x.name,
+                          weight: 1,
+                        ),
+                      ],
+                    ),
+                  );
+                  displayedExercises = fuse.search(query).map((r) => r.item).toList();
+                }
+
+                if (displayedExercises.isEmpty) {
+                  return const Center(child: Text('No se encontraron ejercicios'));
+                }
+
+                return ListView.builder(
+                  itemCount: displayedExercises.length,
+                  itemBuilder: (context, index) {
+                    final exercise = displayedExercises[index];
+                    return ListTile(
+                      title: Text(exercise.name),
+                      subtitle: Text('${exercise.muscleGroup} • ${exercise.equipment}'),
+                      trailing: const Icon(Icons.add_circle_outline),
+                      onTap: () {
+                        Navigator.of(context).pop(exercise);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

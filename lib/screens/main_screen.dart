@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/main_provider.dart';
@@ -14,39 +16,67 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  bool _isFirstLoad = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLibrarySync();
     });
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  void _handleConnectivityChange(List<ConnectivityResult> results) {
+    // Ignore the very first event if it happens immediately, as we handle startup sync separately
+    if (_isFirstLoad) {
+      _isFirstLoad = false;
+      return;
+    }
+
+    final hasConnection = results.any((r) => r != ConnectivityResult.none);
+
+    if (hasConnection) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Conexión recuperada.')),
+      );
+      _checkLibrarySync();
+    } else {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Conexión perdida.')),
+      );
+    }
   }
 
   Future<void> _checkLibrarySync() async {
     final service = ExerciseLibraryService.instance;
     if (await service.shouldSync()) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Actualizando biblioteca de ejercicios...'),
-          duration: Duration(days: 1), // Stay visible until dismissed
-        ),
-      );
+
+      // Only show "Actualizando" if we are manually triggering or it's a significant sync
+      // But per user request, we mostly want to notify on connection change.
+      // We'll keep it subtle.
 
       final success = await service.syncLibrary();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Biblioteca actualizada.')),
         );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sin conexión. Usando modo offline.')),
-        );
       }
+      // If failed, we don't spam "Sin conexión" here because the connectivity listener handles that,
+      // or we are just in offline mode silently.
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:hive/hive.dart';
@@ -11,6 +12,9 @@ class ExerciseLibraryService {
 
   List<LibraryExercise> _exercises = [];
   List<LibraryExercise> get exercises => List.unmodifiable(_exercises);
+
+  // Notifier for real-time updates
+  late final ValueNotifier<List<LibraryExercise>> exercisesNotifier = ValueNotifier(getExercises());
 
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
@@ -81,6 +85,7 @@ class ExerciseLibraryService {
         // The list remains empty, prompting a sync.
       }
       _isLoaded = true;
+      exercisesNotifier.value = getExercises();
     } catch (e) {
       print('Error loading local library: $e');
       // If load fails, we stay empty, sync will fix.
@@ -130,6 +135,7 @@ class ExerciseLibraryService {
         _exercises = fetchedExercises;
         await _saveLibraryToLocal();
         await _updateLastSyncDate();
+        exercisesNotifier.value = getExercises();
         return true;
       }
       return false;
