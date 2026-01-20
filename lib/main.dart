@@ -44,11 +44,11 @@ void main() async {
   Hive.registerAdapter(LibraryExerciseAdapter()); // Type 6
 
   // Open Boxes
-  await Hive.openBox<Rutina>('rutinas');
-  await Hive.openBox<Sesion>('sesiones');
-  // library_exercises box will be managed by Service or opened here?
-  // Let's open it here to ensure it's ready.
-  await Hive.openBox<LibraryExercise>('library_exercises');
+  await Future.wait([
+    Hive.openBox<Rutina>('rutinas'),
+    Hive.openBox<Sesion>('sesiones'),
+    Hive.openBox<LibraryExercise>('library_exercises'),
+  ]);
 
   // Load Library (Service will use the already opened box)
   await ExerciseLibraryService.instance.loadLibrary();
