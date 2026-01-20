@@ -5,3 +5,7 @@
 ## 2025-02-19 - Optimized Exercise Search
 **Learning:** In `SearchExerciseScreen`, the `Fuzzy` search index (O(N) to build) was being re-instantiated on every keystroke because the text controller listener triggered `setState`.
 **Action:** Memoized the `Fuzzy` instance within the state. It is now only rebuilt when the exercise list reference changes, reducing typing latency significantly.
+
+## 2025-02-21 - Granular Session Set Updates
+**Learning:** Even with `SessionExerciseCard` optimized, typing in a set input caused the entire card to rebuild because it watched the whole `Exercise` object. This meant all sibling sets were rebuilt unnecessarily.
+**Action:** Refactored `SessionSetRow` to be a `ConsumerStatefulWidget` that watches its own specific log entry. The parent `SessionExerciseCard` now only watches the exercise name and log count. Typing performance is now O(1) regarding the number of sets/exercises.

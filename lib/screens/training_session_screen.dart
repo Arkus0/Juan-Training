@@ -231,7 +231,128 @@ class SessionExerciseCard extends ConsumerStatefulWidget {
 }
 
 class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
-  void _showAdvancedOptions(BuildContext context, int exerciseIndex, int setIndex) {
+  @override
+  Widget build(BuildContext context) {
+    // ⚡ Bolt Optimization: Only rebuild this specific card when name or log count changes
+    final exerciseName = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex].nombre));
+    final logsLength = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex].logs.length));
+    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exerciseName]));
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 Expanded(
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       Text(
+                        exerciseName.toUpperCase(),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.redAccent[700],
+                          shadows: [
+                            Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                                           ),
+                       if (historyLogs != null && historyLogs.isNotEmpty)
+                         Text(
+                           'LAST: ${historyLogs.last.peso}KG x ${historyLogs.last.reps}',
+                           style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
+                         ),
+                     ],
+                   ),
+                 ),
+                 IconButton(
+                   icon: const Icon(Icons.more_horiz),
+                   onPressed: () {}, // Could open exercise settings
+                 )
+               ],
+             ),
+
+            const SizedBox(height: 16),
+
+            // Header Row
+            const Row(
+              children: [
+                SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
+                SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
+                Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
+                Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
+                SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            ...List.generate(logsLength, (setIndex) {
+              return SessionSetRow(
+                exerciseIndex: widget.exerciseIndex,
+                setIndex: setIndex,
+                exerciseName: exerciseName,
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class SessionSetRow extends ConsumerStatefulWidget {
+  final int exerciseIndex;
+  final int setIndex;
+  final String exerciseName;
+
+  const SessionSetRow({
+    super.key,
+    required this.exerciseIndex,
+    required this.setIndex,
+    required this.exerciseName,
+  });
+
+  @override
+  ConsumerState<SessionSetRow> createState() => _SessionSetRowState();
+}
+
+class _SessionSetRowState extends ConsumerState<SessionSetRow> {
+  late TextEditingController _weightController;
+  late TextEditingController _repsController;
+
+  @override
+  void initState() {
+    super.initState();
+    final log = ref.read(trainingSessionProvider).exercises[widget.exerciseIndex].logs[widget.setIndex];
+    _weightController = TextEditingController(text: log.peso > 0 ? log.peso.toString() : '');
+    _repsController = TextEditingController(text: log.reps > 0 ? log.reps.toString() : '');
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _repsController.dispose();
+    super.dispose();
+  }
+
+  void _openPlateCalc(double currentWeight, TrainingSessionNotifier notifier) {
+    showDialog(
+      context: context,
+      builder: (_) => PlateCalculatorDialog(
+        currentWeight: currentWeight,
+        onWeightSelected: (val) {
+          _weightController.text = val.toString();
+          notifier.updateLog(widget.exerciseIndex, widget.setIndex, peso: val);
+        },
+      ),
+    );
+  }
+
+  void _showAdvancedOptions() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -240,7 +361,7 @@ class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: _AdvancedOptionsModal(exerciseIndex: exerciseIndex, setIndex: setIndex),
+          child: _AdvancedOptionsModal(exerciseIndex: widget.exerciseIndex, setIndex: widget.setIndex),
         );
       },
     );
@@ -280,189 +401,49 @@ class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
 
   @override
   Widget build(BuildContext context) {
-    // ⚡ Bolt Optimization: Only rebuild this specific card when this exercise changes
-    final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex]));
-    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.nombre]));
+    final log = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex].logs[widget.setIndex]));
+    final prevLog = ref.watch(trainingSessionProvider.select((s) {
+      final historyLogs = s.history[widget.exerciseName];
+      if (historyLogs != null && widget.setIndex < historyLogs.length) {
+        return historyLogs[widget.setIndex];
+      }
+      return null;
+    }));
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
-    // Need isRestActive to check for auto-advance
     final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
-
     final notifier = ref.read(trainingSessionProvider.notifier);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-             Row(
-               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               children: [
-                 Expanded(
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       Text(
-                        exercise.nombre.toUpperCase(),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.redAccent[700],
-                          shadows: [
-                            Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                                           ),
-                       if (historyLogs != null && historyLogs.isNotEmpty)
-                         Text(
-                           'LAST: ${historyLogs.last.peso}KG x ${historyLogs.last.reps}',
-                           style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
-                         ),
-                     ],
-                   ),
-                 ),
-                 IconButton(
-                   icon: const Icon(Icons.more_horiz),
-                   onPressed: () {}, // Could open exercise settings
-                 )
-               ],
-             ),
+    ref.listen(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex].logs[widget.setIndex]), (prev, next) {
+        // Sync controllers if external change (e.g. plate calc or copy)
+        // Check weight
+        final double currentWeight = double.tryParse(_weightController.text) ?? 0.0;
+        if (next.peso != currentWeight) {
+           if (_weightController.text.isEmpty || double.tryParse(_weightController.text) != next.peso) {
+              if (next.peso == 0.0) {
+                 if (_weightController.text.isNotEmpty) _weightController.text = '';
+              } else {
+                 _weightController.text = next.peso.toString();
+              }
+           }
+        }
+        // Check reps
+        final int currentReps = int.tryParse(_repsController.text) ?? 0;
+        if (next.reps != currentReps) {
+             if (_repsController.text.isEmpty || int.tryParse(_repsController.text) != next.reps) {
+                if (next.reps == 0) {
+                   if (_repsController.text.isNotEmpty) _repsController.text = '';
+                } else {
+                   _repsController.text = next.reps.toString();
+                }
+             }
+        }
+    });
 
-            const SizedBox(height: 16),
-
-            // Header Row
-            const Row(
-              children: [
-                SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
-                SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
-                Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
-                Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
-                SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            ...List.generate(exercise.logs.length, (setIndex) {
-              final log = exercise.logs[setIndex];
-              final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
-
-              return SessionSetRow(
-                index: setIndex,
-                log: log,
-                prevLog: prevLog,
-                onWeightChanged: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
-                onRepsChanged: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
-                onCompleted: (val) {
-                  notifier.updateLog(widget.exerciseIndex, setIndex, completed: val);
-                  if (val == true) {
-                     _triggerCompletionFeedback(log, prevLog);
-                     // Auto-advance rest
-                     if (!isRestActive) notifier.startRest();
-                  }
-                },
-                onPlateCalc: (val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
-                onLongPress: () => _showAdvancedOptions(context, widget.exerciseIndex, setIndex),
-                showAdvanced: showAdvanced,
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SessionSetRow extends StatefulWidget {
-  final int index;
-  final SerieLog log;
-  final SerieLog? prevLog;
-  final Function(String) onWeightChanged;
-  final Function(String) onRepsChanged;
-  final Function(bool?) onCompleted;
-  final Function(double) onPlateCalc;
-  final VoidCallback onLongPress;
-  final bool showAdvanced;
-
-  const SessionSetRow({
-    super.key,
-    required this.index,
-    required this.log,
-    required this.prevLog,
-    required this.onWeightChanged,
-    required this.onRepsChanged,
-    required this.onCompleted,
-    required this.onPlateCalc,
-    required this.onLongPress,
-    required this.showAdvanced,
-  });
-
-  @override
-  State<SessionSetRow> createState() => _SessionSetRowState();
-}
-
-class _SessionSetRowState extends State<SessionSetRow> {
-  late TextEditingController _weightController;
-  late TextEditingController _repsController;
-
-  @override
-  void initState() {
-    super.initState();
-    _weightController = TextEditingController(text: widget.log.peso > 0 ? widget.log.peso.toString() : '');
-    _repsController = TextEditingController(text: widget.log.reps > 0 ? widget.log.reps.toString() : '');
-  }
-
-  @override
-  void didUpdateWidget(SessionSetRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // Check for weight changes from external source (e.g. copy previous set)
-    final double currentWeight = double.tryParse(_weightController.text) ?? 0.0;
-    if (widget.log.peso != currentWeight && widget.log.peso != 0.0) {
-      if (_weightController.text.isNotEmpty && double.tryParse(_weightController.text) == widget.log.peso) {
-         // Identical
-      } else {
-         _weightController.text = widget.log.peso.toString();
-      }
-    }
-
-    // Check for reps changes
-    final int currentReps = int.tryParse(_repsController.text) ?? 0;
-    if (widget.log.reps != currentReps && widget.log.reps != 0) {
-      if (_repsController.text.isNotEmpty && int.tryParse(_repsController.text) == widget.log.reps) {
-         // Identical
-      } else {
-         _repsController.text = widget.log.reps.toString();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _weightController.dispose();
-    _repsController.dispose();
-    super.dispose();
-  }
-
-  void _openPlateCalc() {
-    final currentVal = double.tryParse(_weightController.text) ?? 0.0;
-    showDialog(
-      context: context,
-      builder: (_) => PlateCalculatorDialog(
-        currentWeight: currentVal,
-        onWeightSelected: (val) {
-          _weightController.text = val.toString();
-          widget.onPlateCalc(val);
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
-      onLongPress: widget.onLongPress,
+      onLongPress: _showAdvancedOptions,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        color: widget.log.completed ? Colors.red[900]!.withValues(alpha: 0.1) : Colors.transparent,
+        color: log.completed ? Colors.red[900]!.withValues(alpha: 0.1) : Colors.transparent,
         child: Column(
           children: [
             Row(
@@ -473,8 +454,8 @@ class _SessionSetRowState extends State<SessionSetRow> {
                   child: Center(
                     child: CircleAvatar(
                       radius: 10,
-                      backgroundColor: widget.log.completed ? Colors.redAccent[700] : Colors.grey[800],
-                      child: Text('${widget.index + 1}', style: const TextStyle(fontSize: 10, color: Colors.white)),
+                      backgroundColor: log.completed ? Colors.redAccent[700] : Colors.grey[800],
+                      child: Text('${widget.setIndex + 1}', style: const TextStyle(fontSize: 10, color: Colors.white)),
                     ),
                   ),
                 ),
@@ -483,7 +464,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
                   width: 50,
                   child: Center(
                     child: Text(
-                      widget.prevLog != null ? '${widget.prevLog!.peso}x${widget.prevLog!.reps}' : '-',
+                      prevLog != null ? '${prevLog.peso}x${prevLog.reps}' : '-',
                       style: TextStyle(color: Colors.grey[600], fontSize: 10),
                     ),
                   ),
@@ -497,10 +478,10 @@ class _SessionSetRowState extends State<SessionSetRow> {
                       children: [
                         _AggressiveTextField(
                           controller: _weightController,
-                          onChanged: widget.onWeightChanged,
+                          onChanged: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, peso: double.tryParse(val)),
                         ),
                         GestureDetector(
-                          onTap: _openPlateCalc,
+                          onTap: () => _openPlateCalc(double.tryParse(_weightController.text) ?? 0.0, notifier),
                           child: Container(
                             margin: const EdgeInsets.only(right: 2),
                             padding: const EdgeInsets.all(4),
@@ -517,7 +498,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: _AggressiveTextField(
                       controller: _repsController,
-                      onChanged: widget.onRepsChanged,
+                      onChanged: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, reps: int.tryParse(val)),
                       isInteger: true,
                     ),
                   ),
@@ -528,9 +509,16 @@ class _SessionSetRowState extends State<SessionSetRow> {
                   child: Transform.scale(
                     scale: 1.3,
                     child: Checkbox(
-                      value: widget.log.completed,
+                      value: log.completed,
                       activeColor: Colors.redAccent[700],
-                      onChanged: widget.onCompleted,
+                      onChanged: (val) {
+                        notifier.updateLog(widget.exerciseIndex, widget.setIndex, completed: val);
+                        if (val == true) {
+                           _triggerCompletionFeedback(log, prevLog);
+                           // Auto-advance rest
+                           if (!isRestActive) notifier.startRest();
+                        }
+                      },
                       side: const BorderSide(color: Colors.grey, width: 2),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
@@ -538,17 +526,17 @@ class _SessionSetRowState extends State<SessionSetRow> {
                 ),
               ],
             ),
-            if (widget.showAdvanced || (widget.log.rpe != null || (widget.log.notas != null && widget.log.notas!.isNotEmpty)))
+            if (showAdvanced || (log.rpe != null || (log.notas != null && log.notas!.isNotEmpty)))
                Padding(
                  padding: const EdgeInsets.only(left: 80, right: 40, top: 4),
                  child: Row(
                    children: [
-                     if (widget.log.rpe != null)
-                       _Tag(text: 'RPE ${widget.log.rpe}', color: Colors.orange),
-                     if (widget.log.isFailure)
+                     if (log.rpe != null)
+                       _Tag(text: 'RPE ${log.rpe}', color: Colors.orange),
+                     if (log.isFailure)
                        const _Tag(text: 'FAIL', color: Colors.red),
-                     if (widget.log.notas != null && widget.log.notas!.isNotEmpty)
-                       Expanded(child: Text(widget.log.notas!, style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic), overflow: TextOverflow.ellipsis)),
+                     if (log.notas != null && log.notas!.isNotEmpty)
+                       Expanded(child: Text(log.notas!, style: const TextStyle(color: Colors.grey, fontSize: 10, fontStyle: FontStyle.italic), overflow: TextOverflow.ellipsis)),
                    ],
                  ),
                )
