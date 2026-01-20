@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'ejercicio.dart';
+import 'dia.dart';
 
 part 'rutina.g.dart';
 
@@ -9,10 +9,10 @@ class Rutina extends HiveObject {
   final String id;
 
   @HiveField(1)
-  final String nombre;
+  String nombre;
 
   @HiveField(2)
-  final List<Ejercicio> ejercicios;
+  List<Dia> dias;
 
   @HiveField(3)
   final DateTime creada;
@@ -20,7 +20,7 @@ class Rutina extends HiveObject {
   Rutina({
     required this.id,
     required this.nombre,
-    required this.ejercicios,
+    required this.dias,
     required this.creada,
   });
 }

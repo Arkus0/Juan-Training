@@ -59,6 +59,10 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   TrainingSessionNotifier(this.ref) : super(TrainingState());
 
   void startSession(Rutina rutina) {
+    // DISABLED FOR MVP BETA REFACTOR (New Models)
+    // Needs update to support Dia -> EjercicioEnRutina mapping to Ejercicio (Session)
+
+    /*
     final now = DateTime.now();
     final box = Hive.box<Sesion>('sesiones');
     // Sort sessions descending by date
@@ -67,67 +71,25 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final Map<String, List<SerieLog>> historyMap = {};
 
     // Build History Map
+    // Fails because rutina.ejercicios doesn't exist anymore (now it's dias)
+    /*
     for (var ex in rutina.ejercicios) {
-      // Find latest session with this exercise
-      for (var s in sessions) {
-        try {
-          // Look for exercise by name
-          final histEx = s.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);
-          historyMap[ex.nombre] = histEx.logs;
-          break; // Found latest, move to next exercise
-        } catch (_) {
-          // Not found in this session, continue to older sessions
-        }
-      }
+       ...
     }
+    */
 
-    // Create working copies with Auto-Suggest
-    final workingExercises = rutina.ejercicios.map((e) {
-      final historyLogs = historyMap[e.nombre];
+    // ...
+    */
 
-      final logs = List.generate(e.series, (index) {
-        double suggestedWeight = e.peso;
-        int suggestedReps = e.reps;
-
-        // Auto-Suggest from history
-        if (historyLogs != null && index < historyLogs.length) {
-          suggestedWeight = historyLogs[index].peso;
-          // Logic: If they did the target reps last time, suggest same weight.
-          // Or we could implement +2.5kg if completed.
-          // For "Juan Training", let's suggest the last used weight for that set.
-        } else if (historyLogs != null && historyLogs.isNotEmpty) {
-           // If we have more sets now than last time, use the last set's weight
-           suggestedWeight = historyLogs.last.peso;
-        }
-
-        return SerieLog(
-          peso: suggestedWeight,
-          reps: suggestedReps,
-          completed: false,
-        );
-      });
-
-      return Ejercicio(
-        id: e.id,
-        nombre: e.nombre,
-        series: e.series,
-        reps: e.reps,
-        peso: e.peso,
-        notas: e.notas,
-        logs: logs,
-      );
-    }).toList();
-
-    final targetExercises = rutina.ejercicios.map((e) => e.copyWith()).toList();
-
+    // Set empty state to avoid crashes if accessed
     state = TrainingState(
       activeRutina: rutina,
-      exercises: workingExercises,
-      targets: targetExercises,
-      startTime: now,
+      exercises: [],
+      targets: [],
+      startTime: DateTime.now(),
       defaultRestSeconds: 90,
       isRestActive: false,
-      history: historyMap,
+      history: {},
       showAdvancedOptions: false,
     );
   }

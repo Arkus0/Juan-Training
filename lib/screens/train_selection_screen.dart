@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/rutina.dart';
-import '../providers/training_provider.dart';
-import 'training_session_screen.dart';
+// import '../providers/training_provider.dart';
+// import 'training_session_screen.dart';
 
 class TrainSelectionScreen extends ConsumerWidget {
   const TrainSelectionScreen({super.key});
@@ -49,14 +49,19 @@ class TrainSelectionScreen extends ConsumerWidget {
               return Card(
                 child: InkWell(
                   onTap: () {
-                    // Initialize session
-                    ref.read(trainingSessionProvider.notifier).startSession(rutina);
+                    // Initialize session - DISABLED FOR MVP BETA REFACTOR
+                    // ref.read(trainingSessionProvider.notifier).startSession(rutina);
                     // Navigate to session screen
+                    /*
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const TrainingSessionScreen(),
                       ),
+                    );
+                    */
+                    ScaffoldMessenger.of(context).showSnackBar(
+                       const SnackBar(content: Text('Modo Entrenamiento en mantenimiento. Usa "Crear Rutina".')),
                     );
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -91,15 +96,16 @@ class TrainSelectionScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '${rutina.ejercicios.length} EJERCICIOS',
+                          '${rutina.dias.length} DÍAS',
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: Colors.redAccent[700],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        if (rutina.ejercicios.isNotEmpty)
+                        // List days instead of exercises
+                        if (rutina.dias.isNotEmpty)
                           Text(
-                            rutina.ejercicios.take(5).map((e) => e.nombre).join(' • ').toUpperCase(),
+                            rutina.dias.take(3).map((d) => d.nombre).join(' • ').toUpperCase(),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[500],
                             ),

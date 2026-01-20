@@ -1,410 +1,207 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:uuid/uuid.dart';
-import '../models/ejercicio.dart';
-import '../models/library_exercise.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:reorderables/reorderables.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../models/rutina.dart';
-import 'search_exercise_screen.dart';
+import '../models/library_exercise.dart';
+import '../providers/create_routine_provider.dart';
+import 'create_routine/widgets/dia_expansion_tile.dart';
+import 'create_routine/widgets/biblioteca_bottom_sheet.dart';
 
-class CreateEditRoutineScreen extends StatefulWidget {
-  final Rutina? rutina;
+class CreateEditRoutineScreen extends ConsumerStatefulWidget {
+  final Rutina? rutina; // Null for Create, existing for Edit
 
   const CreateEditRoutineScreen({super.key, this.rutina});
 
   @override
-  State<CreateEditRoutineScreen> createState() => _CreateEditRoutineScreenState();
+  ConsumerState<CreateEditRoutineScreen> createState() => _CreateEditRoutineScreenState();
 }
 
-class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
-  final _formKey = GlobalKey<FormState>();
+class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScreen> {
   late TextEditingController _nameController;
-  final List<_ExerciseControllers> _exerciseControllers = [];
-
-  static const _uuid = Uuid();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.rutina?.nombre ?? '');
-
-    if (widget.rutina != null) {
-      for (var ex in widget.rutina!.ejercicios) {
-        _addExercise(ejercicio: ex);
-      }
-    } else {
-      _addExercise();
-    }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    for (var controller in _exerciseControllers) {
-      controller.dispose();
-    }
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  void _addExercise({Ejercicio? ejercicio}) {
-    setState(() {
-      _exerciseControllers.add(_ExerciseControllers(ejercicio));
-    });
-  }
+  Future<void> _saveRoutine() async {
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
 
-  void _openLibrary() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SearchExerciseScreen()),
-    );
+    // Attempt Save
+    final error = await notifier.saveRoutine();
 
-    if (result != null && result is LibraryExercise) {
-      if (_exerciseControllers.isNotEmpty) {
-        final lastCtrl = _exerciseControllers.last;
-        final isEmpty = lastCtrl.nameController.text.trim().isEmpty &&
-            (lastCtrl.seriesController.text.trim().isEmpty || lastCtrl.seriesController.text == '0') &&
-            (lastCtrl.repsController.text.trim().isEmpty || lastCtrl.repsController.text == '0');
-
-        if (isEmpty) {
-          lastCtrl.nameController.text = result.name;
-          if (lastCtrl.seriesController.text.isEmpty) lastCtrl.seriesController.text = '3';
-          if (lastCtrl.repsController.text.isEmpty) lastCtrl.repsController.text = '10';
-          if (lastCtrl.pesoController.text.isEmpty) lastCtrl.pesoController.text = '0.0';
-          return;
-        }
-      }
-
-      final newExercise = Ejercicio(
-        id: _uuid.v4(),
-        nombre: result.name,
-        series: 3,
-        reps: 10,
-        peso: 0.0,
-        notas: '',
-      );
-      _addExercise(ejercicio: newExercise);
-    }
-  }
-
-  void _removeExercise(int index) {
-    setState(() {
-      _exerciseControllers[index].dispose();
-      _exerciseControllers.removeAt(index);
-    });
-  }
-
-  void _saveRoutine() {
-    FocusScope.of(context).unfocus();
-
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    if (_exerciseControllers.isEmpty) {
+    if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red[900], content: const Text('¡AÑADE AL MENOS UN EJERCICIO!')),
+        SnackBar(
+          content: Text(error, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.redAccent[700],
+        ),
       );
-      return;
-    }
-
-    final List<Ejercicio> ejercicios = _exerciseControllers.map((c) {
-      return Ejercicio(
-        id: c.existingId ?? _uuid.v4(),
-        nombre: c.nameController.text.trim(),
-        series: int.parse(c.seriesController.text),
-        reps: int.parse(c.repsController.text),
-        peso: double.tryParse(c.pesoController.text.replaceAll(',', '.')) ?? 0.0,
-        notas: c.notesController.text.trim().isEmpty ? null : c.notesController.text.trim(),
-      );
-    }).toList();
-
-    final box = Hive.box<Rutina>('rutinas');
-
-    if (widget.rutina != null) {
-      final updatedRutina = Rutina(
-        id: widget.rutina!.id,
-        nombre: _nameController.text.trim(),
-        ejercicios: ejercicios,
-        creada: widget.rutina!.creada,
-      );
-      box.put(updatedRutina.id, updatedRutina);
+      Vibrate.feedback(FeedbackType.error);
     } else {
-      final newRutina = Rutina(
-        id: _uuid.v4(),
-        nombre: _nameController.text.trim(),
-        ejercicios: ejercicios,
-        creada: DateTime.now(),
+      // Success Feedback
+      if (!mounted) return;
+
+      // Flash
+      final overlay = Overlay.of(context);
+      final entry = OverlayEntry(builder: (context) {
+        return Container(
+          color: Colors.red[900]!.withValues(alpha: 0.4),
+        );
+      });
+      overlay.insert(entry);
+
+      // Sound & Vibrate
+      Vibrate.vibrateWithPauses([
+        const Duration(milliseconds: 50),
+        const Duration(milliseconds: 200),
+      ]); // Simulate heavy impact
+       _audioPlayer.play(AssetSource('sounds/bar_drop_clang.mp3'));
+
+      // SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('RUTINA FORJADA',
+            style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
+          backgroundColor: Colors.red[900],
+        ),
       );
-      box.put(newRutina.id, newRutina);
-    }
 
-    Navigator.of(context).pop();
+      // Wait 300ms for flash then remove and pop
+      await Future.delayed(const Duration(milliseconds: 300));
+      entry.remove();
+
+      if (mounted) Navigator.pop(context);
+    }
   }
 
-  void _deleteRoutine() async {
-    final confirmed = await showDialog<bool>(
+  void _addExercise(int dayIndex) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('ELIMINAR RUTINA', style: Theme.of(context).textTheme.headlineSmall),
-        content: const Text('¿Estás seguro? Se perderá para siempre.', style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('CANCELAR', style: TextStyle(color: Colors.white)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent[700]),
-            child: const Text('ELIMINAR', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BibliotecaBottomSheet(
+        onAdd: (LibraryExercise ex) {
+          ref.read(createRoutineProvider(widget.rutina).notifier).addExerciseToDay(dayIndex, ex);
+          // Don't pop, allow multiple adds? User didn't specify. Standard is stay open or pop.
+          // "AÑADIR red bright button + vibrate on tap"
+          // Usually implies stay open for rapid add.
+        },
       ),
     );
-
-    if (confirmed == true && widget.rutina != null) {
-      final box = Hive.box<Rutina>('rutinas');
-      await box.delete(widget.rutina!.id);
-      if (mounted) Navigator.of(context).pop();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.rutina != null ? 'EDITAR ESTRATEGIA' : 'NUEVA ESTRATEGIA'),
-          actions: [
-            if (widget.rutina != null)
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: _deleteRoutine,
-                tooltip: 'Eliminar',
-              ),
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveRoutine,
-              tooltip: 'Guardar',
-            )
-          ],
+    final routineState = ref.watch(createRoutineProvider(widget.rutina));
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(
+          widget.rutina == null ? 'CREA TU RUTINA' : 'EDITAR: ${routineState.nombre.toUpperCase()}',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 22),
         ),
-        body: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _nameController,
-                  textInputAction: TextInputAction.next,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'NOMBRE DEL PLAN',
-                    prefixIcon: Icon(Icons.edit, color: Colors.white),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Requerido';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-                  itemCount: _exerciseControllers.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    return _ExerciseFormCard(
-                      index: index,
-                      controller: _exerciseControllers[index],
-                      onRemove: () => _removeExercise(index),
-                      isLast: index == _exerciseControllers.length - 1,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        floatingActionButton: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FloatingActionButton.extended(
-              heroTag: 'library',
-              onPressed: _openLibrary,
-              backgroundColor: Colors.grey[800],
-              icon: const Icon(Icons.library_books),
-              label: const Text('BIBLIOTECA'),
-            ),
-            const SizedBox(width: 16),
-            FloatingActionButton(
-              heroTag: 'manual',
-              onPressed: () => _addExercise(),
-              tooltip: 'Manual',
-              child: const Icon(Icons.add),
-            ),
-          ],
-        ),
+        backgroundColor: Colors.red[900],
       ),
-    );
-  }
-}
-
-class _ExerciseFormCard extends StatelessWidget {
-  final int index;
-  final _ExerciseControllers controller;
-  final VoidCallback onRemove;
-  final bool isLast;
-
-  const _ExerciseFormCard({
-    required this.index,
-    required this.controller,
-    required this.onRemove,
-    this.isLast = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100), // Space for FAB/Button
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.red[900],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'EJERCICIO ${index + 1}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.redAccent[700],
-                      ),
-                    ),
-                  ],
+            // Routine Name Input
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _nameController,
+                style: GoogleFonts.montserrat(
+                  fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Nombre que motive miedo',
+                  hintStyle: GoogleFonts.montserrat(color: Colors.red[900]!.withValues(alpha: 0.5)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red[900]!)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent[700]!, width: 2)),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                  onPressed: onRemove,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: controller.nameController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'NOMBRE DEL EJERCICIO',
-                isDense: true,
+                onChanged: (val) => notifier.updateName(val),
               ),
-              validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: controller.seriesController,
-                    decoration: const InputDecoration(
-                      labelText: 'SERIES',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return '!';
-                      if (int.tryParse(value) == null) return '#';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: controller.repsController,
-                    decoration: const InputDecoration(
-                      labelText: 'REPS',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return '!';
-                      if (int.tryParse(value) == null) return '#';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: controller.pesoController,
-                    decoration: const InputDecoration(
-                      labelText: 'KG',
-                      isDense: true,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    textInputAction: TextInputAction.next,
-                  ),
-                ),
-              ],
+
+            // Days List (Reorderable)
+            // Using ReorderableColumn to handle list of Days
+            ReorderableColumn(
+              onReorder: notifier.reorderDays,
+              draggingWidgetOpacity: 0.8,
+              children: routineState.dias.asMap().entries.map((entry) {
+                final index = entry.key;
+                final dia = entry.value;
+
+                return Container(
+                   key: Key(dia.id),
+                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                   child: DiaExpansionTile(
+                     dayIndex: index,
+                     dia: dia,
+                     onUpdateName: (val) => notifier.updateDayName(index, val),
+                     onUpdateProgression: (val) => notifier.updateDayProgression(index, val),
+                     onAddExercise: () => _addExercise(index),
+                     onReorderExercises: (oldIdx, newIdx) => notifier.reorderExercises(index, oldIdx, newIdx),
+                     onRemoveExercise: (exIdx) => notifier.removeExercise(index, exIdx),
+                     onUpdateExercise: (exIdx, updated) => notifier.updateExercise(index, exIdx, updated),
+                     onRemoveDay: () => notifier.removeDay(index),
+                   ),
+                );
+              }).toList(),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: controller.notesController,
-              decoration: const InputDecoration(
-                labelText: 'NOTAS TÁCTICAS (OPCIONAL)',
-                isDense: true,
-                alignLabelWithHint: true,
+
+            const SizedBox(height: 24),
+
+            // FAB Add Day (Inline or actual FAB? Requirements: "Floating big red FAB... Below list: big red FAB")
+            // "Below list: big red FAB 'AÑADIR DÍA'"
+            Center(
+              child: FloatingActionButton.extended(
+                heroTag: 'add_day_fab',
+                onPressed: notifier.addDay,
+                icon: const Icon(Icons.add, size: 32),
+                label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),
+                backgroundColor: Colors.red[900],
+                elevation: 8,
               ),
-              maxLines: 2,
-              minLines: 1,
-              textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
             ),
           ],
         ),
       ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          boxShadow: [BoxShadow(color: Colors.red[900]!.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
+        ),
+        child: ElevatedButton(
+          onPressed: _saveRoutine,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent[700],
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shadowColor: Colors.redAccent,
+            elevation: 10,
+          ),
+          child: Text(
+            'GUARDAR RUTINA',
+            style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+        ),
+      ),
     );
-  }
-}
-
-class _ExerciseControllers {
-  final String? existingId;
-  late TextEditingController nameController;
-  late TextEditingController seriesController;
-  late TextEditingController repsController;
-  late TextEditingController pesoController;
-  late TextEditingController notesController;
-
-  _ExerciseControllers(Ejercicio? ejercicio) : existingId = ejercicio?.id {
-    nameController = TextEditingController(text: ejercicio?.nombre ?? '');
-    seriesController = TextEditingController(text: ejercicio?.series.toString() ?? '');
-    repsController = TextEditingController(text: ejercicio?.reps.toString() ?? '');
-    pesoController = TextEditingController(text: ejercicio?.peso == 0.0 ? '' : ejercicio?.peso.toString());
-    notesController = TextEditingController(text: ejercicio?.notas ?? '');
-  }
-
-  void dispose() {
-    nameController.dispose();
-    seriesController.dispose();
-    repsController.dispose();
-    pesoController.dispose();
-    notesController.dispose();
   }
 }
