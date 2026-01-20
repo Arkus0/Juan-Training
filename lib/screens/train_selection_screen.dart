@@ -234,7 +234,6 @@ class TrainSelectionScreen extends ConsumerWidget {
                   ),
                 ),
               );
-                );
               },
             );
           },

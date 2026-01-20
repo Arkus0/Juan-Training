@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import 'package:hive/hive.dart';
 import '../models/rutina.dart';
@@ -262,7 +263,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         );
       }
     } catch (e) {
-      print('Error restoring session: $e');
+      Logger().e('Error restoring session', error: e);
       await clearStorage();
     }
   }

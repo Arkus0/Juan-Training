@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
@@ -21,6 +22,44 @@ class ExerciseCardContainer extends ConsumerStatefulWidget {
 }
 
 class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
+  void _showNotesDialog(BuildContext context, String exerciseName) {
+    final box = Hive.box('exercise_notes');
+    final String currentNote = box.get(exerciseName, defaultValue: '') as String;
+    final controller = TextEditingController(text: currentNote);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text('NOTAS: ${exerciseName.toUpperCase()}', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        content: TextField(
+          controller: controller,
+          maxLines: 5,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
+            hintStyle: TextStyle(color: Colors.white38),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCELAR'),
+          ),
+          TextButton(
+            onPressed: () {
+              box.put(exerciseName, controller.text);
+              Navigator.pop(ctx);
+            },
+            child: const Text('GUARDAR', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
     showModalBottomSheet(
       context: context,
@@ -57,8 +96,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   title: const Text('Notas del Ejercicio'),
                   onTap: () {
                      Navigator.pop(context);
-                     // TODO: Edit notes
-                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Funcionalidad próximamente: Notas globales')));
+                     _showNotesDialog(context, exercise.nombre);
                   },
                 ),
               ],
