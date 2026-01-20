@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'rutinas_screen.dart';
+import 'history_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,7 +16,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = const [
     RutinasScreen(),
     Center(child: Text('Pantalla de Entrenar (WIP)')),
-    Center(child: Text('Historial de Sesiones (WIP)')),
+    HistoryScreen(),
   ];
 
   @override

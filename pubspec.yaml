@@ -16,6 +16,7 @@ dependencies:
   path_provider: ^2.1.1
   uuid: ^4.2.1
   timer_count_down: ^2.2.2
+  intl: ^0.18.1
 
   # Icons
   cupertino_icons: ^1.0.2
