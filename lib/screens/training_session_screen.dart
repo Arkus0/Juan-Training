@@ -231,6 +231,78 @@ class SessionExerciseCard extends ConsumerStatefulWidget {
 }
 
 class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
+  void _showExerciseOptions(BuildContext context, Ejercicio exercise, TrainingSessionNotifier notifier) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        final historyLogs = ref.read(trainingSessionProvider).history[exercise.nombre];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(exercise.nombre.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.history, color: Colors.white),
+                  title: const Text('Ver Historial'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showHistoryDialog(context, exercise.nombre, historyLogs);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.swap_horiz, color: Colors.white),
+                  title: const Text('Sustituir Ejercicio'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Funcionalidad próximamente: Sustituir Ejercicio')));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.note_alt_outlined, color: Colors.white),
+                  title: const Text('Notas del Ejercicio'),
+                  onTap: () {
+                     Navigator.pop(context);
+                     // TODO: Edit notes
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Funcionalidad próximamente: Notas globales')));
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHistoryDialog(BuildContext context, String name, List<SerieLog>? logs) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text('HISTORIAL: $name', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        content: logs == null || logs.isEmpty
+            ? const Text('No hay datos previos.', style: TextStyle(color: Colors.white70))
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: const TextStyle(color: Colors.white))),
+                ],
+              ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR')),
+        ],
+      ),
+    );
+  }
+
   void _showAdvancedOptions(BuildContext context, int exerciseIndex, int setIndex) {
     showModalBottomSheet(
       context: context,
@@ -322,7 +394,7 @@ class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
                  ),
                  IconButton(
                    icon: const Icon(Icons.more_horiz),
-                   onPressed: () {}, // Could open exercise settings
+                   onPressed: () => _showExerciseOptions(context, exercise, notifier),
                  )
                ],
              ),
@@ -346,6 +418,7 @@ class _SessionExerciseCardState extends ConsumerState<SessionExerciseCard> {
               final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
 
               return SessionSetRow(
+                key: ValueKey('ex${widget.exerciseIndex}_set$setIndex'),
                 index: setIndex,
                 log: log,
                 prevLog: prevLog,

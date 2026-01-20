@@ -49,6 +49,7 @@ void main() async {
   // library_exercises box will be managed by Service or opened here?
   // Let's open it here to ensure it's ready.
   await Hive.openBox<LibraryExercise>('library_exercises');
+  await Hive.openBox('active_session');
 
   // Load Library (Service will use the already opened box)
   await ExerciseLibraryService.instance.loadLibrary();
