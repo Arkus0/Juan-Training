@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'serie_log.dart';
 
 part 'ejercicio.g.dart';
 
@@ -22,6 +23,9 @@ class Ejercicio extends HiveObject {
   @HiveField(5)
   final String? notas;
 
+  @HiveField(6)
+  final List<SerieLog> logs;
+
   Ejercicio({
     required this.id,
     required this.nombre,
@@ -29,7 +33,8 @@ class Ejercicio extends HiveObject {
     required this.reps,
     this.peso = 0.0,
     this.notas,
-  });
+    List<SerieLog>? logs,
+  }) : logs = logs ?? [];
 
   // Helper to create a copy with new values if needed (immutability style, though HiveObjects are mutable)
   Ejercicio copyWith({
@@ -39,6 +44,7 @@ class Ejercicio extends HiveObject {
     int? reps,
     double? peso,
     String? notas,
+    List<SerieLog>? logs,
   }) {
     return Ejercicio(
       id: id ?? this.id,
@@ -47,6 +53,7 @@ class Ejercicio extends HiveObject {
       reps: reps ?? this.reps,
       peso: peso ?? this.peso,
       notas: notas ?? this.notas,
+      logs: logs ?? this.logs,
     );
   }
 }

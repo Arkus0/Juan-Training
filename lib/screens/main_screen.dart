@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/main_provider.dart';
 import '../services/exercise_library_service.dart';
 import 'rutinas_screen.dart';
+import 'train_selection_screen.dart';
 import 'history_screen.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
+class _MainScreenState extends ConsumerState<MainScreen> {
   @override
   void initState() {
     super.initState();
@@ -43,9 +43,6 @@ class _MainScreenState extends State<MainScreen> {
           const SnackBar(content: Text('Biblioteca actualizada.')),
         );
       } else {
-        // If sync failed, check if we have any exercises (local or fallback)
-        // Service.exercises returns fallback if empty, so we are "safe" to use,
-        // but we should warn user about connection.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sin conexión. Usando modo offline.')),
         );
@@ -55,23 +52,23 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = const [
     RutinasScreen(),
-    Center(child: Text('Pantalla de Entrenar (WIP)')),
+    TrainSelectionScreen(),
     HistoryScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(bottomNavIndexProvider);
+
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: currentIndex,
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          ref.read(bottomNavIndexProvider.notifier).state = index;
         },
         items: const [
           BottomNavigationBarItem(
