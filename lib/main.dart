@@ -50,6 +50,7 @@ void main() async {
   // Let's open it here to ensure it's ready.
   await Hive.openBox<LibraryExercise>('library_exercises');
   await Hive.openBox('active_session');
+  await Hive.openBox('exercise_notes');
 
   // Load Library (Service will use the already opened box)
   await ExerciseLibraryService.instance.loadLibrary();
