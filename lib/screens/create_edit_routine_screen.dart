@@ -142,30 +142,50 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
 
             // Days List (Reorderable)
             // Using ReorderableColumn to handle list of Days
-            ReorderableColumn(
-              onReorder: notifier.reorderDays,
-              draggingWidgetOpacity: 0.8,
-              children: routineState.dias.asMap().entries.map((entry) {
-                final index = entry.key;
-                final dia = entry.value;
+            if (routineState.dias.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40.0),
+                child: Center(
+                  child: Text(
+                    'AÑADE TU PRIMER DÍA',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white24,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ReorderableColumn(
+                onReorder: notifier.reorderDays,
+                draggingWidgetOpacity: 0.8,
+                children: routineState.dias.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final dia = entry.value;
 
-                return Container(
-                   key: Key(dia.id),
-                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                   child: DiaExpansionTile(
-                     dayIndex: index,
-                     dia: dia,
-                     onUpdateName: (val) => notifier.updateDayName(index, val),
-                     onUpdateProgression: (val) => notifier.updateDayProgression(index, val),
-                     onAddExercise: () => _addExercise(index),
-                     onReorderExercises: (oldIdx, newIdx) => notifier.reorderExercises(index, oldIdx, newIdx),
-                     onRemoveExercise: (exIdx) => notifier.removeExercise(index, exIdx),
-                     onUpdateExercise: (exIdx, updated) => notifier.updateExercise(index, exIdx, updated),
-                     onRemoveDay: () => notifier.removeDay(index),
-                   ),
-                );
-              }).toList(),
-            ),
+                  return Container(
+                    key: Key(dia.id),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: DiaExpansionTile(
+                      dayIndex: index,
+                      dia: dia,
+                      onUpdateName: (val) => notifier.updateDayName(index, val),
+                      onUpdateProgression: (val) =>
+                          notifier.updateDayProgression(index, val),
+                      onAddExercise: () => _addExercise(index),
+                      onReorderExercises: (oldIdx, newIdx) =>
+                          notifier.reorderExercises(index, oldIdx, newIdx),
+                      onRemoveExercise: (exIdx) =>
+                          notifier.removeExercise(index, exIdx),
+                      onUpdateExercise: (exIdx, updated) =>
+                          notifier.updateExercise(index, exIdx, updated),
+                      onRemoveDay: () => notifier.removeDay(index),
+                    ),
+                  );
+                }).toList(),
+              ),
 
             const SizedBox(height: 24),
 
