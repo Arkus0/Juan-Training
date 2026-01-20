@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/ejercicio.dart';
+import '../models/library_exercise.dart';
 import '../models/rutina.dart';
+import 'search_exercise_screen.dart';
 
 class CreateEditRoutineScreen extends StatefulWidget {
   final Rutina? rutina;
@@ -49,6 +51,25 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     setState(() {
       _exerciseControllers.add(_ExerciseControllers(ejercicio));
     });
+  }
+
+  void _openLibrary() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchExerciseScreen()),
+    );
+
+    if (result != null && result is LibraryExercise) {
+      final newExercise = Ejercicio(
+        id: _uuid.v4(),
+        nombre: result.name,
+        series: 3,
+        reps: 10,
+        peso: 0.0,
+        notas: '',
+      );
+      _addExercise(ejercicio: newExercise);
+    }
   }
 
   void _removeExercise(int index) {
@@ -199,10 +220,23 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _addExercise(),
-          icon: const Icon(Icons.add),
-          label: const Text('Ejercicio'),
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton.extended(
+              heroTag: 'library',
+              onPressed: _openLibrary,
+              icon: const Icon(Icons.library_books),
+              label: const Text('Biblioteca'),
+            ),
+            const SizedBox(width: 16),
+            FloatingActionButton(
+              heroTag: 'manual',
+              onPressed: () => _addExercise(),
+              child: const Icon(Icons.add),
+              tooltip: 'Manual',
+            ),
+          ],
         ),
       ),
     );

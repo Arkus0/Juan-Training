@@ -5,6 +5,7 @@ import 'models/ejercicio.dart';
 import 'models/rutina.dart';
 import 'models/sesion.dart';
 import 'screens/main_screen.dart';
+import 'services/exercise_library_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,10 @@ void main() async {
   // Open Boxes
   await Hive.openBox<Rutina>('rutinas');
   await Hive.openBox<Sesion>('sesiones');
+  await Hive.openBox('settings');
+
+  // Load Library locally
+  await ExerciseLibraryService.instance.loadLibrary();
 
   await initializeDateFormatting('es_ES', null);
 
