@@ -12,21 +12,34 @@ class TrainSelectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Entrenar'),
+        title: const Text('SELECCIONAR ENTRENO'),
       ),
       body: ValueListenableBuilder(
         valueListenable: Hive.box<Rutina>('rutinas').listenable(),
         builder: (context, Box<Rutina> box, _) {
           if (box.isEmpty) {
-            return const Center(
-              child: Text('No tienes rutinas creadas.\nVe a la pestaña Rutinas para crear una.',
-                textAlign: TextAlign.center,
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 80, color: Colors.redAccent[700]),
+                  const SizedBox(height: 24),
+                  Text(
+                    'SIN RUTINAS',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ve a Rutinas y crea tu plan de batalla.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
 
           final rutinas = box.values.toList();
-          // Sort by creation date? Or just list.
+          rutinas.sort((a, b) => b.creada.compareTo(a.creada));
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -34,8 +47,6 @@ class TrainSelectionScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final rutina = rutinas[index];
               return Card(
-                elevation: 2,
-                margin: const EdgeInsets.only(bottom: 12),
                 child: InkWell(
                   onTap: () {
                     // Initialize session
@@ -50,29 +61,49 @@ class TrainSelectionScreen extends ConsumerWidget {
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                rutina.nombre.toUpperCase(),
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.red[900],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'START',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                         Text(
-                          rutina.nombre,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                          '${rutina.ejercicios.length} EJERCICIOS',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: Colors.redAccent[700],
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '${rutina.ejercicios.length} Ejercicios',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        // Preview exercises (first 3)
                         if (rutina.ejercicios.isNotEmpty)
                           Text(
-                            rutina.ejercicios.take(3).map((e) => e.nombre).join(', ') +
-                            (rutina.ejercicios.length > 3 ? '...' : ''),
+                            rutina.ejercicios.take(5).map((e) => e.nombre).join(' • ').toUpperCase(),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                              color: Colors.grey[500],
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],

@@ -35,48 +35,47 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   void _handleConnectivityChange(List<ConnectivityResult> results) {
-    // Ignore the very first event if it happens immediately, as we handle startup sync separately
     if (_isFirstLoad) {
       _isFirstLoad = false;
       return;
     }
 
     final hasConnection = results.any((r) => r != ConnectivityResult.none);
+    _showSnackBar(hasConnection ? 'Conexión recuperada.' : 'Conexión perdida.');
 
     if (hasConnection) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Conexión recuperada.')),
-      );
       _checkLibrarySync();
-    } else {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Conexión perdida.')),
-      );
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+        ),
+        backgroundColor: Colors.red[900], // Aggressive red snackbar
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: Colors.redAccent[700]!, width: 1),
+        ),
+      ),
+    );
   }
 
   Future<void> _checkLibrarySync() async {
     final service = ExerciseLibraryService.instance;
     if (await service.shouldSync()) {
       if (!mounted) return;
-
-      // Only show "Actualizando" if we are manually triggering or it's a significant sync
-      // But per user request, we mostly want to notify on connection change.
-      // We'll keep it subtle.
-
       final success = await service.syncLibrary();
-
       if (!mounted) return;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Biblioteca actualizada.')),
-        );
+        _showSnackBar('Biblioteca actualizada.');
       }
-      // If failed, we don't spam "Sin conexión" here because the connectivity listener handles that,
-      // or we are just in offline mode silently.
     }
   }
 
@@ -95,25 +94,42 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         index: currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) {
-          ref.read(bottomNavIndexProvider.notifier).state = index;
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: 'Rutinas',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+              width: 1.5,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center),
-            label: 'Entrenar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            )
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            ref.read(bottomNavIndexProvider.notifier).state = index;
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list_alt),
+              label: 'RUTINAS',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.fitness_center),
+              label: 'ENTRENAR',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.history),
+              label: 'HISTORIAL',
+            ),
+          ],
+        ),
       ),
     );
   }

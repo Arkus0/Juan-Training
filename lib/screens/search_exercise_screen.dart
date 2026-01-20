@@ -16,7 +16,6 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   @override
   void initState() {
     super.initState();
-    // Trigger rebuild on text change to re-filter the list inside the ValueListenableBuilder
     _searchController.addListener(() {
       setState(() {});
     });
@@ -32,7 +31,7 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Biblioteca de Ejercicios'),
+        title: const Text('ARSENAL DE EJERCICIOS'),
       ),
       body: Column(
         children: [
@@ -40,15 +39,13 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(fontWeight: FontWeight.bold),
               decoration: InputDecoration(
-                hintText: 'Buscar ejercicio...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                hintText: 'BUSCAR ARMA...',
+                prefixIcon: Icon(Icons.search, color: Colors.redAccent[700]),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, color: Colors.grey),
                         onPressed: () {
                           _searchController.clear();
                         },
@@ -83,17 +80,54 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                 }
 
                 if (displayedExercises.isEmpty) {
-                  return const Center(child: Text('No se encontraron ejercicios'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 60, color: Colors.grey[800]),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'NO SE ENCONTRÓ EL EJERCICIO',
+                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
-                return ListView.builder(
+                return ListView.separated(
                   itemCount: displayedExercises.length,
+                  separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[800]),
                   itemBuilder: (context, index) {
                     final exercise = displayedExercises[index];
                     return ListTile(
-                      title: Text(exercise.name),
-                      subtitle: Text('${exercise.muscleGroup} • ${exercise.equipment}'),
-                      trailing: const Icon(Icons.add_circle_outline),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      title: Text(
+                        exercise.name.toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      subtitle: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red[900]?.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red[900]!.withOpacity(0.5)),
+                            ),
+                            child: Text(
+                              exercise.muscleGroup.toUpperCase(),
+                              style: TextStyle(fontSize: 10, color: Colors.redAccent[100]),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            exercise.equipment,
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                          ),
+                        ],
+                      ),
+                      trailing: Icon(Icons.add_circle_outline, color: Colors.redAccent[700]),
                       onTap: () {
                         Navigator.of(context).pop(exercise);
                       },

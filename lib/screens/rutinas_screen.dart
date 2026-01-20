@@ -13,8 +13,7 @@ class RutinasScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mis Rutinas'),
-        centerTitle: false,
+        title: const Text('MIS RUTINAS'),
       ),
       body: ValueListenableBuilder(
         valueListenable: rutinasBox.listenable(),
@@ -23,13 +22,24 @@ class RutinasScreen extends StatelessWidget {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.fitness_center, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                children: [
+                  Icon(Icons.fitness_center, size: 80, color: Colors.grey[800]),
+                  const SizedBox(height: 24),
                   Text(
-                    'No hay rutinas creadas.\n¡Empieza hoy!',
+                    'NO HAY RUTINAS',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '¡CREA TU LEGADO AHORA!',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.redAccent[700],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -47,11 +57,6 @@ class RutinasScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final rutina = rutinas[index];
               return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.only(bottom: 12.0),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
@@ -63,7 +68,7 @@ class RutinasScreen extends StatelessWidget {
                     );
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -72,35 +77,35 @@ class RutinasScreen extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                rutina.nombre,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                rutina.nombre.toUpperCase(),
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            Icon(Icons.edit, color: Colors.redAccent[700]),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
-                            const Icon(Icons.format_list_bulleted, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
+                            Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
+                            const SizedBox(width: 6),
                             Text(
-                              '${rutina.ejercicios.length} ejercicios',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                              '${rutina.ejercicios.length} EJERCICIOS',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Colors.grey[400],
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
+                            const Spacer(),
+                            Icon(Icons.calendar_today, size: 18, color: Colors.grey[400]),
+                            const SizedBox(width: 6),
                             Text(
                               _formatDate(rutina.creada),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: Colors.grey[400],
                               ),
                             ),
                           ],
@@ -123,7 +128,7 @@ class RutinasScreen extends StatelessWidget {
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text('Nueva Rutina'),
+        label: const Text('NUEVA RUTINA'),
       ),
     );
   }
