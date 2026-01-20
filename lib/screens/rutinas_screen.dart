@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/rutina.dart';
 import 'create_edit_routine_screen.dart';
 
@@ -56,11 +57,13 @@ class RutinasScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             itemBuilder: (context, index) {
               final rutina = rutinas[index];
+              final totalExercises = rutina.dias.fold(0, (sum, day) => sum + day.ejercicios.length);
+
               return Card(
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
-                    // Navigate to Edit screen for details/editing
+                    // Navigate to Edit screen
                      Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => CreateEditRoutineScreen(rutina: rutina),
@@ -91,19 +94,19 @@ class RutinasScreen extends StatelessWidget {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
+                            Icon(Icons.calendar_view_week, size: 18, color: Colors.grey[400]),
                             const SizedBox(width: 6),
                             Text(
-                              '${rutina.ejercicios.length} EJERCICIOS',
+                              '${rutina.dias.length} DÍAS',
                               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                 color: Colors.grey[400],
                               ),
                             ),
-                            const Spacer(),
-                            Icon(Icons.calendar_today, size: 18, color: Colors.grey[400]),
+                            const SizedBox(width: 16),
+                            Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
                             const SizedBox(width: 6),
                             Text(
-                              _formatDate(rutina.creada),
+                              '$totalExercises EJERCICIOS',
                               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                 color: Colors.grey[400],
                               ),
@@ -131,9 +134,5 @@ class RutinasScreen extends StatelessWidget {
         label: const Text('NUEVA RUTINA'),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }

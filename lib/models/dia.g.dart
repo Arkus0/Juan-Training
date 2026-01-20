@@ -1,41 +1,41 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'rutina.dart';
+part of 'dia.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class RutinaAdapter extends TypeAdapter<Rutina> {
+class DiaAdapter extends TypeAdapter<Dia> {
   @override
-  final int typeId = 1;
+  final int typeId = 4;
 
   @override
-  Rutina read(BinaryReader reader) {
+  Dia read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Rutina(
-      id: fields[0] as String,
-      nombre: fields[1] as String,
-      dias: (fields[2] as List).cast<Dia>(),
-      creada: fields[3] as DateTime,
+    return Dia(
+      nombre: fields[0] as String,
+      ejercicios: (fields[1] as List).cast<EjercicioEnRutina>(),
+      progressionType: fields[2] as String,
+      id: fields[3] as String?,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Rutina obj) {
+  void write(BinaryWriter writer, Dia obj) {
     writer
       ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.id)
-      ..writeByte(1)
       ..write(obj.nombre)
+      ..writeByte(1)
+      ..write(obj.ejercicios)
       ..writeByte(2)
-      ..write(obj.dias)
+      ..write(obj.progressionType)
       ..writeByte(3)
-      ..write(obj.creada);
+      ..write(obj.id);
   }
 
   @override
@@ -44,7 +44,7 @@ class RutinaAdapter extends TypeAdapter<Rutina> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is RutinaAdapter &&
+      other is DiaAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
