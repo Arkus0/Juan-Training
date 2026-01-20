@@ -79,14 +79,14 @@ class JuanTrainingApp extends StatelessWidget {
           titleMedium: GoogleFonts.montserrat(
             fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
           titleSmall: GoogleFonts.montserrat(
-            fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white.withOpacity(0.9)),
+            fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white.withValues(alpha: 0.9)),
 
           bodyLarge: GoogleFonts.montserrat(
             fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
           bodyMedium: GoogleFonts.montserrat(
-            fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.8)),
+            fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.8)),
           bodySmall: GoogleFonts.montserrat(
-            fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.6)),
+            fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white.withValues(alpha: 0.6)),
 
           labelLarge: GoogleFonts.montserrat( // Button text
             fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
@@ -103,13 +103,13 @@ class JuanTrainingApp extends StatelessWidget {
         ),
 
         // Cards
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: bgGrey,
           elevation: 4,
-          shadowColor: primaryRed.withOpacity(0.4),
+          shadowColor: primaryRed.withValues(alpha: 0.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: primaryRed.withOpacity(0.6), width: 2),
+            side: BorderSide(color: primaryRed.withValues(alpha: 0.6), width: 2),
           ),
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         ),
@@ -168,12 +168,12 @@ class JuanTrainingApp extends StatelessWidget {
 
         // Checkbox/Switch
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.selected)) return accentRed;
+          fillColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return accentRed;
             return Colors.transparent;
           }),
-          side: BorderSide(color: Colors.white.withOpacity(0.8), width: 2),
-          checkColor: MaterialStateProperty.all(Colors.white),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 2),
+          checkColor: WidgetStateProperty.all(Colors.white),
         ),
 
         dividerColor: Colors.grey[800],

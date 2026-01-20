@@ -4,11 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:hive/hive.dart';
+import 'package:logger/logger.dart';
 import '../models/library_exercise.dart';
 
 class ExerciseLibraryService {
   static final ExerciseLibraryService instance = ExerciseLibraryService._();
   ExerciseLibraryService._();
+
+  final _logger = Logger();
 
   List<LibraryExercise> _exercises = [];
   List<LibraryExercise> get exercises => List.unmodifiable(_exercises);
@@ -87,7 +90,7 @@ class ExerciseLibraryService {
       _isLoaded = true;
       exercisesNotifier.value = getExercises();
     } catch (e) {
-      print('Error loading local library: $e');
+      _logger.e('Error loading local library', error: e);
       // If load fails, we stay empty, sync will fix.
     }
   }
@@ -126,7 +129,7 @@ class ExerciseLibraryService {
             url = '';
           }
         } else {
-          print('API Error: ${response.statusCode}');
+          _logger.w('API Error: ${response.statusCode}');
           return false;
         }
       }
@@ -140,7 +143,7 @@ class ExerciseLibraryService {
       }
       return false;
     } catch (e) {
-      print('Sync Error: $e');
+      _logger.e('Sync Error', error: e);
       return false;
     }
   }
@@ -161,7 +164,7 @@ class ExerciseLibraryService {
       final jsonList = _exercises.map((e) => e.toJson()).toList();
       await file.writeAsString(jsonEncode(jsonList));
     } catch (e) {
-      print('Error saving library: $e');
+      _logger.e('Error saving library', error: e);
     }
   }
 
