@@ -103,6 +103,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       history: historyMap,
       showAdvancedOptions: false,
     );
+    _saveState();
   }
 
   void updateLog(int exerciseIndex, int setIndex, {
@@ -138,6 +139,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     exercises[exerciseIndex] = newExercise;
 
     state = state.copyWith(exercises: exercises);
+    _saveState();
   }
 
   void copyPreviousSet(int exerciseIndex, int setIndex) {
@@ -159,18 +161,22 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   void toggleAdvancedOptions(bool show) {
     state = state.copyWith(showAdvancedOptions: show);
+    _saveState();
   }
 
   void setRestDuration(int seconds) {
     state = state.copyWith(defaultRestSeconds: seconds);
+    _saveState();
   }
 
   void startRest() {
     state = state.copyWith(isRestActive: true);
+    _saveState();
   }
 
   void stopRest() {
     state = state.copyWith(isRestActive: false);
+    _saveState();
   }
 
   Future<void> finishSession() async {
@@ -191,8 +197,74 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final box = Hive.box<Sesion>('sesiones');
     await box.add(sesion);
 
+    await clearStorage();
+
     state = TrainingState();
     ref.read(bottomNavIndexProvider.notifier).state = 2;
+  }
+
+  // --- Persistence ---
+
+  void _saveState() async {
+    if (state.activeRutina == null) return;
+
+    final box = Hive.box('active_session');
+    await box.put('activeRutina', state.activeRutina);
+    await box.put('exercises', state.exercises);
+    await box.put('targets', state.targets);
+    await box.put('startTime', state.startTime);
+    await box.put('defaultRestSeconds', state.defaultRestSeconds);
+    // Hive cannot save Map<String, List<Object>> easily if types are mixed or generic
+    // We cast to ensure it's compatible or wrap.
+    // However, Hive supports Map. Let's try direct put.
+    await box.put('history', state.history);
+  }
+
+  Future<void> clearStorage() async {
+    final box = Hive.box('active_session');
+    await box.clear();
+  }
+
+  Future<void> restoreFromStorage() async {
+    final box = Hive.box('active_session');
+    if (box.isEmpty) return;
+
+    try {
+      final activeRutina = box.get('activeRutina') as Rutina?;
+      final exercisesList = box.get('exercises') as List?;
+      final targetsList = box.get('targets') as List?;
+      final startTime = box.get('startTime') as DateTime?;
+      final defaultRestSeconds = box.get('defaultRestSeconds') as int? ?? 90;
+      final historyMapRaw = box.get('history') as Map?;
+
+      if (activeRutina != null && exercisesList != null) {
+        final exercises = exercisesList.cast<Ejercicio>();
+        final targets = targetsList?.cast<Ejercicio>() ?? [];
+
+        final Map<String, List<SerieLog>> history = {};
+        if (historyMapRaw != null) {
+          historyMapRaw.forEach((key, value) {
+            if (key is String && value is List) {
+              history[key] = value.cast<SerieLog>();
+            }
+          });
+        }
+
+        state = TrainingState(
+          activeRutina: activeRutina,
+          exercises: exercises,
+          targets: targets,
+          startTime: startTime ?? DateTime.now(),
+          defaultRestSeconds: defaultRestSeconds,
+          isRestActive: false, // Do not restore timer state for now
+          history: history,
+          showAdvancedOptions: false,
+        );
+      }
+    } catch (e) {
+      print('Error restoring session: $e');
+      await clearStorage();
+    }
   }
 }
 

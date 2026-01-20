@@ -15,10 +15,94 @@ class TrainSelectionScreen extends ConsumerWidget {
         title: const Text('SELECCIONAR ENTRENO'),
       ),
       body: ValueListenableBuilder(
-        valueListenable: Hive.box<Rutina>('rutinas').listenable(),
-        builder: (context, Box<Rutina> box, _) {
-          if (box.isEmpty) {
+        valueListenable: Hive.box('active_session').listenable(),
+        builder: (context, Box activeSessionBox, _) {
+          if (activeSessionBox.isNotEmpty && activeSessionBox.get('activeRutina') != null) {
+            final Rutina activeRutina = activeSessionBox.get('activeRutina');
+            final startTime = activeSessionBox.get('startTime') as DateTime?;
+
             return Center(
+              child: Card(
+                color: Colors.red[900],
+                margin: const EdgeInsets.all(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.fitness_center, size: 60, color: Colors.white),
+                      const SizedBox(height: 16),
+                      Text(
+                        'SESIÓN ACTIVA',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        activeRutina.nombre.toUpperCase(),
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      if (startTime != null)
+                        Text(
+                          'Iniciada hace ${DateTime.now().difference(startTime).inMinutes} min',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            ref.read(trainingSessionProvider.notifier).restoreFromStorage();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const TrainingSessionScreen(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.red[900],
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('CONTINUAR SESIÓN'),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () {
+                           showDialog(
+                             context: context,
+                             builder: (context) => AlertDialog(
+                               title: const Text('¿Descartar sesión?'),
+                               content: const Text('Se perderá el progreso actual.'),
+                               actions: [
+                                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+                                 TextButton(
+                                   onPressed: () {
+                                     Navigator.pop(context);
+                                     ref.read(trainingSessionProvider.notifier).clearStorage();
+                                   },
+                                   child: const Text('DESCARTAR', style: TextStyle(color: Colors.red)),
+                                 ),
+                               ],
+                             ),
+                           );
+                        },
+                        child: const Text('DESCARTAR Y EMPEZAR NUEVA', style: TextStyle(color: Colors.white70)),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ValueListenableBuilder(
+            valueListenable: Hive.box<Rutina>('rutinas').listenable(),
+            builder: (context, Box<Rutina> box, _) {
+              if (box.isEmpty) {
+                return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -150,9 +234,12 @@ class TrainSelectionScreen extends ConsumerWidget {
                   ),
                 ),
               );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        );
+       },
       ),
     );
   }
