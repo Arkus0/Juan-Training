@@ -16,7 +16,7 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   bool _isFirstLoad = true;
 
   @override
@@ -34,13 +34,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     super.dispose();
   }
 
-  void _handleConnectivityChange(List<ConnectivityResult> results) {
+  void _handleConnectivityChange(ConnectivityResult result) {
     if (_isFirstLoad) {
       _isFirstLoad = false;
       return;
     }
 
-    final hasConnection = results.any((r) => r != ConnectivityResult.none);
+    final hasConnection = result != ConnectivityResult.none;
     _showSnackBar(hasConnection ? 'Conexión recuperada.' : 'Conexión perdida.');
 
     if (hasConnection) {
@@ -98,13 +98,13 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
               width: 1.5,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               blurRadius: 10,
               offset: const Offset(0, -4),
             )

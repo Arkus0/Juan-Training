@@ -243,8 +243,8 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
             FloatingActionButton(
               heroTag: 'manual',
               onPressed: () => _addExercise(),
-              child: const Icon(Icons.add),
               tooltip: 'Manual',
+              child: const Icon(Icons.add),
             ),
           ],
         ),

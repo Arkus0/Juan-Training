@@ -6,7 +6,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../models/ejercicio.dart';
-import '../models/serie_log.dart';
 
 class TrainingSessionScreen extends ConsumerStatefulWidget {
   const TrainingSessionScreen({super.key});
@@ -106,7 +105,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 color: Colors.redAccent[700],
                 shadows: [
-                  Shadow(color: Colors.red[900]!.withOpacity(0.5), blurRadius: 4, offset: const Offset(0, 2)),
+                  Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
             ),
@@ -124,7 +123,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(4),
                     border: Border(left: BorderSide(color: Colors.red[900]!, width: 2)),
                   ),
@@ -216,7 +215,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   Widget _buildTimerPanel(BuildContext context, TrainingState state, TrainingSessionNotifier notifier) {
     if (state.isRestActive) {
       return Container(
-        color: Colors.black.withOpacity(0.95), // Dark overlay feeling
+        color: Colors.black.withValues(alpha: 0.95), // Dark overlay feeling
         height: 250, // Large area for timer
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -417,7 +416,7 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with S
               color: isCritical ? Colors.redAccent[700] : Colors.white,
               shadows: [
                 Shadow(
-                  color: (isCritical ? Colors.red : Colors.red[900])!.withOpacity(0.8),
+                  color: (isCritical ? Colors.red : Colors.red[900])!.withValues(alpha: 0.8),
                   blurRadius: isCritical ? 20 : 10,
                   offset: const Offset(0, 0),
                 )

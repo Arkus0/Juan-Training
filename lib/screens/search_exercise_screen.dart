@@ -111,9 +111,9 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.red[900]?.withOpacity(0.3),
+                              color: Colors.red[900]?.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.red[900]!.withOpacity(0.5)),
+                              border: Border.all(color: Colors.red[900]!.withValues(alpha: 0.5)),
                             ),
                             child: Text(
                               exercise.muscleGroup.toUpperCase(),
