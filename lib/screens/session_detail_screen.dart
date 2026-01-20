@@ -18,12 +18,12 @@ class SessionDetailScreen extends StatelessWidget {
 
     final dateFormat = DateFormat('EEE, d MMM yyyy HH:mm', 'es_ES');
     final durationText = sesion.durationSeconds != null
-        ? '${(sesion.durationSeconds! / 60).toStringAsFixed(0)} min'
-        : 'Duración no registrada';
+        ? '${(sesion.durationSeconds! / 60).toStringAsFixed(0)} MIN'
+        : 'N/A';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalle de Sesión'),
+        title: const Text('INFORME DE COMBATE'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -33,21 +33,34 @@ class SessionDetailScreen extends StatelessWidget {
             // Header Info
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(rutinaName, style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      rutinaName.toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 16, color: Colors.grey[400]),
+                        const SizedBox(width: 6),
+                        Text(
+                          dateFormat.format(sesion.fecha).toUpperCase(),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 16),
-                        const SizedBox(width: 4),
-                        Text(dateFormat.format(sesion.fecha)),
-                        const Spacer(),
-                        const Icon(Icons.timer, size: 16),
-                        const SizedBox(width: 4),
-                        Text(durationText),
+                        Icon(Icons.timer, size: 16, color: Colors.grey[400]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'DURACIÓN: $durationText',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+                        ),
                       ],
                     ),
                   ],
@@ -57,7 +70,15 @@ class SessionDetailScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Exercises List
-            Text('Ejercicios', style: Theme.of(context).textTheme.titleLarge),
+            Padding(
+              padding: const EdgeInsets.only(left: 4.0),
+              child: Text(
+                'EJERCICIOS EJECUTADOS',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.redAccent[700],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             ...sesion.ejerciciosCompletados.map((ejercicio) {
               return _buildExerciseCard(
@@ -71,7 +92,10 @@ class SessionDetailScreen extends StatelessWidget {
             }).toList(),
 
             if (sesion.ejerciciosCompletados.isEmpty)
-               const Text('No se registraron ejercicios en esta sesión.'),
+               const Padding(
+                 padding: EdgeInsets.all(16.0),
+                 child: Text('No se registraron ejercicios en esta sesión.'),
+               ),
           ],
         ),
       ),
@@ -117,46 +141,51 @@ class SessionDetailScreen extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(real.nombre, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
+            Text(
+              real.nombre.toUpperCase(),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
             Table(
               columnWidths: const {
-                0: FixedColumnWidth(40), // Set #
+                0: FixedColumnWidth(30), // Set #
                 1: FlexColumnWidth(),    // Target
                 2: FlexColumnWidth(),    // Real
                 3: FlexColumnWidth(),    // Prev
               },
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 0.5
-                )
-              ),
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 // Header
                 TableRow(
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.redAccent[700]!, width: 2)),
+                  ),
                   children: [
-                    _buildHeaderCell('#'),
-                    _buildHeaderCell('Meta'),
-                    _buildHeaderCell('Real'),
-                    _buildHeaderCell('Prev'),
+                    _buildHeaderCell(context, '#'),
+                    _buildHeaderCell(context, 'META'),
+                    _buildHeaderCell(context, 'REAL'),
+                    _buildHeaderCell(context, 'PREV'),
                   ]
                 ),
+                const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
                 // Rows
                 for (int i = 0; i < maxSets; i++)
                   TableRow(
                     children: [
                       _buildCell('${i + 1}'),
                       // Target
-                      _buildDataCell(target, i),
+                      _buildDataCell(context, target, i),
                       // Real
-                      _buildDataCell(real, i, isReal: true),
+                      _buildDataCell(context, real, i, isReal: true),
                       // Prev
-                      _buildDataCell(prev, i, isPrev: true),
+                      _buildDataCell(context, prev, i, isPrev: true),
                     ]
                   )
               ],
@@ -167,12 +196,15 @@ class SessionDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCell(String text) {
+  Widget _buildHeaderCell(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Colors.redAccent[700],
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -180,34 +212,46 @@ class SessionDetailScreen extends StatelessWidget {
 
   Widget _buildCell(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13),
+        style: const TextStyle(fontSize: 13, color: Colors.white),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  Widget _buildDataCell(Ejercicio? ejercicio, int setIndex, {bool isReal = false, bool isPrev = false}) {
+  Widget _buildDataCell(BuildContext context, Ejercicio? ejercicio, int setIndex, {bool isReal = false, bool isPrev = false}) {
     if (ejercicio == null || setIndex >= ejercicio.series) {
       return _buildCell('-');
     }
 
-    // For now, we assume weight/reps are constant across sets for the "Ejercicio" model
-    // because Ejercicio has single 'reps' and 'peso' fields, not a list per set.
-    // NOTE: The current Ejercicio model seems to imply 3x10 @ 20kg means all sets are the same.
-    // If the user wants per-set logging, the model would need to be List<SetLog>.
-    // Based on "Ejercicio (series, reps, peso)", it's a summary.
-    // So we just show the same values for each set line, or just 1 line?
-    // The prompt says "Tabla... peso/reps objetivo vs real".
-    // Since the model is simple, we repeat the values.
-
     final text = '${ejercicio.peso}kg x ${ejercicio.reps}';
 
-    // Simple color coding for Real vs Target could go here (e.g. green if met)
-    // For MVP, just text.
+    // Highlight Real if it meets/exceeds Target (Logic simulation for visual polish)
+    // Here we just style "Real" boldly
+    if (isReal) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
 
-    return _buildCell(text);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+        textAlign: TextAlign.center,
+      ),
+    );
   }
 }

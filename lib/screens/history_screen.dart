@@ -12,7 +12,7 @@ class HistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: const Text('LEGADO DE BATALLA'), // More aggressive title
       ),
       body: ValueListenableBuilder(
         valueListenable: Hive.box<Sesion>('sesiones').listenable(),
@@ -21,12 +21,18 @@ class HistoryScreen extends StatelessWidget {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.history, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                children: [
+                  Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[800]),
+                  const SizedBox(height: 24),
                   Text(
-                    'No hay sesiones registradas.',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    'SIN HISTORIAL',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tu leyenda comienza con el primer entreno.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -34,11 +40,11 @@ class HistoryScreen extends StatelessWidget {
           }
 
           final sessions = box.values.toList();
-          // Sort by date descending (newest first)
           sessions.sort((a, b) => b.fecha.compareTo(a.fecha));
 
           return ListView.builder(
             itemCount: sessions.length,
+            padding: const EdgeInsets.only(top: 16, bottom: 16),
             itemBuilder: (context, index) {
               final session = sessions[index];
               return _SessionTile(session: session);
@@ -57,37 +63,19 @@ class _SessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Look up routine name safely
     final rutinaBox = Hive.box<Rutina>('rutinas');
     final rutina = rutinaBox.get(session.rutinaId);
-    final rutinaName = rutina?.nombre ?? 'Rutina desconocida';
+    final rutinaName = rutina?.nombre ?? 'RUTINA ELIMINADA';
 
-    // Format Date: e.g., "Lun, 23 Oct"
-    // Note: Requires initializeDateFormatting if strictly enforcing locales,
-    // but usually works for common locales on modern Flutter.
-    final dateStr = DateFormat('EEE, d MMM', 'es_ES').format(session.fecha);
+    final dateStr = DateFormat('d MMM', 'es_ES').format(session.fecha).toUpperCase();
     final timeStr = DateFormat('HH:mm').format(session.fecha);
 
-    // Duration
     final durationText = session.durationSeconds != null
-       ? '${(session.durationSeconds! / 60).toStringAsFixed(0)} min'
-       : null;
+       ? '${(session.durationSeconds! / 60).toStringAsFixed(0)} MIN'
+       : 'N/A';
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          child: const Icon(Icons.check, size: 20),
-        ),
-        title: Text(
-          rutinaName,
-          style: const TextStyle(fontWeight: FontWeight.bold)
-        ),
-        subtitle: Text(
-          '$dateStr • $timeStr${durationText != null ? " • $durationText" : ""}',
-        ),
-        trailing: const Icon(Icons.chevron_right),
+      child: InkWell(
         onTap: () {
           Navigator.push(
             context,
@@ -96,6 +84,77 @@ class _SessionTile extends StatelessWidget {
             ),
           );
         },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[800]!),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      dateStr.split(' ')[0], // Day
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      dateStr.split(' ')[1], // Month
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.redAccent[700],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      rutinaName.toUpperCase(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          timeStr,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(Icons.timer, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          durationText,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.redAccent[700]),
+            ],
+          ),
+        ),
       ),
     );
   }

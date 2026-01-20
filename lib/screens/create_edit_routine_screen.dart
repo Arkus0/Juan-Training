@@ -20,7 +20,6 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
   late TextEditingController _nameController;
   final List<_ExerciseControllers> _exerciseControllers = [];
 
-  // Use a constant UUID instance
   static const _uuid = Uuid();
 
   @override
@@ -33,7 +32,6 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
         _addExercise(ejercicio: ex);
       }
     } else {
-      // Start with one empty exercise for convenience
       _addExercise();
     }
   }
@@ -60,7 +58,6 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     );
 
     if (result != null && result is LibraryExercise) {
-      // Check if the last exercise is empty (placeholder), if so, fill it instead of adding new
       if (_exerciseControllers.isNotEmpty) {
         final lastCtrl = _exerciseControllers.last;
         final isEmpty = lastCtrl.nameController.text.trim().isEmpty &&
@@ -68,9 +65,7 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
             (lastCtrl.repsController.text.trim().isEmpty || lastCtrl.repsController.text == '0');
 
         if (isEmpty) {
-          // Fill the existing empty controller
           lastCtrl.nameController.text = result.name;
-          // Set default values if they were empty
           if (lastCtrl.seriesController.text.isEmpty) lastCtrl.seriesController.text = '3';
           if (lastCtrl.repsController.text.isEmpty) lastCtrl.repsController.text = '10';
           if (lastCtrl.pesoController.text.isEmpty) lastCtrl.pesoController.text = '0.0';
@@ -98,7 +93,6 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
   }
 
   void _saveRoutine() {
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) {
@@ -107,12 +101,11 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
 
     if (_exerciseControllers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Añade al menos un ejercicio')),
+        SnackBar(backgroundColor: Colors.red[900], content: const Text('¡AÑADE AL MENOS UN EJERCICIO!')),
       );
       return;
     }
 
-    // Create Ejercicio objects
     final List<Ejercicio> ejercicios = _exerciseControllers.map((c) {
       return Ejercicio(
         id: c.existingId ?? _uuid.v4(),
@@ -127,17 +120,14 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     final box = Hive.box<Rutina>('rutinas');
 
     if (widget.rutina != null) {
-      // Update existing
       final updatedRutina = Rutina(
         id: widget.rutina!.id,
         nombre: _nameController.text.trim(),
         ejercicios: ejercicios,
-        creada: widget.rutina!.creada, // Keep original creation date
+        creada: widget.rutina!.creada,
       );
-      // Ensure we use the same ID as key
       box.put(updatedRutina.id, updatedRutina);
     } else {
-      // Create new
       final newRutina = Rutina(
         id: _uuid.v4(),
         nombre: _nameController.text.trim(),
@@ -154,17 +144,18 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar Rutina'),
-        content: const Text('¿Estás seguro de que quieres eliminar esta rutina? Esta acción no se puede deshacer.'),
+        backgroundColor: Colors.grey[900],
+        title: Text('ELIMINAR RUTINA', style: Theme.of(context).textTheme.headlineSmall),
+        content: const Text('¿Estás seguro? Se perderá para siempre.', style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
+            child: const Text('CANCELAR', style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent[700]),
+            child: const Text('ELIMINAR', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -180,10 +171,10 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap outside
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.rutina != null ? 'Editar Rutina' : 'Crear Rutina'),
+          title: Text(widget.rutina != null ? 'EDITAR ESTRATEGIA' : 'NUEVA ESTRATEGIA'),
           actions: [
             if (widget.rutina != null)
               IconButton(
@@ -207,14 +198,14 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
                 child: TextFormField(
                   controller: _nameController,
                   textInputAction: TextInputAction.next,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   decoration: const InputDecoration(
-                    labelText: 'Nombre de la Rutina',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.edit),
+                    labelText: 'NOMBRE DEL PLAN',
+                    prefixIcon: Icon(Icons.edit, color: Colors.white),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'El nombre es obligatorio';
+                      return 'Requerido';
                     }
                     return null;
                   },
@@ -222,7 +213,7 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
               ),
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), // Extra padding for FAB/Button
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                   itemCount: _exerciseControllers.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
@@ -244,8 +235,9 @@ class _CreateEditRoutineScreenState extends State<CreateEditRoutineScreen> {
             FloatingActionButton.extended(
               heroTag: 'library',
               onPressed: _openLibrary,
+              backgroundColor: Colors.grey[800],
               icon: const Icon(Icons.library_books),
-              label: const Text('Biblioteca'),
+              label: const Text('BIBLIOTECA'),
             ),
             const SizedBox(width: 16),
             FloatingActionButton(
@@ -277,10 +269,8 @@ class _ExerciseFormCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -289,34 +279,38 @@ class _ExerciseFormCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Theme.of(context).primaryColor,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red[900],
+                        shape: BoxShape.circle,
+                      ),
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(fontSize: 12, color: Colors.white),
+                        style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Text(
-                      'Ejercicio ${index + 1}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      'EJERCICIO ${index + 1}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.redAccent[700],
+                      ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
                   onPressed: onRemove,
-                  tooltip: 'Quitar ejercicio',
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: controller.nameController,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
-                labelText: 'Nombre del Ejercicio',
-                border: OutlineInputBorder(),
+                labelText: 'NOMBRE DEL EJERCICIO',
                 isDense: true,
               ),
               validator: (value) => value == null || value.trim().isEmpty ? 'Requerido' : null,
@@ -328,15 +322,14 @@ class _ExerciseFormCard extends StatelessWidget {
                   child: TextFormField(
                     controller: controller.seriesController,
                     decoration: const InputDecoration(
-                      labelText: 'Series',
-                      border: OutlineInputBorder(),
+                      labelText: 'SERIES',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Requerido';
-                      if (int.tryParse(value) == null) return 'Número';
+                      if (value == null || value.isEmpty) return '!';
+                      if (int.tryParse(value) == null) return '#';
                       return null;
                     },
                   ),
@@ -346,15 +339,14 @@ class _ExerciseFormCard extends StatelessWidget {
                   child: TextFormField(
                     controller: controller.repsController,
                     decoration: const InputDecoration(
-                      labelText: 'Reps',
-                      border: OutlineInputBorder(),
+                      labelText: 'REPS',
                       isDense: true,
                     ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.next,
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Requerido';
-                      if (int.tryParse(value) == null) return 'Número';
+                      if (value == null || value.isEmpty) return '!';
+                      if (int.tryParse(value) == null) return '#';
                       return null;
                     },
                   ),
@@ -364,8 +356,7 @@ class _ExerciseFormCard extends StatelessWidget {
                   child: TextFormField(
                     controller: controller.pesoController,
                     decoration: const InputDecoration(
-                      labelText: 'Peso (kg)',
-                      border: OutlineInputBorder(),
+                      labelText: 'KG',
                       isDense: true,
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -378,8 +369,7 @@ class _ExerciseFormCard extends StatelessWidget {
             TextFormField(
               controller: controller.notesController,
               decoration: const InputDecoration(
-                labelText: 'Notas (opcional)',
-                border: OutlineInputBorder(),
+                labelText: 'NOTAS TÁCTICAS (OPCIONAL)',
                 isDense: true,
                 alignLabelWithHint: true,
               ),
@@ -394,7 +384,6 @@ class _ExerciseFormCard extends StatelessWidget {
   }
 }
 
-// Helper class to manage controllers for each exercise
 class _ExerciseControllers {
   final String? existingId;
   late TextEditingController nameController;
