@@ -12,8 +12,11 @@ import 'models/ejercicio_en_rutina.dart';
 import 'models/library_exercise.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
-import 'repositories/hive_training_repository.dart';
 import 'providers/training_provider.dart';
+
+import 'database/database.dart';
+import 'repositories/drift_training_repository.dart';
+import 'services/migration_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +26,7 @@ void main() async {
 
   // FRESH START CHECK
   // We open settings to check version. If mismatch, we nuke everything.
-  var settingsBox = await Hive.openBox('settings');
+  Box settingsBox = await Hive.openBox('settings');
   const targetVersion = '2026_01_MVP_BETA_V2';
   final currentVersion = settingsBox.get('db_version');
 
@@ -54,22 +57,27 @@ void main() async {
   final activeSessionBox = await Hive.openBox('active_session');
   final exerciseNotesBox = await Hive.openBox('exercise_notes');
 
-  // Load Library (Service will use the already opened box)
-  await ExerciseLibraryService.instance.loadLibrary();
+  // Drift & Migration
+  final appDb = AppDatabase();
+  final driftRepository = DriftTrainingRepository(appDb);
 
-  // Initialize Repository
-  final repository = HiveTrainingRepository(
+  final migrationService = MigrationService(
+    driftRepo: driftRepository,
     rutinasBox: rutinasBox,
     sesionesBox: sesionesBox,
-    activeSessionBox: activeSessionBox,
     exerciseNotesBox: exerciseNotesBox,
+    settingsBox: settingsBox,
   );
+  await migrationService.migrate();
+
+  // Load Library (Service will use the already opened box)
+  await ExerciseLibraryService.instance.loadLibrary();
 
   await initializeDateFormatting('es_ES', null);
 
   runApp(ProviderScope(
     overrides: [
-       trainingRepositoryProvider.overrideWithValue(repository),
+       trainingRepositoryProvider.overrideWithValue(driftRepository),
     ],
     child: const JuanTrainingApp(),
   ));

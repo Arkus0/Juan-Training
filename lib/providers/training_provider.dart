@@ -80,7 +80,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState());
 
-  void startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises) {
+  Future<void> startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises) async {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
     final sessionExercises = routineExercises.map((e) {
       return Ejercicio(
@@ -102,7 +102,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final Map<String, List<SerieLog>> historyMap = {};
 
     for (var ex in sessionExercises) {
-       final historyList = _repository.getHistoryForExercise(ex.nombre);
+       final historyList = await _repository.getHistoryForExercise(ex.nombre);
        if (historyList.isNotEmpty) {
          // getHistoryForExercise returns sorted list (newest first)
          final lastSession = historyList.first;
