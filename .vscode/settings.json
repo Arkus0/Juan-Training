@@ -1,3 +1,6 @@
 {
-    "jules-extension.apiKey": "AQ.Ab8RN6JAAs7-FoZsF4obLjBPO_qjnleDtQYE8QCln2KVhwBQCA"
+    "jules-extension.apiKey": "AQ.Ab8RN6JAAs7-FoZsF4obLjBPO_qjnleDtQYE8QCln2KVhwBQCA",
+    "chat.tools.terminal.autoApprove": {
+        "dart": true
+    }
 }
