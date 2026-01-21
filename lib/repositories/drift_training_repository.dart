@@ -40,7 +40,7 @@ class DriftTrainingRepository implements ITrainingRepository {
                   nombre: e.name,
                   descripcion: e.description,
                   musculosPrincipales: e.musclesPrimary,
-                  musculosSecundarios: e.musclesSecondary ?? [],
+                  musculosSecundarios: e.musclesSecondary,
                   equipo: e.equipment,
                   localImagePath: e.localImagePath,
                   series: e.series,
