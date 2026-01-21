@@ -1,37 +1,13 @@
-import 'package:hive/hive.dart';
-
-part 'library_exercise.g.dart';
-
-@HiveType(typeId: 6)
-class LibraryExercise extends HiveObject {
-  @HiveField(0)
+class LibraryExercise {
   final int id;
-
-  @HiveField(1)
   final String name;
-
-  @HiveField(2)
   final String muscleGroup; // Category
-
-  @HiveField(3)
   final String equipment;
-
-  @HiveField(4)
   final String? description;
-
-  @HiveField(5)
   final String? license;
-
-  @HiveField(6)
   final List<String> imageUrls;
-
-  @HiveField(7)
   String? localImagePath;
-
-  @HiveField(8)
   final List<String> muscles; // Detailed muscles
-
-  @HiveField(9)
   final List<String> secondaryMuscles;
 
   LibraryExercise({
@@ -63,11 +39,6 @@ class LibraryExercise extends HiveObject {
         }
       }
     }
-    // Also check 'images' key might be just urls or objects depending on endpoint.
-    // Wger /exercise endpoint usually doesn't include images inline unless we use a specific serializer or fetch separately.
-    // But assuming the service handles fetching images or the endpoint provides them.
-    // If we fetch images from a separate endpoint, we might merge them later.
-    // For now, we assume the input json *might* have them or we set them empty.
 
     return LibraryExercise(
       id: json['id'] as int,
@@ -79,6 +50,36 @@ class LibraryExercise extends HiveObject {
       imageUrls: images,
       muscles: detailedMuscles,
       secondaryMuscles: detailedSecondaryMuscles,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'muscleGroup': muscleGroup,
+      'equipment': equipment,
+      'description': description,
+      'license': license,
+      'imageUrls': imageUrls,
+      'localImagePath': localImagePath,
+      'muscles': muscles,
+      'secondaryMuscles': secondaryMuscles,
+    };
+  }
+
+  factory LibraryExercise.fromJson(Map<String, dynamic> json) {
+    return LibraryExercise(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      muscleGroup: json['muscleGroup'] as String,
+      equipment: json['equipment'] as String,
+      description: json['description'] as String?,
+      license: json['license'] as String?,
+      imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>() ?? [],
+      localImagePath: json['localImagePath'] as String?,
+      muscles: (json['muscles'] as List<dynamic>?)?.cast<String>() ?? [],
+      secondaryMuscles: (json['secondaryMuscles'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 }

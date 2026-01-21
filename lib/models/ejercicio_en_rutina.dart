@@ -1,46 +1,20 @@
-import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
-part 'ejercicio_en_rutina.g.dart';
-
-@HiveType(typeId: 5)
-class EjercicioEnRutina extends HiveObject {
+class EjercicioEnRutina {
   // Embedded Library Data
-  @HiveField(0)
   final String id; // Wger/Library ID
-
-  @HiveField(1)
   final String nombre;
-
-  @HiveField(2)
   final String? descripcion;
-
-  @HiveField(3)
   final List<String> musculosPrincipales;
-
-  @HiveField(4)
   final List<String> musculosSecundarios;
-
-  @HiveField(5)
   final String equipo;
-
-  @HiveField(6)
   final String? localImagePath;
 
   // Routine Specific Data
-  @HiveField(7)
   int series;
-
-  @HiveField(8)
   String repsRange;
-
-  @HiveField(9)
   Duration? descansoSugerido;
-
-  @HiveField(10)
   String? notas;
-
-  @HiveField(11)
   final String instanceId;
 
   EjercicioEnRutina({
