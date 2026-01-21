@@ -171,6 +171,12 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
       return group.first;
     }
 
+    String? _supersetIdForVisual(int visualIndex) {
+      final flat = _flatIndexFromVisual(visualIndex);
+      if (flat == null) return null;
+      return widget.dia.ejercicios[flat].supersetId;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -269,8 +275,17 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                              final sourceFlat = _flatIndexFromVisual(data);
                              final targetFlat = _flatIndexFromVisual(visualIndex);
                              if (sourceFlat != null && targetFlat != null) {
-                               _dragAccepted = true;
-                               widget.onCreateSuperset(sourceFlat, targetFlat);
+                               final sourceSuperset = _supersetIdForVisual(data);
+                               final targetSuperset = _supersetIdForVisual(visualIndex);
+
+                               if (sourceSuperset != null && sourceSuperset == targetSuperset) {
+                                 // Reorder inside the same superserie
+                                 _dragAccepted = true;
+                                 widget.onReorderExercises(sourceFlat, targetFlat);
+                               } else {
+                                 _dragAccepted = true;
+                                 widget.onCreateSuperset(sourceFlat, targetFlat);
+                               }
                              }
                              _isLinkDragActive = false;
                              setState(() {});
@@ -332,8 +347,16 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                             final sourceFlat = _flatIndexFromVisual(data);
                             final targetFlat = _flatIndexFromVisual(visualIndex);
                             if (sourceFlat != null && targetFlat != null) {
-                              _dragAccepted = true;
-                              widget.onCreateSuperset(sourceFlat, targetFlat);
+                              final sourceSuperset = _supersetIdForVisual(data);
+                              final targetSuperset = _supersetIdForVisual(visualIndex);
+
+                              if (sourceSuperset != null && sourceSuperset == targetSuperset) {
+                                _dragAccepted = true;
+                                widget.onReorderExercises(sourceFlat, targetFlat);
+                              } else {
+                                _dragAccepted = true;
+                                widget.onCreateSuperset(sourceFlat, targetFlat);
+                              }
                             }
                             _isLinkDragActive = false;
                             _dragSourceVisualIndex = null;

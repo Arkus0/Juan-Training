@@ -203,11 +203,9 @@ class EjercicioCard extends StatelessWidget {
 
             // Actions
             if (onLink != null)
-              IconButton(
-                icon: const Icon(Icons.link, color: Colors.white70),
-                onPressed: onLink,
-                tooltip: 'Unir como superserie (arrastrar)',
-                visualDensity: VisualDensity.compact,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Icon(Icons.link, color: Colors.white70), // hint only, drag is on long press of card
               ),
 
             // Info Icon / Menu
