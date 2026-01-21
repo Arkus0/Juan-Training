@@ -290,28 +290,69 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                             final removedItem = ex;
                             widget.onRemoveExercise(idx);
                             
-                            // Clear all existing snackbars first
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            
-                            // Show new snackbar with auto-dismiss
-                            final snackBar = SnackBar(
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              content: Text(
-                                'Ejercicio eliminado',
-                                style: GoogleFonts.montserrat(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.red[900],
-                              action: SnackBarAction(
-                                label: 'DESHACER',
-                                textColor: Colors.white,
-                                onPressed: () {
-                                  widget.onUndoRemove(idx, removedItem);
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                },
+                            // Show popup dialog
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              barrierColor: Colors.black26,
+                              builder: (dialogContext) => Center(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[900],
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.3),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Ejercicio eliminado',
+                                          style: GoogleFonts.montserrat(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Colors.red[900],
+                                            minimumSize: const Size(double.infinity, 40),
+                                          ),
+                                          onPressed: () {
+                                            Navigator.of(dialogContext).pop();
+                                            widget.onUndoRemove(idx, removedItem);
+                                          },
+                                          child: Text(
+                                            'DESHACER',
+                                            style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             );
-                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                            
+                            // Auto-close after 2 seconds
+                            Future.delayed(const Duration(seconds: 2), () {
+                              if (Navigator.canPop(context)) {
+                                Navigator.of(context, rootNavigator: true).pop();
+                              }
+                            });
                           },
                           child: Container(
                             key: groupKey,
