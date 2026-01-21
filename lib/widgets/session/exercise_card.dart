@@ -149,9 +149,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
   void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
     // Basic completion feedback
-    if (await Vibrate.canVibrate) {
-      Vibrate.vibrate();
-    }
+    // if (await Vibrate.canVibrate) {
+    //   Vibrate.vibrate();
+    // }
 
     // Check for "PR" or better performance
     if (previous != null) {
@@ -198,7 +198,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
              final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
              _triggerCompletionFeedback(log, prevLog);
              // Auto-advance rest
-             if (!isRestActive) notifier.startRest();
+             if (!isRestActive) notifier.startRestForExercise(widget.exerciseIndex);
         }
       },
       onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
