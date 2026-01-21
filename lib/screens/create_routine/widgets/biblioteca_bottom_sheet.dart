@@ -263,11 +263,18 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
         );
       }
     } else {
+      // On mobile: prefer local file, but fall back to network if available
       if (ex.localImagePath != null && File(ex.localImagePath!).existsSync()) {
         return Image.file(
           File(ex.localImagePath!),
           fit: BoxFit.cover,
           errorBuilder: (ctx, err, stack) => Container(color: Colors.grey[800], child: const Icon(Icons.broken_image, color: Colors.white24)),
+        );
+      } else if (ex.imageUrls.isNotEmpty) {
+        return Image.network(
+          ex.imageUrls.first,
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => Image.asset('assets/img/placeholder_exercise.png', fit: BoxFit.cover),
         );
       } else {
         return Image.asset(

@@ -352,6 +352,9 @@ class ExerciseLibraryService {
         _logger
             .i('Found ${pendingDownloads.length} exercises with images to download.');
         if (pendingDownloads.isNotEmpty) {
+            // Log a few sample URLs to help debugging network/image issues
+            final sample = pendingDownloads.take(5).map((e) => e.imageUrls.isNotEmpty ? e.imageUrls.first : '(no-url)').toList();
+            _logger.d('Sample image URLs: $sample');
           await _processImageDownloads(
               pendingDownloads, imagesDirPath, exercisesMap);
         }

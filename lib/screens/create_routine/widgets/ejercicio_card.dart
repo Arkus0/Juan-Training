@@ -86,11 +86,13 @@ class EjercicioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lookup library exercise for Web URLs
-    final libraryExercise = ExerciseLibraryService.instance.exercises.cast<LibraryExercise?>().firstWhere(
-      (e) => e?.name == ejercicio.nombre,
-      orElse: () => null,
-    );
+    // Lookup library exercise by library ID (more reliable than matching by name)
+    final int? libId = int.tryParse(ejercicio.id);
+    final libraryExercise = libId == null
+        ? null
+        : ExerciseLibraryService.instance.exercises
+            .cast<LibraryExercise?>()
+            .firstWhere((e) => e?.id == libId, orElse: () => null);
 
     final imageWidget = _buildImage(libraryExercise);
 
@@ -217,6 +219,17 @@ class EjercicioCard extends StatelessWidget {
         errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
       );
     }
+    // Fallback: if library has network image URLs, show network image (helps when local file not yet downloaded)
+    if (libExercise != null && libExercise.imageUrls.isNotEmpty) {
+      return Image.network(
+        libExercise.imageUrls.first,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+      );
+    }
+
     return Image.asset(
       'assets/img/placeholder_exercise.png',
       width: 60,
