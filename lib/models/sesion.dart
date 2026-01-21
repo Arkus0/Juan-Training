@@ -1,26 +1,11 @@
-import 'package:hive/hive.dart';
 import 'ejercicio.dart';
 
-part 'sesion.g.dart';
-
-@HiveType(typeId: 2)
-class Sesion extends HiveObject {
-  @HiveField(0)
+class Sesion {
   final String id;
-
-  @HiveField(1)
   final String rutinaId;
-
-  @HiveField(2)
   final DateTime fecha;
-
-  @HiveField(3)
   final List<Ejercicio> ejerciciosCompletados;
-
-  @HiveField(4)
   final List<Ejercicio> ejerciciosObjetivo;
-
-  @HiveField(5)
   final int? durationSeconds;
 
   Sesion({

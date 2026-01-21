@@ -17,8 +17,9 @@ dependencies:
   collection: ^1.18.0
 
   # Dependencies requested
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
+  # hive: ^2.2.3  <-- Removed
+  # hive_flutter: ^1.1.0 <-- Removed
+  shared_preferences: ^2.2.0
   path_provider: ^2.1.1
   uuid: ^4.2.1
   timer_count_down: ^2.2.2
@@ -43,7 +44,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   build_runner: ^2.4.8
-  hive_generator: ^2.0.1
+  # hive_generator: ^2.0.1 <-- Removed
   drift_dev: ^2.16.0
 
 flutter:

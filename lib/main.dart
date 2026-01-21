@@ -1,76 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'models/ejercicio.dart';
-import 'models/rutina.dart';
-import 'models/sesion.dart';
-import 'models/serie_log.dart';
-import 'models/dia.dart';
-import 'models/ejercicio_en_rutina.dart';
-import 'models/library_exercise.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
 import 'providers/training_provider.dart';
 
 import 'database/database.dart';
 import 'repositories/drift_training_repository.dart';
-import 'services/migration_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive
-  await Hive.initFlutter();
-
-  // FRESH START CHECK
-  // We open settings to check version. If mismatch, we nuke everything.
-  Box settingsBox = await Hive.openBox('settings');
-  const targetVersion = '2026_01_MVP_BETA_V2';
-  final currentVersion = settingsBox.get('db_version');
-
-  if (currentVersion != targetVersion) {
-    // Nuke it
-    await settingsBox.close();
-    await Hive.deleteFromDisk();
-    // Re-open settings
-    settingsBox = await Hive.openBox('settings');
-    await settingsBox.put('db_version', targetVersion);
-  }
-
-  // Register Adapters
-  Hive.registerAdapter(EjercicioAdapter()); // Type 0 (Keep for legacy/sessions compatibility if needed)
-  Hive.registerAdapter(RutinaAdapter()); // Type 1
-  Hive.registerAdapter(SesionAdapter()); // Type 2
-  Hive.registerAdapter(SerieLogAdapter()); // Type 3
-  Hive.registerAdapter(DiaAdapter()); // Type 4
-  Hive.registerAdapter(EjercicioEnRutinaAdapter()); // Type 5
-  Hive.registerAdapter(LibraryExerciseAdapter()); // Type 6
-
-  // Open Boxes
-  final rutinasBox = await Hive.openBox<Rutina>('rutinas');
-  final sesionesBox = await Hive.openBox<Sesion>('sesiones');
-  // library_exercises box will be managed by Service or opened here?
-  // Let's open it here to ensure it's ready.
-  await Hive.openBox<LibraryExercise>('library_exercises');
-  await Hive.openBox('active_session');
-  final exerciseNotesBox = await Hive.openBox('exercise_notes');
-
-  // Drift & Migration
+  // Drift
   final appDb = AppDatabase();
   final driftRepository = DriftTrainingRepository(appDb);
 
-  final migrationService = MigrationService(
-    driftRepo: driftRepository,
-    rutinasBox: rutinasBox,
-    sesionesBox: sesionesBox,
-    exerciseNotesBox: exerciseNotesBox,
-    settingsBox: settingsBox,
-  );
-  await migrationService.migrate();
-
-  // Load Library (Service will use the already opened box)
+  // Load Library (Service uses local file now)
   await ExerciseLibraryService.instance.loadLibrary();
 
   await initializeDateFormatting('es_ES', null);
