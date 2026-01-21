@@ -203,11 +203,12 @@ class ExerciseLibraryService {
   }
 
   /// Checks if a given name is valid for the exercise library.
+  /// This is relaxed to only check for null, empty, or the placeholder "Exercise".
   bool _isValidName(String? name) {
     if (name == null || name.trim().isEmpty) return false;
     final lower = name.toLowerCase();
-    // These are often placeholder names in the API
-    if (lower.contains('sin nombre') || lower == 'exercise') return false;
+    // "Exercise" is often a placeholder name in the API
+    if (lower == 'exercise') return false;
     return true;
   }
 
@@ -242,16 +243,29 @@ class ExerciseLibraryService {
       final Map<int, LibraryExercise> exercisesMap = {
         for (var ex in _exercises) ex.id: ex
       };
+      _logger.d('Initialized sync with ${exercisesMap.length} existing exercises.');
 
       // Phase 1: Fetch English exercises (Language 2 - Primary)
       await _fetchAndProcessLanguage(2, exercisesMap, isPrimary: true);
 
       // Phase 2: Fetch Spanish exercises (Language 4 - Secondary) and merge
       await _fetchAndProcessLanguage(4, exercisesMap, isPrimary: false);
+      _logger
+          .i('Total exercises in map before final filtering: ${exercisesMap.length}');
 
-      // Update internal list from the map
-      _exercises = exercisesMap.values.where((e) => _isValidName(e.name)).toList();
-      _logger.i('Total unique, valid exercises after merge: ${_exercises.length}');
+      // Update internal list from the map, filtering for validity
+      final originalCount = exercisesMap.length;
+      _exercises =
+          exercisesMap.values.where((e) => _isValidName(e.name)).toList();
+
+      if (exercisesMap.isNotEmpty && _exercises.isEmpty) {
+        _logger.w(
+            'CRITICAL WARNING: All $originalCount exercises were discarded after name validation.',
+            error:
+                'Example invalid name: "${exercisesMap.values.first.name}"');
+      }
+      _logger.i(
+          'Total unique, valid exercises after merge: ${_exercises.length}');
 
       // Phase 3: Parallel Image Downloads
       if (!kIsWeb && imagesDirPath != null) {
@@ -262,9 +276,11 @@ class ExerciseLibraryService {
                     !File(e.localImagePath!).existsSync()))
             .toList();
 
-        _logger.i('Found ${pendingDownloads.length} exercises with images to download.');
+        _logger
+            .i('Found ${pendingDownloads.length} exercises with images to download.');
         if (pendingDownloads.isNotEmpty) {
-           await _processImageDownloads(pendingDownloads, imagesDirPath, exercisesMap);
+          await _processImageDownloads(
+              pendingDownloads, imagesDirPath, exercisesMap);
         }
       }
 
@@ -281,7 +297,8 @@ class ExerciseLibraryService {
       _logger.e('❌ CRITICAL SYNC ERROR', error: e, stackTrace: stacktrace);
       // FAIL-SAFE: If sync fails and we have no exercises, use fallback.
       if (_exercises.isEmpty) {
-        _logger.w('Sync failed and library is empty. Loading fallback exercises.');
+        _logger
+            .w('Sync failed and library is empty. Loading fallback exercises.');
         _exercises = List.from(_fallbackExercises);
         _updateNotifier();
       }
@@ -298,14 +315,17 @@ class ExerciseLibraryService {
     String? url =
         'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=200';
     int fetchedCount = 0;
+    int addedCount = 0;
+    int mergedCount = 0;
 
     while (url != null && url.isNotEmpty) {
       try {
         final response =
             await http.get(Uri.parse(url)).timeout(const Duration(seconds: 45));
         if (response.statusCode != 200) {
-           _logger.e('API Error (lang $language): ${response.statusCode}, Body: ${response.body}');
-           break;
+          _logger.e(
+              'API Error (lang $language): ${response.statusCode}, Body: ${response.body}');
+          break;
         }
 
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -317,12 +337,14 @@ class ExerciseLibraryService {
           final existing = exercisesMap[exercise.id];
 
           if (existing != null) {
+            mergedCount++;
             // --- MERGE LOGIC ---
             final newName = isPrimary || _isValidName(exercise.name)
                 ? exercise.name
                 : existing.name;
 
-            final allImageUrls = {...existing.imageUrls, ...exercise.imageUrls}.toList();
+            final allImageUrls =
+                {...existing.imageUrls, ...exercise.imageUrls}.toList();
 
             exercisesMap[exercise.id] = LibraryExercise(
               id: existing.id,
@@ -334,24 +356,32 @@ class ExerciseLibraryService {
                   : existing.description,
               license: exercise.license ?? existing.license,
               imageUrls: allImageUrls,
-              localImagePath: existing.localImagePath, // Preserve existing local path
-              muscles: exercise.muscles.isNotEmpty ? exercise.muscles : existing.muscles,
+              localImagePath:
+                  existing.localImagePath, // Preserve existing local path
+              muscles: exercise.muscles.isNotEmpty
+                  ? exercise.muscles
+                  : existing.muscles,
               secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
                   ? exercise.secondaryMuscles
                   : existing.secondaryMuscles,
             );
-          } else if (_isValidName(exercise.name)) {
-            // --- ADD NEW EXERCISE ---
+          } else {
+            addedCount++;
+            // --- ADD NEW EXERCISE (Permissive) ---
+            // Add the exercise regardless of name validity.
+            // The final filtering step in `syncLibrary` will handle cleanup.
             exercisesMap[exercise.id] = exercise;
           }
         }
         url = data['next'];
       } catch (e, s) {
-        _logger.e('Failed to fetch or process page for language $language', error: e, stackTrace: s);
+        _logger.e('Failed to fetch or process page for language $language',
+            error: e, stackTrace: s);
         break; // Stop fetching this language on error
       }
     }
-     _logger.i('Fetched $fetchedCount exercises for language $language.');
+    _logger.i(
+        'Language $language: Fetched $fetchedCount, added $addedCount new, merged $mergedCount existing.');
   }
 
   LibraryExercise _parseExerciseFromApi(Map<String, dynamic> item) {
