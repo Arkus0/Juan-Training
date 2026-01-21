@@ -49,6 +49,7 @@ class DriftTrainingRepository implements ITrainingRepository {
                       ? Duration(seconds: e.suggestedRestSeconds!)
                       : null,
                   notas: e.notes,
+                  supersetId: e.supersetId,
                 ))
             .toList(),
       );
@@ -233,6 +234,7 @@ class DriftTrainingRepository implements ITrainingRepository {
                   suggestedRestSeconds:
                       Value(ej.descansoSugerido?.inSeconds ?? 60),
                   notes: Value(ej.notas ?? ""),
+                  supersetId: Value(ej.supersetId),
                   exerciseIndex: j,
                 ));
           }

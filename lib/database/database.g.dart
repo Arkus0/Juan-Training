@@ -628,6 +628,12 @@ class $RoutineExercisesTable extends RoutineExercises
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
       'notes', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _supersetIdMeta =
+      const VerificationMeta('supersetId');
+  @override
+  late final GeneratedColumn<String> supersetId = GeneratedColumn<String>(
+      'superset_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _exerciseIndexMeta =
       const VerificationMeta('exerciseIndex');
   @override
@@ -649,6 +655,7 @@ class $RoutineExercisesTable extends RoutineExercises
         repsRange,
         suggestedRestSeconds,
         notes,
+        supersetId,
         exerciseIndex
       ];
   @override
@@ -724,6 +731,12 @@ class $RoutineExercisesTable extends RoutineExercises
       context.handle(
           _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
     }
+    if (data.containsKey('superset_id')) {
+      context.handle(
+          _supersetIdMeta,
+          supersetId.isAcceptableOrUnknown(
+              data['superset_id']!, _supersetIdMeta));
+    }
     if (data.containsKey('exercise_index')) {
       context.handle(
           _exerciseIndexMeta,
@@ -769,6 +782,8 @@ class $RoutineExercisesTable extends RoutineExercises
           DriftSqlType.int, data['${effectivePrefix}suggested_rest_seconds']),
       notes: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
+      supersetId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}superset_id']),
       exerciseIndex: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}exercise_index'])!,
     );
@@ -799,6 +814,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
   final String repsRange;
   final int? suggestedRestSeconds;
   final String? notes;
+  final String? supersetId;
   final int exerciseIndex;
   const RoutineExercise(
       {required this.id,
@@ -814,6 +830,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       required this.repsRange,
       this.suggestedRestSeconds,
       this.notes,
+      this.supersetId,
       required this.exerciseIndex});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -847,6 +864,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    if (!nullToAbsent || supersetId != null) {
+      map['superset_id'] = Variable<String>(supersetId);
+    }
     map['exercise_index'] = Variable<int>(exerciseIndex);
     return map;
   }
@@ -873,6 +893,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           : Value(suggestedRestSeconds),
       notes:
           notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      supersetId: supersetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supersetId),
       exerciseIndex: Value(exerciseIndex),
     );
   }
@@ -896,6 +919,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       suggestedRestSeconds:
           serializer.fromJson<int?>(json['suggestedRestSeconds']),
       notes: serializer.fromJson<String?>(json['notes']),
+      supersetId: serializer.fromJson<String?>(json['supersetId']),
       exerciseIndex: serializer.fromJson<int>(json['exerciseIndex']),
     );
   }
@@ -916,6 +940,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       'repsRange': serializer.toJson<String>(repsRange),
       'suggestedRestSeconds': serializer.toJson<int?>(suggestedRestSeconds),
       'notes': serializer.toJson<String?>(notes),
+      'supersetId': serializer.toJson<String?>(supersetId),
       'exerciseIndex': serializer.toJson<int>(exerciseIndex),
     };
   }
@@ -934,6 +959,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           String? repsRange,
           Value<int?> suggestedRestSeconds = const Value.absent(),
           Value<String?> notes = const Value.absent(),
+          Value<String?> supersetId = const Value.absent(),
           int? exerciseIndex}) =>
       RoutineExercise(
         id: id ?? this.id,
@@ -952,6 +978,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
             ? suggestedRestSeconds.value
             : this.suggestedRestSeconds,
         notes: notes.present ? notes.value : this.notes,
+        supersetId: supersetId.present ? supersetId.value : this.supersetId,
         exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       );
   RoutineExercise copyWithCompanion(RoutineExercisesCompanion data) {
@@ -978,6 +1005,8 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ? data.suggestedRestSeconds.value
           : this.suggestedRestSeconds,
       notes: data.notes.present ? data.notes.value : this.notes,
+      supersetId:
+          data.supersetId.present ? data.supersetId.value : this.supersetId,
       exerciseIndex: data.exerciseIndex.present
           ? data.exerciseIndex.value
           : this.exerciseIndex,
@@ -1000,6 +1029,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ..write('repsRange: $repsRange, ')
           ..write('suggestedRestSeconds: $suggestedRestSeconds, ')
           ..write('notes: $notes, ')
+          ..write('supersetId: $supersetId, ')
           ..write('exerciseIndex: $exerciseIndex')
           ..write(')'))
         .toString();
@@ -1020,6 +1050,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       repsRange,
       suggestedRestSeconds,
       notes,
+      supersetId,
       exerciseIndex);
   @override
   bool operator ==(Object other) =>
@@ -1038,6 +1069,7 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           other.repsRange == this.repsRange &&
           other.suggestedRestSeconds == this.suggestedRestSeconds &&
           other.notes == this.notes &&
+          other.supersetId == this.supersetId &&
           other.exerciseIndex == this.exerciseIndex);
 }
 
@@ -1055,6 +1087,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
   final Value<String> repsRange;
   final Value<int?> suggestedRestSeconds;
   final Value<String?> notes;
+  final Value<String?> supersetId;
   final Value<int> exerciseIndex;
   final Value<int> rowid;
   const RoutineExercisesCompanion({
@@ -1071,6 +1104,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     this.repsRange = const Value.absent(),
     this.suggestedRestSeconds = const Value.absent(),
     this.notes = const Value.absent(),
+    this.supersetId = const Value.absent(),
     this.exerciseIndex = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1088,6 +1122,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     required String repsRange,
     this.suggestedRestSeconds = const Value.absent(),
     this.notes = const Value.absent(),
+    this.supersetId = const Value.absent(),
     required int exerciseIndex,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -1114,6 +1149,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     Expression<String>? repsRange,
     Expression<int>? suggestedRestSeconds,
     Expression<String>? notes,
+    Expression<String>? supersetId,
     Expression<int>? exerciseIndex,
     Expression<int>? rowid,
   }) {
@@ -1132,6 +1168,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       if (suggestedRestSeconds != null)
         'suggested_rest_seconds': suggestedRestSeconds,
       if (notes != null) 'notes': notes,
+      if (supersetId != null) 'superset_id': supersetId,
       if (exerciseIndex != null) 'exercise_index': exerciseIndex,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1151,6 +1188,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       Value<String>? repsRange,
       Value<int?>? suggestedRestSeconds,
       Value<String?>? notes,
+      Value<String?>? supersetId,
       Value<int>? exerciseIndex,
       Value<int>? rowid}) {
     return RoutineExercisesCompanion(
@@ -1167,6 +1205,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       repsRange: repsRange ?? this.repsRange,
       suggestedRestSeconds: suggestedRestSeconds ?? this.suggestedRestSeconds,
       notes: notes ?? this.notes,
+      supersetId: supersetId ?? this.supersetId,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       rowid: rowid ?? this.rowid,
     );
@@ -1218,6 +1257,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (supersetId.present) {
+      map['superset_id'] = Variable<String>(supersetId.value);
+    }
     if (exerciseIndex.present) {
       map['exercise_index'] = Variable<int>(exerciseIndex.value);
     }
@@ -1243,6 +1285,7 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
           ..write('repsRange: $repsRange, ')
           ..write('suggestedRestSeconds: $suggestedRestSeconds, ')
           ..write('notes: $notes, ')
+          ..write('supersetId: $supersetId, ')
           ..write('exerciseIndex: $exerciseIndex, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3545,6 +3588,7 @@ typedef $$RoutineExercisesTableCreateCompanionBuilder
   required String repsRange,
   Value<int?> suggestedRestSeconds,
   Value<String?> notes,
+  Value<String?> supersetId,
   required int exerciseIndex,
   Value<int> rowid,
 });
@@ -3563,6 +3607,7 @@ typedef $$RoutineExercisesTableUpdateCompanionBuilder
   Value<String> repsRange,
   Value<int?> suggestedRestSeconds,
   Value<String?> notes,
+  Value<String?> supersetId,
   Value<int> exerciseIndex,
   Value<int> rowid,
 });
@@ -3639,6 +3684,9 @@ class $$RoutineExercisesTableFilterComposer
   ColumnFilters<String> get notes => $composableBuilder(
       column: $table.notes, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get supersetId => $composableBuilder(
+      column: $table.supersetId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<int> get exerciseIndex => $composableBuilder(
       column: $table.exerciseIndex, builder: (column) => ColumnFilters(column));
 
@@ -3712,6 +3760,9 @@ class $$RoutineExercisesTableOrderingComposer
   ColumnOrderings<String> get notes => $composableBuilder(
       column: $table.notes, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get supersetId => $composableBuilder(
+      column: $table.supersetId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get exerciseIndex => $composableBuilder(
       column: $table.exerciseIndex,
       builder: (column) => ColumnOrderings(column));
@@ -3784,6 +3835,9 @@ class $$RoutineExercisesTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get supersetId => $composableBuilder(
+      column: $table.supersetId, builder: (column) => column);
+
   GeneratedColumn<int> get exerciseIndex => $composableBuilder(
       column: $table.exerciseIndex, builder: (column) => column);
 
@@ -3845,6 +3899,7 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             Value<String> repsRange = const Value.absent(),
             Value<int?> suggestedRestSeconds = const Value.absent(),
             Value<String?> notes = const Value.absent(),
+            Value<String?> supersetId = const Value.absent(),
             Value<int> exerciseIndex = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3862,6 +3917,7 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             repsRange: repsRange,
             suggestedRestSeconds: suggestedRestSeconds,
             notes: notes,
+            supersetId: supersetId,
             exerciseIndex: exerciseIndex,
             rowid: rowid,
           ),
@@ -3879,6 +3935,7 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             required String repsRange,
             Value<int?> suggestedRestSeconds = const Value.absent(),
             Value<String?> notes = const Value.absent(),
+            Value<String?> supersetId = const Value.absent(),
             required int exerciseIndex,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3896,6 +3953,7 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             repsRange: repsRange,
             suggestedRestSeconds: suggestedRestSeconds,
             notes: notes,
+            supersetId: supersetId,
             exerciseIndex: exerciseIndex,
             rowid: rowid,
           ),

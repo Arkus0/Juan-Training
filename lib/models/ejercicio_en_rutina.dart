@@ -16,6 +16,7 @@ class EjercicioEnRutina {
   Duration? descansoSugerido;
   String? notas;
   final String instanceId;
+  final String? supersetId;
 
   EjercicioEnRutina({
     required this.id,
@@ -30,6 +31,7 @@ class EjercicioEnRutina {
     this.descansoSugerido,
     this.notas,
     String? instanceId,
+    this.supersetId,
   }) : instanceId = instanceId ?? const Uuid().v4();
 
   EjercicioEnRutina copyWith({
@@ -45,6 +47,7 @@ class EjercicioEnRutina {
     Duration? descansoSugerido,
     String? notas,
     String? instanceId,
+    String? supersetId,
   }) {
     return EjercicioEnRutina(
       id: id ?? this.id,
@@ -59,6 +62,7 @@ class EjercicioEnRutina {
       descansoSugerido: descansoSugerido ?? this.descansoSugerido,
       notas: notas ?? this.notas,
       instanceId: instanceId ?? this.instanceId,
+      supersetId: supersetId ?? this.supersetId,
     );
   }
 }
