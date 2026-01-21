@@ -160,6 +160,22 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     state = state.copyWith(dias: newDias);
   }
 
+  void insertExercise(int dayIndex, int index, EjercicioEnRutina ex) {
+    final day = state.dias[dayIndex];
+    final newEjercicios = [...day.ejercicios];
+
+    // Safety check for index
+    if (index < 0) index = 0;
+    if (index > newEjercicios.length) index = newEjercicios.length;
+
+    newEjercicios.insert(index, ex);
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+  }
+
   // Helper to get visual groups
   // Returns list of lists. Each inner list is a "visual item" (can contain 1 or more exercises).
   List<List<EjercicioEnRutina>> _getVisualGroups(List<EjercicioEnRutina> exercises) {
