@@ -115,7 +115,7 @@ class SessionExercises extends Table {
 }
 
 // 6. Sets
-class Sets extends Table {
+class WorkoutSets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get sessionExerciseId => text().references(SessionExercises, #id, onDelete: KeyAction.cascade)();
 
@@ -156,7 +156,7 @@ LazyDatabase _openConnection() {
   RoutineExercises,
   Sessions,
   SessionExercises,
-  Sets,
+  WorkoutSets,
   ExerciseNotes,
 ])
 class AppDatabase extends _$AppDatabase {

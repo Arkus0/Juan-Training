@@ -64,7 +64,7 @@ class DriftTrainingRepository implements ITrainingRepository {
     );
   }
 
-  Sesion _mapSesion(Session sessionRow, List<SessionExercise> sessionExercises, List<Set> sets) {
+  Sesion _mapSesion(Session sessionRow, List<SessionExercise> sessionExercises, List<WorkoutSet> sets) {
     final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
 
     // Split exercises into Completed and Target
@@ -204,11 +204,6 @@ class DriftTrainingRepository implements ITrainingRepository {
 
   @override
   Stream<List<Sesion>> watchSesionesHistory() {
-    final joinQuery = db.select(db.sessions).join([
-      leftOuterJoin(db.sessionExercises, db.sessionExercises.sessionId.equalsExp(db.sessions.id)),
-      leftOuterJoin(db.sets, db.sets.sessionExerciseId.equalsExp(db.sessionExercises.id)),
-    ]);
-
     // We filter in memory or join condition, better filter in memory for simplicity with complex logic
     // Actually we should where clause on sessions
     // db.select(db.sessions)..where((s) => s.completedAt.isNotNull())
@@ -219,11 +214,11 @@ class DriftTrainingRepository implements ITrainingRepository {
 
     return ((db.select(db.sessions)..where((s) => s.completedAt.isNotNull())).join([
       leftOuterJoin(db.sessionExercises, db.sessionExercises.sessionId.equalsExp(db.sessions.id)),
-      leftOuterJoin(db.sets, db.sets.sessionExerciseId.equalsExp(db.sessionExercises.id)),
+      leftOuterJoin(db.workoutSets, db.workoutSets.sessionExerciseId.equalsExp(db.sessionExercises.id)),
     ])).watch().map((rows) {
       final sessions = <String, Session>{};
       final exercises = <String, SessionExercise>{};
-      final sets = <int, Set>{};
+      final sets = <int, WorkoutSet>{};
 
       for (final row in rows) {
         final s = row.readTable(db.sessions);
@@ -234,7 +229,7 @@ class DriftTrainingRepository implements ITrainingRepository {
           exercises.putIfAbsent(e.id, () => e);
         }
 
-        final st = row.readTableOrNull(db.sets);
+        final st = row.readTableOrNull(db.workoutSets);
         if (st != null) {
           sets.putIfAbsent(st.id, () => st);
         }
@@ -292,7 +287,7 @@ class DriftTrainingRepository implements ITrainingRepository {
 
         for (var j = 0; j < ex.logs.length; j++) {
           final log = ex.logs[j];
-          await db.into(db.sets).insert(SetsCompanion.insert(
+          await db.into(db.workoutSets).insert(WorkoutSetsCompanion.insert(
             sessionExerciseId: rowId,
             setIndex: j,
             weight: log.peso,
@@ -335,7 +330,7 @@ class DriftTrainingRepository implements ITrainingRepository {
 
     final allSessionExercises = await (db.select(db.sessionExercises)..where((e) => e.sessionId.isIn(sessionIds))).get();
     final allSessionExerciseIds = allSessionExercises.map((e) => e.id).toList();
-    final allSets = await (db.select(db.sets)..where((s) => s.sessionExerciseId.isIn(allSessionExerciseIds))).get();
+    final allSets = await (db.select(db.workoutSets)..where((s) => s.sessionExerciseId.isIn(allSessionExerciseIds))).get();
 
     final result = sessions.map((s) {
       final sExercises = allSessionExercises.where((e) => e.sessionId == s.id).toList();
@@ -384,7 +379,7 @@ class DriftTrainingRepository implements ITrainingRepository {
     final sessionExercises = await (db.select(db.sessionExercises)..where((e) => e.sessionId.equals(sessionRow.id))).get();
     final sessionExerciseIds = sessionExercises.map((e) => e.id).toList();
 
-    final sets = await (db.select(db.sets)..where((s) => s.sessionExerciseId.isIn(sessionExerciseIds))).get();
+    final sets = await (db.select(db.workoutSets)..where((s) => s.sessionExerciseId.isIn(sessionExerciseIds))).get();
 
     final tempSession = _mapSesion(sessionRow, sessionExercises, sets);
 
