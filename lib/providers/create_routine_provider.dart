@@ -162,8 +162,9 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         validPath = null;
       }
 
-      // Update state if path changed
-      if (mounted) {
+      // Update state if path changed and notifier still mounted
+      // StateNotifier is disposed when the provider is disposed
+      try {
         final currentDay = state.dias[dayIndex];
         if (exerciseIndex < currentDay.ejercicios.length) {
           final currentExercise = currentDay.ejercicios[exerciseIndex];
@@ -174,6 +175,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
             updateExercise(dayIndex, exerciseIndex, updatedExercise);
           }
         }
+      } catch (e) {
+        // Notifier may have been disposed, ignore
       }
     });
   }
@@ -389,9 +392,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       if (newEjercicios[i].supersetId == supersetId) {
         break;
       }
-      if (newEjercicios[i].supersetId != supersetId) {
-        insertPosition++;
-      }
+      insertPosition++;
     }
 
     final reordered = <EjercicioEnRutina>[];
@@ -417,14 +418,19 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       // Remove ID from this exercise
       newEjercicios[exerciseIndex] = ex.copyWith(supersetId: null);
 
-      // Check remaining members
-      final remaining = newEjercicios.where((e) => e.supersetId == oldSupersetId).toList();
-      if (remaining.length == 1) {
-          // Clean up the orphan
-          final orphanIndex = newEjercicios.indexOf(remaining.first);
-           if (orphanIndex != -1) {
-               newEjercicios[orphanIndex] = newEjercicios[orphanIndex].copyWith(supersetId: null);
-           }
+      // Check remaining members and clean up orphan if only one remains
+      int? orphanIndex;
+      int count = 0;
+      for (int i = 0; i < newEjercicios.length; i++) {
+        if (newEjercicios[i].supersetId == oldSupersetId) {
+          count++;
+          orphanIndex = i;
+        }
+      }
+
+      if (count == 1 && orphanIndex != null) {
+        // Only one exercise left with this superset ID, clean it up
+        newEjercicios[orphanIndex] = newEjercicios[orphanIndex].copyWith(supersetId: null);
       }
 
       final updatedDay = day.copyWith(ejercicios: newEjercicios);
