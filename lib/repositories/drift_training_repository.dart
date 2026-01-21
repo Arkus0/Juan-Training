@@ -316,7 +316,7 @@ class DriftTrainingRepository implements ITrainingRepository {
     Future<void> insertExercises(List<Ejercicio> list, bool isTarget) async {
       for (var i = 0; i < list.length; i++) {
         final ex = list[i];
-        final rowId = 'se-${isTarget ? "t" : "c"}-${sesion.id}-$i-${ex.id}';
+        final rowId = 'se-${isTarget ? "t" : "c"}-${sesion.id}-$i-${ex.id}-${const Uuid().v4()}';
 
         await db
             .into(db.sessionExercises)
