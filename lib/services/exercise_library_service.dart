@@ -56,52 +56,24 @@ const Map<int, String> _muscleMap = {
 
 // --- Top-Level Isolate Function ---
 
-/// Decodes JSON and maps results to LibraryExercise objects in a separate thread.
-/// Returns a Map with 'exercises' (List<LibraryExercise>) and 'next' (String? url).
-Map<String, dynamic> parseLibraryExercises(Uint8List responseBytes) {
-  // 1. Decode UTF-8 (cpu intensive for large strings)
+/// Decodes JSON and ensures strict Map typing in a separate thread.
+/// Returns a Map with 'results' (List<Map<String, dynamic>>) and 'next' (String? url).
+Map<String, dynamic> _decodeJsonBackground(Uint8List responseBytes) {
+  // 1. Decode UTF-8
   final String jsonStr = utf8.decode(responseBytes);
 
   // 2. Decode JSON
   final Map<String, dynamic> data = jsonDecode(jsonStr);
-  final List<dynamic> results = data['results'] as List<dynamic>;
 
-  // 3. Map to Domain Objects
-  final exercises = results.map((item) {
-    // Helper to extract nested IDs safely
-    int catId = (item['category'] is Map) ? item['category']['id'] : item['category'] ?? 0;
-
-    int equipId = 7; // Default: Body weight
-    if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
-      final firstEq = (item['equipment'] as List)[0];
-      equipId = (firstEq is Map) ? firstEq['id'] : firstEq;
-    }
-
-    // Map IDs to Names using Top-Level constants
-    final categoryName = _categoryMap[catId] ?? 'Otros';
-    final equipmentName = _equipmentMap[equipId] ?? 'Otro';
-
-    List<String> mapMuscles(String key) {
-      if (item[key] is List) {
-        return (item[key] as List).map((m) {
-          int mId = (m is Map) ? m['id'] : m as int;
-          return _muscleMap[mId] ?? 'Músculo $mId';
-        }).toList();
-      }
-      return [];
-    }
-
-    return LibraryExercise.fromApi(
-      item as Map<String, dynamic>,
-      categoryName,
-      equipmentName,
-      mapMuscles('muscles'),
-      mapMuscles('muscles_secondary'),
-    );
-  }).toList();
+  // 3. Strict Type Mapping
+  // Ensure that each item in 'results' is explicitly cast to Map<String, dynamic>
+  // This prevents 'Map<dynamic, dynamic>' issues that cause key access failures.
+  final List<Map<String, dynamic>> safeResults = (data['results'] as List)
+      .map((e) => Map<String, dynamic>.from(e))
+      .toList();
 
   return {
-    'exercises': exercises,
+    'results': safeResults,
     'next': data['next'],
   };
 }
@@ -408,6 +380,47 @@ class ExerciseLibraryService {
     }
   }
 
+  LibraryExercise? _parseExerciseFromApi(Map<String, dynamic> item) {
+    if (item['name'] == null) {
+      _logger.e(
+          'CRITICAL: Found exercise with NULL name. Item keys: ${item.keys.toList()}');
+      return null;
+    }
+
+    // Helper to extract nested IDs safely
+    int catId = (item['category'] is Map)
+        ? item['category']['id']
+        : item['category'] ?? 0;
+
+    int equipId = 7; // Default: Body weight
+    if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
+      final firstEq = (item['equipment'] as List)[0];
+      equipId = (firstEq is Map) ? firstEq['id'] : firstEq;
+    }
+
+    // Map IDs to Names using Top-Level constants
+    final categoryName = _categoryMap[catId] ?? 'Otros';
+    final equipmentName = _equipmentMap[equipId] ?? 'Otro';
+
+    List<String> mapMuscles(String key) {
+      if (item[key] is List) {
+        return (item[key] as List).map((m) {
+          int mId = (m is Map) ? m['id'] : m as int;
+          return _muscleMap[mId] ?? 'Músculo $mId';
+        }).toList();
+      }
+      return [];
+    }
+
+    return LibraryExercise.fromApi(
+      item,
+      categoryName,
+      equipmentName,
+      mapMuscles('muscles'),
+      mapMuscles('muscles_secondary'),
+    );
+  }
+
   Future<void> _fetchAndProcessLanguage(
       int language, Map<int, LibraryExercise> exercisesMap,
       {required bool isPrimary}) async {
@@ -432,15 +445,19 @@ class ExerciseLibraryService {
         // Offload decoding and parsing to background thread.
         // We pass bodyBytes to allow UTF8 decoding in the isolate.
         final Map<String, dynamic> result =
-            await compute(parseLibraryExercises, response.bodyBytes);
+            await compute(_decodeJsonBackground, response.bodyBytes);
 
-        final List<LibraryExercise> pageExercises =
-            result['exercises'] as List<LibraryExercise>;
+        // Explicit cast to the new expected type
+        final List<Map<String, dynamic>> rawExercises =
+            result['results'] as List<Map<String, dynamic>>;
         final String? nextUrl = result['next'] as String?;
 
-        fetchedCount += pageExercises.length;
+        fetchedCount += rawExercises.length;
 
-        for (var exercise in pageExercises) {
+        for (var item in rawExercises) {
+          final exercise = _parseExerciseFromApi(item);
+          if (exercise == null) continue; // Skip invalid data
+
           final existing = exercisesMap[exercise.id];
 
           if (existing != null) {
@@ -451,7 +468,8 @@ class ExerciseLibraryService {
             // newName should use Lang 4 name (exercise.name) ONLY if it is valid.
             // If Lang 4 name is invalid ("Exercise", "Ejercicio sin nombre"), we keep existing (English).
 
-            final bool shouldUseNewName = isPrimary || _isValidName(exercise.name);
+            final bool shouldUseNewName =
+                isPrimary || _isValidName(exercise.name);
             final newName = shouldUseNewName ? exercise.name : existing.name;
 
             // Merge and Deduplicate Images

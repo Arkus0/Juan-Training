@@ -47,7 +47,7 @@ class LibraryExercise {
 
     return LibraryExercise(
       id: id,
-      name: json['name']?.toString() ?? 'Ejercicio sin nombre',
+      name: json['name']?.toString() ?? '',
       muscleGroup: muscleName,
       equipment: equipmentName,
       description: json['description'] as String?,
