@@ -177,9 +177,45 @@ class ExerciseLibraryService {
 
   /// Initialize the service: Load local data and start Sentinel listener
   Future<void> init() async {
+    await _sanitizeCache();
     await loadLibrary();
     _setupConnectivityListener();
     _checkAndSync();
+  }
+
+  /// Sanitizes cache by removing corrupt files (0 bytes) to prevent crashes.
+  Future<void> _sanitizeCache() async {
+    try {
+      if (kIsWeb) return;
+
+      final directory = await getApplicationDocumentsDirectory();
+
+      // 1. Sanitize Images
+      final imagesDir = Directory('${directory.path}/ejercicios_images');
+      if (await imagesDir.exists()) {
+        final files = imagesDir.listSync();
+        for (var entity in files) {
+          if (entity is File) {
+            final length = await entity.length();
+            if (length == 0) {
+              _logger.w('Deleting 0-byte image file: ${entity.path}');
+              await entity.delete();
+            }
+          }
+        }
+      }
+
+      // 2. Sanitize JSON
+      final jsonFile = File('${directory.path}/exercises.json');
+      if (await jsonFile.exists()) {
+        if (await jsonFile.length() == 0) {
+          _logger.w('Deleting 0-byte exercises.json file.');
+          await jsonFile.delete();
+        }
+      }
+    } catch (e, s) {
+      _logger.e('Error during cache sanitization', error: e, stackTrace: s);
+    }
   }
 
   void _setupConnectivityListener() {
@@ -234,6 +270,18 @@ class ExerciseLibraryService {
       _isLoaded = true;
     } catch (e, s) {
       _logger.e('Error loading library from disk', error: e, stackTrace: s);
+
+      // Critical Fix: Delete corrupt file to force clean sync next time
+      try {
+        final file = await _localFile;
+        if (await file.exists()) {
+          _logger.w('Deleting corrupt exercises.json to prevent crash loop.');
+          await file.delete();
+        }
+      } catch (deleteError) {
+        _logger.e('Failed to delete corrupt exercises.json', error: deleteError);
+      }
+
       if (_exercises.isEmpty) {
         _exercises = List.from(_fallbackExercises);
         _updateNotifier();

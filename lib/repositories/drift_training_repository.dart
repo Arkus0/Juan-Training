@@ -182,13 +182,23 @@ class DriftTrainingRepository implements ITrainingRepository {
               ),
             );
 
-        // 2. "Clean Update" for Routines (Assuming simpler model for Routines for now,
-        // or leaving as destructive-recreate for Routines as per original code,
-        // but user only asked to fix Session save. I will leave Routine save as is
-        // unless requested, but the prompt focused on `_saveSessionInternal`).
-        // The prompt said "Elimina el Guardado Destructivo... Reescribe _saveSessionInternal".
-        // Routine structure is complex to upsert, so deleting days/exercises is standard for simple document replacement.
+        // 2. Manual cleanup of old days and exercises to prevent UNIQUE constraint errors
+        // (Cascade delete might not trigger correctly or we want explicit control)
 
+        // A. Get existing Day IDs for this routine
+        final existingDays = await (db.select(db.routineDays)
+              ..where((tbl) => tbl.routineId.equals(rutina.id)))
+            .get();
+        final dayIds = existingDays.map((d) => d.id).toList();
+
+        // B. Explicitly delete exercises belonging to those days
+        if (dayIds.isNotEmpty) {
+          await (db.delete(db.routineExercises)
+                ..where((tbl) => tbl.dayId.isIn(dayIds)))
+              .go();
+        }
+
+        // C. Delete the days themselves
         await (db.delete(db.routineDays)
               ..where((tbl) => tbl.routineId.equals(rutina.id)))
             .go();
