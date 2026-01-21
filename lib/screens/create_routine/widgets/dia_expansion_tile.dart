@@ -249,9 +249,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
                       // Identify key for the group
                       final firstEx = widget.dia.ejercicios[groupIndices.first];
-                      final Key groupKey = isSuperset
-                          ? Key('superset_${firstEx.supersetId}')
-                          : Key('single_${firstEx.instanceId}');
+                      final Key groupKey = Key('group_${firstEx.supersetId ?? firstEx.instanceId}');
 
                       return ReorderableDragStartListener(
                         index: visualIndex,
@@ -328,7 +326,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
           children: groupIndices.map((idx) {
             final ex = exercises[idx];
             return EjercicioCard(
-              key: Key('card_${ex.instanceId}'),
+              key: Key('exercise_${ex.instanceId}'),
               ejercicio: ex,
               onRemove: () => onRemoveExercise(idx),
               onUpdate: (updated) => onUpdateExercise(idx, updated),
@@ -376,7 +374,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           child: EjercicioCard(
-            key: Key('card_${ex.instanceId}'),
+            key: Key('exercise_${ex.instanceId}'),
             ejercicio: ex,
             onRemove: () => onRemoveExercise(idx),
             onUpdate: (updated) => onUpdateExercise(idx, updated),
