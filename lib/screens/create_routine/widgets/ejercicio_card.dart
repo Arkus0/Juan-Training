@@ -202,10 +202,19 @@ class EjercicioCard extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
 
+              // Delete Icon (visible)
+              IconButton(
+                icon: Icon(Icons.delete_outline, color: Colors.red[300], size: 20),
+                onPressed: onRemove,
+                tooltip: 'Eliminar',
+                visualDensity: VisualDensity.compact,
+              ),
+
               // Info Icon / Menu
               IconButton(
-                icon: Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
+                icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
                 onPressed: () => _showProOptions(context),
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
