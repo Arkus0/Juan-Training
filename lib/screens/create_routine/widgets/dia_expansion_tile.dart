@@ -289,68 +289,71 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           onDismissed: (_) {
                             final removedItem = ex;
                             widget.onRemoveExercise(idx);
-                            
-                            // Show popup dialog
+
+                            BuildContext? dialogCtx;
                             showDialog(
                               context: context,
                               barrierDismissible: false,
                               barrierColor: Colors.black26,
-                              builder: (dialogContext) => Center(
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    margin: const EdgeInsets.symmetric(horizontal: 40),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red[900],
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.3),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Ejercicio eliminado',
-                                          style: GoogleFonts.montserrat(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w900,
+                              builder: (dialogContext) {
+                                dialogCtx = dialogContext;
+                                return Center(
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      margin: const EdgeInsets.symmetric(horizontal: 40),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[900],
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.3),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            foregroundColor: Colors.red[900],
-                                            minimumSize: const Size(double.infinity, 40),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Ejercicio eliminado',
+                                            style: GoogleFonts.montserrat(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                            textAlign: TextAlign.center,
                                           ),
-                                          onPressed: () {
-                                            Navigator.of(dialogContext).pop();
-                                            widget.onUndoRemove(idx, removedItem);
-                                          },
-                                          child: Text(
-                                            'DESHACER',
-                                            style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                                          const SizedBox(height: 12),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              foregroundColor: Colors.red[900],
+                                              minimumSize: const Size(double.infinity, 40),
+                                            ),
+                                            onPressed: () {
+                                              Navigator.of(dialogContext).pop();
+                                              widget.onUndoRemove(idx, removedItem);
+                                            },
+                                            child: Text(
+                                              'DESHACER',
+                                              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             );
-                            
-                            // Auto-close after 2 seconds
+
+                            // Auto-close after 2 seconds (only this dialog)
                             Future.delayed(const Duration(seconds: 2), () {
-                              if (Navigator.canPop(context)) {
-                                Navigator.of(context, rootNavigator: true).pop();
+                              if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
+                                Navigator.of(dialogCtx!, rootNavigator: true).pop();
                               }
                             });
                           },
