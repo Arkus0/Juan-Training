@@ -21,7 +21,8 @@ class ExerciseLibraryService {
   bool _isSyncing = false;
 
   // Notifier for real-time updates
-  final ValueNotifier<List<LibraryExercise>> exercisesNotifier = ValueNotifier([]);
+  final ValueNotifier<List<LibraryExercise>> exercisesNotifier =
+      ValueNotifier([]);
 
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
@@ -73,16 +74,86 @@ class ExerciseLibraryService {
 
   // --- Fallback Data (Offline/Error) ---
   static final List<LibraryExercise> _fallbackExercises = [
-    LibraryExercise(id: 1001, name: 'Press de Banca', muscleGroup: 'Pecho', equipment: 'Barra', description: 'Press básico de pecho', muscles: ['Pectoral mayor'], secondaryMuscles: ['Tríceps braquial', 'Deltoides anterior']),
-    LibraryExercise(id: 1002, name: 'Sentadilla', muscleGroup: 'Piernas', equipment: 'Barra', description: 'Sentadilla clásica', muscles: ['Cuádriceps'], secondaryMuscles: ['Glúteo mayor', 'Gemelos']),
-    LibraryExercise(id: 1003, name: 'Peso Muerto', muscleGroup: 'Espalda', equipment: 'Barra', description: 'Peso muerto convencional', muscles: ['Erectores', 'Glúteo mayor'], secondaryMuscles: ['Isquios', 'Trapecio']),
-    LibraryExercise(id: 1004, name: 'Dominadas', muscleGroup: 'Espalda', equipment: 'Barra dominadas', description: 'Pull-ups', muscles: ['Dorsal ancho'], secondaryMuscles: ['Bíceps braquial']),
-    LibraryExercise(id: 1005, name: 'Press Militar', muscleGroup: 'Hombros', equipment: 'Barra', description: 'Press de hombros de pie', muscles: ['Deltoides anterior'], secondaryMuscles: ['Tríceps braquial']),
-    LibraryExercise(id: 1006, name: 'Curl de Bíceps', muscleGroup: 'Brazos', equipment: 'Mancuerna', description: 'Curl alterno con mancuernas', muscles: ['Bíceps braquial'], secondaryMuscles: []),
-    LibraryExercise(id: 1007, name: 'Extensiones de Tríceps', muscleGroup: 'Brazos', equipment: 'Polea', description: 'En polea alta', muscles: ['Tríceps braquial'], secondaryMuscles: []),
-    LibraryExercise(id: 1008, name: 'Plancha', muscleGroup: 'Abdominales', equipment: 'Peso corporal', description: 'Plancha isométrica', muscles: ['Recto abdominal'], secondaryMuscles: ['Oblicuos']),
-    LibraryExercise(id: 1009, name: 'Zancadas', muscleGroup: 'Piernas', equipment: 'Mancuerna', description: 'Lunges caminando', muscles: ['Cuádriceps', 'Glúteo mayor'], secondaryMuscles: []),
-    LibraryExercise(id: 1010, name: 'Elevaciones Laterales', muscleGroup: 'Hombros', equipment: 'Mancuerna', description: 'Para deltoides medio', muscles: ['Deltoides medio'], secondaryMuscles: []),
+    LibraryExercise(
+        id: 1001,
+        name: 'Press de Banca',
+        muscleGroup: 'Pecho',
+        equipment: 'Barra',
+        description: 'Press básico de pecho',
+        muscles: ['Pectoral mayor'],
+        secondaryMuscles: ['Tríceps braquial', 'Deltoides anterior']),
+    LibraryExercise(
+        id: 1002,
+        name: 'Sentadilla',
+        muscleGroup: 'Piernas',
+        equipment: 'Barra',
+        description: 'Sentadilla clásica',
+        muscles: ['Cuádriceps'],
+        secondaryMuscles: ['Glúteo mayor', 'Gemelos']),
+    LibraryExercise(
+        id: 1003,
+        name: 'Peso Muerto',
+        muscleGroup: 'Espalda',
+        equipment: 'Barra',
+        description: 'Peso muerto convencional',
+        muscles: ['Erectores', 'Glúteo mayor'],
+        secondaryMuscles: ['Isquios', 'Trapecio']),
+    LibraryExercise(
+        id: 1004,
+        name: 'Dominadas',
+        muscleGroup: 'Espalda',
+        equipment: 'Barra dominadas',
+        description: 'Pull-ups',
+        muscles: ['Dorsal ancho'],
+        secondaryMuscles: ['Bíceps braquial']),
+    LibraryExercise(
+        id: 1005,
+        name: 'Press Militar',
+        muscleGroup: 'Hombros',
+        equipment: 'Barra',
+        description: 'Press de hombros de pie',
+        muscles: ['Deltoides anterior'],
+        secondaryMuscles: ['Tríceps braquial']),
+    LibraryExercise(
+        id: 1006,
+        name: 'Curl de Bíceps',
+        muscleGroup: 'Brazos',
+        equipment: 'Mancuerna',
+        description: 'Curl alterno con mancuernas',
+        muscles: ['Bíceps braquial'],
+        secondaryMuscles: []),
+    LibraryExercise(
+        id: 1007,
+        name: 'Extensiones de Tríceps',
+        muscleGroup: 'Brazos',
+        equipment: 'Polea',
+        description: 'En polea alta',
+        muscles: ['Tríceps braquial'],
+        secondaryMuscles: []),
+    LibraryExercise(
+        id: 1008,
+        name: 'Plancha',
+        muscleGroup: 'Abdominales',
+        equipment: 'Peso corporal',
+        description: 'Plancha isométrica',
+        muscles: ['Recto abdominal'],
+        secondaryMuscles: ['Oblicuos']),
+    LibraryExercise(
+        id: 1009,
+        name: 'Zancadas',
+        muscleGroup: 'Piernas',
+        equipment: 'Mancuerna',
+        description: 'Lunges caminando',
+        muscles: ['Cuádriceps', 'Glúteo mayor'],
+        secondaryMuscles: []),
+    LibraryExercise(
+        id: 1010,
+        name: 'Elevaciones Laterales',
+        muscleGroup: 'Hombros',
+        equipment: 'Mancuerna',
+        description: 'Para deltoides medio',
+        muscles: ['Deltoides medio'],
+        secondaryMuscles: []),
   ];
 
   Future<File> get _localFile async {
@@ -99,7 +170,8 @@ class ExerciseLibraryService {
   }
 
   void _setupConnectivityListener() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((results) {
       final isOnline = results.any((r) => r != ConnectivityResult.none);
       if (isOnline) {
         _logger.d('Sentinel: Connection restored. Checking sync status...');
@@ -112,7 +184,8 @@ class ExerciseLibraryService {
     if (_isSyncing) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final initialSyncCompleted = prefs.getBool('initial_library_sync_completed') ?? false;
+    final initialSyncCompleted =
+        prefs.getBool('initial_library_sync_completed') ?? false;
 
     // Re-check connectivity just to be sure
     final connectivityResult = await Connectivity().checkConnectivity();
@@ -161,8 +234,8 @@ class ExerciseLibraryService {
       _logger.e('Error loading library', error: e);
       // Fallback in case of corruption
       if (_exercises.isEmpty) {
-         _exercises = List.from(_fallbackExercises);
-         _updateNotifier();
+        _exercises = List.from(_fallbackExercises);
+        _updateNotifier();
       }
     }
   }
@@ -170,7 +243,8 @@ class ExerciseLibraryService {
   Future<void> _saveToFile() async {
     try {
       final file = await _localFile;
-      final String content = jsonEncode(_exercises.map((e) => e.toJson()).toList());
+      final String content =
+          jsonEncode(_exercises.map((e) => e.toJson()).toList());
       await file.writeAsString(content);
     } catch (e) {
       _logger.e('Error saving library to file', error: e);
@@ -187,10 +261,8 @@ class ExerciseLibraryService {
       _logger.w('Sync already in progress. Skipping.');
       return false;
     }
-
     _isSyncing = true;
 
-    // ⚡ Check Connectivity First
     final connectivityResult = await Connectivity().checkConnectivity();
     if (!connectivityResult.any((r) => r != ConnectivityResult.none)) {
       _logger.w('Skipping sync: No internet connection.');
@@ -209,156 +281,44 @@ class ExerciseLibraryService {
         imagesDirPath = imagesDir.path;
       }
 
-      List<LibraryExercise> pendingDownloads = [];
-
-      final Map<String, LibraryExercise> mergedMap = {};
-
-      // Seed with existing to preserve local paths?
-      final Map<int, String> existingLocalPaths = {
-        for (var e in _exercises)
-          if (e.localImagePath != null) e.id: e.localImagePath!
+      final Map<int, LibraryExercise> exercisesById = {
+        // Pre-fill with existing exercises to preserve local data like image paths
+        for (var ex in _exercises) ex.id: ex
       };
 
-      final List<int> languages = [4, 2]; // 4 = Spanish, 2 = English
+      // Phase 1: Fetch English exercises (Language 2)
+      _logger.i('Phase 1: Fetching English exercises (lang=2)...');
+      await _fetchAndProcessLanguage(2, exercisesById, isPrimary: true);
 
-      for (final language in languages) {
-         String url = 'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=100';
-         _logger.i('Fetching exercises for language $language...');
-         int fetchedCount = 0;
+      // Phase 2: Fetch Spanish exercises (Language 4) and merge
+      _logger.i('Phase 2: Fetching Spanish exercises (lang=4) and merging...');
+      await _fetchAndProcessLanguage(4, exercisesById, isPrimary: false);
 
-         while (url.isNotEmpty) {
-           final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-           if (response.statusCode == 200) {
-             final data = jsonDecode(utf8.decode(response.bodyBytes));
-             final results = data['results'] as List;
-             fetchedCount += results.length;
-
-             for (var item in results) {
-               final int id = item['id'];
-               final int? variationId = item['variations']; // Can be null or int
-
-               int catId = 0;
-               if (item['category'] is Map) {
-                 catId = item['category']['id'];
-               } else if (item['category'] is int) {
-                 catId = item['category'];
-               }
-
-               // Equipment
-               int equipId = 7; // Body weight default
-               if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
-                 final first = (item['equipment'] as List).first;
-                 if (first is Map) {
-                   equipId = first['id'];
-                 } else if (first is int) {
-                   equipId = first;
-                 }
-               }
-
-               // Muscles
-               final muscles = <String>[];
-               if (item['muscles'] is List) {
-                 for (var m in item['muscles']) {
-                    int mId = (m is Map) ? m['id'] : m as int;
-                    muscles.add(_muscleMap[mId] ?? 'Músculo $mId');
-                 }
-               }
-
-               final secondaryMuscles = <String>[];
-                if (item['muscles_secondary'] is List) {
-                 for (var m in item['muscles_secondary']) {
-                    int mId = (m is Map) ? m['id'] : m as int;
-                    secondaryMuscles.add(_muscleMap[mId] ?? 'Músculo $mId');
-                 }
-               }
-
-               // Parse Exercise
-               final exercise = LibraryExercise.fromApi(
-                 item,
-                 _categoryMap[catId] ?? 'Otro',
-                 _equipmentMap[equipId] ?? 'Otro',
-                 muscles,
-                 secondaryMuscles,
-               );
-
-               // Restore local path if exists (using ID)
-               if (existingLocalPaths.containsKey(exercise.id)) {
-                 exercise.localImagePath = existingLocalPaths[exercise.id];
-               }
-
-               // Determine Merge Key
-               String key;
-               if (variationId != null) {
-                 key = 'v-$variationId';
-               } else {
-                 key = 'i-$id';
-               }
-
-                final existing = mergedMap[key];
-                if (existing != null) {
-                  // Entry exists. Let's merge.
-                  var newName = exercise.name;
-                  if (newName == 'Ejercicio sin nombre' &&
-                      existing.name != 'Ejercicio sin nombre') {
-                    newName = existing.name;
-                  }
-
-                  final allImageUrls = {...existing.imageUrls, ...exercise.imageUrls}.toList();
-
-                  mergedMap[key] = LibraryExercise(
-                      id: exercise.id,
-                      name: newName,
-                      muscleGroup: exercise.muscleGroup,
-                      equipment: exercise.equipment,
-                      description: exercise.description ?? existing.description,
-                      license: exercise.license ?? existing.license,
-                      imageUrls: allImageUrls,
-                      localImagePath: existing.localImagePath ?? exercise.localImagePath,
-                      muscles: exercise.muscles.isNotEmpty ? exercise.muscles : existing.muscles,
-                      secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
-                          ? exercise.secondaryMuscles
-                          : existing.secondaryMuscles);
-                } else {
-                  mergedMap[key] = exercise;
-                }
-             }
-
-             if (data['next'] != null) {
-               url = data['next'];
-             } else {
-               url = '';
-             }
-           } else {
-             _logger.w('API Error ($language): ${response.statusCode}');
-             break;
-           }
-         } // while url
-         _logger.i('Fetched $fetchedCount exercises for language $language');
-      } // for languages
-
-      // Update internal list
-      _exercises = mergedMap.values.toList();
+      // Update internal list from the map
+      _exercises = exercisesById.values.toList();
       _logger.i('Total unique exercises after merge: ${_exercises.length}');
 
-      // Re-evaluate pending downloads from the merged list
+      // Phase 3: Parallel Image Downloads
       if (!kIsWeb && imagesDirPath != null) {
-        pendingDownloads = _exercises
-            .where((e) => e.imageUrls.isNotEmpty && e.localImagePath == null)
+        final pendingDownloads = _exercises
+            .where((e) =>
+                e.imageUrls.isNotEmpty &&
+                (e.localImagePath == null ||
+                    !File(e.localImagePath!).existsSync()))
             .toList();
-      }
 
-      // Phase 2: Parallel Image Downloads
-      if (!kIsWeb && pendingDownloads.isNotEmpty && imagesDirPath != null) {
-        final Map<int, LibraryExercise> idMap = {
-          for (var e in _exercises) e.id: e
-        };
+        _logger.i('Found ${pendingDownloads.length} exercises with images to download.');
 
-        await _processImageDownloads(pendingDownloads, imagesDirPath, idMap);
+        if (pendingDownloads.isNotEmpty) {
+          final Map<int, LibraryExercise> idMap = {
+            for (var e in _exercises) e.id: e
+          };
+          await _processImageDownloads(pendingDownloads, imagesDirPath, idMap);
+        }
       }
 
       // Save everything to file
       await _saveToFile();
-
       await _updateLastSyncDate();
 
       // ✅ SUCCESS: Mark initial sync as completed
@@ -367,13 +327,133 @@ class ExerciseLibraryService {
       _logger.i('Sync completed successfully. Sentinel satisfied.');
 
       _updateNotifier();
-      _isSyncing = false;
       return true;
-    } catch (e) {
-      _logger.e('Sync Error', error: e);
-      _isSyncing = false;
+    } catch (e, stacktrace) {
+      _logger.e('Sync Error', error: e, stackTrace: stacktrace);
       return false;
+    } finally {
+      _isSyncing = false;
     }
+  }
+
+  Future<void> _fetchAndProcessLanguage(
+      int language, Map<int, LibraryExercise> exercisesById,
+      {required bool isPrimary}) async {
+    String? url =
+        'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=200';
+    int fetchedCount = 0;
+
+    while (url != null && url.isNotEmpty) {
+      try {
+        final response =
+            await http.get(Uri.parse(url)).timeout(const Duration(seconds: 45));
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          final results = data['results'] as List;
+          fetchedCount += results.length;
+
+          for (var item in results) {
+            final exercise = _parseExerciseFromApi(item);
+            final existing = exercisesById[exercise.id];
+
+            if (existing != null) {
+              // --- MERGE LOGIC ---
+              // Name Protection Logic
+              final newNameRaw = isPrimary ? exercise.name : (exercise.name.trim().isNotEmpty ? exercise.name : existing.name);
+              final isInvalidSpanishName = !isPrimary &&
+                  (newNameRaw.toLowerCase().contains('sin nombre') ||
+                      newNameRaw.toLowerCase() == 'exercise');
+
+              final finalName = isInvalidSpanishName ? existing.name : newNameRaw;
+
+              // Merge other fields
+              final allImageUrls = {...existing.imageUrls, ...exercise.imageUrls}.toList();
+
+              exercisesById[exercise.id] = LibraryExercise(
+                id: existing.id,
+                name: finalName,
+                description: exercise.description?.isNotEmpty == true
+                    ? exercise.description
+                    : existing.description,
+                muscleGroup: exercise.muscleGroup,
+                equipment: exercise.equipment,
+                muscles: exercise.muscles.isNotEmpty
+                    ? exercise.muscles
+                    : existing.muscles,
+                secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
+                    ? exercise.secondaryMuscles
+                    : existing.secondaryMuscles,
+                imageUrls: allImageUrls,
+                localImagePath: existing.localImagePath, // Preserve path
+                license: exercise.license ?? existing.license,
+              );
+            } else {
+              // --- ADD NEW EXERCISE ---
+              final name = exercise.name.trim();
+              final isInvalidName = name.isEmpty ||
+                  name.toLowerCase().contains('sin nombre') ||
+                  name.toLowerCase() == 'exercise';
+              
+              if (!isInvalidName) {
+                exercisesById[exercise.id] = exercise;
+              }
+            }
+          }
+          url = data['next'];
+        } else {
+          _logger.w('API Error (language $language): ${response.statusCode}');
+          break;
+        }
+      } catch (e) {
+        _logger.e('Failed to fetch page for language $language: $e');
+        break; // Stop fetching this language on error
+      }
+    }
+    _logger.i('Fetched $fetchedCount exercises for language $language.');
+  }
+
+  LibraryExercise _parseExerciseFromApi(Map<String, dynamic> item) {
+
+    int catId = 0;
+    if (item['category'] is Map) {
+      catId = item['category']['id'];
+    } else if (item['category'] is int) {
+      catId = item['category'];
+    }
+
+    int equipId = 7; // Body weight default
+    if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
+      final first = (item['equipment'] as List).first;
+      if (first is Map) {
+        equipId = first['id'];
+      } else if (first is int) {
+        equipId = first;
+      }
+    }
+
+    final muscles = <String>[];
+    if (item['muscles'] is List) {
+      for (var m in item['muscles']) {
+        int mId = (m is Map) ? m['id'] : m as int;
+        muscles.add(_muscleMap[mId] ?? 'Músculo $mId');
+      }
+    }
+
+    final secondaryMuscles = <String>[];
+    if (item['muscles_secondary'] is List) {
+      for (var m in item['muscles_secondary']) {
+        int mId = (m is Map) ? m['id'] : m as int;
+        secondaryMuscles.add(_muscleMap[mId] ?? 'Músculo $mId');
+      }
+    }
+
+    return LibraryExercise.fromApi(
+      item,
+      _categoryMap[catId] ?? 'Otro',
+      _equipmentMap[equipId] ?? 'Otro',
+      muscles,
+      secondaryMuscles,
+    );
   }
 
   Future<void> _processImageDownloads(
@@ -388,32 +468,50 @@ class ExerciseLibraryService {
 
       await Future.wait(batch.map((exercise) async {
         for (final imageUrl in exercise.imageUrls) {
-          final localPath = await _downloadImage(imageUrl, exercise.id.toString(), dirPath);
+          final localPath =
+              await _downloadImage(imageUrl, exercise.id.toString(), dirPath);
           if (localPath != null) {
-            exercise.localImagePath = localPath;
-            map[exercise.id]?.localImagePath = localPath;
-            break; 
+            // Check if the component is still mounted before updating state
+            if (map.containsKey(exercise.id)) {
+                map[exercise.id]!.localImagePath = localPath;
+                // No need to update the exercise object directly, map holds the reference
+            }
+            break;
           }
         }
       }));
+       // After each batch, save to persist progress
+      await _saveToFile();
     }
   }
 
   Future<String?> _downloadImage(String url, String id, String dirPath) async {
+    // Correctly handle image extensions
+    final extension = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
+    final filePath = '$dirPath/$id.$extension';
+    final file = File(filePath);
+
     try {
-      final filePath = '$dirPath/$id.jpg';
-      final file = File(filePath);
       if (await file.exists()) {
-        return filePath; // Already exists
+        if (await file.length() > 0) {
+          return filePath; // Already exists and is valid
+        } else {
+          _logger.w('Found 0-byte image for $id, re-downloading...');
+          await file.delete(); // Delete corrupted file
+        }
       }
 
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 20));
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
+        _logger.d('Downloaded image: $filePath');
         return filePath;
+      } else {
+         _logger.w('Failed to download image for $id: status code ${response.statusCode}');
       }
     } catch (e) {
-      _logger.w('Error downloading image for $id: $e');
+      _logger.w('Error downloading image for $id from $url: $e');
     }
     return null;
   }
@@ -444,5 +542,6 @@ class ExerciseLibraryService {
 
   void dispose() {
     _connectivitySubscription?.cancel();
+    exercisesNotifier.dispose();
   }
 }

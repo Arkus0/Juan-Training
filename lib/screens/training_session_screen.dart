@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../widgets/session/exercise_card.dart';
@@ -88,10 +87,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
   void _notifyTimerFinished() async {
     Vibrate.vibrate();
-    try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('sounds/beep.mp3'));
-    } catch (_) {}
   }
 
   @override

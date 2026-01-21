@@ -13,4 +13,17 @@ class Dia {
     this.progressionType = 'none',
     String? id,
   }) : id = id ?? const Uuid().v4();
+
+  Dia copyWith({
+    String? nombre,
+    List<EjercicioEnRutina>? ejercicios,
+    String? progressionType,
+  }) {
+    return Dia(
+      id: this.id,
+      nombre: nombre ?? this.nombre,
+      ejercicios: ejercicios ?? this.ejercicios,
+      progressionType: progressionType ?? this.progressionType,
+    );
+  }
 }

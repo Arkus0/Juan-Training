@@ -8,7 +8,8 @@ import '../repositories/i_training_repository.dart';
 import 'training_provider.dart';
 
 // Provider family to initialize with existing routine or null
-final createRoutineProvider = StateNotifierProvider.family<CreateRoutineNotifier, Rutina, Rutina?>(
+final createRoutineProvider =
+    StateNotifierProvider.family<CreateRoutineNotifier, Rutina, Rutina?>(
   (ref, existingRutina) {
     final repository = ref.watch(trainingRepositoryProvider);
     return CreateRoutineNotifier(repository, existingRutina);
@@ -19,9 +20,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   final ITrainingRepository _repository;
 
   CreateRoutineNotifier(this._repository, Rutina? existingRutina)
-      : super(existingRutina != null
-            ? _deepCopy(existingRutina)
-            : _createEmptyRoutine());
+      : super(existingRutina?.copyWith() ?? _createEmptyRoutine());
 
   static Rutina _createEmptyRoutine() {
     return Rutina(
@@ -32,68 +31,49 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     );
   }
 
-  static Rutina _deepCopy(Rutina original) {
-    // We create a detached copy.
-    return Rutina(
-      id: original.id,
-      nombre: original.nombre,
-      creada: original.creada,
-      dias: original.dias.map((d) => _copyDia(d)).toList(),
-    );
-  }
-
-  static Dia _copyDia(Dia d) {
-    return Dia(
-      nombre: d.nombre,
-      ejercicios: d.ejercicios.map((e) => e.copyWith()).toList(),
-      progressionType: d.progressionType,
-      id: d.id, // Preserve Stable ID
-    );
-  }
-
   // --- Actions ---
 
   void updateName(String name) {
-    state.nombre = name;
-    state = _deepCopy(state);
+    state = state.copyWith(nombre: name);
   }
 
   void addDay() {
     final newDia = Dia(
       nombre: 'Día ${state.dias.length + 1}',
       ejercicios: [],
-      id: const Uuid().v4(), // New ID
     );
-    state.dias.add(newDia);
-    state = _deepCopy(state);
+    state = state.copyWith(dias: [...state.dias, newDia]);
   }
 
   void removeDay(int index) {
-    state.dias.removeAt(index);
-    state = _deepCopy(state);
+    final newDias = [...state.dias]..removeAt(index);
+    state = state.copyWith(dias: newDias);
   }
 
   void reorderDays(int oldIndex, int newIndex) {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final item = state.dias.removeAt(oldIndex);
-    state.dias.insert(newIndex, item);
-    state = _deepCopy(state);
+    final newDias = [...state.dias];
+    final item = newDias.removeAt(oldIndex);
+    newDias.insert(newIndex, item);
+    state = state.copyWith(dias: newDias);
   }
 
   void updateDayName(int index, String newName) {
-    state.dias[index].nombre = newName;
-    state = _deepCopy(state);
+    final newDias = [...state.dias];
+    newDias[index] = newDias[index].copyWith(nombre: newName);
+    state = state.copyWith(dias: newDias);
   }
 
   void updateDayProgression(int index, String type) {
-    state.dias[index].progressionType = type;
-    state = _deepCopy(state);
+    final newDias = [...state.dias];
+    newDias[index] = newDias[index].copyWith(progressionType: type);
+    state = state.copyWith(dias: newDias);
   }
 
   void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
-    final exercise = EjercicioEnRutina(
+    final newExercise = EjercicioEnRutina(
       id: libExercise.id.toString(),
       nombre: libExercise.name,
       descripcion: libExercise.description,
@@ -101,18 +81,26 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       musculosSecundarios: libExercise.secondaryMuscles,
       equipo: libExercise.equipment,
       localImagePath: libExercise.localImagePath,
-      series: 3,
-      repsRange: '8-12',
-      notas: null,
-      instanceId: const Uuid().v4(), // New ID
     );
-    state.dias[dayIndex].ejercicios.add(exercise);
-    state = _deepCopy(state);
+
+    final day = state.dias[dayIndex];
+    final updatedDay = day.copyWith(
+      ejercicios: [...day.ejercicios, newExercise],
+    );
+
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   void removeExercise(int dayIndex, int exerciseIndex) {
-    state.dias[dayIndex].ejercicios.removeAt(exerciseIndex);
-    state = _deepCopy(state);
+    final day = state.dias[dayIndex];
+    final newEjercicios = [...day.ejercicios]..removeAt(exerciseIndex);
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   void reorderExercises(int dayIndex, int oldIndex, int newIndex) {
@@ -120,14 +108,26 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
-    final item = day.ejercicios.removeAt(oldIndex);
-    day.ejercicios.insert(newIndex, item);
-    state = _deepCopy(state);
+    final newEjercicios = [...day.ejercicios];
+    final item = newEjercicios.removeAt(oldIndex);
+    newEjercicios.insert(newIndex, item);
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
-  void updateExercise(int dayIndex, int exerciseIndex, EjercicioEnRutina updated) {
-    state.dias[dayIndex].ejercicios[exerciseIndex] = updated;
-    state = _deepCopy(state);
+  void updateExercise(
+      int dayIndex, int exerciseIndex, EjercicioEnRutina updated) {
+    final day = state.dias[dayIndex];
+    final newEjercicios = [...day.ejercicios];
+    newEjercicios[exerciseIndex] = updated;
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   Future<String?> saveRoutine() async {

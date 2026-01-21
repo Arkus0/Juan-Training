@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
@@ -161,12 +160,6 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       if (current.peso == previous.peso && current.reps > previous.reps) improved = true;
 
       if (improved) {
-        // Play success sound
-        try {
-           final player = AudioPlayer();
-           await player.play(AssetSource('sounds/success.mp3'));
-        } catch (_) {}
-
         if (mounted) {
            ScaffoldMessenger.of(context).showSnackBar(
              SnackBar(

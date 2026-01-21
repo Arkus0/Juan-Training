@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../models/rutina.dart';
 import '../models/library_exercise.dart';
 import '../providers/create_routine_provider.dart';
@@ -21,7 +20,6 @@ class CreateEditRoutineScreen extends ConsumerStatefulWidget {
 
 class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScreen> {
   late TextEditingController _nameController;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -32,7 +30,6 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   @override
   void dispose() {
     _nameController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -65,12 +62,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       });
       overlay.insert(entry);
 
-      // Sound & Vibrate
+      // Vibrate
       Vibrate.vibrateWithPauses([
         const Duration(milliseconds: 50),
         const Duration(milliseconds: 200),
       ]); // Simulate heavy impact
-       _audioPlayer.play(AssetSource('sounds/bar_drop_clang.mp3'));
 
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +84,6 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       if (mounted) Navigator.pop(context);
     }
   }
-
   void _addExercise(int dayIndex) {
     showModalBottomSheet(
       context: context,
