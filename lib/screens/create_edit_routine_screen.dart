@@ -119,6 +119,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             SnackBar(
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 500, left: 16, right: 16),
               content: Text(
                 'Has añadido ${ex.name} 💪',
                 style: GoogleFonts.montserrat(color: Colors.white),
