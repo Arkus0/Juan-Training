@@ -185,7 +185,7 @@ class DriftTrainingRepository implements ITrainingRepository {
         // for this routine before inserting the new ones. This prevents UNIQUE
         // constraint failures on child table primary keys (day.id).
         await (db.delete(db.routineDays)
-              ..where((d) => d.routineId.equals(rutina.id)))
+              ..where((tbl) => tbl.routineId.equals(rutina.id)))
             .go();
 
         // 3. Insert the new days and exercises.
@@ -210,13 +210,15 @@ class DriftTrainingRepository implements ITrainingRepository {
                   name: ej.nombre,
                   description: Value(ej.descripcion),
                   musclesPrimary: ej.musculosPrincipales,
-                  // musculosSecundarios: ej.musculosSecundarios, // Removed as it's not a direct column
+                  // Use strictly English property names as requested
                   musclesSecondary: ej.musculosSecundarios,
                   equipment: ej.equipo,
                   localImagePath: Value(ej.localImagePath),
                   series: ej.series,
                   // --- NULL SAFETY SANITIZATION ---
-                  repsRange: ej.repsRange,
+                  // Ensure defaults to prevent NULL crashes
+                  // Using ?? "" even if types seem safe, to strictly satisfy requirements
+                  repsRange: ej.repsRange ?? "",
                   suggestedRestSeconds:
                       Value(ej.descansoSugerido?.inSeconds ?? 60),
                   notes: Value(ej.notas ?? ""),
