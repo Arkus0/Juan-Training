@@ -8,6 +8,7 @@ import '../models/library_exercise.dart';
 import '../providers/create_routine_provider.dart';
 import 'create_routine/widgets/dia_expansion_tile.dart';
 import 'create_routine/widgets/biblioteca_bottom_sheet.dart';
+import 'package:logger/logger.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -37,19 +38,22 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
 
     // Attempt Save
-    final error = await notifier.saveRoutine();
+    try {
+      final error = await notifier.saveRoutine();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error, style: const TextStyle(color: Colors.white)),
-          backgroundColor: Colors.redAccent[700],
-        ),
-      );
-      Vibrate.feedback(FeedbackType.error);
-    } else {
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error, style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.redAccent[700],
+          ),
+        );
+        Vibrate.feedback(FeedbackType.error);
+        return;
+      }
+
       // Success Feedback
       if (!mounted) return;
 
@@ -78,10 +82,24 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       );
 
       // Wait 300ms for flash then remove and pop
+      final navigator = Navigator.of(context);
       await Future.delayed(const Duration(milliseconds: 300));
       entry.remove();
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) navigator.pop();
+
+    } catch (e, s) {
+      // Unexpected error: show friendly message and log
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error inesperado al guardar: ${e.toString()}', style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.redAccent[700],
+        ),
+      );
+      Vibrate.feedback(FeedbackType.error);
+      final logger = Logger();
+      logger.e('Unexpected error in _saveRoutine', error: e, stackTrace: s);
+      return;
     }
   }
   void _addExercise(int dayIndex) {
@@ -163,6 +181,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               )
             else
               ReorderableColumn(
+                key: ValueKey(routineState.dias.length),
                 onReorder: notifier.reorderDays,
                 draggingWidgetOpacity: 0.8,
                 children: routineState.dias.asMap().entries.map((entry) {
@@ -206,7 +225,10 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             Center(
               child: FloatingActionButton.extended(
                 heroTag: 'add_day_fab',
-                onPressed: notifier.addDay,
+                onPressed: () {
+                  notifier.addDay();
+                  Vibrate.feedback(FeedbackType.light);
+                },
                 icon: const Icon(Icons.add, size: 32),
                 label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),
                 backgroundColor: Colors.red[900],

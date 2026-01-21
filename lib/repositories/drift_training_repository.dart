@@ -136,36 +136,44 @@ class DriftTrainingRepository implements ITrainingRepository {
     ]);
 
     return query.watch().map((rows) {
-      final routines = <String, Routine>{};
-      final days = <String, RoutineDay>{};
-      final exercises = <String, RoutineExercise>{};
+      try {
+        final routines = <String, Routine>{};
+        final days = <String, RoutineDay>{};
+        final exercises = <String, RoutineExercise>{};
 
-      for (final row in rows) {
-        final routine = row.readTable(db.routines);
-        routines.putIfAbsent(routine.id, () => routine);
+        for (final row in rows) {
+          final routine = row.readTable(db.routines);
+          routines.putIfAbsent(routine.id, () => routine);
 
-        final day = row.readTableOrNull(db.routineDays);
-        if (day != null) {
-          days.putIfAbsent(day.id, () => day);
+          final day = row.readTableOrNull(db.routineDays);
+          if (day != null) {
+            days.putIfAbsent(day.id, () => day);
+          }
+
+          final exercise = row.readTableOrNull(db.routineExercises);
+          if (exercise != null) {
+            exercises.putIfAbsent(exercise.id, () => exercise);
+          }
         }
 
-        final exercise = row.readTableOrNull(db.routineExercises);
-        if (exercise != null) {
-          exercises.putIfAbsent(exercise.id, () => exercise);
-        }
+        final result = routines.values.map((routine) {
+          final routineDays =
+              days.values.where((d) => d.routineId == routine.id).toList();
+          final relevantDayIds = routineDays.map((d) => d.id).toSet();
+          final routineExercises = exercises.values
+              .where((e) => relevantDayIds.contains(e.dayId))
+              .toList();
+
+          return _mapRutina(routine, routineDays, routineExercises);
+        }).toList()
+          ..sort((a, b) => b.creada.compareTo(a.creada));
+
+        return result;
+      } catch (e, s) {
+        _logger.e('Error while mapping routines stream', error: e, stackTrace: s);
+        // Return empty list to avoid bubbling exception to UI and crashing the app
+        return <Rutina>[];
       }
-
-      return routines.values.map((routine) {
-        final routineDays =
-            days.values.where((d) => d.routineId == routine.id).toList();
-        final relevantDayIds = routineDays.map((d) => d.id).toSet();
-        final routineExercises = exercises.values
-            .where((e) => relevantDayIds.contains(e.dayId))
-            .toList();
-
-        return _mapRutina(routine, routineDays, routineExercises);
-      }).toList()
-        ..sort((a, b) => b.creada.compareTo(a.creada));
     });
   }
 
@@ -173,6 +181,16 @@ class DriftTrainingRepository implements ITrainingRepository {
   /// update of an existing one, preventing UNIQUE constraint errors.
   Future<void> createRoutine(Rutina rutina) async {
     try {
+      // Pre-validate to avoid silent DB errors or constraint violations
+      final dayIds = rutina.dias.map((d) => d.id).toList();
+      if (dayIds.length != dayIds.toSet().length) {
+        throw Exception('Duplicated day IDs in rutina before DB insert.');
+      }
+      final allInstanceIds = rutina.dias.expand((d) => d.ejercicios.map((e) => e.instanceId)).toList();
+      if (allInstanceIds.length != allInstanceIds.toSet().length) {
+        throw Exception('Duplicated exercise instance IDs in rutina before DB insert.');
+      }
+
       await db.transaction(() async {
         // 1. Insert or Update the Routine itself.
         await db.into(db.routines).insertOnConflictUpdate(
@@ -242,6 +260,7 @@ class DriftTrainingRepository implements ITrainingRepository {
       });
     } catch (e, s) {
       _logger.e('Failed to create/save routine', error: e, stackTrace: s);
+      rethrow;
     }
   }
 

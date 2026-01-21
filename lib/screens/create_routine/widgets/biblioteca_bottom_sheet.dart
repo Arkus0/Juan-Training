@@ -142,10 +142,70 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                 var filtered = exercises;
 
                 if (_selectedMuscle != 'Todos') {
-                  filtered = filtered.where((e) => e.muscleGroup.contains(_selectedMuscle) || e.muscles.contains(_selectedMuscle)).toList();
+                  final selectedLower = _selectedMuscle.toLowerCase();
+
+                  // Map Spanish selection to common English synonyms to tolerate both data sources
+                  final Map<String, List<String>> muscleSynonyms = {
+                    'pecho': ['chest', 'pectoral', 'pectoralis', 'pectorales'],
+                    'espalda': ['back', 'dorsal', 'lats', 'latissimus', 'dorsal ancho'],
+                    'piernas': ['legs', 'quads', 'quadriceps', 'glutes', 'hamstrings', 'pierna'],
+                    'brazos': ['arms', 'biceps', 'triceps', 'arm'],
+                    'hombros': ['shoulders', 'deltoid', 'deltoides'],
+                    'abdominales': ['abs', 'abdominal', 'obliques', 'rectus'],
+                    'gemelos': ['calves', 'gastrocnemius', 'soleus', 'gemelos'],
+                    'cardio': ['cardio', 'aerobic']
+                  };
+
+                  final synonyms = muscleSynonyms[selectedLower] ?? [];
+
+                  filtered = filtered.where((e) {
+                    final mg = (e.muscleGroup ?? '').toLowerCase();
+
+                    // Direct matches
+                    if (mg.contains(selectedLower)) return true;
+                    for (final s in synonyms) {
+                      if (mg.contains(s)) return true;
+                    }
+
+                    // Check detailed muscle names (normalize maps/strings)
+                    final musclesLower = e.muscles.map((m) => m.toLowerCase()).toList();
+                    if (musclesLower.any((m) => m.contains(selectedLower))) return true;
+                    if (musclesLower.any((m) => synonyms.any((s) => m.contains(s)))) return true;
+
+                    return false;
+                  }).toList();
                 }
+
                 if (_selectedEquipment != 'Todos') {
-                  filtered = filtered.where((e) => e.equipment.contains(_selectedEquipment)).toList();
+                  final selectedEq = _selectedEquipment.toLowerCase();
+
+                  final Map<String, List<String>> equipmentSynonyms = {
+                    'barra': ['barbell', 'bar'],
+                    'mancuerna': ['dumbbell', 'dumbbells'],
+                    'máquina': ['machine', 'machine-based'],
+                    'polea': ['cable', 'pulley'],
+                    'peso corporal': ['bodyweight', 'body weight'],
+                    'banco': ['bench', 'bench press']
+                  };
+
+                  final synonyms = equipmentSynonyms[selectedEq] ?? [];
+
+                  filtered = filtered.where((e) {
+                    final eq = (e.equipment ?? '').toLowerCase();
+
+                    if (eq.contains(selectedEq)) return true;
+                    for (final s in synonyms) {
+                      if (eq.contains(s)) return true;
+                    }
+
+                    // Some library entries use longer names or multiple words; also check name and description
+                    if ((e.name ?? '').toLowerCase().contains(selectedEq)) return true;
+                    for (final s in synonyms) {
+                      if ((e.name ?? '').toLowerCase().contains(s)) return true;
+                    }
+
+                    return false;
+                  }).toList();
                 }
 
                 if (_query.isNotEmpty) {

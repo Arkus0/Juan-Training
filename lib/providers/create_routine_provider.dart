@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io';
+import 'package:logger/logger.dart';
 import '../models/rutina.dart';
 import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/library_exercise.dart';
 import '../repositories/i_training_repository.dart';
 import 'training_provider.dart';
-import 'package:collection/collection.dart'; // For equality checks if needed
+
 
 // Provider family to initialize with existing routine or null
 final createRoutineProvider =
@@ -21,7 +23,11 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   final ITrainingRepository _repository;
 
   CreateRoutineNotifier(this._repository, Rutina? existingRutina)
-      : super(existingRutina?.copyWith() ?? _createEmptyRoutine());
+      : super(existingRutina?.copyWith() ?? _createEmptyRoutine()) {
+    if (existingRutina == null) {
+      addDay();
+    }
+  }
 
   static Rutina _createEmptyRoutine() {
     return Rutina(
@@ -108,6 +114,20 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
+    // Validate local image path to avoid runtime exceptions when the file is missing/corrupt
+    String? validLocalPath;
+    try {
+      if (libExercise.localImagePath != null) {
+        final f = File(libExercise.localImagePath!);
+        if (f.existsSync() && f.lengthSync() > 0) {
+          validLocalPath = libExercise.localImagePath;
+        }
+      }
+    } catch (e) {
+      // If any filesystem error occurs, ignore the path and proceed without image
+      validLocalPath = null;
+    }
+
     final newExercise = EjercicioEnRutina(
       id: libExercise.id.toString(),
       nombre: libExercise.name,
@@ -115,7 +135,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       musculosPrincipales: libExercise.muscles,
       musculosSecundarios: libExercise.secondaryMuscles,
       equipo: libExercise.equipment,
-      localImagePath: libExercise.localImagePath,
+      localImagePath: validLocalPath,
     );
 
     final day = state.dias[dayIndex];
@@ -179,32 +199,29 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   // Helper to get visual groups
   // Returns list of lists. Each inner list is a "visual item" (can contain 1 or more exercises).
   List<List<EjercicioEnRutina>> _getVisualGroups(List<EjercicioEnRutina> exercises) {
+    if (exercises.isEmpty) return [];
+
     final groups = <List<EjercicioEnRutina>>[];
-    if (exercises.isEmpty) return groups;
+    final processedInstanceIds = <String>{};
+    final exerciseOrder = {for (var i = 0; i < exercises.length; i++) exercises[i].instanceId: i};
 
-    List<EjercicioEnRutina> currentGroup = [];
-    String? currentSupersetId;
-
-    for (var ex in exercises) {
-      if (currentGroup.isEmpty) {
-        currentGroup.add(ex);
-        currentSupersetId = ex.supersetId;
-      } else {
-        // If ex belongs to same superset as current group
-        if (ex.supersetId != null && ex.supersetId == currentSupersetId) {
-          currentGroup.add(ex);
-        } else {
-          // Finish previous group
-          groups.add(currentGroup);
-          // Start new group
-          currentGroup = [ex];
-          currentSupersetId = ex.supersetId;
-        }
+    for (final ex in exercises) {
+      if (processedInstanceIds.contains(ex.instanceId)) {
+        continue;
       }
-    }
-    // Add last group
-    if (currentGroup.isNotEmpty) {
-      groups.add(currentGroup);
+
+      if (ex.supersetId != null) {
+        final group = exercises.where((e) => e.supersetId == ex.supersetId).toList();
+        // Sort the group by their original order to maintain stability
+        group.sort((a, b) => exerciseOrder[a.instanceId]!.compareTo(exerciseOrder[b.instanceId]!));
+        groups.add(group);
+        for (final groupEx in group) {
+          processedInstanceIds.add(groupEx.instanceId);
+        }
+      } else {
+        groups.add([ex]);
+        processedInstanceIds.add(ex.instanceId);
+      }
     }
     return groups;
   }
@@ -361,6 +378,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       state = state.copyWith(dias: newDias);
   }
 
+  final _logger = Logger();
+
   Future<String?> saveRoutine() async {
     if (state.nombre.trim().isEmpty) {
       return 'Ponle nombre a tu legado.';
@@ -379,8 +398,27 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       return 'Una rutina vacía es debilidad. Añade ejercicios.';
     }
 
-    await _repository.saveRutina(state);
+    // Basic sanity checks to avoid DB constraint errors
+    try {
+      final dayIds = state.dias.map((d) => d.id).toList();
+      if (dayIds.length != dayIds.toSet().length) {
+        return 'IDs de días duplicados. Reinicia y prueba de nuevo.';
+      }
 
-    return null;
+      final allInstanceIds = state.dias.expand((d) => d.ejercicios.map((e) => e.instanceId)).toList();
+      if (allInstanceIds.isEmpty) return 'Añade al menos un ejercicio antes de guardar.';
+      if (allInstanceIds.length != allInstanceIds.toSet().length) {
+        return 'IDs de ejercicios duplicados. Intenta reiniciar la app.';
+      }
+      if (allInstanceIds.any((id) => id.trim().isEmpty)) {
+        return 'Encontrado ID de ejercicio vacío. Revisa los ejercicios.';
+      }
+
+      await _repository.saveRutina(state);
+      return null;
+    } catch (e, s) {
+      _logger.e('Error guardando rutina', error: e, stackTrace: s);
+      return 'Error al guardar rutina: ${e.toString()}';
+    }
   }
 }
