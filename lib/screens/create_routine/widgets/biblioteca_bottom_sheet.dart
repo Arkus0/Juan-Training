@@ -287,9 +287,6 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               onPressed: () {
                                 Vibrate.feedback(FeedbackType.selection);
                                 widget.onAdd(ex);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('${ex.name} añadido'), duration: const Duration(seconds: 1)),
-                                );
                               },
                               child: const Text('AÑADIR'),
                             ),

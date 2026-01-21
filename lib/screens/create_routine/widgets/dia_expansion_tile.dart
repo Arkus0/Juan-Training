@@ -290,6 +290,8 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                             widget.onRemoveExercise(idx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
                                 content: Text(
                                   'Ejercicio eliminado',
                                   style: GoogleFonts.montserrat(
