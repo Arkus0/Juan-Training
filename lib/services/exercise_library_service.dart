@@ -21,6 +21,9 @@ class ExerciseLibraryService {
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
 
+  bool _isSyncing = false;
+  static const String _prefsKeySynced = 'library_fully_synced';
+
   // --- Mappings (Wger ID -> Spanish Name) ---
   static const Map<int, String> _categoryMap = {
     10: 'Abdominales',
@@ -130,10 +133,14 @@ class ExerciseLibraryService {
 
   /// returns true if sync was successful, false otherwise.
   Future<bool> syncLibrary() async {
+    if (_isSyncing) return false;
+    _isSyncing = true;
+
     // ⚡ Check Connectivity First
     final connectivityResult = await Connectivity().checkConnectivity();
     if (!connectivityResult.any((r) => r != ConnectivityResult.none)) {
       _logger.w('Skipping sync: No internet connection.');
+      _isSyncing = false;
       return false;
     }
 
@@ -351,10 +358,16 @@ class ExerciseLibraryService {
 
       await _updateLastSyncDate();
       _updateNotifier();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefsKeySynced, true);
+
       return true;
     } catch (e) {
       _logger.e('Sync Error', error: e);
       return false;
+    } finally {
+      _isSyncing = false;
     }
   }
 
@@ -406,15 +419,15 @@ class ExerciseLibraryService {
   }
 
   Future<bool> shouldSync() async {
-    if (_exercises.isEmpty) return true;
+    // If local file is missing, we must sync
+    final file = await _localFile;
+    if (!await file.exists()) return true;
 
+    // If never fully synced, we must sync
     final prefs = await SharedPreferences.getInstance();
-    final lastSyncStr = prefs.getString('last_library_sync');
-    if (lastSyncStr == null) return true;
+    final isSynced = prefs.getBool(_prefsKeySynced) ?? false;
 
-    final lastSync = DateTime.parse(lastSyncStr);
-    final difference = DateTime.now().difference(lastSync);
-    return difference.inHours > 24;
+    return !isSynced;
   }
 
   List<LibraryExercise> getExercises() {
