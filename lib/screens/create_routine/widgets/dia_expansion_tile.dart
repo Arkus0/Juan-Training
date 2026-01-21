@@ -240,9 +240,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
                   Column(
-                    children: visualGroups.asMap().entries.map((entry) {
-                      final visualIndex = entry.key;
-                      final groupIndices = entry.value;
+                    children: visualGroups.map((groupIndices) {
                       final isSuperset = groupIndices.length > 1 || (groupIndices.isNotEmpty && widget.dia.ejercicios[groupIndices.first].supersetId != null);
 
                       // Identify key for the group
@@ -252,168 +250,81 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           : Key(firstEx.instanceId);
 
                       if (isSuperset) {
-                         return LongPressDraggable<int>(
+                         return Container(
                            key: groupKey,
-                           data: visualIndex,
-                           feedback: Material(
-                             color: Colors.transparent,
-                             child: Opacity(
-                               opacity: 0.7,
-                               child: Container(
-                                 width: 300,
-                                 padding: const EdgeInsets.all(8),
-                                 decoration: BoxDecoration(
-                                   border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
-                                   color: Colors.grey[900]!.withValues(alpha: 0.8),
-                                 ),
-                                 child: Text('Superserie (${groupIndices.length} ejercicios)',
-                                   style: GoogleFonts.montserrat(color: Colors.white)),
-                               ),
-                             ),
+                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                           decoration: BoxDecoration(
+                             border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+                             color: Colors.grey[900]!.withValues(alpha: 0.5),
                            ),
-                           childWhenDragging: Opacity(
-                             opacity: 0.3,
-                             child: Container(
-                               margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                               decoration: BoxDecoration(
-                                 border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
-                                 color: Colors.grey[900]!.withValues(alpha: 0.5),
-                               ),
-                               height: 60,
-                             ),
-                           ),
-                           child: DragTarget<int>(
-                             onAcceptWithDetails: (details) {
-                               if (details.data != visualIndex) {
-                                 widget.onReorderExercises(details.data, visualIndex);
-                               }
-                             },
-                             builder: (context, candidateData, rejectedData) {
-                               return Container(
-                                 margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                 decoration: BoxDecoration(
-                                   border: Border(left: BorderSide(
-                                     color: candidateData.isNotEmpty ? Colors.amber : Colors.redAccent,
-                                     width: 4)),
-                                   color: Colors.grey[900]!.withValues(alpha: 0.5),
-                                 ),
-                                 child: Column(
-                                   mainAxisSize: MainAxisSize.min,
-                                   children: groupIndices.map((idx) {
-                                     final ex = widget.dia.ejercicios[idx];
-                                     return EjercicioCard(
-                                       ejercicio: ex,
-                                       onRemove: () => widget.onRemoveExercise(idx),
-                                       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                                       onLink: (idx < widget.dia.ejercicios.length - 1)
-                                           ? () => widget.onCreateSuperset(idx, idx + 1)
-                                           : null,
-                                       onUnlink: () => widget.onRemoveFromSuperset(idx),
-                                     );
-                                   }).toList(),
-                                 ),
+                           child: Column(
+                             mainAxisSize: MainAxisSize.min,
+                             children: groupIndices.map((idx) {
+                               final ex = widget.dia.ejercicios[idx];
+                               return EjercicioCard(
+                                 ejercicio: ex,
+                                 onRemove: () => widget.onRemoveExercise(idx),
+                                 onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                                 onLink: (idx < widget.dia.ejercicios.length - 1)
+                                     ? () => widget.onCreateSuperset(idx, idx + 1)
+                                     : null,
+                                 onUnlink: () => widget.onRemoveFromSuperset(idx),
                                );
-                             },
+                             }).toList(),
                            ),
                          );
                       } else {
                         // Single item
                         final idx = groupIndices.first;
                         final ex = widget.dia.ejercicios[idx];
-                        return LongPressDraggable<int>(
-                          key: groupKey,
-                          data: visualIndex,
-                          feedback: Material(
-                            color: Colors.transparent,
-                            child: Opacity(
-                              opacity: 0.7,
-                              child: Container(
-                                width: 300,
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[900]!.withValues(alpha: 0.8),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(ex.nombre,
-                                  style: GoogleFonts.montserrat(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold)),
-                              ),
-                            ),
+                        return Dismissible(
+                          key: Key(ex.instanceId),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.red[900],
+                            child: const Icon(Icons.delete, color: Colors.white),
                           ),
-                          childWhenDragging: Opacity(
-                            opacity: 0.3,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[800],
-                                borderRadius: BorderRadius.circular(8),
+                          onDismissed: (_) {
+                            final removedItem = ex;
+                            widget.onRemoveExercise(idx);
+                            
+                            // Clear all existing snackbars first
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            
+                            // Show new snackbar with auto-dismiss
+                            final snackBar = SnackBar(
+                              duration: const Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                              content: Text(
+                                'Ejercicio eliminado',
+                                style: GoogleFonts.montserrat(color: Colors.white),
                               ),
-                            ),
-                          ),
-                          child: DragTarget<int>(
-                            onAcceptWithDetails: (details) {
-                              if (details.data != visualIndex) {
-                                widget.onReorderExercises(details.data, visualIndex);
-                              }
-                            },
-                            builder: (context, candidateData, rejectedData) {
-                              return Dismissible(
-                                key: Key(ex.instanceId),
-                                direction: DismissDirection.endToStart,
-                                background: Container(
-                                  alignment: Alignment.centerRight,
-                                  padding: const EdgeInsets.only(right: 20),
-                                  color: Colors.red[900],
-                                  child: const Icon(Icons.delete, color: Colors.white),
-                                ),
-                                onDismissed: (_) {
-                                  final removedItem = ex;
-                                  widget.onRemoveExercise(idx);
-                                  ScaffoldMessenger.of(context).clearSnackBars();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      duration: const Duration(seconds: 2),
-                                      behavior: SnackBarBehavior.floating,
-                                      content: Text(
-                                        'Ejercicio eliminado',
-                                        style: GoogleFonts.montserrat(
-                                            color: Colors.white),
-                                      ),
-                                      backgroundColor: Colors.red[900],
-                                      action: SnackBarAction(
-                                        label: 'DESHACER',
-                                        textColor: Colors.white,
-                                        onPressed: () {
-                                          widget.onUndoRemove(idx, removedItem);
-                                        },
-                                      ),
-                                    ),
-                                  );
+                              backgroundColor: Colors.red[900],
+                              action: SnackBarAction(
+                                label: 'DESHACER',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  widget.onUndoRemove(idx, removedItem);
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                 },
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 4, horizontal: 8),
-                                  decoration: candidateData.isNotEmpty
-                                      ? BoxDecoration(
-                                          border: Border.all(color: Colors.amber, width: 2),
-                                          borderRadius: BorderRadius.circular(8),
-                                        )
-                                      : null,
-                                  child: EjercicioCard(
-                                    ejercicio: ex,
-                                    onRemove: () => widget.onRemoveExercise(idx),
-                                    onUpdate: (updated) =>
-                                        widget.onUpdateExercise(idx, updated),
-                                    onLink: (idx < widget.dia.ejercicios.length - 1)
-                                        ? () => widget.onCreateSuperset(idx, idx + 1)
-                                        : null,
-                                    onUnlink: null, // No unlink for single item
-                                  ),
-                                ),
-                              );
-                            },
+                              ),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                          },
+                          child: Container(
+                            key: groupKey,
+                            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            child: EjercicioCard(
+                              ejercicio: ex,
+                              onRemove: () => widget.onRemoveExercise(idx),
+                              onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                              onLink: (idx < widget.dia.ejercicios.length - 1)
+                                  ? () => widget.onCreateSuperset(idx, idx + 1)
+                                  : null,
+                              onUnlink: null,
+                            ),
                           ),
                         );
                       }

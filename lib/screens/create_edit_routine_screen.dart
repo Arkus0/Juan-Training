@@ -113,13 +113,12 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(dayIndex, ex);
           Vibrate.feedback(FeedbackType.light);
-          // Close the bottom sheet first
-          Navigator.pop(bottomSheetContext);
-          // Then show SnackBar on the main scaffold
+          // Show SnackBar at the top of the screen, above the bottom sheet
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(top: 50, left: 16, right: 16),
               content: Text(
                 'Has añadido ${ex.name} 💪',
                 style: GoogleFonts.montserrat(color: Colors.white),
