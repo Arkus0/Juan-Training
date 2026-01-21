@@ -14,13 +14,13 @@ class EjercicioCard extends StatelessWidget {
   final Function()? onUnlink;
 
   const EjercicioCard({
-    super.key,
+    Key? key,
     required this.ejercicio,
     required this.onRemove,
     required this.onUpdate,
     this.onLink,
     this.onUnlink,
-  });
+  }) : super(key: key);
 
   void _showProOptions(BuildContext context) {
     showModalBottomSheet(
