@@ -92,6 +92,7 @@ class Sessions extends Table {
 }
 
 // 5. Session Exercises
+@TableIndex(name: 'session_exercises_name_idx', columns: {#name})
 class SessionExercises extends Table {
   TextColumn get id => text()();
   TextColumn get sessionId => text().references(Sessions, #id, onDelete: KeyAction.cascade)();
@@ -116,7 +117,7 @@ class SessionExercises extends Table {
 
 // 6. Sets
 class WorkoutSets extends Table {
-  IntColumn get id => integer().autoIncrement()();
+  TextColumn get id => text()(); // Changed from Int to Text (UUID)
   TextColumn get sessionExerciseId => text().references(SessionExercises, #id, onDelete: KeyAction.cascade)();
 
   IntColumn get setIndex => integer()();
@@ -131,6 +132,9 @@ class WorkoutSets extends Table {
   BoolColumn get isFailure => boolean().withDefault(const Constant(false))();
   BoolColumn get isDropset => boolean().withDefault(const Constant(false))();
   BoolColumn get isWarmup => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 // 7. Exercise Notes

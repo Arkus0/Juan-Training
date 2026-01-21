@@ -84,13 +84,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
     final sessionExercises = routineExercises.map((e) {
       return Ejercicio(
-        id: e.instanceId,
+        id: e.instanceId, // Use the stable Instance ID
+        libraryId: e.id,  // Reference to the library
         nombre: e.nombre,
+        musculosPrincipales: e.musculosPrincipales,
+        musculosSecundarios: e.musculosSecundarios,
         series: e.series,
         reps: int.tryParse(e.repsRange.split('-').first) ?? 0, // Best effort parse
         peso: 0.0,
         notas: e.notas,
         logs: List.generate(e.series, (_) => SerieLog(
+          // ID is generated automatically in constructor
           peso: 0.0,
           reps: 0,
           completed: false,
@@ -145,6 +149,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final log = logs[setIndex];
 
     final newLog = SerieLog(
+      id: log.id, // Preserve UUID
       peso: peso ?? log.peso,
       reps: reps ?? log.reps,
       completed: completed ?? log.completed,
@@ -202,14 +207,16 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 
   Future<void> finishSession() async {
-    if (state.activeRutina == null || state.startTime == null) return;
+    // Modified to allow saving sessions without a routine (Ad-hoc)
+    if (state.startTime == null) return;
+    if (state.exercises.isEmpty) return; // Should not save empty session
 
     final endTime = DateTime.now();
     final durationSeconds = endTime.difference(state.startTime!).inSeconds;
 
     final sesion = Sesion(
       id: const Uuid().v4(),
-      rutinaId: state.activeRutina!.id,
+      rutinaId: state.activeRutina?.id ?? '', // Handle null routine
       fecha: endTime,
       ejerciciosCompletados: state.exercises,
       ejerciciosObjetivo: state.targets,
@@ -226,7 +233,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   // --- Persistence ---
 
   void _saveState() async {
-    if (state.activeRutina == null) return;
+    // Removed strict check for activeRutina to allow Ad-Hoc saves
+    if (state.exercises.isEmpty) return;
 
     final data = ActiveSessionData(
       activeRutina: state.activeRutina,
@@ -248,7 +256,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     try {
       final data = await _repository.getActiveSession();
 
-      if (data != null && data.activeRutina != null) {
+      if (data != null) {
+        // Safe Restore: Load data even if activeRutina is missing (deleted routine)
         state = TrainingState(
           activeRutina: data.activeRutina,
           exercises: data.exercises,
@@ -262,6 +271,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       }
     } catch (e) {
       Logger().e('Error restoring session', error: e);
+      // Fallback: If critical failure, clear storage to prevent crash loop.
+      // Ideally, we could try to rescue partial data here, but getActiveSession
+      // handles the DB read. If that threw, the data is likely corrupt.
       await clearStorage();
     }
   }

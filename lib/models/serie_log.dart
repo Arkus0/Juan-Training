@@ -1,4 +1,7 @@
+import 'package:uuid/uuid.dart';
+
 class SerieLog {
+  final String id;
   final double peso;
   final int reps;
   bool completed;
@@ -10,6 +13,7 @@ class SerieLog {
   final bool isWarmup;
 
   SerieLog({
+    String? id,
     required this.peso,
     required this.reps,
     this.completed = true,
@@ -19,5 +23,5 @@ class SerieLog {
     this.isFailure = false,
     this.isDropset = false,
     this.isWarmup = false,
-  });
+  }) : id = id ?? const Uuid().v4();
 }

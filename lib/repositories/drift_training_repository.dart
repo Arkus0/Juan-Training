@@ -86,16 +86,18 @@ class DriftTrainingRepository implements ITrainingRepository {
         exerciseSets.sort((a, b) => a.setIndex.compareTo(b.setIndex));
 
         return Ejercicio(
-          id: row.libraryId ?? 'unknown', // Fallback
+          id: row.id, // Now using the correct instance ID
+          libraryId: row.libraryId ?? 'unknown',
           nombre: row.name,
           musculosPrincipales: row.musclesPrimary,
           musculosSecundarios: row.musculosSecundarios,
-          series: exerciseSets.length, // Approximate
-          reps: 0, // Not stored at exercise level in history, usually
-          peso: 0, // Not stored
+          series: exerciseSets.length,
+          reps: 0,
+          peso: 0,
           notas: row.notes,
           logs: exerciseSets
               .map((s) => SerieLog(
+                    id: s.id, // ID from DB
                     peso: s.weight,
                     reps: s.reps,
                     completed: s.completed,
@@ -172,7 +174,6 @@ class DriftTrainingRepository implements ITrainingRepository {
     try {
       await db.transaction(() async {
         // 1. Insert or Update the Routine itself.
-        // This handles both new routines and edits to existing ones without conflict.
         await db.into(db.routines).insertOnConflictUpdate(
               RoutinesCompanion.insert(
                 id: rutina.id,
@@ -181,9 +182,13 @@ class DriftTrainingRepository implements ITrainingRepository {
               ),
             );
 
-        // 2. "Clean Update": Delete all existing days (and their exercises via cascade)
-        // for this routine before inserting the new ones. This prevents UNIQUE
-        // constraint failures on child table primary keys (day.id).
+        // 2. "Clean Update" for Routines (Assuming simpler model for Routines for now,
+        // or leaving as destructive-recreate for Routines as per original code,
+        // but user only asked to fix Session save. I will leave Routine save as is
+        // unless requested, but the prompt focused on `_saveSessionInternal`).
+        // The prompt said "Elimina el Guardado Destructivo... Reescribe _saveSessionInternal".
+        // Routine structure is complex to upsert, so deleting days/exercises is standard for simple document replacement.
+
         await (db.delete(db.routineDays)
               ..where((tbl) => tbl.routineId.equals(rutina.id)))
             .go();
@@ -210,14 +215,10 @@ class DriftTrainingRepository implements ITrainingRepository {
                   name: ej.nombre,
                   description: Value(ej.descripcion),
                   musclesPrimary: ej.musculosPrincipales,
-                  // Use strictly English property names as requested
                   musclesSecondary: ej.musculosSecundarios,
                   equipment: ej.equipo,
                   localImagePath: Value(ej.localImagePath),
                   series: ej.series,
-                  // --- NULL SAFETY SANITIZATION ---
-                  // Ensure defaults to prevent NULL crashes
-                  // Using ?? "" even if types seem safe, to strictly satisfy requirements
                   repsRange: ej.repsRange ?? "",
                   suggestedRestSeconds:
                       Value(ej.descansoSugerido?.inSeconds ?? 60),
@@ -229,14 +230,11 @@ class DriftTrainingRepository implements ITrainingRepository {
       });
     } catch (e, s) {
       _logger.e('Failed to create/save routine', error: e, stackTrace: s);
-      // Do not rethrow, as a crashing save should not crash the whole app.
-      // The UI should give feedback based on whether this call completes.
     }
   }
 
   @override
   Future<void> saveRutina(Rutina rutina) async {
-    // This now correctly points to the robust `createRoutine` method.
     await createRoutine(rutina);
   }
 
@@ -260,7 +258,7 @@ class DriftTrainingRepository implements ITrainingRepository {
         .map((rows) {
       final sessions = <String, Session>{};
       final exercises = <String, SessionExercise>{};
-      final sets = <int, WorkoutSet>{};
+      final sets = <String, WorkoutSet>{}; // Changed key to String (UUID) if needed or just handle List
 
       for (final row in rows) {
         final s = row.readTable(db.sessions);
@@ -273,6 +271,8 @@ class DriftTrainingRepository implements ITrainingRepository {
 
         final st = row.readTableOrNull(db.workoutSets);
         if (st != null) {
+          // Using ID string as key
+          // Note: WorkoutSet.id is now String.
           sets.putIfAbsent(st.id, () => st);
         }
       }
@@ -302,9 +302,9 @@ class DriftTrainingRepository implements ITrainingRepository {
 
   Future<void> _saveSessionInternal(Sesion sesion,
       {required bool isCompleted}) async {
-    await (db.delete(db.sessions)..where((s) => s.id.equals(sesion.id))).go();
 
-    await db.into(db.sessions).insert(SessionsCompanion.insert(
+    // 1. Upsert Session
+    await db.into(db.sessions).insertOnConflictUpdate(SessionsCompanion.insert(
           id: sesion.id,
           routineId: Value(sesion.rutinaId),
           startTime: sesion.fecha,
@@ -315,28 +315,39 @@ class DriftTrainingRepository implements ITrainingRepository {
               : const Value(null),
         ));
 
-    Future<void> insertExercises(List<Ejercicio> list, bool isTarget) async {
+    // 2. Track what we are saving to handle deletions
+    final visitedExerciseIds = <String>{};
+    final visitedSetIds = <String>{};
+
+    Future<void> processExercises(List<Ejercicio> list, bool isTarget) async {
       for (var i = 0; i < list.length; i++) {
         final ex = list[i];
-        final rowId = 'se-${isTarget ? "t" : "c"}-${sesion.id}-$i-${ex.id}-${const Uuid().v4()}';
+        // Ensure ex.id is the stable instance ID.
+        final rowId = ex.id;
+        visitedExerciseIds.add(rowId);
 
-        await db
-            .into(db.sessionExercises)
-            .insert(SessionExercisesCompanion.insert(
-              id: rowId,
-              sessionId: sesion.id,
-              libraryId: Value(ex.id),
-              name: ex.nombre,
-              musclesPrimary: ex.musculosPrincipales,
-              musclesSecondary: ex.musculosSecundarios,
-              notes: Value(ex.notas),
-              exerciseIndex: i, // Removed duplicate musclesSecondary
-              isTarget: Value(isTarget),
-            ));
+        await db.into(db.sessionExercises).insertOnConflictUpdate(
+          SessionExercisesCompanion.insert(
+            id: rowId,
+            sessionId: sesion.id,
+            libraryId: Value(ex.libraryId),
+            name: ex.nombre,
+            musclesPrimary: ex.musculosPrincipales,
+            musclesSecondary: ex.musculosSecundarios,
+            notes: Value(ex.notas),
+            exerciseIndex: i,
+            isTarget: Value(isTarget),
+          )
+        );
 
         for (var j = 0; j < ex.logs.length; j++) {
           final log = ex.logs[j];
-          await db.into(db.workoutSets).insert(WorkoutSetsCompanion.insert(
+          final setId = log.id;
+          visitedSetIds.add(setId);
+
+          await db.into(db.workoutSets).insertOnConflictUpdate(
+            WorkoutSetsCompanion.insert(
+                id: setId, // Using UUID primary key
                 sessionExerciseId: rowId,
                 setIndex: j,
                 weight: log.peso,
@@ -346,60 +357,86 @@ class DriftTrainingRepository implements ITrainingRepository {
                 notes: Value(log.notas),
                 restSeconds: Value(log.restSeconds),
                 isFailure: Value(log.isFailure),
-                isDropset: const Value.absent(), // DEPRECATED
+                isDropset: const Value.absent(),
                 isWarmup: Value(log.isWarmup),
-              ));
+              )
+          );
         }
       }
     }
 
-    await insertExercises(sesion.ejerciciosCompletados, false);
-    await insertExercises(sesion.ejerciciosObjetivo, true);
+    await processExercises(sesion.ejerciciosCompletados, false);
+    await processExercises(sesion.ejerciciosObjetivo, true);
+
+    // 3. Clean up orphans
+    // Delete exercises that belong to this session but were not in the updated list
+    await (db.delete(db.sessionExercises)
+      ..where((e) => e.sessionId.equals(sesion.id) & e.id.isNotIn(visitedExerciseIds)))
+      .go();
+
+    // Delete sets that belong to the kept exercises but were not in the updated list
+    // Note: Sets of deleted exercises are removed via Cascade, so we only check visited exercises.
+    if (visitedExerciseIds.isNotEmpty) {
+      await (db.delete(db.workoutSets)
+        ..where((s) => s.sessionExerciseId.isIn(visitedExerciseIds) & s.id.isNotIn(visitedSetIds)))
+        .go();
+    }
   }
 
   @override
   Future<List<Sesion>> getHistoryForExercise(String exerciseName) async {
-    // 1. Find SessionExercises with this name (not targets)
-    final exerciseRows = await (db.select(db.sessionExercises)
-          ..where(
-              (e) => e.name.equals(exerciseName) & e.isTarget.equals(false)))
+    // 1. Get top 5 most recent sessions containing this exercise
+    // We use distinct to avoid duplicate sessions if the exercise appears multiple times
+    final distinctSessions = await (db.select(db.sessions, distinct: true).join([
+      innerJoin(db.sessionExercises,
+          db.sessionExercises.sessionId.equalsExp(db.sessions.id))
+    ])
+      ..where(db.sessionExercises.name.equals(exerciseName) &
+          db.sessionExercises.isTarget.equals(false))
+      ..orderBy([OrderingTerm.desc(db.sessions.startTime)])
+      ..limit(5))
+        .map((r) => r.readTable(db.sessions))
         .get();
 
-    if (exerciseRows.isEmpty) return [];
+    if (distinctSessions.isEmpty) return [];
 
-    final sessionIds = exerciseRows.map((e) => e.sessionId).toSet();
+    final sessionIds = distinctSessions.map((s) => s.id).toList();
 
-    // 2. Fetch Sessions
-    final sessions = await (db.select(db.sessions)
-          ..where((s) => s.id.isIn(sessionIds)))
-        .get();
+    // 2. Fetch only the relevant exercises for these sessions
+    // Requirement: "filter strictly by name... only need last 5 sessions"
+    // Optimization: Only load the specific exercise data to save memory
+    final relevantExercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName)))
+      .get();
 
-    final allSessionExercises = await (db.select(db.sessionExercises)
-          ..where((e) => e.sessionId.isIn(sessionIds)))
-        .get();
-    final allSessionExerciseIds = allSessionExercises.map((e) => e.id).toList();
-    final allSets = await (db.select(db.workoutSets)
-          ..where((s) => s.sessionExerciseId.isIn(allSessionExerciseIds)))
-        .get();
+    final relevantExerciseIds = relevantExercises.map((e) => e.id).toList();
 
-    final result = sessions.map((s) {
-      final sExercises =
-          allSessionExercises.where((e) => e.sessionId == s.id).toList();
-      final sExerciseIds = sExercises.map((e) => e.id).toSet();
-      final sSets = allSets
-          .where((st) => sExerciseIds.contains(st.sessionExerciseId))
+    // 3. Fetch sets for these exercises
+    final relevantSets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(relevantExerciseIds)))
+      .get();
+
+    // 4. Map to Sesion objects (Sparse objects containing only the relevant history)
+    final result = distinctSessions.map((s) {
+      final sExercises = relevantExercises.where((e) => e.sessionId == s.id).toList();
+      final sSets = relevantSets
+          .where((st) => sExercises.any((e) => e.id == st.sessionExerciseId))
           .toList();
+
+      // We populate 'ejerciciosCompletados' with the historical data for this specific exercise
       return _mapSesion(s, sExercises, sSets);
     }).toList();
 
+    // Ensure order
     result.sort((a, b) => b.fecha.compareTo(a.fecha));
+
     return result;
   }
 
   @override
   Future<void> saveActiveSession(ActiveSessionData data) async {
     final session = Sesion(
-      id: 'active_session', // Logic handled below
+      id: 'active_session', // Placeholder, ignored below
       rutinaId: data.activeRutina?.id ?? '',
       fecha: data.startTime ?? DateTime.now(),
       durationSeconds: 0,
@@ -477,7 +514,6 @@ class DriftTrainingRepository implements ITrainingRepository {
         .watchSingleOrNull()
         .asyncMap((sessionRow) async {
       if (sessionRow == null) return null;
-      // This re-uses the full fetch logic.
       return await getActiveSession();
     });
   }
@@ -494,8 +530,6 @@ class DriftTrainingRepository implements ITrainingRepository {
         .getSingleOrNull();
     return row?.note ?? '';
   }
-
-
 
   @override
   Future<void> saveNote(String exerciseName, String note) async {
