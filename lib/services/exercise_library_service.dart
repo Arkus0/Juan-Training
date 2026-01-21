@@ -558,9 +558,9 @@ class ExerciseLibraryService {
           }
         }
       }));
-       // Persist progress after each batch to avoid data loss on failure
-      await _saveToFile();
     }
+    // Persist progress after all batches to reduce I/O
+    await _saveToFile();
   }
 
   Future<String?> _downloadImage(String url, String id, String dirPath) async {
