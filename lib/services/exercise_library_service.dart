@@ -138,8 +138,6 @@ class ExerciseLibraryService {
     }
 
     try {
-      String url = 'https://wger.de/api/v2/exercise/?language=4&limit=50'; // Limit 50 for MVP speed
-
       String? imagesDirPath;
       if (!kIsWeb) {
         final directory = await getApplicationDocumentsDirectory();
@@ -152,67 +150,200 @@ class ExerciseLibraryService {
 
       List<({LibraryExercise exercise, String imageUrl})> pendingDownloads = [];
 
-      // Create a temporary map to update exercises efficiently
-      final Map<int, LibraryExercise> updatedMap = {
-        for (var e in _exercises) e.id: e
+      // Create a temporary map to update exercises efficiently.
+      // We will re-build this map from scratch (or merge) depending on strategy.
+      // If we want to keep old custom exercises, we should seed it with them.
+      // For now, let's assume we want a fresh sync but preserving local paths if ID matches.
+
+      // We need a way to map 'variations' ID to our LibraryExercise.
+      // But we also need to handle exercises without variations.
+      // Strategy: Key = variations ID (if present) OR exercise ID (if not).
+      // This means we might have collisions if an ID equals a Variation ID, but statistically unlikely or we can use negative for one.
+      // Better: Key = 'V_{variation_id}' or 'I_{id}' string keys?
+      // Or just keep a map of `int` and assume no collision between ID and Variation ID?
+      // Actually, 'variations' is an ID of a 'Variation' object/group in Wger. Exercise IDs are distinct.
+      // Let's use a String key for safety: "v-$vid" vs "i-$id".
+
+      final Map<String, LibraryExercise> mergedMap = {};
+
+      // Seed with existing to preserve local paths?
+      // Actually, if we re-fetch, we can just check against _exercises list for local paths.
+      // Let's build a lookup for existing local paths.
+      final Map<int, String> existingLocalPaths = {
+        for (var e in _exercises)
+          if (e.localImagePath != null) e.id: e.localImagePath!
       };
 
-      // Phase 1: Fetch Text Data
-      while (url.isNotEmpty) {
-        final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-        if (response.statusCode == 200) {
-          final data = jsonDecode(utf8.decode(response.bodyBytes));
-          final results = data['results'] as List;
+      // Also, if we are merging English and Spanish, we need to know if we already have an entry for a given variation.
+      // So 'mergedMap' is the accumulator.
 
-          for (var item in results) {
-            final categoryId = item['category'] as int?;
-            final equipmentIds = item['equipment'] as List?;
-            final equipmentId = (equipmentIds != null && equipmentIds.isNotEmpty)
-                ? equipmentIds.first as int
-                : 7; // none
+      final List<int> languages = [2, 4]; // 2 = English, 4 = Spanish
 
-            final muscles = (item['muscles'] as List?)?.map((id) => _muscleMap[id] ?? 'Músculo $id').toList() ?? [];
-            final secondaryMuscles = (item['muscles_secondary'] as List?)?.map((id) => _muscleMap[id] ?? 'Músculo $id').toList() ?? [];
+      for (final lang in languages) {
+         String url = 'https://wger.de/api/v2/exerciseinfo/?language=$lang&limit=100';
+         _logger.i('Fetching exercises for language $lang...');
+         int fetchedCount = 0;
 
-            final exercise = LibraryExercise.fromApi(
-              item,
-              _categoryMap[categoryId] ?? 'Otro',
-              _equipmentMap[equipmentId] ?? 'Otro',
-              List<String>.from(muscles),
-              List<String>.from(secondaryMuscles),
-            );
+         while (url.isNotEmpty) {
+           final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+           if (response.statusCode == 200) {
+             final data = jsonDecode(utf8.decode(response.bodyBytes));
+             final results = data['results'] as List;
+             fetchedCount += results.length;
 
-            // Check if we already have this exercise and it has a local path
-            final existing = updatedMap[exercise.id];
-            if (existing?.localImagePath != null) {
-              exercise.localImagePath = existing!.localImagePath;
-            }
+             for (var item in results) {
+               final int id = item['id'];
+               final int? variationId = item['variations']; // Can be null or int
 
-            // Update map
-            updatedMap[exercise.id] = exercise;
+               final categoryId = item['category'] is Map ? item['category']['id'] : item['category'] as int?;
 
-            if (!kIsWeb && exercise.imageUrls.isNotEmpty) {
-              pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));
-            }
-          }
+               // Equipment is usually a list of objects in exerciseinfo or list of ints?
+               // In exerciseinfo, it seems to be list of objects based on docs, but let's check parsing.
+               // 'LibraryExercise.fromApi' expects 'category' and 'equipment' as IDs in the raw JSON?
+               // Wait, 'LibraryExercise.fromApi' was built for '/exercise/' endpoint.
+               // '/exerciseinfo/' structure might be slightly different.
+               // Let's re-verify the structure in 'fromApi' or adjust it.
 
-          if (data['next'] != null) {
-            url = data['next'];
-          } else {
-            url = '';
-          }
-        } else {
-          _logger.w('API Error: ${response.statusCode}');
-          return false;
-        }
-      }
+               // In '/exercise/', 'category' is an int ID.
+               // In '/exerciseinfo/', 'category' is an object: {id: 10, name: "Abs" ...}
+               // Let's handle both or adjust parsing here.
+
+               int catId = 0;
+               if (item['category'] is Map) {
+                 catId = item['category']['id'];
+               } else if (item['category'] is int) {
+                 catId = item['category'];
+               }
+
+               // Equipment
+               int equipId = 7; // Body weight default
+               if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
+                 final first = (item['equipment'] as List).first;
+                 if (first is Map) {
+                   equipId = first['id'];
+                 } else if (first is int) {
+                   equipId = first;
+                 }
+               }
+
+               // Muscles
+               final muscles = <String>[];
+               if (item['muscles'] is List) {
+                 for (var m in item['muscles']) {
+                    int mId = (m is Map) ? m['id'] : m as int;
+                    muscles.add(_muscleMap[mId] ?? 'Músculo $mId');
+                 }
+               }
+
+               final secondaryMuscles = <String>[];
+                if (item['muscles_secondary'] is List) {
+                 for (var m in item['muscles_secondary']) {
+                    int mId = (m is Map) ? m['id'] : m as int;
+                    secondaryMuscles.add(_muscleMap[mId] ?? 'Músculo $mId');
+                 }
+               }
+
+               // Parse Exercise
+               // We need to construct LibraryExercise manually or adapt fromApi.
+               // LibraryExercise.fromApi handles 'images' extraction from JSON.
+               // But it expects 'category' and 'equipment' to be passed as strings.
+
+               final exercise = LibraryExercise.fromApi(
+                 item,
+                 _categoryMap[catId] ?? 'Otro',
+                 _equipmentMap[equipId] ?? 'Otro',
+                 muscles,
+                 secondaryMuscles,
+               );
+
+               // Restore local path if exists (using ID)
+               // Note: If we merge via variation, the ID might change (e.g. English ID vs Spanish ID).
+               // The 'existingLocalPaths' is keyed by ID.
+               // If we overwrite English (ID=X) with Spanish (ID=Y), we lose access to X's local path?
+               // But wait, the image URL will be the same (Wger uses same image for variations usually, or we download new).
+               // If image URL is same, we might want to check if file exists by name.
+               // However, `_downloadImage` checks `await file.exists()`.
+               // So if we preserve the naming convention (ID based), we might re-download if ID changes.
+               // But we can't easily link ID X file to ID Y exercise without mapping.
+               // For now, let's just allow re-download (or check by URL hash? No, too complex).
+               // Just rely on `localImagePath` being null initially for new ID.
+
+               // Attempt to restore path if ID matches exactly (e.g. same lang update)
+               if (existingLocalPaths.containsKey(exercise.id)) {
+                 exercise.localImagePath = existingLocalPaths[exercise.id];
+               }
+
+               // Determine Merge Key
+               String key;
+               if (variationId != null) {
+                 key = 'v-$variationId';
+               } else {
+                 key = 'i-$id';
+               }
+
+               // Merge Logic:
+               // If key exists, we overwrite.
+               // Since we iterate [English, Spanish], Spanish (Language 4) will overwrite English (Language 2).
+               // This satisfies "Prefer Spanish".
+
+               // ONE CATCH: If we have an existing entry from English, and now we process Spanish.
+               // The Spanish entry might have images, or NOT.
+               // If Spanish has NO images, but English DID, do we want to lose images?
+               // The 'exerciseinfo' endpoint usually includes images for both if they are linked.
+               // But if not, we might want to merge images?
+               // Prompt said "Complete Object Replacement".
+               // So we overwrite. If Spanish is missing images, so be it (or Wger usually shares them).
+
+               mergedMap[key] = exercise;
+
+               // Queue images for download
+               if (!kIsWeb && exercise.imageUrls.isNotEmpty) {
+                 // For now, just take the first one or all?
+                 // The code below takes the first one.
+                 // "simply add the result to this list... Process... to handle local caching."
+                 // existing logic queues `exercise.imageUrls.first`.
+                 // Let's stick to first image for offline cache to save space, or all?
+                 // The `pendingDownloads` uses `imageUrls.first` in the original code.
+                 // We'll stick to that for now unless needed.
+                 // Wait, `fromApi` extracts ALL images.
+                 // `pendingDownloads` is a list of (exercise, url).
+                 // If we want multiple images, we iterate.
+                 // Original code: `pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));`
+                 // Let's just download the first one for the thumbnail/preview.
+                 pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));
+               }
+             }
+
+             if (data['next'] != null) {
+               url = data['next'];
+             } else {
+               url = '';
+             }
+           } else {
+             _logger.w('API Error ($lang): ${response.statusCode}');
+             // Don't abort entire sync, just this language?
+             // Or maybe abort to be safe.
+             // Let's stop this language loop.
+             break;
+           }
+         } // while url
+         _logger.i('Fetched $fetchedCount exercises for language $lang');
+      } // for languages
 
       // Update internal list
-      _exercises = updatedMap.values.toList();
+      _exercises = mergedMap.values.toList();
+      _logger.i('Total unique exercises after merge: ${_exercises.length}');
 
       // Phase 2: Parallel Image Downloads
       if (!kIsWeb && pendingDownloads.isNotEmpty && imagesDirPath != null) {
-        await _processImageDownloads(pendingDownloads, imagesDirPath, updatedMap);
+        // We need to map our merged exercises back to ID for the `updatedMap` param of `_processImageDownloads`
+        // Actually `_processImageDownloads` takes a Map<int, LibraryExercise> to update the object in the map.
+        // We can just pass a map keyed by ID.
+        final Map<int, LibraryExercise> idMap = {
+          for (var e in _exercises) e.id: e
+        };
+
+        await _processImageDownloads(pendingDownloads, imagesDirPath, idMap);
       }
 
       // Save everything to file
@@ -238,6 +369,8 @@ class ExerciseLibraryService {
       final batch = items.sublist(i, end);
 
       await Future.wait(batch.map((item) async {
+        // Use the ID of the exercise object.
+        // Note: item.exercise is a reference to the object in mergedMap.
         final localPath = await _downloadImage(item.imageUrl, item.exercise.id.toString(), dirPath);
         if (localPath != null) {
           item.exercise.localImagePath = localPath;
