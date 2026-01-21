@@ -1,0 +1,734 @@
+﻿CI check started at 2026-01-21T14:18:10.0921811+01:00
+--- flutter pub get ---
+flutter pub get
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 92.0.0 (93.0.0 available)
+  analyzer 9.0.0 (10.0.1 available)
+  characters 1.4.0 (1.4.1 available)
+  connectivity_plus 6.1.5 (7.0.0 available)
+  dart_style 3.1.3 (3.1.4 available)
+  flutter_lints 3.0.2 (6.0.0 available)
+  flutter_riverpod 2.6.1 (3.2.0 available)
+  google_fonts 6.3.3 (7.1.0 available)
+  intl 0.19.0 (0.20.2 available)
+  lints 3.0.0 (6.0.0 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.0 available)
+  riverpod 2.6.1 (3.2.0 available)
+  sqlite3 2.9.4 (3.1.3 available)
+  test_api 0.7.7 (0.7.9 available)
+Got dependencies!
+16 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+--- flutter analyze ---
+flutter analyze --fatal-infos
+Analyzing Juan-Training...                                      
+
+   info - Don't invoke 'print' in production code - bin\alt_endpoint_debug.dart:13:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\alt_endpoint_debug.dart:18:60 - prefer_const_constructors
+   info - Unnecessary braces in a string interpolation - bin\alt_endpoint_debug.dart:19:28 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - bin\alt_endpoint_debug.dart:25:37 - unnecessary_brace_in_string_interps
+   info - Don't invoke 'print' in production code - bin\alt_endpoint_debug.dart:33:11 - avoid_print
+   info - Don't invoke 'print' in production code - bin\alt_endpoint_debug.dart:35:11 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\alt_endpoint_debug.dart:37:30 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\check_first_bytes.dart:6:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\check_first_bytes.dart:14:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\check_first_bytes.dart:24:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\ci_asset_check.dart:63:34 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\ci_asset_check.dart:64:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\ci_asset_check.dart:65:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\ci_asset_check.dart:66:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\ci_asset_check.dart:67:3 - avoid_print
+warning - Unused import: 'dart:io' - bin\debug_fetch.dart:2:8 - unused_import
+   info - Use 'const' with the constructor to improve performance - bin\debug_fetch.dart:11:58 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:12:9 - avoid_print
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:16:13 - avoid_print
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:18:13 - avoid_print
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:19:13 - avoid_print
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:22:11 - avoid_print
+   info - Don't invoke 'print' in production code - bin\debug_fetch.dart:25:9 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\debug_fetch.dart:27:28 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:17:3 - avoid_print
+warning - The value of the local variable 'id' isn't used - bin\fill_names_batch.dart:29:11 - unused_local_variable
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:34:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:36:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch.dart:53:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch.dart:65:28 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:70:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:72:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch.dart:77:34 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:78:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:80:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch.dart:83:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:17:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:33:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:35:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch_en.dart:52:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch_en.dart:64:28 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:69:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:71:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_batch_en.dart:76:34 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:77:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:79:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_batch_en.dart:82:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_from_api.dart:33:3 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_from_api.dart:43:61 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_from_api.dart:56:28 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_from_api.dart:62:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_from_api.dart:67:34 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_from_api.dart:68:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_from_api.dart:70:5 - avoid_print
+warning - Unused import: 'dart:io' - bin\fill_names_via_translations.dart:2:8 - unused_import
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:13:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations.dart:16:67 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:18:9 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:26:9 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:54:9 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations.dart:62:67 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:67:15 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:71:13 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:74:11 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations.dart:80:99 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:85:13 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:89:11 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:92:9 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:95:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations.dart:97:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations.dart:99:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations_batch.dart:19:65 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations_batch.dart:47:63 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations_batch.dart:56:95 - prefer_const_constructors
+   info - Use 'isNotEmpty' instead of 'length' to test whether the collection is empty - bin\fill_names_via_translations_batch.dart:69:21 - prefer_is_empty
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:84:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:93:5 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:102:9 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:104:9 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations_batch.dart:106:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - bin\fill_names_via_translations_batch.dart:110:36 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:111:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:113:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\fill_names_via_translations_batch.dart:119:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\generate_exercises.dart:24:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\generate_exercises.dart:107:13 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\generate_exercises.dart:125:31 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\generate_exercises.dart:126:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\normalize_images_and_update_json.dart:68:9 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\normalize_images_and_update_json.dart:92:32 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\normalize_images_and_update_json.dart:93:3 - avoid_print
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:81:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:86:7 - avoid_print
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:90:5 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\retry_failed_ids.dart:91:68 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:95:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\retry_failed_ids.dart:96:36 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:98:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - bin\retry_failed_ids.dart:100:26 - prefer_const_constructors
+   info - Don't invoke 'print' in production code - bin\retry_failed_ids.dart:103:3 - avoid_print
+warning - Unused import: 'package:flutter/material.dart' - test\widget_test.dart:8:8 - unused_import
+warning - Unused import: 'package:flutter_test/flutter_test.dart' - test\widget_test.dart:9:8 - unused_import
+warning - Unused import: 'package:juan_training/main.dart' - test\widget_test.dart:11:8 - unused_import
+
+--- flutter test ---
+flutter test
+00:00 +0: loading C:/Users/Usuario/Documents/Juan-Training/test/widget_test.dart
+00:00 +0 -1: loading C:/Users/Usuario/Documents/Juan-Training/test/widget_test.dart [E]
+  Failed to load "C:/Users/Usuario/Documents/Juan-Training/test/widget_test.dart":
+  Compilation failed for testPath=C:/Users/Usuario/Documents/Juan-Training/test/widget_test.dart: ../../AppData/Local/Temp/flutter_tools.9d0bce67/flutter_test_listener.51b44578/listener.dart:21:21: Error: Undefined name 'main'.
+    await Future(test.main);
+                      ^^^^
+  .
+00:00 +0 -1: Some tests failed.
+--- dart asset check ---
+dart run bin/ci_asset_check.dart
+Running build hooks...Running build hooks...Asset check finished. Report written to ci_report_assets.json
+Placeholders: 2
+Missing images: 573
+Invalid images: 0
+Asset report (summary):
+{
+  "timestamp": "2026-01-21T14:18:31.295474",
+  "placeholder_names": [
+    1241,
+    1242
+  ],
+  "missing_images": [
+    9,
+    20,
+    31,
+    41,
+    43,
+    46,
+    48,
+    56,
+    57,
+    71,
+    79,
+    82,
+    112,
+    124,
+    129,
+    132,
+    137,
+    139,
+    142,
+    145,
+    148,
+    152,
+    161,
+    165,
+    172,
+    173,
+    174,
+    177,
+    178,
+    182,
+    186,
+    188,
+    189,
+    193,
+    202,
+    204,
+    205,
+    208,
+    211,
+    222,
+    235,
+    239,
+    245,
+    254,
+    258,
+    259,
+    260,
+    265,
+    282,
+    283,
+    284,
+    285,
+    289,
+    291,
+    292,
+    294,
+    297,
+    308,
+    310,
+    312,
+    313,
+    314,
+    319,
+    320,
+    331,
+    341,
+    346,
+    351,
+    354,
+    355,
+    374,
+    376,
+    378,
+    379,
+    380,
+    382,
+    386,
+    395,
+    397,
+    406,
+    423,
+    439,
+    441,
+    445,
+    448,
+    454,
+    468,
+    477,
+    487,
+    490,
+    493,
+    495,
+    498,
+    500,
+    501,
+    505,
+    507,
+    508,
+    510,
+    516,
+    527,
+    529,
+    530,
+    545,
+    549,
+    556,
+    562,
+    569,
+    570,
+    575,
+    577,
+    578,
+    580,
+    583,
+    584,
+    590,
+    591,
+    595,
+    598,
+    599,
+    604,
+    607,
+    614,
+    615,
+    616,
+    621,
+    623,
+    624,
+    627,
+    628,
+    629,
+    632,
+    636,
+    650,
+    655,
+    660,
+    661,
+    672,
+    674,
+    675,
+    683,
+    684,
+    687,
+    688,
+    695,
+    702,
+    711,
+    713,
+    716,
+    718,
+    722,
+    723,
+    801,
+    802,
+    803,
+    804,
+    805,
+    820,
+    821,
+    827,
+    901,
+    902,
+    906,
+    907,
+    908,
+    909,
+    910,
+    911,
+    912,
+    913,
+    914,
+    915,
+    916,
+    917,
+    918,
+    919,
+    920,
+    922,
+    923,
+    924,
+    925,
+    926,
+    960,
+    961,
+    962,
+    974,
+    975,
+    976,
+    977,
+    978,
+    979,
+    980,
+    981,
+    983,
+    985,
+    986,
+    987,
+    989,
+    990,
+    991,
+    992,
+    993,
+    994,
+    995,
+    996,
+    997,
+    998,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
+    1013,
+    1014,
+    1015,
+    1016,
+    1017,
+    1018,
+    1019,
+    1020,
+    1021,
+    1027,
+    1028,
+    1029,
+    1081,
+    1082,
+    1083,
+    1090,
+    1092,
+    1093,
+    1094,
+    1095,
+    1096,
+    1099,
+    1101,
+    1102,
+    1103,
+    1104,
+    1111,
+    1113,
+    1114,
+    1115,
+    1116,
+    1124,
+    1125,
+    1132,
+    1195,
+    1196,
+    1200,
+    1201,
+    1202,
+    1203,
+    1204,
+    1205,
+    1206,
+    1207,
+    1208,
+    1209,
+    1210,
+    1211,
+    1214,
+    1215,
+    1216,
+    1218,
+    1219,
+    1224,
+    1228,
+    1234,
+    1238,
+    1240,
+    1241,
+    1242,
+    1244,
+    1245,
+    1246,
+    1248,
+    1252,
+    1259,
+    1260,
+    1261,
+    1262,
+    1263,
+    1266,
+    1269,
+    1270,
+    1271,
+    1272,
+    1273,
+    1278,
+    1280,
+    1282,
+    1284,
+    1286,
+    1287,
+    1288,
+    1289,
+    1290,
+    1292,
+    1293,
+    1294,
+    1302,
+    1303,
+    1304,
+    1307,
+    1312,
+    1313,
+    1314,
+    1315,
+    1316,
+    1317,
+    1318,
+    1319,
+    1320,
+    1321,
+    1322,
+    1324,
+    1360,
+    1361,
+    1365,
+    1366,
+    1370,
+    1372,
+    1373,
+    1374,
+    1376,
+    1380,
+    1381,
+    1384,
+    1388,
+    1389,
+    1390,
+    1391,
+    1392,
+    1393,
+    1394,
+    1395,
+    1396,
+    1397,
+    1398,
+    1399,
+    1400,
+    1406,
+    1407,
+    1408,
+    1409,
+    1410,
+    1411,
+    1412,
+    1414,
+    1415,
+    1424,
+    1425,
+    1426,
+    1429,
+    1430,
+    1433,
+    1434,
+    1435,
+    1436,
+    1437,
+    1438,
+    1439,
+    1440,
+    1441,
+    1442,
+    1443,
+    1444,
+    1445,
+    1446,
+    1447,
+    1449,
+    1450,
+    1451,
+    1452,
+    1455,
+    1457,
+    1458,
+    1461,
+    1462,
+    1463,
+    1464,
+    1465,
+    1466,
+    1467,
+    1468,
+    1469,
+    1470,
+    1471,
+    1472,
+    1473,
+    1474,
+    1475,
+    1476,
+    1477,
+    1478,
+    1480,
+    1481,
+    1482,
+    1483,
+    1484,
+    1485,
+    1486,
+    1487,
+    1488,
+    1489,
+    1490,
+    1492,
+    1493,
+    1494,
+    1496,
+    1497,
+    1498,
+    1499,
+    1500,
+    1501,
+    1502,
+    1503,
+    1504,
+    1508,
+    1509,
+    1510,
+    1511,
+    1512,
+    1513,
+    1514,
+    1515,
+    1516,
+    1523,
+    1524,
+    1525,
+    1526,
+    1527,
+    1528,
+    1529,
+    1530,
+    1531,
+    1535,
+    1536,
+    1537,
+    1542,
+    1545,
+    1546,
+    1548,
+    1549,
+    1573,
+    1574,
+    1575,
+    1576,
+    1577,
+    1578,
+    1579,
+    1580,
+    1583,
+    1584,
+    1589,
+    1590,
+    1591,
+    1592,
+    1602,
+    1603,
+    1605,
+    1606,
+    1607,
+    1608,
+    1621,
+    1630,
+    1656,
+    1657,
+    1658,
+    1659,
+    1660,
+    1661,
+    1662,
+    1665,
+    1666,
+    1668,
+    1669,
+    1670,
+    1672,
+    1674,
+    1675,
+    1679,
+    1680,
+    1683,
+    1684,
+    1686,
+    1687,
+    1688,
+    1689,
+    1690,
+    1691,
+    1692,
+    1693,
+    1694,
+    1695,
+    1696,
+    1697,
+    1698,
+    1699,
+    1700,
+    1701,
+    1702,
+    1703,
+    1704,
+    1707,
+    1709,
+    1710,
+    1711,
+    1712,
+    1713,
+    1714,
+    1715,
+    1716,
+    1717,
+    1718,
+    1719,
+    1723,
+    1724,
+    1727,
+    1728,
+    1729,
+    1730,
+    1731,
+    1737,
+    1739,
+    1740,
+    1741,
+    1742,
+    1743,
+    1751,
+    1752,
+    1753,
+    1754,
+    1755,
+    1757,
+    1762,
+    1763,
+    1764,
+    1766,
+    1767,
+    1768,
+    1769,
+    1771,
+    1772,
+    1773,
+    1774,
+    1775,
+    1776,
+    1777,
+    1778,
+    1779,
+    1780,
+    1792,
+    1793,
+    1794,
+    1795,
+    1796,
+    1797,
+    1798,
+    1799,
+    1800,
+    1802,
+    1803,
+    1806,
+    1807,
+    1808,
+    1809
+  ],
+  "invalid_images": [],
+  "entries_checked": 798
+}
+CI check finished at 2026-01-21T14:18:33.7353322+01:00
