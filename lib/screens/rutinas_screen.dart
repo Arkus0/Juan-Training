@@ -53,61 +53,89 @@ class RutinasScreen extends ConsumerWidget {
               final rutina = rutinas[index];
               final totalExercises = rutina.dias.fold(0, (sum, day) => sum + day.ejercicios.length);
 
-              return Card(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    // Navigate to Edit screen
-                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+              return Dismissible(
+                key: ValueKey(rutina.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red[900],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.delete_forever, color: Colors.white, size: 32),
+                ),
+                onDismissed: (_) {
+                  ref.read(trainingRepositoryProvider).deleteRutina(rutina.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${rutina.nombre} eliminada'),
+                      action: SnackBarAction(
+                        label: 'DESHACER',
+                        onPressed: () {
+                          ref.read(trainingRepositoryProvider).saveRutina(rutina);
+                        },
                       ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                rutina.nombre.toUpperCase(),
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
+                    ),
+                  );
+                },
+                child: Card(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      // Navigate to Edit screen
+                       Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  rutina.nombre.toUpperCase(),
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Icon(Icons.edit, color: Colors.redAccent[700]),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_view_week, size: 18, color: Colors.grey[400]),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${rutina.dias.length} DÍAS',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: Colors.grey[400],
+                              Icon(Icons.edit, color: Colors.redAccent[700]),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_view_week, size: 18, color: Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${rutina.dias.length} DÍAS',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: Colors.grey[400],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$totalExercises EJERCICIOS',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: Colors.grey[400],
+                              const SizedBox(width: 16),
+                              Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$totalExercises EJERCICIOS',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: Colors.grey[400],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
