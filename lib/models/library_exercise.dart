@@ -74,17 +74,45 @@ class LibraryExercise {
   }
 
   factory LibraryExercise.fromJson(Map<String, dynamic> json) {
+    // Helper to normalize lists that may contain strings or maps
+    List<String> _normalizeStringList(dynamic val, {String? defaultKey}) {
+      if (val == null) return [];
+      if (val is List) {
+        return val.map((e) {
+          if (e == null) return '';
+          if (e is String) return e;
+          if (e is Map) {
+            if (e['name'] != null) return e['name'].toString();
+            if (e['name_en'] != null) return e['name_en'].toString();
+            if (defaultKey != null && e[defaultKey] != null) return e[defaultKey].toString();
+            // Fallback: try to find any string value inside the map
+            for (final v in e.values) {
+              if (v is String) return v;
+            }
+            return '';
+          }
+          return e.toString();
+        }).where((s) => s.isNotEmpty).toList();
+      }
+      return [];
+    }
+
+    final int id = json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '') ?? 0;
+    final name = (json['name'] as String?) ?? json['name']?.toString() ?? '';
+
     return LibraryExercise(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      muscleGroup: json['muscleGroup'] as String,
-      equipment: json['equipment'] as String,
+      id: id,
+      name: name,
+      muscleGroup: json['muscleGroup'] as String? ?? '',
+      equipment: json['equipment'] as String? ?? '',
       description: json['description'] as String?,
       license: json['license'] as String?,
-      imageUrls: (json['imageUrls'] as List<dynamic>?)?.cast<String>() ?? [],
+      imageUrls: (json['imageUrls'] is List)
+          ? (json['imageUrls'] as List).map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList()
+          : [],
       localImagePath: json['localImagePath'] as String?,
-      muscles: (json['muscles'] as List<dynamic>?)?.cast<String>() ?? [],
-      secondaryMuscles: (json['secondaryMuscles'] as List<dynamic>?)?.cast<String>() ?? [],
+      muscles: _normalizeStringList(json['muscles'], defaultKey: 'name'),
+      secondaryMuscles: _normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
     );
   }
 }

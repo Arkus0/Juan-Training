@@ -61,9 +61,9 @@ class JuanTrainingApp extends StatelessWidget {
         // Typography
         textTheme: TextTheme(
           headlineLarge: GoogleFonts.montserrat(
-            fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+            fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
           headlineMedium: GoogleFonts.montserrat(
-            fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+            fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
           headlineSmall: GoogleFonts.montserrat(
             fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
 
@@ -91,18 +91,17 @@ class JuanTrainingApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
           titleTextStyle: GoogleFonts.montserrat(
-            fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+            fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
 
         // Cards
         cardTheme: CardThemeData(
           color: bgGrey,
-          elevation: 4,
-          shadowColor: primaryRed.withValues(alpha: 0.4),
+          elevation: 2,
+          shadowColor: bgGrey,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: primaryRed.withValues(alpha: 0.6), width: 2),
           ),
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         ),
@@ -156,7 +155,7 @@ class JuanTrainingApp extends StatelessWidget {
           backgroundColor: accentRed,
           foregroundColor: Colors.white,
           elevation: 6,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: const CircleBorder(),
         ),
 
         // Checkbox/Switch
@@ -167,6 +166,7 @@ class JuanTrainingApp extends StatelessWidget {
           }),
           side: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 2),
           checkColor: WidgetStateProperty.all(Colors.white),
+          shape: const CircleBorder(),
         ),
 
         dividerColor: Colors.grey[800],

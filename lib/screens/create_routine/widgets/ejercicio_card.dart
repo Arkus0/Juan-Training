@@ -234,14 +234,21 @@ class EjercicioCard extends StatelessWidget {
       );
     }
 
-    if (ejercicio.localImagePath != null && File(ejercicio.localImagePath!).existsSync()) {
-      return Image.file(
-        File(ejercicio.localImagePath!),
-        width: 60,
-        height: 60,
-        fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
-      );
+    try {
+      if (ejercicio.localImagePath != null) {
+        final f = File(ejercicio.localImagePath!);
+        if (f.existsSync() && f.lengthSync() > 0) {
+          return Image.file(
+            f,
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+            errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+          );
+        }
+      }
+    } catch (e) {
+      // Any filesystem error: fall back to network/placeholder silently
     }
     // Fallback: if library has network image URLs, show network image (helps when local file not yet downloaded)
     if (libExercise != null && libExercise.imageUrls.isNotEmpty) {

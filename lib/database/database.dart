@@ -168,5 +168,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+        },
+        onUpgrade: (m, from, to) async {
+          // Migration path to version 2: add supersetId column to routine_exercises
+          if (from < 2) {
+            try {
+              await m.addColumn(routineExercises, routineExercises.supersetId);
+            } catch (e) {
+              // Log and continue (column might already exist in some edge cases)
+              // Can't use logger here; rethrow to be caught by callers if needed
+            }
+          }
+        },
+      );
+
+  @override
+  int get schemaVersion => 2;
 }

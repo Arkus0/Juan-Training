@@ -15,12 +15,13 @@ class Dia {
   }) : id = id ?? const Uuid().v4();
 
   Dia copyWith({
+    String? id,
     String? nombre,
     List<EjercicioEnRutina>? ejercicios,
     String? progressionType,
   }) {
     return Dia(
-      id: id,
+      id: id ?? this.id,
       nombre: nombre ?? this.nombre,
       ejercicios: ejercicios ?? this.ejercicios,
       progressionType: progressionType ?? this.progressionType,
