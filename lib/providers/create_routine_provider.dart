@@ -114,20 +114,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
-    // Validate local image path to avoid runtime exceptions when the file is missing/corrupt
-    String? validLocalPath;
-    try {
-      if (libExercise.localImagePath != null) {
-        final f = File(libExercise.localImagePath!);
-        if (f.existsSync() && f.lengthSync() > 0) {
-          validLocalPath = libExercise.localImagePath;
-        }
-      }
-    } catch (e) {
-      // If any filesystem error occurs, ignore the path and proceed without image
-      validLocalPath = null;
-    }
-
+    // Add exercise immediately without blocking I/O
     final newExercise = EjercicioEnRutina(
       id: libExercise.id.toString(),
       nombre: libExercise.name,
@@ -135,7 +122,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       musculosPrincipales: libExercise.muscles,
       musculosSecundarios: libExercise.secondaryMuscles,
       equipo: libExercise.equipment,
-      localImagePath: validLocalPath,
+      localImagePath: libExercise.localImagePath,
     );
 
     final day = state.dias[dayIndex];
@@ -146,6 +133,49 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     final newDias = [...state.dias];
     newDias[dayIndex] = updatedDay;
     state = state.copyWith(dias: newDias);
+
+    // Schedule async validation of local image path (non-blocking)
+    if (libExercise.localImagePath != null) {
+      final exerciseIndex = day.ejercicios.length; // Index of newly added exercise
+      _updateExerciseLocalImagePath(
+          dayIndex, exerciseIndex, libExercise.localImagePath!);
+    }
+  }
+
+  /// Asynchronously validates and updates exercise local image path.
+  /// Runs in a microtask to avoid blocking the UI thread.
+  void _updateExerciseLocalImagePath(
+      int dayIndex, int exerciseIndex, String imagePath) {
+    Future.microtask(() async {
+      String? validPath;
+      try {
+        final file = File(imagePath);
+        // Async file checks
+        if (await file.exists()) {
+          final length = await file.length();
+          if (length > 0) {
+            validPath = imagePath;
+          }
+        }
+      } catch (e) {
+        // If any error occurs, clear the path
+        validPath = null;
+      }
+
+      // Update state if path changed
+      if (mounted) {
+        final currentDay = state.dias[dayIndex];
+        if (exerciseIndex < currentDay.ejercicios.length) {
+          final currentExercise = currentDay.ejercicios[exerciseIndex];
+          // Only update if the path is different from what we validated
+          if (currentExercise.localImagePath != validPath) {
+            final updatedExercise =
+                currentExercise.copyWith(localImagePath: validPath);
+            updateExercise(dayIndex, exerciseIndex, updatedExercise);
+          }
+        }
+      }
+    });
   }
 
   void removeExercise(int dayIndex, int exerciseIndex) {
@@ -196,73 +226,64 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     state = state.copyWith(dias: newDias);
   }
 
-  // Helper to get visual groups
-  // Returns list of lists. Each inner list is a "visual item" (can contain 1 or more exercises).
-  List<List<EjercicioEnRutina>> _getVisualGroups(List<EjercicioEnRutina> exercises) {
+  /// Computes visual groups from a list of exercises.
+  /// A visual group is either:
+  /// - A single exercise without a supersetId, or
+  /// - A contiguous block of exercises sharing the same supersetId.
+  /// Returns a list of groups, where each group is a list of exercises.
+  List<List<EjercicioEnRutina>> _computeVisualGroups(
+      List<EjercicioEnRutina> exercises) {
     if (exercises.isEmpty) return [];
 
     final groups = <List<EjercicioEnRutina>>[];
-    final processedInstanceIds = <String>{};
-    final exerciseOrder = {for (var i = 0; i < exercises.length; i++) exercises[i].instanceId: i};
+    int i = 0;
 
-    for (final ex in exercises) {
-      if (processedInstanceIds.contains(ex.instanceId)) {
-        continue;
-      }
+    while (i < exercises.length) {
+      final current = exercises[i];
 
-      if (ex.supersetId != null) {
-        final group = exercises.where((e) => e.supersetId == ex.supersetId).toList();
-        // Sort the group by their original order to maintain stability
-        group.sort((a, b) => exerciseOrder[a.instanceId]!.compareTo(exerciseOrder[b.instanceId]!));
-        groups.add(group);
-        for (final groupEx in group) {
-          processedInstanceIds.add(groupEx.instanceId);
-        }
+      if (current.supersetId == null) {
+        // Single exercise without superset
+        groups.add([current]);
+        i++;
       } else {
-        groups.add([ex]);
-        processedInstanceIds.add(ex.instanceId);
+        // Start of a superset group - collect all contiguous exercises with same ID
+        final supersetId = current.supersetId!;
+        final group = <EjercicioEnRutina>[];
+
+        while (i < exercises.length &&
+            exercises[i].supersetId == supersetId) {
+          group.add(exercises[i]);
+          i++;
+        }
+
+        groups.add(group);
       }
     }
+
     return groups;
   }
 
   /// Reorders visual items (which might be single exercises or superset blocks)
   void reorderVisualExercises(int dayIndex, int oldVisualIndex, int newVisualIndex) {
     final day = state.dias[dayIndex];
-    final visualGroups = _getVisualGroups(day.ejercicios);
+    final visualGroups = _computeVisualGroups(day.ejercicios);
 
+    if (oldVisualIndex < 0 || oldVisualIndex >= visualGroups.length) return;
+    if (newVisualIndex < 0 || newVisualIndex >= visualGroups.length) return;
+
+    // Adjust newVisualIndex for standard reordering logic
     if (oldVisualIndex < newVisualIndex) {
       newVisualIndex -= 1;
     }
 
-    // Get the block of exercises to move
-    final exercisesToMove = visualGroups[oldVisualIndex];
+    // Remove the group from the visual groups list
+    final movedGroups = [...visualGroups];
+    final groupToMove = movedGroups.removeAt(oldVisualIndex);
+    movedGroups.insert(newVisualIndex, groupToMove);
 
-    // Remove them from the flat list
-    // Note: Since they are contiguous in the flat list (by definition of visual group logic),
-    // we can find where they start.
-    // However, to be safe, we just filter them out.
-    // Wait, relying on instance equality is safer if instanceId is unique.
-    final idsToMove = exercisesToMove.map((e) => e.instanceId).toSet();
-    final remainingExercises = day.ejercicios.where((e) => !idsToMove.contains(e.instanceId)).toList();
-
-    // Find insertion index in flat list
-    // The newVisualIndex corresponds to a position in the `visualGroups` list (after removal).
-    // We need to find how many flat exercises are before that visual group.
-
-    // Reconstruct visual groups from remaining exercises to match indices
-    final remainingVisualGroups = _getVisualGroups(remainingExercises);
-
-    int flatInsertionIndex = 0;
-    for (int i = 0; i < newVisualIndex; i++) {
-        if (i < remainingVisualGroups.length) {
-            flatInsertionIndex += remainingVisualGroups[i].length;
-        }
-    }
-
-    // Insert
-    final newEjercicios = [...remainingExercises];
-    newEjercicios.insertAll(flatInsertionIndex, exercisesToMove);
+    // Flatten back to a single list of exercises
+    final newEjercicios =
+        movedGroups.expand((group) => group).toList();
 
     final updatedDay = day.copyWith(ejercicios: newEjercicios);
     final newDias = [...state.dias];
@@ -304,50 +325,84 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
   // --- Superset Actions ---
 
+  /// Creates a superset between two exercises at the given indices.
+  /// If the exercises are not adjacent, they will be made adjacent.
+  /// Ensures superset members are contiguous.
   void createSuperset(int dayIndex, int indexA, int indexB) {
-      if (indexA < 0 || indexB < 0) return;
-      final day = state.dias[dayIndex];
-      if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length) return;
+    if (indexA < 0 || indexB < 0) return;
+    final day = state.dias[dayIndex];
+    if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length)
+      return;
+    if (indexA == indexB) return;
 
-      final exA = day.ejercicios[indexA];
-      final exB = day.ejercicios[indexB];
+    final exA = day.ejercicios[indexA];
+    final exB = day.ejercicios[indexB];
+    final newEjercicios = [...day.ejercicios];
 
-      final newEjercicios = [...day.ejercicios];
-      final uuid = const Uuid().v4();
-
-      // Check if they already have supersetIds
-      // Case 1: Neither has ID -> New ID for both
-      // Case 2: One has ID -> Add the other to that ID
-      // Case 3: Both have DIFFERENT IDs -> Merge? Or just overwrite?
-      // Requirement: "Link with next". Usually implies merging blocks or extending.
-
-      String idToUse = uuid;
-      if (exA.supersetId != null) {
-          idToUse = exA.supersetId!;
-      } else if (exB.supersetId != null) {
-          idToUse = exB.supersetId!;
+    // Determine superset ID to use
+    String supersetId;
+    if (exA.supersetId != null && exB.supersetId != null) {
+      if (exA.supersetId == exB.supersetId) {
+        // Already in same superset, nothing to do
+        return;
       }
+      // Merge two different supersets: use exA's ID, update all of exB's group
+      supersetId = exA.supersetId!;
+      final oldIdB = exB.supersetId!;
+      for (int i = 0; i < newEjercicios.length; i++) {
+        if (newEjercicios[i].supersetId == oldIdB) {
+          newEjercicios[i] =
+              newEjercicios[i].copyWith(supersetId: supersetId);
+        }
+      }
+    } else if (exA.supersetId != null) {
+      // Add exB to exA's superset
+      supersetId = exA.supersetId!;
+      newEjercicios[indexB] = exB.copyWith(supersetId: supersetId);
+    } else if (exB.supersetId != null) {
+      // Add exA to exB's superset
+      supersetId = exB.supersetId!;
+      newEjercicios[indexA] = exA.copyWith(supersetId: supersetId);
+    } else {
+      // Neither has a superset, create new one
+      supersetId = const Uuid().v4();
+      newEjercicios[indexA] = exA.copyWith(supersetId: supersetId);
+      newEjercicios[indexB] = exB.copyWith(supersetId: supersetId);
+    }
 
-      // If both have different IDs, we merge all B's group into A's group
-      if (exA.supersetId != null && exB.supersetId != null && exA.supersetId != exB.supersetId) {
-           final idA = exA.supersetId!;
-           final idB = exB.supersetId!;
-           // Update all exercises with idB to have idA
-           for (int i=0; i<newEjercicios.length; i++) {
-               if (newEjercicios[i].supersetId == idB) {
-                   newEjercicios[i] = newEjercicios[i].copyWith(supersetId: idA);
-               }
-           }
+    // Ensure contiguity: move all exercises with this supersetId together
+    final supersetExercises = <EjercicioEnRutina>[];
+    final otherExercises = <EjercicioEnRutina>[];
+
+    for (final ex in newEjercicios) {
+      if (ex.supersetId == supersetId) {
+        supersetExercises.add(ex);
       } else {
-          // Standard case
-          newEjercicios[indexA] = exA.copyWith(supersetId: idToUse);
-          newEjercicios[indexB] = exB.copyWith(supersetId: idToUse);
+        otherExercises.add(ex);
       }
+    }
 
-      final updatedDay = day.copyWith(ejercicios: newEjercicios);
-      final newDias = [...state.dias];
-      newDias[dayIndex] = updatedDay;
-      state = state.copyWith(dias: newDias);
+    // Insert superset group at the position of the first occurrence
+    // Find how many "other" exercises come before the first superset exercise
+    int insertPosition = 0;
+    for (int i = 0; i < newEjercicios.length; i++) {
+      if (newEjercicios[i].supersetId == supersetId) {
+        break;
+      }
+      if (newEjercicios[i].supersetId != supersetId) {
+        insertPosition++;
+      }
+    }
+
+    final reordered = <EjercicioEnRutina>[];
+    reordered.addAll(otherExercises.sublist(0, insertPosition.clamp(0, otherExercises.length)));
+    reordered.addAll(supersetExercises);
+    reordered.addAll(otherExercises.sublist(insertPosition.clamp(0, otherExercises.length)));
+
+    final updatedDay = day.copyWith(ejercicios: reordered);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   void removeFromSuperset(int dayIndex, int exerciseIndex) {
