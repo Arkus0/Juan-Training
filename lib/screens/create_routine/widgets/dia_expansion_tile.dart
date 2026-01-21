@@ -314,8 +314,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
-                  Column(
-                    children: visualGroups.asMap().entries.map((entry) {
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: Column(
+                      children: visualGroups.asMap().entries.map((entry) {
                       final visualIndex = entry.key;
                       final groupIndices = entry.value;
                       final isSuperset = groupIndices.length > 1 || (groupIndices.isNotEmpty && widget.dia.ejercicios[groupIndices.first].supersetId != null);
@@ -332,7 +335,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           children: [
                             _buildSupersetDropZone(visualIndex),
                             DragTarget<SupersetDragData>(
-                              onWillAccept: (data) => data != null && data.visualIndex != visualIndex,
+                              onWillAccept: (data) {
+                                if (data == null) return false;
+                                // Allow reordering within same superset OR moving from different groups
+                                return true;
+                              },
                               onAccept: (data) {
                                 if (data != null) {
                                   _dragAccepted = true;
@@ -386,7 +393,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                           setState(() {});
                                         },
                                         onLinkDragEnd: () {
-                                          if (!_dragAccepted && ex.supersetId != null) {
+                                          // Solo romper superserie si no se soltó en ningún target válido
+                                          // y este ejercicio es del grupo que se estaba arrastrando
+                                          if (!_dragAccepted && _dragSourceVisualIndex == visualIndex && ex.supersetId != null) {
                                             widget.onRemoveFromSuperset(idx);
                                           }
                                           _isLinkDragActive = false;
@@ -394,7 +403,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                           setState(() {});
                                         },
                                         onLinkDragCancel: () {
-                                          if (!_dragAccepted && ex.supersetId != null) {
+                                          if (!_dragAccepted && _dragSourceVisualIndex == visualIndex && ex.supersetId != null) {
                                             widget.onRemoveFromSuperset(idx);
                                           }
                                           _isLinkDragActive = false;
@@ -419,7 +428,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           children: [
                             _buildSupersetDropZone(visualIndex),
                             DragTarget<SupersetDragData>(
-                              onWillAccept: (data) => data != null && data.visualIndex != visualIndex,
+                              onWillAccept: (data) {
+                                if (data == null) return false;
+                                // Allow all drops for reordering
+                                return true;
+                              },
                               onAccept: (data) {
                                 if (data != null) {
                                   _dragAccepted = true;
@@ -544,7 +557,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                         setState(() {});
                                       },
                                       onLinkDragEnd: () {
-                                        if (!_dragAccepted && ex.supersetId != null) {
+                                        if (!_dragAccepted && _dragSourceVisualIndex == visualIndex && ex.supersetId != null) {
                                           widget.onRemoveFromSuperset(idx);
                                         }
                                         _isLinkDragActive = false;
@@ -552,7 +565,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                         setState(() {});
                                       },
                                       onLinkDragCancel: () {
-                                        if (!_dragAccepted && ex.supersetId != null) {
+                                        if (!_dragAccepted && _dragSourceVisualIndex == visualIndex && ex.supersetId != null) {
                                           widget.onRemoveFromSuperset(idx);
                                         }
                                         _isLinkDragActive = false;
@@ -569,6 +582,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                         );
                       }
                     }).toList(),
+                    ),
                   ),
 
                 const SizedBox(height: 12),
