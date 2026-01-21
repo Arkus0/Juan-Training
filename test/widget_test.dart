@@ -9,16 +9,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:juan_training/main.dart';
-
-
+import 'package:juan_training/main.dart' hide main;
+import 'package:juan_training/providers/training_provider.dart';
+import 'fake_training_repository.dart';
 
 void main() {
-	testWidgets('App builds', (WidgetTester tester) async {
-		await tester.pumpWidget(const ProviderScope(child: JuanTrainingApp()));
-		await tester.pumpAndSettle(const Duration(seconds: 1));
-		expect(find.byType(MaterialApp), findsOneWidget);
-	});
+  testWidgets('App builds', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          trainingRepositoryProvider.overrideWithValue(FakeTrainingRepository()),
+        ],
+        child: const JuanTrainingApp(),
+      ),
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+    expect(find.byType(MaterialApp), findsOneWidget);
+  });
 }
-
-
