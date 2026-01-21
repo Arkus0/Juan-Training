@@ -103,9 +103,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     }
   }
   void _addExercise(int dayIndex) {
-    final parentContext = context;
     showModalBottomSheet(
-      context: parentContext,
+      context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (bottomSheetContext) => BibliotecaBottomSheet(
@@ -114,8 +113,10 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(dayIndex, ex);
           Vibrate.feedback(FeedbackType.light);
-          // Show SnackBar in the bottom sheet context so it appears on top of it
-          ScaffoldMessenger.of(bottomSheetContext).showSnackBar(
+          // Close the bottom sheet first
+          Navigator.pop(bottomSheetContext);
+          // Then show SnackBar on the main scaffold
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
