@@ -245,7 +245,7 @@ class SessionDetailScreen extends ConsumerWidget {
     }
 
     final logs = ejercicio.logs;
-    final log = (logs != null && setIndex < logs.length) ? logs[setIndex] : null;
+    final log = (setIndex < logs.length) ? logs[setIndex] : null;
 
     // Use logs if available, else fallback to session/reps (backward compatibility)
     // Actually, Session model has Ejercicio which has logs.

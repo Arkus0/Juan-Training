@@ -54,7 +54,7 @@ void main() async {
   // library_exercises box will be managed by Service or opened here?
   // Let's open it here to ensure it's ready.
   await Hive.openBox<LibraryExercise>('library_exercises');
-  final activeSessionBox = await Hive.openBox('active_session');
+  await Hive.openBox('active_session');
   final exerciseNotesBox = await Hive.openBox('exercise_notes');
 
   // Drift & Migration
