@@ -350,8 +350,8 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                               },
                             );
 
-                            // Auto-close after 2 seconds (only this dialog)
-                            Future.delayed(const Duration(seconds: 2), () {
+                            // Auto-close after 1.5 seconds (only this dialog)
+                            Future.delayed(const Duration(milliseconds: 1500), () {
                               if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
                                 Navigator.of(dialogCtx!, rootNavigator: true).pop();
                               }
