@@ -145,14 +145,15 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     // Perform async validation of the image path without blocking UI
     // If the path is invalid, we'll update the exercise to remove it
     if (libExercise.localImagePath != null) {
+      // Index of newly added exercise is the previous length (0-based indexing)
       _validateImagePathAsync(dayIndex, day.ejercicios.length, libExercise.localImagePath!);
     }
   }
 
   /// Validates image path asynchronously and updates exercise if path is invalid
   void _validateImagePathAsync(int dayIndex, int exerciseIndex, String imagePath) {
-    // Use microtask to defer filesystem check off the UI thread
-    scheduleMicrotask(() async {
+    // Use Future.microtask to defer filesystem check and handle errors properly
+    Future.microtask(() async {
       try {
         final file = File(imagePath);
         final exists = await file.exists();
@@ -164,6 +165,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         }
       } catch (e) {
         // If any filesystem error occurs, remove the invalid path
+        // Errors are expected here for invalid paths and should be silently handled
         _updateExerciseImagePath(dayIndex, exerciseIndex, null);
       }
     });
