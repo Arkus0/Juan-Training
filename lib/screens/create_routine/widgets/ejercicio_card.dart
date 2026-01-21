@@ -17,7 +17,6 @@ class EjercicioCard extends StatelessWidget {
   final VoidCallback? onLinkDragEnd;
   final VoidCallback? onLinkDragCancel;
   final bool disableSwipe;
-  final bool disableLongPress;
 
   const EjercicioCard({
     super.key,
@@ -31,7 +30,6 @@ class EjercicioCard extends StatelessWidget {
     this.onLinkDragEnd,
     this.onLinkDragCancel,
     this.disableSwipe = false,
-    this.disableLongPress = false,
   });
 
   void _showProOptions(BuildContext context) {
@@ -123,118 +121,128 @@ class EjercicioCard extends StatelessWidget {
 
     final imageWidget = _buildImage(libraryExercise);
 
-    return GestureDetector(
-      onLongPress: disableLongPress ? null : () => _showProOptions(context),
-      child: Card(
-        color: Colors.grey[900],
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              // Drag Handle
-              Icon(Icons.drag_indicator, color: Colors.grey[700]),
-              const SizedBox(width: 8),
+    final card = Card(
+      color: Colors.grey[900],
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            // Drag Handle (visual only)
+            Icon(Icons.drag_indicator, color: Colors.grey[700]),
+            const SizedBox(width: 8),
 
-              // Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: imageWidget,
-              ),
-              const SizedBox(width: 12),
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: imageWidget,
+            ),
+            const SizedBox(width: 12),
 
-              // Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ejercicio.nombre.toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      ejercicio.musculosPrincipales.join(', '),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    // Series x Reps Inputs
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: TextFormField(
-                            initialValue: ejercicio.series.toString(),
-                            keyboardType: TextInputType.number,
-                            style: GoogleFonts.montserrat(
-                                fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                              border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                            ),
-                            onChanged: (val) {
-                              final s = int.tryParse(val);
-                              if (s != null) onUpdate(ejercicio.copyWith(series: s));
-                            },
-                          ),
-                        ),
-                        Text(' x ', style: TextStyle(color: Colors.grey[600])),
-                        SizedBox(
-                          width: 60,
-                          child: TextFormField(
-                            initialValue: ejercicio.repsRange,
-                            style: GoogleFonts.montserrat(
-                                fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                              border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                            ),
-                            onChanged: (val) {
-                              onUpdate(ejercicio.copyWith(repsRange: val));
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Actions
-              if (onLink != null)
-                LongPressDraggable<int>(
-                  data: linkDragData,
-                  onDragStarted: onLinkDragStart,
-                  onDragEnd: (_) => onLinkDragEnd?.call(),
-                  onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
-                  feedback: Material(
-                    color: Colors.transparent,
-                    child: Icon(Icons.link, color: Colors.red[200], size: 28),
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ejercicio.nombre.toUpperCase(),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: IconButton(
-                    icon: const Icon(Icons.link, color: Colors.white70),
-                    onPressed: onLink,
-                    tooltip: 'Unir como superserie (arrastrar)',
-                    visualDensity: VisualDensity.compact,
+                  const SizedBox(height: 4),
+                  Text(
+                    ejercicio.musculosPrincipales.join(', '),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  // Series x Reps Inputs
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        child: TextFormField(
+                          initialValue: ejercicio.series.toString(),
+                          keyboardType: TextInputType.number,
+                          style: GoogleFonts.montserrat(
+                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                          ),
+                          onChanged: (val) {
+                            final s = int.tryParse(val);
+                            if (s != null) onUpdate(ejercicio.copyWith(series: s));
+                          },
+                        ),
+                      ),
+                      Text(' x ', style: TextStyle(color: Colors.grey[600])),
+                      SizedBox(
+                        width: 60,
+                        child: TextFormField(
+                          initialValue: ejercicio.repsRange,
+                          style: GoogleFonts.montserrat(
+                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                          ),
+                          onChanged: (val) {
+                            onUpdate(ejercicio.copyWith(repsRange: val));
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
-              // Info Icon / Menu
+            // Actions
+            if (onLink != null)
               IconButton(
-                icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
-                onPressed: () => _showProOptions(context),
+                icon: const Icon(Icons.link, color: Colors.white70),
+                onPressed: onLink,
+                tooltip: 'Unir como superserie (arrastrar)',
                 visualDensity: VisualDensity.compact,
               ),
-            ],
-          ),
+
+            // Info Icon / Menu
+            IconButton(
+              icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+              onPressed: () => _showProOptions(context),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ),
       ),
     );
+
+    if (onLink != null) {
+      return LongPressDraggable<int>(
+        data: linkDragData,
+        onDragStarted: onLinkDragStart,
+        onDragEnd: (_) => onLinkDragEnd?.call(),
+        onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
+        feedback: Material(
+          color: Colors.transparent,
+          child: Opacity(
+            opacity: 0.9,
+            child: card,
+          ),
+        ),
+        childWhenDragging: Opacity(
+          opacity: 0.3,
+          child: card,
+        ),
+        child: card,
+      );
+    }
+
+    return card;
   }
 
   Widget _buildImage(LibraryExercise? libExercise) {
