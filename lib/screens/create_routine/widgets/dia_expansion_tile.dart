@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:reorderables/reorderables.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/dia.dart';
 import '../../../models/ejercicio_en_rutina.dart';
@@ -236,94 +235,39 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
-                  ReorderableColumn(
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: visualGroups.length,
                     onReorder: widget.onReorderExercises,
-                    children: visualGroups.map((groupIndices) {
-                      final isSuperset = groupIndices.length > 1 || (groupIndices.isNotEmpty && widget.dia.ejercicios[groupIndices.first].supersetId != null);
+                    buildDefaultDragHandles: false,
+                    itemBuilder: (context, visualIndex) {
+                      final groupIndices = visualGroups[visualIndex];
+                      final isSuperset = groupIndices.length > 1 || 
+                          (groupIndices.isNotEmpty && 
+                           widget.dia.ejercicios[groupIndices.first].supersetId != null);
 
                       // Identify key for the group
                       final firstEx = widget.dia.ejercicios[groupIndices.first];
                       final Key groupKey = isSuperset
                           ? Key('superset_${firstEx.supersetId}')
-                          : Key(firstEx.instanceId);
+                          : Key('single_${firstEx.instanceId}');
 
-                      if (isSuperset) {
-                         return Container(
-                           key: groupKey,
-                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                           decoration: BoxDecoration(
-                             border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
-                             color: Colors.grey[900]!.withValues(alpha: 0.5),
-                           ),
-                           child: Column(
-                             mainAxisSize: MainAxisSize.min,
-                             children: groupIndices.map((idx) {
-                               final ex = widget.dia.ejercicios[idx];
-                               return EjercicioCard(
-                                 ejercicio: ex,
-                                 onRemove: () => widget.onRemoveExercise(idx),
-                                 onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                                 onLink: (idx < widget.dia.ejercicios.length - 1)
-                                     ? () => widget.onCreateSuperset(idx, idx + 1)
-                                     : null,
-                                 onUnlink: () => widget.onRemoveFromSuperset(idx),
-                               );
-                             }).toList(),
-                           ),
-                         );
-                      } else {
-                        // Single item
-                        final idx = groupIndices.first;
-                        final ex = widget.dia.ejercicios[idx];
-                        return Dismissible(
-                          key: Key(ex.instanceId),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            color: Colors.red[900],
-                            child:
-                                const Icon(Icons.delete, color: Colors.white),
-                          ),
-                          onDismissed: (_) {
-                            final removedItem = ex;
-                            widget.onRemoveExercise(idx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Ejercicio eliminado',
-                                  style: GoogleFonts.montserrat(
-                                      color: Colors.white),
-                                ),
-                                backgroundColor: Colors.red[900],
-                                action: SnackBarAction(
-                                  label: 'DESHACER',
-                                  textColor: Colors.white,
-                                  onPressed: () {
-                                    widget.onUndoRemove(idx, removedItem);
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            key: groupKey,
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 4, horizontal: 8),
-                            child: EjercicioCard(
-                              ejercicio: ex,
-                              onRemove: () => widget.onRemoveExercise(idx),
-                              onUpdate: (updated) =>
-                                  widget.onUpdateExercise(idx, updated),
-                              onLink: (idx < widget.dia.ejercicios.length - 1)
-                                  ? () => widget.onCreateSuperset(idx, idx + 1)
-                                  : null,
-                              onUnlink: null, // No unlink for single item
-                            ),
-                          ),
-                        );
-                      }
-                    }).toList(),
+                      return ReorderableDragStartListener(
+                        index: visualIndex,
+                        key: groupKey,
+                        child: _ExerciseGroupWidget(
+                          groupIndices: groupIndices,
+                          exercises: widget.dia.ejercicios,
+                          isSuperset: isSuperset,
+                          onRemoveExercise: widget.onRemoveExercise,
+                          onUpdateExercise: widget.onUpdateExercise,
+                          onCreateSuperset: widget.onCreateSuperset,
+                          onRemoveFromSuperset: widget.onRemoveFromSuperset,
+                          onUndoRemove: widget.onUndoRemove,
+                        ),
+                      );
+                    },
                   ),
 
                 const SizedBox(height: 12),
@@ -344,5 +288,105 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
         ],
       ),
     );
+  }
+}
+
+/// Lightweight widget for rendering a single visual group (either a single exercise or a superset)
+class _ExerciseGroupWidget extends StatelessWidget {
+  final List<int> groupIndices;
+  final List<EjercicioEnRutina> exercises;
+  final bool isSuperset;
+  final Function(int) onRemoveExercise;
+  final Function(int, EjercicioEnRutina) onUpdateExercise;
+  final Function(int, int) onCreateSuperset;
+  final Function(int) onRemoveFromSuperset;
+  final Function(int, EjercicioEnRutina) onUndoRemove;
+
+  const _ExerciseGroupWidget({
+    required this.groupIndices,
+    required this.exercises,
+    required this.isSuperset,
+    required this.onRemoveExercise,
+    required this.onUpdateExercise,
+    required this.onCreateSuperset,
+    required this.onRemoveFromSuperset,
+    required this.onUndoRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isSuperset) {
+      // Render superset group
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+          color: Colors.grey[900]!.withValues(alpha: 0.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: groupIndices.map((idx) {
+            final ex = exercises[idx];
+            return EjercicioCard(
+              key: Key('card_${ex.instanceId}'),
+              ejercicio: ex,
+              onRemove: () => onRemoveExercise(idx),
+              onUpdate: (updated) => onUpdateExercise(idx, updated),
+              onLink: (idx < exercises.length - 1)
+                  ? () => onCreateSuperset(idx, idx + 1)
+                  : null,
+              onUnlink: () => onRemoveFromSuperset(idx),
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      // Single item with dismissible behavior
+      final idx = groupIndices.first;
+      final ex = exercises[idx];
+      return Dismissible(
+        key: Key('dismissible_${ex.instanceId}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: Colors.red[900],
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+        onDismissed: (_) {
+          final removedItem = ex;
+          onRemoveExercise(idx);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Ejercicio eliminado',
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              backgroundColor: Colors.red[900],
+              action: SnackBarAction(
+                label: 'DESHACER',
+                textColor: Colors.white,
+                onPressed: () {
+                  onUndoRemove(idx, removedItem);
+                },
+              ),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: EjercicioCard(
+            key: Key('card_${ex.instanceId}'),
+            ejercicio: ex,
+            onRemove: () => onRemoveExercise(idx),
+            onUpdate: (updated) => onUpdateExercise(idx, updated),
+            onLink: (idx < exercises.length - 1)
+                ? () => onCreateSuperset(idx, idx + 1)
+                : null,
+            onUnlink: null, // No unlink for single item
+          ),
+        ),
+      );
+    }
   }
 }
