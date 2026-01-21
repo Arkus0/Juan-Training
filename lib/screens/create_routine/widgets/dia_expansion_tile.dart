@@ -14,7 +14,10 @@ class DiaExpansionTile extends StatefulWidget {
   final Function(int, int) onReorderExercises;
   final Function(int) onRemoveExercise;
   final Function(int, EjercicioEnRutina) onUpdateExercise;
-  final Function() onRemoveDay; // To implement if needed, though user didn't explicitly ask for "Remove Day" button, but implied editable.
+  final Function() onRemoveDay;
+  final Function() onDuplicateDay;
+  final Function(int, int) onCreateSuperset;
+  final Function(int) onRemoveFromSuperset;
 
   const DiaExpansionTile({
     super.key,
@@ -27,6 +30,9 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onRemoveExercise,
     required this.onUpdateExercise,
     required this.onRemoveDay,
+    required this.onDuplicateDay,
+    required this.onCreateSuperset,
+    required this.onRemoveFromSuperset,
   });
 
   @override
@@ -99,6 +105,14 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 ),
               ),
               ListTile(
+                leading: const Icon(Icons.copy, color: Colors.white),
+                title: const Text('DUPLICAR DÍA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(context);
+                  widget.onDuplicateDay();
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('ELIMINAR DÍA', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                 onTap: () {
@@ -113,8 +127,39 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
     );
   }
 
+  // Returns list of groups, where each group is a list of indices in the original list
+  List<List<int>> _getVisualGroupIndices() {
+    final groups = <List<int>>[];
+    if (widget.dia.ejercicios.isEmpty) return groups;
+
+    List<int> currentGroup = [];
+    String? currentSupersetId;
+
+    for (int i = 0; i < widget.dia.ejercicios.length; i++) {
+      final ex = widget.dia.ejercicios[i];
+      if (currentGroup.isEmpty) {
+        currentGroup.add(i);
+        currentSupersetId = ex.supersetId;
+      } else {
+        if (ex.supersetId != null && ex.supersetId == currentSupersetId) {
+           currentGroup.add(i);
+        } else {
+           groups.add(currentGroup);
+           currentGroup = [i];
+           currentSupersetId = ex.supersetId;
+        }
+      }
+    }
+    if (currentGroup.isNotEmpty) {
+      groups.add(currentGroup);
+    }
+    return groups;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final visualGroups = _getVisualGroupIndices();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -191,18 +236,57 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 if (widget.dia.ejercicios.isNotEmpty)
                   ReorderableColumn(
                     onReorder: widget.onReorderExercises,
-                    children: widget.dia.ejercicios.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final ex = entry.value;
-                      return Container(
-                        key: Key(ex.instanceId),
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        child: EjercicioCard(
-                          ejercicio: ex,
-                          onRemove: () => widget.onRemoveExercise(index),
-                          onUpdate: (updated) => widget.onUpdateExercise(index, updated),
-                        ),
-                      );
+                    children: visualGroups.map((groupIndices) {
+                      final isSuperset = groupIndices.length > 1 || (groupIndices.isNotEmpty && widget.dia.ejercicios[groupIndices.first].supersetId != null);
+
+                      // Identify key for the group
+                      final firstEx = widget.dia.ejercicios[groupIndices.first];
+                      final Key groupKey = isSuperset
+                          ? Key('superset_${firstEx.supersetId}')
+                          : Key(firstEx.instanceId);
+
+                      if (isSuperset) {
+                         return Container(
+                           key: groupKey,
+                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                           decoration: BoxDecoration(
+                             border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+                             color: Colors.grey[900]!.withValues(alpha: 0.5),
+                           ),
+                           child: Column(
+                             mainAxisSize: MainAxisSize.min,
+                             children: groupIndices.map((idx) {
+                               final ex = widget.dia.ejercicios[idx];
+                               return EjercicioCard(
+                                 ejercicio: ex,
+                                 onRemove: () => widget.onRemoveExercise(idx),
+                                 onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                                 onLink: (idx < widget.dia.ejercicios.length - 1)
+                                     ? () => widget.onCreateSuperset(idx, idx + 1)
+                                     : null,
+                                 onUnlink: () => widget.onRemoveFromSuperset(idx),
+                               );
+                             }).toList(),
+                           ),
+                         );
+                      } else {
+                         // Single item
+                         final idx = groupIndices.first;
+                         final ex = widget.dia.ejercicios[idx];
+                         return Container(
+                           key: groupKey,
+                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                           child: EjercicioCard(
+                             ejercicio: ex,
+                             onRemove: () => widget.onRemoveExercise(idx),
+                             onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                             onLink: (idx < widget.dia.ejercicios.length - 1)
+                                 ? () => widget.onCreateSuperset(idx, idx + 1)
+                                 : null,
+                             onUnlink: null, // No unlink for single item
+                           ),
+                         );
+                      }
                     }).toList(),
                   ),
 

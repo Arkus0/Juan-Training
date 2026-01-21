@@ -71,6 +71,7 @@ class RoutineExercises extends Table {
   IntColumn get suggestedRestSeconds => integer().nullable()();
   TextColumn get notes => text().nullable()();
 
+  TextColumn get supersetId => text().nullable()();
   IntColumn get exerciseIndex => integer()();
 
   @override

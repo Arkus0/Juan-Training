@@ -10,12 +10,16 @@ class EjercicioCard extends StatelessWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
+  final Function()? onLink;
+  final Function()? onUnlink;
 
   const EjercicioCard({
     super.key,
     required this.ejercicio,
     required this.onRemove,
     required this.onUpdate,
+    this.onLink,
+    this.onUnlink,
   });
 
   void _showProOptions(BuildContext context) {
@@ -38,6 +42,17 @@ class EjercicioCard extends StatelessWidget {
                   fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const SizedBox(height: 16),
+
+              if (onUnlink != null)
+                ListTile(
+                  leading: const Icon(Icons.link_off, color: Colors.orange),
+                  title: const Text('DESVINCULAR (ROMPER SUPERSERIE)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onUnlink!();
+                  },
+                ),
+
               TextFormField(
                 initialValue: ejercicio.notas,
                 style: const TextStyle(color: Colors.white),
@@ -177,6 +192,15 @@ class EjercicioCard extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Actions
+              if (onLink != null)
+                IconButton(
+                  icon: const Icon(Icons.link, color: Colors.white70),
+                  onPressed: onLink,
+                  tooltip: 'Unir con siguiente',
+                  visualDensity: VisualDensity.compact,
+                ),
 
               // Info Icon / Menu
               IconButton(

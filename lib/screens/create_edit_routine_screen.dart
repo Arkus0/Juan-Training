@@ -171,12 +171,17 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                           notifier.updateDayProgression(index, val),
                       onAddExercise: () => _addExercise(index),
                       onReorderExercises: (oldIdx, newIdx) =>
-                          notifier.reorderExercises(index, oldIdx, newIdx),
+                          notifier.reorderVisualExercises(index, oldIdx, newIdx),
                       onRemoveExercise: (exIdx) =>
                           notifier.removeExercise(index, exIdx),
                       onUpdateExercise: (exIdx, updated) =>
                           notifier.updateExercise(index, exIdx, updated),
                       onRemoveDay: () => notifier.removeDay(index),
+                      onDuplicateDay: () => notifier.duplicateDay(index),
+                      onCreateSuperset: (idxA, idxB) =>
+                          notifier.createSuperset(index, idxA, idxB),
+                      onRemoveFromSuperset: (exIdx) =>
+                          notifier.removeFromSuperset(index, exIdx),
                     ),
                   );
                 }).toList(),
