@@ -17,6 +17,7 @@ class EjercicioCard extends StatelessWidget {
   final VoidCallback? onLinkDragEnd;
   final VoidCallback? onLinkDragCancel;
   final bool disableSwipe;
+  final bool disableLongPress;
 
   const EjercicioCard({
     super.key,
@@ -30,6 +31,7 @@ class EjercicioCard extends StatelessWidget {
     this.onLinkDragEnd,
     this.onLinkDragCancel,
     this.disableSwipe = false,
+    this.disableLongPress = false,
   });
 
   void _showProOptions(BuildContext context) {
@@ -122,7 +124,7 @@ class EjercicioCard extends StatelessWidget {
     final imageWidget = _buildImage(libraryExercise);
 
     return GestureDetector(
-      onLongPress: () => _showProOptions(context),
+      onLongPress: disableLongPress ? null : () => _showProOptions(context),
       child: Card(
         color: Colors.grey[900],
         child: Padding(

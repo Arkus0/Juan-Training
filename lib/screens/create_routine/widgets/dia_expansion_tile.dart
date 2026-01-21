@@ -316,6 +316,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                        setState(() {});
                                      },
                                      disableSwipe: _isLinkDragActive,
+                                     disableLongPress: _isLinkDragActive,
                                    );
                                  }).toList(),
                                ),
@@ -459,6 +460,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                     setState(() {});
                                   },
                                   disableSwipe: _isLinkDragActive,
+                                  disableLongPress: _isLinkDragActive,
                                 ),
                               ),
                             );
