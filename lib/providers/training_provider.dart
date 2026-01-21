@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
+import 'package:collection/collection.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
@@ -193,6 +194,28 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   void setRestDuration(int seconds) {
     state = state.copyWith(defaultRestSeconds: seconds);
+    _saveState();
+  }
+
+  void startRestForExercise(int exerciseIndex) {
+    final exercise = state.exercises[exerciseIndex];
+    int restTime = state.defaultRestSeconds;
+
+    // Try to find configured rest time in the active routine
+    if (state.activeRutina != null) {
+      for (final day in state.activeRutina!.dias) {
+        final match = day.ejercicios.firstWhereOrNull((e) => e.instanceId == exercise.id);
+        if (match != null && match.descansoSugerido != null) {
+          restTime = match.descansoSugerido!.inSeconds;
+          break;
+        }
+      }
+    }
+
+    state = state.copyWith(
+      defaultRestSeconds: restTime,
+      isRestActive: true,
+    );
     _saveState();
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
 
@@ -110,12 +111,26 @@ class _SessionSetRowState extends State<SessionSetRow> {
                   ),
                 ),
                 // Previous History
-                SizedBox(
-                  width: 50,
-                  child: Center(
-                    child: Text(
-                      widget.prevLog != null ? '${widget.prevLog!.peso}x${widget.prevLog!.reps}' : '-',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                GestureDetector(
+                  onTap: () {
+                    if (widget.prevLog != null) {
+                      HapticFeedback.selectionClick();
+                      _weightController.text = widget.prevLog!.peso.toString();
+                      _repsController.text = widget.prevLog!.reps.toString();
+                      widget.onWeightChanged(_weightController.text);
+                      widget.onRepsChanged(_repsController.text);
+                    }
+                  },
+                  child: SizedBox(
+                    width: 50,
+                    child: Center(
+                      child: Text(
+                        widget.prevLog != null
+                            ? 'Prev:\n${widget.prevLog!.peso}x${widget.prevLog!.reps}'
+                            : '-',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
@@ -161,7 +176,12 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     child: Checkbox(
                       value: widget.log.completed,
                       activeColor: Colors.redAccent[700],
-                      onChanged: widget.onCompleted,
+                      onChanged: (val) {
+                        if (val == true) {
+                          HapticFeedback.mediumImpact();
+                        }
+                        widget.onCompleted(val);
+                      },
                       side: const BorderSide(color: Colors.grey, width: 2),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                     ),
