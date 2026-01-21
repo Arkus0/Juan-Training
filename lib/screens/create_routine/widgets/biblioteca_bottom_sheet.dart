@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
-import '../../../models/library_exercise.dart';
-import '../../../services/exercise_library_service.dart';
+import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/services/exercise_library_service.dart';
 
 class BibliotecaBottomSheet extends StatefulWidget {
   final Function(LibraryExercise) onAdd;

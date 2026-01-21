@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../models/dia.dart';
-import '../../../models/ejercicio_en_rutina.dart';
-import 'ejercicio_card.dart';
+import 'package:juan_training/models/dia.dart';
+import 'package:juan_training/models/ejercicio_en_rutina.dart';
+import 'package:juan_training/screens/create_routine/widgets/ejercicio_card.dart';
 
 class DiaExpansionTile extends StatefulWidget {
   final int dayIndex;
