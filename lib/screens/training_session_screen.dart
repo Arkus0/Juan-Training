@@ -33,9 +33,41 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   }
 
   void _onFinishSession() async {
-    final navigator = Navigator.of(context);
-    await ref.read(trainingSessionProvider.notifier).finishSession();
-    navigator.pop();
+    final shouldFinish = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿TERMINAR SESIÓN?'),
+        content: const Text(
+          '¿Estás seguro de que quieres terminar el entrenamiento? Asegúrate de haber completado tus series.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'CANCELAR',
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              'TERMINAR',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldFinish == true) {
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
+      await ref.read(trainingSessionProvider.notifier).finishSession();
+      navigator.pop();
+    }
   }
 
   void _checkDiscoveryTooltip() async {
