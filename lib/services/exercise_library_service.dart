@@ -79,6 +79,12 @@ Map<String, dynamic> _decodeJsonBackground(Uint8List responseBytes) {
   };
 }
 
+/// Parses the JSON content into a List of LibraryExercise objects in a separate isolate.
+List<LibraryExercise> _parseLibraryExercises(String content) {
+  final List<dynamic> jsonList = jsonDecode(content);
+  return jsonList.map((e) => LibraryExercise.fromJson(e)).toList();
+}
+
 // --- Service Class ---
 
 class ExerciseLibraryService {
@@ -242,8 +248,8 @@ class ExerciseLibraryService {
       if (await file.exists()) {
         final content = await file.readAsString();
         if (content.isNotEmpty) {
-          final List<dynamic> jsonList = jsonDecode(content);
-          _exercises = jsonList.map((e) => LibraryExercise.fromJson(e)).toList();
+          // Offload JSON decoding and object creation to background isolate
+          _exercises = await compute(_parseLibraryExercises, content);
         }
       }
 
