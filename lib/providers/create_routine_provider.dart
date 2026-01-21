@@ -406,18 +406,23 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
     // Rebuild the exercise list with superset exercises contiguous
     final result = <EjercicioEnRutina>[];
-    int insertedSuperset = 0;
+    bool insertedSuperset = false;
     
     for (int i = 0; i < newEjercicios.length; i++) {
-      if (i == minIndex && insertedSuperset == 0) {
+      if (i == minIndex && !insertedSuperset) {
         // Insert all superset exercises here
         result.addAll(exercisesWithSupersetId);
-        insertedSuperset = 1;
+        insertedSuperset = true;
       }
       
       if (!exercisesWithSupersetId.contains(newEjercicios[i])) {
         result.add(newEjercicios[i]);
       }
+    }
+
+    // Handle edge case where minIndex is at the end
+    if (!insertedSuperset) {
+      result.addAll(exercisesWithSupersetId);
     }
 
     final updatedDay = day.copyWith(ejercicios: result);
