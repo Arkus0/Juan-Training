@@ -96,7 +96,7 @@ class HiveTrainingRepository implements ITrainingRepository {
   }
 
   @override
-  List<Sesion> getHistoryForExercise(String exerciseName) {
+  Future<List<Sesion>> getHistoryForExercise(String exerciseName) async {
     return _sesionesBox.values
         .where((s) => s.ejerciciosCompletados.any((e) => e.nombre == exerciseName))
         .toList()
@@ -168,7 +168,7 @@ class HiveTrainingRepository implements ITrainingRepository {
   // --- Notes ---
 
   @override
-  String getNote(String exerciseName) {
+  Future<String> getNote(String exerciseName) async {
     return _exerciseNotesBox.get(exerciseName, defaultValue: '') as String;
   }
 

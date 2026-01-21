@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/rutina.dart';
 import 'create_edit_routine_screen.dart';
 import '../providers/training_provider.dart';
 

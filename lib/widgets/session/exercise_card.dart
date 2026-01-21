@@ -21,9 +21,12 @@ class ExerciseCardContainer extends ConsumerStatefulWidget {
 }
 
 class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
-  void _showNotesDialog(BuildContext context, String exerciseName) {
+  void _showNotesDialog(BuildContext context, String exerciseName) async {
     final repo = ref.read(trainingRepositoryProvider);
-    final String currentNote = repo.getNote(exerciseName);
+    final String currentNote = await repo.getNote(exerciseName);
+
+    if (!context.mounted) return;
+
     final controller = TextEditingController(text: currentNote);
 
     showDialog(
@@ -50,7 +53,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
           TextButton(
             onPressed: () async {
               await repo.saveNote(exerciseName, controller.text);
-              if (mounted) Navigator.pop(ctx);
+              if (ctx.mounted) Navigator.pop(ctx);
             },
             child: const Text('GUARDAR', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
