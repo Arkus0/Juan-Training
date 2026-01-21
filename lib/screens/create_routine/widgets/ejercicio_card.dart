@@ -229,14 +229,20 @@ class EjercicioCard extends StatelessWidget {
         onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
         feedback: Material(
           color: Colors.transparent,
-          child: Opacity(
-            opacity: 0.9,
-            child: card,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Opacity(
+              opacity: 0.9,
+              child: card,
+            ),
           ),
         ),
         childWhenDragging: Opacity(
           opacity: 0.3,
-          child: card,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: card,
+          ),
         ),
         child: card,
       );
