@@ -1,95 +1,21 @@
-import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/main_provider.dart';
-import '../services/exercise_library_service.dart';
 import 'rutinas_screen.dart';
 import 'train_selection_screen.dart';
 import 'history_screen.dart';
 
-class MainScreen extends ConsumerStatefulWidget {
+class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
 
-  @override
-  ConsumerState<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends ConsumerState<MainScreen> {
-  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-  bool _isFirstLoad = true;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkLibrarySync();
-    });
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(_handleConnectivityChange);
-  }
-
-  @override
-  void dispose() {
-    _connectivitySubscription.cancel();
-    super.dispose();
-  }
-
-  void _handleConnectivityChange(List<ConnectivityResult> results) {
-    if (_isFirstLoad) {
-      _isFirstLoad = false;
-      return;
-    }
-
-    // Check if there is any active connection (mobile, wifi, ethernet, vpn, bluetooth, etc.)
-    // If the list contains .none, it usually means no connection, but we check for presence of ANY valid connection.
-    final hasConnection = results.any((result) => result != ConnectivityResult.none);
-
-    _showSnackBar(hasConnection ? 'Conexión recuperada.' : 'Conexión perdida.');
-
-    if (hasConnection) {
-      _checkLibrarySync();
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
-        ),
-        backgroundColor: Colors.red[900], // Aggressive red snackbar
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: Colors.redAccent[700]!, width: 1),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _checkLibrarySync() async {
-    final service = ExerciseLibraryService.instance;
-    if (await service.shouldSync()) {
-      if (!mounted) return;
-      final success = await service.syncLibrary();
-      if (!mounted) return;
-
-      if (success) {
-        _showSnackBar('Biblioteca actualizada.');
-      }
-    }
-  }
-
-  final List<Widget> _pages = const [
+  static final List<Widget> _pages = const [
     RutinasScreen(),
     TrainSelectionScreen(),
     HistoryScreen(),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
     return Scaffold(

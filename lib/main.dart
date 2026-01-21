@@ -17,7 +17,7 @@ void main() async {
   final driftRepository = DriftTrainingRepository(appDb);
 
   // Load Library (Service uses local file now)
-  await ExerciseLibraryService.instance.loadLibrary();
+  await ExerciseLibraryService.instance.init();
 
   await initializeDateFormatting('es_ES', null);
 
