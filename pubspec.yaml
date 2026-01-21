@@ -51,6 +51,7 @@ flutter:
   assets:
     - assets/img/
     - assets/img/ejercicios/
+    - assets/data/exercises.json
     - assets/fonts/
 
 google_fonts:

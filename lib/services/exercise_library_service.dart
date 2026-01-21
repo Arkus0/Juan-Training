@@ -7,6 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import '../models/library_exercise.dart';
 
 // --- Top-Level Constants (Optimized for Isolate Access) ---
@@ -150,6 +151,19 @@ class ExerciseLibraryService {
   /// Initialize the service: Load local data and start Sentinel listener
   Future<void> init() async {
     await _sanitizeCache();
+    // If a bundled exercises JSON exists in assets, copy it to app documents
+    // so the rest of the service uses the same local-file-based flow.
+    try {
+      final bundled = await rootBundle.loadString('assets/data/exercises.json');
+      if (bundled.isNotEmpty) {
+        final file = await _localFile;
+        await file.writeAsString(bundled);
+        _logger.i('Copied bundled exercises.json to local storage.');
+      }
+    } catch (_) {
+      // No bundled file: ignore and proceed to load from disk or fallback.
+    }
+
     await loadLibrary();
     _setupConnectivityListener();
     _checkAndSync();
