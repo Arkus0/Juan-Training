@@ -40,9 +40,14 @@ class LibraryExercise {
       }
     }
 
+    final id = json['id'];
+    if (id == null || id is! int) {
+      throw Exception('Invalid or missing ID from API for item: $json');
+    }
+
     return LibraryExercise(
-      id: json['id'] as int,
-      name: json['name'] as String,
+      id: id,
+      name: json['name']?.toString() ?? 'Ejercicio sin nombre',
       muscleGroup: muscleName,
       equipment: equipmentName,
       description: json['description'] as String?,

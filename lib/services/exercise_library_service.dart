@@ -209,7 +209,7 @@ class ExerciseLibraryService {
         imagesDirPath = imagesDir.path;
       }
 
-      List<({LibraryExercise exercise, String imageUrl})> pendingDownloads = [];
+      List<LibraryExercise> pendingDownloads = [];
 
       final Map<String, LibraryExercise> mergedMap = {};
 
@@ -219,15 +219,15 @@ class ExerciseLibraryService {
           if (e.localImagePath != null) e.id: e.localImagePath!
       };
 
-      final List<int> languages = [2, 4]; // 2 = English, 4 = Spanish
+      final List<int> languages = [4, 2]; // 4 = Spanish, 2 = English
 
-      for (final lang in languages) {
-         String url = 'https://wger.de/api/v2/exerciseinfo/?language=$lang&limit=100';
-         _logger.i('Fetching exercises for language $lang...');
+      for (final language in languages) {
+         String url = 'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=100';
+         _logger.i('Fetching exercises for language $language...');
          int fetchedCount = 0;
 
          while (url.isNotEmpty) {
-           final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+           final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
            if (response.statusCode == 200) {
              final data = jsonDecode(utf8.decode(response.bodyBytes));
              final results = data['results'] as List;
@@ -236,8 +236,6 @@ class ExerciseLibraryService {
              for (var item in results) {
                final int id = item['id'];
                final int? variationId = item['variations']; // Can be null or int
-
-               final categoryId = item['category'] is Map ? item['category']['id'] : item['category'] as int?;
 
                int catId = 0;
                if (item['category'] is Map) {
@@ -296,12 +294,33 @@ class ExerciseLibraryService {
                  key = 'i-$id';
                }
 
-               mergedMap[key] = exercise;
+                final existing = mergedMap[key];
+                if (existing != null) {
+                  // Entry exists. Let's merge.
+                  var newName = exercise.name;
+                  if (newName == 'Ejercicio sin nombre' &&
+                      existing.name != 'Ejercicio sin nombre') {
+                    newName = existing.name;
+                  }
 
-               // Queue images for download
-               if (!kIsWeb && exercise.imageUrls.isNotEmpty) {
-                 pendingDownloads.add((exercise: exercise, imageUrl: exercise.imageUrls.first));
-               }
+                  final allImageUrls = {...existing.imageUrls, ...exercise.imageUrls}.toList();
+
+                  mergedMap[key] = LibraryExercise(
+                      id: exercise.id,
+                      name: newName,
+                      muscleGroup: exercise.muscleGroup,
+                      equipment: exercise.equipment,
+                      description: exercise.description ?? existing.description,
+                      license: exercise.license ?? existing.license,
+                      imageUrls: allImageUrls,
+                      localImagePath: existing.localImagePath ?? exercise.localImagePath,
+                      muscles: exercise.muscles.isNotEmpty ? exercise.muscles : existing.muscles,
+                      secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
+                          ? exercise.secondaryMuscles
+                          : existing.secondaryMuscles);
+                } else {
+                  mergedMap[key] = exercise;
+                }
              }
 
              if (data['next'] != null) {
@@ -310,16 +329,23 @@ class ExerciseLibraryService {
                url = '';
              }
            } else {
-             _logger.w('API Error ($lang): ${response.statusCode}');
+             _logger.w('API Error ($language): ${response.statusCode}');
              break;
            }
          } // while url
-         _logger.i('Fetched $fetchedCount exercises for language $lang');
+         _logger.i('Fetched $fetchedCount exercises for language $language');
       } // for languages
 
       // Update internal list
       _exercises = mergedMap.values.toList();
       _logger.i('Total unique exercises after merge: ${_exercises.length}');
+
+      // Re-evaluate pending downloads from the merged list
+      if (!kIsWeb && imagesDirPath != null) {
+        pendingDownloads = _exercises
+            .where((e) => e.imageUrls.isNotEmpty && e.localImagePath == null)
+            .toList();
+      }
 
       // Phase 2: Parallel Image Downloads
       if (!kIsWeb && pendingDownloads.isNotEmpty && imagesDirPath != null) {
@@ -351,7 +377,7 @@ class ExerciseLibraryService {
   }
 
   Future<void> _processImageDownloads(
-    List<({LibraryExercise exercise, String imageUrl})> items,
+    List<LibraryExercise> items,
     String dirPath,
     Map<int, LibraryExercise> map,
   ) async {
@@ -360,11 +386,14 @@ class ExerciseLibraryService {
       final end = (i + batchSize < items.length) ? i + batchSize : items.length;
       final batch = items.sublist(i, end);
 
-      await Future.wait(batch.map((item) async {
-        final localPath = await _downloadImage(item.imageUrl, item.exercise.id.toString(), dirPath);
-        if (localPath != null) {
-          item.exercise.localImagePath = localPath;
-          map[item.exercise.id]?.localImagePath = localPath;
+      await Future.wait(batch.map((exercise) async {
+        for (final imageUrl in exercise.imageUrls) {
+          final localPath = await _downloadImage(imageUrl, exercise.id.toString(), dirPath);
+          if (localPath != null) {
+            exercise.localImagePath = localPath;
+            map[exercise.id]?.localImagePath = localPath;
+            break; 
+          }
         }
       }));
     }
@@ -378,7 +407,7 @@ class ExerciseLibraryService {
         return filePath; // Already exists
       }
 
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes);
         return filePath;

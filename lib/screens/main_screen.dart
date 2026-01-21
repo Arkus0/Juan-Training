@@ -8,7 +8,7 @@ import 'history_screen.dart';
 class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
 
-  static final List<Widget> _pages = const [
+  static const List<Widget> _pages = [
     RutinasScreen(),
     TrainSelectionScreen(),
     HistoryScreen(),
