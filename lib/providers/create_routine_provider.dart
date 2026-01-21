@@ -309,40 +309,51 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       final day = state.dias[dayIndex];
       if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length) return;
 
-      final exA = day.ejercicios[indexA];
-      final exB = day.ejercicios[indexB];
-
-      final newEjercicios = [...day.ejercicios];
-      final uuid = const Uuid().v4();
-
-      // Check if they already have supersetIds
-      // Case 1: Neither has ID -> New ID for both
-      // Case 2: One has ID -> Add the other to that ID
-      // Case 3: Both have DIFFERENT IDs -> Merge? Or just overwrite?
-      // Requirement: "Link with next". Usually implies merging blocks or extending.
-
-      String idToUse = uuid;
-      if (exA.supersetId != null) {
-          idToUse = exA.supersetId!;
-      } else if (exB.supersetId != null) {
-          idToUse = exB.supersetId!;
+      List<EjercicioEnRutina> _collectGroup(List<EjercicioEnRutina> list, int index) {
+        final target = list[index];
+        if (target.supersetId == null) return [target];
+        return list.where((e) => e.supersetId == target.supersetId).toList();
       }
 
-      // If both have different IDs, we merge all B's group into A's group
-      if (exA.supersetId != null && exB.supersetId != null && exA.supersetId != exB.supersetId) {
-           final idA = exA.supersetId!;
-           final idB = exB.supersetId!;
-           // Update all exercises with idB to have idA
-           for (int i=0; i<newEjercicios.length; i++) {
-               if (newEjercicios[i].supersetId == idB) {
-                   newEjercicios[i] = newEjercicios[i].copyWith(supersetId: idA);
-               }
-           }
-      } else {
-          // Standard case
-          newEjercicios[indexA] = exA.copyWith(supersetId: idToUse);
-          newEjercicios[indexB] = exB.copyWith(supersetId: idToUse);
+      final original = [...day.ejercicios];
+      final sourceGroup = _collectGroup(original, indexA);
+      final targetGroup = _collectGroup(original, indexB);
+
+      final sourceIds = sourceGroup.map((e) => e.instanceId).toSet();
+      final targetIds = targetGroup.map((e) => e.instanceId).toSet();
+      final blockIds = {...sourceIds, ...targetIds};
+
+      // Decide which supersetId to keep/assign
+      String idToUse = const Uuid().v4();
+      final sourceId = sourceGroup.first.supersetId;
+      final targetId = targetGroup.first.supersetId;
+      if (targetId != null) {
+        idToUse = targetId;
+      } else if (sourceId != null) {
+        idToUse = sourceId;
       }
+
+      // Build remaining list while finding insertion point (before the first target member)
+      final remaining = <EjercicioEnRutina>[];
+      int insertionIndex = 0;
+      for (int i = 0; i < original.length; i++) {
+        final ex = original[i];
+        if (blockIds.contains(ex.instanceId)) {
+          if (targetIds.contains(ex.instanceId)) {
+            insertionIndex = remaining.length; // place block where target started
+          }
+          continue;
+        }
+        remaining.add(ex);
+      }
+
+      // Normalize the block: target group first, then source group, all with the same supersetId
+      final block = [
+        ...targetGroup.map((e) => e.copyWith(supersetId: idToUse)),
+        ...sourceGroup.map((e) => e.copyWith(supersetId: idToUse)),
+      ];
+
+      final newEjercicios = [...remaining]..insertAll(insertionIndex, block);
 
       final updatedDay = day.copyWith(ejercicios: newEjercicios);
       final newDias = [...state.dias];

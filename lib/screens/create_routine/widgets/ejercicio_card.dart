@@ -6,13 +6,26 @@ import '../../../models/ejercicio_en_rutina.dart';
 import '../../../models/library_exercise.dart';
 import '../../../services/exercise_library_service.dart';
 
+/// Payload passed through drag events so the parent knows which item is moving.
+class SupersetDragData {
+  final int visualIndex;
+  final int flatIndex;
+  final String? supersetId;
+
+  const SupersetDragData({
+    required this.visualIndex,
+    required this.flatIndex,
+    this.supersetId,
+  });
+}
+
 class EjercicioCard extends StatelessWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
   final Function()? onLink;
   final Function()? onUnlink;
-  final int? linkDragData;
+  final SupersetDragData? linkDragData;
   final VoidCallback? onLinkDragStart;
   final VoidCallback? onLinkDragEnd;
   final VoidCallback? onLinkDragCancel;
@@ -220,7 +233,7 @@ class EjercicioCard extends StatelessWidget {
     );
 
     if (onLink != null) {
-      return LongPressDraggable<int>(
+      return LongPressDraggable<SupersetDragData>(
         data: linkDragData,
         onDragStarted: onLinkDragStart,
         onDragEnd: (_) => onLinkDragEnd?.call(),
