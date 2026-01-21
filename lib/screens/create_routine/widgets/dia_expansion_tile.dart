@@ -44,6 +44,9 @@ class DiaExpansionTile extends StatefulWidget {
 class _DiaExpansionTileState extends State<DiaExpansionTile> {
   bool _isExpanded = true;
   late TextEditingController _nameController;
+  bool _isLinkDragActive = false;
+  bool _dragAccepted = false;
+  int? _dragSourceVisualIndex;
 
   @override
   void initState() {
@@ -161,6 +164,13 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
   Widget build(BuildContext context) {
     final visualGroups = _getVisualGroupIndices();
 
+    int? _flatIndexFromVisual(int visualIndex) {
+      if (visualIndex < 0 || visualIndex >= visualGroups.length) return null;
+      final group = visualGroups[visualIndex];
+      if (group.isEmpty) return null;
+      return group.first;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -240,7 +250,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
                   Column(
-                    children: visualGroups.map((groupIndices) {
+                    children: visualGroups.asMap().entries.map((entry) {
+                      final visualIndex = entry.key;
+                      final groupIndices = entry.value;
                       final isSuperset = groupIndices.length > 1 || (groupIndices.isNotEmpty && widget.dia.ejercicios[groupIndices.first].supersetId != null);
 
                       // Identify key for the group
@@ -250,126 +262,207 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           : Key(firstEx.instanceId);
 
                       if (isSuperset) {
-                         return Container(
+                         return DragTarget<int>(
                            key: groupKey,
-                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                           decoration: BoxDecoration(
-                             border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
-                             color: Colors.grey[900]!.withValues(alpha: 0.5),
-                           ),
-                           child: Column(
-                             mainAxisSize: MainAxisSize.min,
-                             children: groupIndices.map((idx) {
-                               final ex = widget.dia.ejercicios[idx];
-                               return EjercicioCard(
-                                 ejercicio: ex,
-                                 onRemove: () => widget.onRemoveExercise(idx),
-                                 onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                                 onLink: (idx < widget.dia.ejercicios.length - 1)
-                                     ? () => widget.onCreateSuperset(idx, idx + 1)
-                                     : null,
-                                 onUnlink: () => widget.onRemoveFromSuperset(idx),
-                               );
-                             }).toList(),
-                           ),
+                           onWillAccept: (data) => data != null && data != visualIndex,
+                           onAccept: (data) {
+                             final sourceFlat = _flatIndexFromVisual(data);
+                             final targetFlat = _flatIndexFromVisual(visualIndex);
+                             if (sourceFlat != null && targetFlat != null) {
+                               _dragAccepted = true;
+                               widget.onCreateSuperset(sourceFlat, targetFlat);
+                             }
+                             _isLinkDragActive = false;
+                             setState(() {});
+                           },
+                           builder: (context, candidateData, rejectedData) {
+                             return Container(
+                               margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                               decoration: BoxDecoration(
+                                 border: Border(left: BorderSide(color: candidateData.isNotEmpty ? Colors.amber : Colors.redAccent, width: 4)),
+                                 color: Colors.grey[900]!.withValues(alpha: 0.5),
+                               ),
+                               child: Column(
+                                 mainAxisSize: MainAxisSize.min,
+                                 children: groupIndices.map((idx) {
+                                   final ex = widget.dia.ejercicios[idx];
+                                   return EjercicioCard(
+                                     ejercicio: ex,
+                                     onRemove: () => widget.onRemoveExercise(idx),
+                                     onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                                     onLink: () {},
+                                     onUnlink: () => widget.onRemoveFromSuperset(idx),
+                                     linkDragData: visualIndex,
+                                     onLinkDragStart: () {
+                                       _isLinkDragActive = true;
+                                       _dragAccepted = false;
+                                       _dragSourceVisualIndex = visualIndex;
+                                       setState(() {});
+                                     },
+                                     onLinkDragEnd: () {
+                                       if (!_dragAccepted && ex.supersetId != null) {
+                                         widget.onRemoveFromSuperset(idx);
+                                       }
+                                       _isLinkDragActive = false;
+                                       _dragSourceVisualIndex = null;
+                                       setState(() {});
+                                     },
+                                     onLinkDragCancel: () {
+                                       if (!_dragAccepted && ex.supersetId != null) {
+                                         widget.onRemoveFromSuperset(idx);
+                                       }
+                                       _isLinkDragActive = false;
+                                       _dragSourceVisualIndex = null;
+                                       setState(() {});
+                                     },
+                                     disableSwipe: _isLinkDragActive,
+                                   );
+                                 }).toList(),
+                               ),
+                             );
+                           },
                          );
                       } else {
                         // Single item
                         final idx = groupIndices.first;
                         final ex = widget.dia.ejercicios[idx];
-                        return Dismissible(
-                          key: Key(ex.instanceId),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            color: Colors.red[900],
-                            child: const Icon(Icons.delete, color: Colors.white),
-                          ),
-                          onDismissed: (_) {
-                            final removedItem = ex;
-                            widget.onRemoveExercise(idx);
-
-                            BuildContext? dialogCtx;
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              barrierColor: Colors.black26,
-                              builder: (dialogContext) {
-                                dialogCtx = dialogContext;
-                                return Center(
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      margin: const EdgeInsets.symmetric(horizontal: 40),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red[900],
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.3),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'Ejercicio eliminado',
-                                            style: GoogleFonts.montserrat(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          const SizedBox(height: 12),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                              foregroundColor: Colors.red[900],
-                                              minimumSize: const Size(double.infinity, 40),
-                                            ),
-                                            onPressed: () {
-                                              Navigator.of(dialogContext).pop();
-                                              widget.onUndoRemove(idx, removedItem);
-                                            },
-                                            child: Text(
-                                              'DESHACER',
-                                              style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-
-                            // Auto-close after 1.5 seconds (only this dialog)
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
-                                Navigator.of(dialogCtx!, rootNavigator: true).pop();
-                              }
-                            });
+                        return DragTarget<int>(
+                          onWillAccept: (data) => data != null && data != visualIndex,
+                          onAccept: (data) {
+                            final sourceFlat = _flatIndexFromVisual(data);
+                            final targetFlat = _flatIndexFromVisual(visualIndex);
+                            if (sourceFlat != null && targetFlat != null) {
+                              _dragAccepted = true;
+                              widget.onCreateSuperset(sourceFlat, targetFlat);
+                            }
+                            _isLinkDragActive = false;
+                            _dragSourceVisualIndex = null;
+                            setState(() {});
                           },
-                          child: Container(
-                            key: groupKey,
-                            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            child: EjercicioCard(
-                              ejercicio: ex,
-                              onRemove: () => widget.onRemoveExercise(idx),
-                              onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                              onLink: (idx < widget.dia.ejercicios.length - 1)
-                                  ? () => widget.onCreateSuperset(idx, idx + 1)
-                                  : null,
-                              onUnlink: null,
-                            ),
-                          ),
+                          builder: (context, candidateData, rejectedData) {
+                            return Dismissible(
+                              key: Key(ex.instanceId),
+                              direction: _isLinkDragActive ? DismissDirection.none : DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                color: Colors.red[900],
+                                child: const Icon(Icons.delete, color: Colors.white),
+                              ),
+                              onDismissed: (_) {
+                                final removedItem = ex;
+                                widget.onRemoveExercise(idx);
+
+                                BuildContext? dialogCtx;
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  barrierColor: Colors.black26,
+                                  builder: (dialogContext) {
+                                    dialogCtx = dialogContext;
+                                    return Center(
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(16),
+                                          margin: const EdgeInsets.symmetric(horizontal: 40),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[900],
+                                            borderRadius: BorderRadius.circular(12),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'Ejercicio eliminado',
+                                                style: GoogleFonts.montserrat(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              const SizedBox(height: 12),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                  foregroundColor: Colors.red[900],
+                                                  minimumSize: const Size(double.infinity, 40),
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.of(dialogContext).pop();
+                                                  widget.onUndoRemove(idx, removedItem);
+                                                },
+                                                child: Text(
+                                                  'DESHACER',
+                                                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                // Auto-close after 1.5 seconds (only this dialog)
+                                Future.delayed(const Duration(milliseconds: 1500), () {
+                                  if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
+                                    Navigator.of(dialogCtx!, rootNavigator: true).pop();
+                                  }
+                                });
+                              },
+                              child: Container(
+                                key: groupKey,
+                                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                decoration: candidateData.isNotEmpty
+                                    ? BoxDecoration(
+                                        border: Border.all(color: Colors.amber, width: 2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      )
+                                    : null,
+                                child: EjercicioCard(
+                                  ejercicio: ex,
+                                  onRemove: () => widget.onRemoveExercise(idx),
+                                  onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+                                  onLink: () {},
+                                  onUnlink: null,
+                                  linkDragData: visualIndex,
+                                  onLinkDragStart: () {
+                                    _isLinkDragActive = true;
+                                    _dragAccepted = false;
+                                    _dragSourceVisualIndex = visualIndex;
+                                    setState(() {});
+                                  },
+                                  onLinkDragEnd: () {
+                                    if (!_dragAccepted && ex.supersetId != null) {
+                                      widget.onRemoveFromSuperset(idx);
+                                    }
+                                    _isLinkDragActive = false;
+                                    _dragSourceVisualIndex = null;
+                                    setState(() {});
+                                  },
+                                  onLinkDragCancel: () {
+                                    if (!_dragAccepted && ex.supersetId != null) {
+                                      widget.onRemoveFromSuperset(idx);
+                                    }
+                                    _isLinkDragActive = false;
+                                    _dragSourceVisualIndex = null;
+                                    setState(() {});
+                                  },
+                                  disableSwipe: _isLinkDragActive,
+                                ),
+                              ),
+                            );
+                          },
                         );
                       }
                     }).toList(),

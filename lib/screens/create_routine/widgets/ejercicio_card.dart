@@ -12,6 +12,11 @@ class EjercicioCard extends StatelessWidget {
   final Function(EjercicioEnRutina) onUpdate;
   final Function()? onLink;
   final Function()? onUnlink;
+  final int? linkDragData;
+  final VoidCallback? onLinkDragStart;
+  final VoidCallback? onLinkDragEnd;
+  final VoidCallback? onLinkDragCancel;
+  final bool disableSwipe;
 
   const EjercicioCard({
     super.key,
@@ -20,6 +25,11 @@ class EjercicioCard extends StatelessWidget {
     required this.onUpdate,
     this.onLink,
     this.onUnlink,
+    this.linkDragData,
+    this.onLinkDragStart,
+    this.onLinkDragEnd,
+    this.onLinkDragCancel,
+    this.disableSwipe = false,
   });
 
   void _showProOptions(BuildContext context) {
@@ -195,11 +205,21 @@ class EjercicioCard extends StatelessWidget {
 
               // Actions
               if (onLink != null)
-                IconButton(
-                  icon: const Icon(Icons.link, color: Colors.white70),
-                  onPressed: onLink,
-                  tooltip: 'Unir con siguiente',
-                  visualDensity: VisualDensity.compact,
+                LongPressDraggable<int>(
+                  data: linkDragData,
+                  onDragStarted: onLinkDragStart,
+                  onDragEnd: (_) => onLinkDragEnd?.call(),
+                  onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Icon(Icons.link, color: Colors.red[200], size: 28),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.link, color: Colors.white70),
+                    onPressed: onLink,
+                    tooltip: 'Unir como superserie (arrastrar)',
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
 
               // Info Icon / Menu

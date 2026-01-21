@@ -153,8 +153,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             },
           );
           
-          // Auto-close after 1.5 seconds (only closes this dialog)
-          Future.delayed(const Duration(milliseconds: 1500), () {
+          // Auto-close after 1 second (only closes this dialog)
+          Future.delayed(const Duration(seconds: 1), () {
             if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
               Navigator.of(dialogCtx!, rootNavigator: true).pop();
             }
