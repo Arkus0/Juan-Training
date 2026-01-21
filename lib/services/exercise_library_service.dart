@@ -280,8 +280,10 @@ class ExerciseLibraryService {
   bool _isValidName(String? name) {
     if (name == null || name.trim().isEmpty) return false;
     final lower = name.trim().toLowerCase();
+    // Only reject a generic English placeholder 'exercise'.
+    // Allow 'Ejercicio sin nombre' because many API entries may lack localized names;
+    // we'll keep them to avoid discarding the whole library.
     if (lower == 'exercise') return false;
-    if (lower == 'ejercicio sin nombre') return false;
     return true;
   }
 
