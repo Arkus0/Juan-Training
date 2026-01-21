@@ -278,18 +278,21 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                         // Single item
                         final idx = groupIndices.first;
                         final ex = widget.dia.ejercicios[idx];
-                        return Container(
-                          key: groupKey,
-                          margin: const EdgeInsets.symmetric(
-                              vertical: 4, horizontal: 8),
-                          child: EjercicioCard(
-                            ejercicio: ex,
-                            onRemove: () {
-                              final removedItem = ex;
-                              widget.onRemoveExercise(idx);
-                              ScaffoldMessenger.of(context)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
+                        return Dismissible(
+                          key: Key(ex.instanceId),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.red[900],
+                            child: const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          onDismissed: (_) {
+                            final removedItem = ex;
+                            widget.onRemoveExercise(idx);
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
                                 SnackBar(
                                   duration: const Duration(seconds: 2),
                                   behavior: SnackBarBehavior.floating,
@@ -308,13 +311,21 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                                   ),
                                 ),
                               );
-                            },
-                            onUpdate: (updated) =>
-                                widget.onUpdateExercise(idx, updated),
-                            onLink: (idx < widget.dia.ejercicios.length - 1)
-                                ? () => widget.onCreateSuperset(idx, idx + 1)
-                                : null,
-                            onUnlink: null, // No unlink for single item
+                          },
+                          child: Container(
+                            key: groupKey,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 8),
+                            child: EjercicioCard(
+                              ejercicio: ex,
+                              onRemove: () => widget.onRemoveExercise(idx),
+                              onUpdate: (updated) =>
+                                  widget.onUpdateExercise(idx, updated),
+                              onLink: (idx < widget.dia.ejercicios.length - 1)
+                                  ? () => widget.onCreateSuperset(idx, idx + 1)
+                                  : null,
+                              onUnlink: null, // No unlink for single item
+                            ),
                           ),
                         );
                       }
