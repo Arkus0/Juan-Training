@@ -203,12 +203,15 @@ class ExerciseLibraryService {
   }
 
   /// Checks if a given name is valid for the exercise library.
-  /// This is relaxed to only check for null, empty, or the placeholder "Exercise".
+  /// Modified to protect against common placeholder names during merge.
   bool _isValidName(String? name) {
     if (name == null || name.trim().isEmpty) return false;
-    final lower = name.toLowerCase();
-    // "Exercise" is often a placeholder name in the API
+    final lower = name.trim().toLowerCase();
+
+    // Invalid placeholders that should not overwrite a valid English name
     if (lower == 'exercise') return false;
+    if (lower == 'ejercicio sin nombre') return false;
+
     return true;
   }
 
@@ -250,10 +253,12 @@ class ExerciseLibraryService {
 
       // Phase 2: Fetch Spanish exercises (Language 4 - Secondary) and merge
       await _fetchAndProcessLanguage(4, exercisesMap, isPrimary: false);
-      _logger
-          .i('Total exercises in map before final filtering: ${exercisesMap.length}');
+
+      _logger.i('Total exercises in map before final filtering: ${exercisesMap.length}');
 
       // Update internal list from the map, filtering for validity
+      // Note: We use _isValidName here only to remove exercises that have NO valid name at all
+      // (neither English nor Spanish).
       final originalCount = exercisesMap.length;
       _exercises =
           exercisesMap.values.where((e) => _isValidName(e.name)).toList();
@@ -339,9 +344,14 @@ class ExerciseLibraryService {
           if (existing != null) {
             mergedCount++;
             // --- MERGE LOGIC ---
-            final newName = isPrimary || _isValidName(exercise.name)
-                ? exercise.name
-                : existing.name;
+            // If primary (English), we overwrite (since it comes first in our flow, usually, but here we run Lang 2 then Lang 4).
+            // Actually, we run Lang 2 (isPrimary=true) then Lang 4 (isPrimary=false).
+            // When processing Lang 4:
+            // newName should use Lang 4 name (exercise.name) ONLY if it is valid.
+            // If Lang 4 name is invalid ("Exercise", "Ejercicio sin nombre"), we keep existing (English).
+
+            final bool shouldUseNewName = isPrimary || _isValidName(exercise.name);
+            final newName = shouldUseNewName ? exercise.name : existing.name;
 
             final allImageUrls =
                 {...existing.imageUrls, ...exercise.imageUrls}.toList();
@@ -368,8 +378,9 @@ class ExerciseLibraryService {
           } else {
             addedCount++;
             // --- ADD NEW EXERCISE (Permissive) ---
-            // Add the exercise regardless of name validity.
-            // The final filtering step in `syncLibrary` will handle cleanup.
+            // Add the exercise regardless of name validity at this stage.
+            // Invalid names will be filtered out at the end of syncLibrary
+            // if no valid name was ever found (e.g. if English was also invalid).
             exercisesMap[exercise.id] = exercise;
           }
         }
@@ -386,11 +397,16 @@ class ExerciseLibraryService {
 
   LibraryExercise _parseExerciseFromApi(Map<String, dynamic> item) {
 
+    // Relaxed Filtering: Default to 0 (which maps to 'Otros' or handled below)
     int catId = (item['category'] is Map) ? item['category']['id'] : item['category'] ?? 0;
     int equipId = 7; // Body weight default
     if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
        equipId = (item['equipment'][0] is Map) ? item['equipment'][0]['id'] : item['equipment'][0];
     }
+
+    // Maps unknown IDs to 'Otros' / 'Otro' instead of discarding or erroring
+    final categoryName = _categoryMap[catId] ?? 'Otros';
+    final equipmentName = _equipmentMap[equipId] ?? 'Otro';
 
     List<String> mapMuscles(String key) {
         if (item[key] is List) {
@@ -404,8 +420,8 @@ class ExerciseLibraryService {
 
     return LibraryExercise.fromApi(
       item,
-      _categoryMap[catId] ?? 'Otro',
-      _equipmentMap[equipId] ?? 'Otro',
+      categoryName,
+      equipmentName,
       mapMuscles('muscles'),
       mapMuscles('muscles_secondary'),
     );
@@ -438,7 +454,7 @@ class ExerciseLibraryService {
   }
 
   Future<String?> _downloadImage(String url, String id, String dirPath) async {
-    // Force .jpg or .png extension
+    // Correct extension handling based on URL
     final extension = url.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
     final filePath = '$dirPath/$id.$extension';
     final file = File(filePath);
