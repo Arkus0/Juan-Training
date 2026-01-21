@@ -91,10 +91,20 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       backgroundColor: Colors.transparent,
       builder: (context) => BibliotecaBottomSheet(
         onAdd: (LibraryExercise ex) {
-          ref.read(createRoutineProvider(widget.rutina).notifier).addExerciseToDay(dayIndex, ex);
-          // Don't pop, allow multiple adds? User didn't specify. Standard is stay open or pop.
-          // "AÑADIR red bright button + vibrate on tap"
-          // Usually implies stay open for rapid add.
+          ref
+              .read(createRoutineProvider(widget.rutina).notifier)
+              .addExerciseToDay(dayIndex, ex);
+          Vibrate.feedback(FeedbackType.light);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 1),
+              content: Text(
+                'Has añadido ${ex.name} 💪',
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              backgroundColor: Colors.red[900],
+            ),
+          );
         },
       ),
     );
@@ -174,6 +184,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                           notifier.reorderVisualExercises(index, oldIdx, newIdx),
                       onRemoveExercise: (exIdx) =>
                           notifier.removeExercise(index, exIdx),
+                      onUndoRemove: (exIdx, ex) =>
+                          notifier.insertExercise(index, exIdx, ex),
                       onUpdateExercise: (exIdx, updated) =>
                           notifier.updateExercise(index, exIdx, updated),
                       onRemoveDay: () => notifier.removeDay(index),

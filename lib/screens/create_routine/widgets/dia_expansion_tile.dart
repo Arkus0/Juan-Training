@@ -13,6 +13,7 @@ class DiaExpansionTile extends StatefulWidget {
   final Function() onAddExercise;
   final Function(int, int) onReorderExercises;
   final Function(int) onRemoveExercise;
+  final Function(int, EjercicioEnRutina) onUndoRemove;
   final Function(int, EjercicioEnRutina) onUpdateExercise;
   final Function() onRemoveDay;
   final Function() onDuplicateDay;
@@ -28,6 +29,7 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onAddExercise,
     required this.onReorderExercises,
     required this.onRemoveExercise,
+    required this.onUndoRemove,
     required this.onUpdateExercise,
     required this.onRemoveDay,
     required this.onDuplicateDay,
@@ -270,22 +272,56 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                            ),
                          );
                       } else {
-                         // Single item
-                         final idx = groupIndices.first;
-                         final ex = widget.dia.ejercicios[idx];
-                         return Container(
-                           key: groupKey,
-                           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                           child: EjercicioCard(
-                             ejercicio: ex,
-                             onRemove: () => widget.onRemoveExercise(idx),
-                             onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                             onLink: (idx < widget.dia.ejercicios.length - 1)
-                                 ? () => widget.onCreateSuperset(idx, idx + 1)
-                                 : null,
-                             onUnlink: null, // No unlink for single item
-                           ),
-                         );
+                        // Single item
+                        final idx = groupIndices.first;
+                        final ex = widget.dia.ejercicios[idx];
+                        return Dismissible(
+                          key: Key(ex.instanceId),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20),
+                            color: Colors.red[900],
+                            child:
+                                const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          onDismissed: (_) {
+                            final removedItem = ex;
+                            widget.onRemoveExercise(idx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Ejercicio eliminado',
+                                  style: GoogleFonts.montserrat(
+                                      color: Colors.white),
+                                ),
+                                backgroundColor: Colors.red[900],
+                                action: SnackBarAction(
+                                  label: 'DESHACER',
+                                  textColor: Colors.white,
+                                  onPressed: () {
+                                    widget.onUndoRemove(idx, removedItem);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            key: groupKey,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 4, horizontal: 8),
+                            child: EjercicioCard(
+                              ejercicio: ex,
+                              onRemove: () => widget.onRemoveExercise(idx),
+                              onUpdate: (updated) =>
+                                  widget.onUpdateExercise(idx, updated),
+                              onLink: (idx < widget.dia.ejercicios.length - 1)
+                                  ? () => widget.onCreateSuperset(idx, idx + 1)
+                                  : null,
+                              onUnlink: null, // No unlink for single item
+                            ),
+                          ),
+                        );
                       }
                     }).toList(),
                   ),
