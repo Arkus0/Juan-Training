@@ -40,7 +40,7 @@ class DriftTrainingRepository implements ITrainingRepository {
                   nombre: e.name,
                   descripcion: e.description,
                   musculosPrincipales: e.musclesPrimary,
-                  musculosSecundarios: e.musclesSecondary,
+                  musculosSecundarios: e.musculosSecundarios ?? [],
                   equipo: e.equipment,
                   localImagePath: e.localImagePath,
                   series: e.series,
@@ -89,7 +89,7 @@ class DriftTrainingRepository implements ITrainingRepository {
           id: row.libraryId ?? 'unknown', // Fallback
           nombre: row.name,
           musculosPrincipales: row.musclesPrimary,
-          musculosSecundarios: row.musclesSecondary,
+          musculosSecundarios: row.musculosSecundarios,
           series: exerciseSets.length, // Approximate
           reps: 0, // Not stored at exercise level in history, usually
           peso: 0, // Not stored
@@ -167,21 +167,28 @@ class DriftTrainingRepository implements ITrainingRepository {
   }
 
   /// This function handles both the creation of a new routine and the
-  /// update of an existing one.
+  /// update of an existing one, preventing UNIQUE constraint errors.
   Future<void> createRoutine(Rutina rutina) async {
     try {
       await db.transaction(() async {
-        // For simplicity and to ensure data integrity on updates, we perform
-        // a full delete and re-insert. Cascade deletes should handle children.
-        await (db.delete(db.routines)..where((r) => r.id.equals(rutina.id)))
+        // 1. Insert or Update the Routine itself.
+        // This handles both new routines and edits to existing ones without conflict.
+        await db.into(db.routines).insertOnConflictUpdate(
+              RoutinesCompanion.insert(
+                id: rutina.id,
+                name: rutina.nombre,
+                createdAt: rutina.creada,
+              ),
+            );
+
+        // 2. "Clean Update": Delete all existing days (and their exercises via cascade)
+        // for this routine before inserting the new ones. This prevents UNIQUE
+        // constraint failures on child table primary keys (day.id).
+        await (db.delete(db.routineDays)
+              ..where((d) => d.routineId.equals(rutina.id)))
             .go();
 
-        await db.into(db.routines).insert(RoutinesCompanion.insert(
-              id: rutina.id,
-              name: rutina.nombre,
-              createdAt: rutina.creada,
-            ));
-
+        // 3. Insert the new days and exercises.
         for (var i = 0; i < rutina.dias.length; i++) {
           final dia = rutina.dias[i];
           await db.into(db.routineDays).insert(RoutineDaysCompanion.insert(
@@ -199,10 +206,11 @@ class DriftTrainingRepository implements ITrainingRepository {
                 .insert(RoutineExercisesCompanion.insert(
                   id: ej.instanceId,
                   dayId: dia.id,
-                  libraryId: ej.id, // CRITICAL: Pass libraryId correctly
+                  libraryId: ej.id,
                   name: ej.nombre,
                   description: Value(ej.descripcion),
                   musclesPrimary: ej.musculosPrincipales,
+                  // musculosSecundarios: ej.musculosSecundarios, // Removed as it's not a direct column
                   musclesSecondary: ej.musculosSecundarios,
                   equipment: ej.equipo,
                   localImagePath: Value(ej.localImagePath),
@@ -219,14 +227,14 @@ class DriftTrainingRepository implements ITrainingRepository {
       });
     } catch (e, s) {
       _logger.e('Failed to create/save routine', error: e, stackTrace: s);
-      // Do not rethrow, to prevent UI crash as requested.
+      // Do not rethrow, as a crashing save should not crash the whole app.
+      // The UI should give feedback based on whether this call completes.
     }
   }
 
   @override
   Future<void> saveRutina(Rutina rutina) async {
-    // Forward to the corrected method. The user likely intended to call this logic 'createRoutine'.
-    // To maintain repository integrity and avoid breaking changes, we call it internally.
+    // This now correctly points to the robust `createRoutine` method.
     await createRoutine(rutina);
   }
 
@@ -320,7 +328,7 @@ class DriftTrainingRepository implements ITrainingRepository {
               musclesPrimary: ex.musculosPrincipales,
               musclesSecondary: ex.musculosSecundarios,
               notes: Value(ex.notas),
-              exerciseIndex: i,
+              exerciseIndex: i, // Removed duplicate musclesSecondary
               isTarget: Value(isTarget),
             ));
 
@@ -484,6 +492,8 @@ class DriftTrainingRepository implements ITrainingRepository {
         .getSingleOrNull();
     return row?.note ?? '';
   }
+
+
 
   @override
   Future<void> saveNote(String exerciseName, String note) async {

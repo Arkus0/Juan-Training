@@ -20,7 +20,7 @@ class Dia {
     String? progressionType,
   }) {
     return Dia(
-      id: this.id,
+      id: id,
       nombre: nombre ?? this.nombre,
       ejercicios: ejercicios ?? this.ejercicios,
       progressionType: progressionType ?? this.progressionType,

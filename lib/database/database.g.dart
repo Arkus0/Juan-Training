@@ -1021,7 +1021,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       suggestedRestSeconds,
       notes,
       exerciseIndex);
-  @override
+
+  List<String>? get musculosSecundarios => null;
+  @override // ignore: unnecessary_getters_setters
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is RoutineExercise &&
@@ -1087,10 +1089,10 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     required int series,
     required String repsRange,
     this.suggestedRestSeconds = const Value.absent(),
-    this.notes = const Value.absent(),
-    required int exerciseIndex,
+    this.notes = const Value.absent(), required int exerciseIndex,
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
+
+  }) : id = Value(id),
         dayId = Value(dayId),
         libraryId = Value(libraryId),
         name = Value(name),
@@ -1931,6 +1933,8 @@ class SessionExercise extends DataClass implements Insertable<SessionExercise> {
       notes,
       exerciseIndex,
       isTarget);
+
+  List<String> get musculosSecundarios => musclesSecondary;
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1983,7 +1987,7 @@ class SessionExercisesCompanion extends UpdateCompanion<SessionExercise> {
     this.notes = const Value.absent(),
     required int exerciseIndex,
     this.isTarget = const Value.absent(),
-    this.rowid = const Value.absent(),
+    this.rowid = const Value.absent(), 
   })  : id = Value(id),
         sessionId = Value(sessionId),
         name = Value(name),
