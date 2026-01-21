@@ -334,11 +334,20 @@ class ExerciseLibraryService {
       };
       _logger.d('Initialized sync with ${exercisesMap.length} existing exercises.');
 
-      // Phase 1: Fetch English exercises (Language 2 - Primary)
-      await _fetchAndProcessLanguage(2, exercisesMap, isPrimary: true);
+      // --- PARALLEL FETCH ---
+      // Fetch both languages concurrently to speed up the process.
+      final results = await Future.wait([
+        _fetchLanguageExercises(2), // English (Primary)
+        _fetchLanguageExercises(4), // Spanish (Secondary)
+      ]);
 
-      // Phase 2: Fetch Spanish exercises (Language 4 - Secondary) and merge
-      await _fetchAndProcessLanguage(4, exercisesMap, isPrimary: false);
+      final englishExercises = results[0];
+      final spanishExercises = results[1];
+
+      // --- SEQUENTIAL MERGE ---
+      // Apply merges in strict order to ensure Spanish (Language 4) overrides English (Language 2).
+      _mergeExercises(exercisesMap, englishExercises, isPrimary: true);
+      _mergeExercises(exercisesMap, spanishExercises, isPrimary: false);
 
       _logger.i('Total exercises in map before final filtering: ${exercisesMap.length}');
 
@@ -440,15 +449,12 @@ class ExerciseLibraryService {
     );
   }
 
-  Future<void> _fetchAndProcessLanguage(
-      int language, Map<int, LibraryExercise> exercisesMap,
-      {required bool isPrimary}) async {
-    _logger.i('Phase: Fetching language $language (isPrimary: $isPrimary)');
+  Future<List<LibraryExercise>> _fetchLanguageExercises(int language) async {
+    _logger.i('Phase: Fetching language $language...');
+    List<LibraryExercise> fetchedExercises = [];
     String? url =
         'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=200';
     int fetchedCount = 0;
-    int addedCount = 0;
-    int mergedCount = 0;
 
     while (url != null && url.isNotEmpty) {
       try {
@@ -461,12 +467,9 @@ class ExerciseLibraryService {
         }
 
         // --- ISOLATE IMPLEMENTATION ---
-        // Offload decoding and parsing to background thread.
-        // We pass bodyBytes to allow UTF8 decoding in the isolate.
         final Map<String, dynamic> result =
             await compute(_decodeJsonBackground, response.bodyBytes);
 
-        // Explicit cast to the new expected type
         final List<Map<String, dynamic>> rawExercises =
             result['results'] as List<Map<String, dynamic>>;
         final String? nextUrl = result['next'] as String?;
@@ -475,61 +478,72 @@ class ExerciseLibraryService {
 
         for (var item in rawExercises) {
           final exercise = _parseExerciseFromApi(item);
-          if (exercise == null) continue; // Skip invalid data
-
-          final existing = exercisesMap[exercise.id];
-
-          if (existing != null) {
-            mergedCount++;
-            // --- MERGE LOGIC ---
-            // If primary (English), we overwrite (since it comes first in our flow).
-            // When processing Lang 4 (Spanish - Secondary):
-            // newName should use Lang 4 name (exercise.name) ONLY if it is valid.
-            // If Lang 4 name is invalid ("Exercise", "Ejercicio sin nombre"), we keep existing (English).
-
-            final bool shouldUseNewName =
-                isPrimary || _isValidName(exercise.name);
-            final newName = shouldUseNewName ? exercise.name : existing.name;
-
-            // Merge and Deduplicate Images
-            final Set<String> uniqueImages = {};
-            uniqueImages.addAll(existing.imageUrls);
-            uniqueImages.addAll(exercise.imageUrls);
-
-            exercisesMap[exercise.id] = LibraryExercise(
-              id: existing.id,
-              name: newName,
-              muscleGroup: exercise.muscleGroup,
-              equipment: exercise.equipment,
-              description: exercise.description?.isNotEmpty == true
-                  ? exercise.description
-                  : existing.description,
-              license: exercise.license ?? existing.license,
-              imageUrls: uniqueImages.toList(),
-              localImagePath:
-                  existing.localImagePath, // Preserve existing local path
-              muscles: exercise.muscles.isNotEmpty
-                  ? exercise.muscles
-                  : existing.muscles,
-              secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
-                  ? exercise.secondaryMuscles
-                  : existing.secondaryMuscles,
-            );
-          } else {
-            addedCount++;
-            // --- ADD NEW EXERCISE ---
-            exercisesMap[exercise.id] = exercise;
+          if (exercise != null) {
+            fetchedExercises.add(exercise);
           }
         }
         url = nextUrl;
       } catch (e, s) {
-        _logger.e('Failed to fetch or process page for language $language',
+        _logger.e('Failed to fetch page for language $language',
             error: e, stackTrace: s);
-        break; // Stop fetching this language on error
+        break;
+      }
+    }
+    _logger.i('Language $language: Fetched $fetchedCount raw items.');
+    return fetchedExercises;
+  }
+
+  void _mergeExercises(Map<int, LibraryExercise> exercisesMap,
+      List<LibraryExercise> newExercises,
+      {required bool isPrimary}) {
+    int addedCount = 0;
+    int mergedCount = 0;
+
+    for (var exercise in newExercises) {
+      final existing = exercisesMap[exercise.id];
+
+      if (existing != null) {
+        mergedCount++;
+        // --- MERGE LOGIC ---
+        // If primary (English), we overwrite (since it comes first in our flow).
+        // When processing Lang 4 (Spanish - Secondary):
+        // newName should use Lang 4 name (exercise.name) ONLY if it is valid.
+        // If Lang 4 name is invalid ("Exercise", "Ejercicio sin nombre"), we keep existing (English).
+
+        final bool shouldUseNewName = isPrimary || _isValidName(exercise.name);
+        final newName = shouldUseNewName ? exercise.name : existing.name;
+
+        // Merge and Deduplicate Images
+        final Set<String> uniqueImages = {};
+        uniqueImages.addAll(existing.imageUrls);
+        uniqueImages.addAll(exercise.imageUrls);
+
+        exercisesMap[exercise.id] = LibraryExercise(
+          id: existing.id,
+          name: newName,
+          muscleGroup: exercise.muscleGroup,
+          equipment: exercise.equipment,
+          description: exercise.description?.isNotEmpty == true
+              ? exercise.description
+              : existing.description,
+          license: exercise.license ?? existing.license,
+          imageUrls: uniqueImages.toList(),
+          localImagePath: existing.localImagePath, // Preserve existing local path
+          muscles: exercise.muscles.isNotEmpty
+              ? exercise.muscles
+              : existing.muscles,
+          secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
+              ? exercise.secondaryMuscles
+              : existing.secondaryMuscles,
+        );
+      } else {
+        addedCount++;
+        // --- ADD NEW EXERCISE ---
+        exercisesMap[exercise.id] = exercise;
       }
     }
     _logger.i(
-        'Language $language: Fetched $fetchedCount, added $addedCount new, merged $mergedCount existing.');
+        'Merge (isPrimary=$isPrimary): Added $addedCount new, Merged $mergedCount existing.');
   }
 
   Future<void> _processImageDownloads(
