@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'create_edit_routine_screen.dart';
 import '../providers/training_provider.dart';
@@ -53,61 +54,94 @@ class RutinasScreen extends ConsumerWidget {
               final rutina = rutinas[index];
               final totalExercises = rutina.dias.fold(0, (sum, day) => sum + day.ejercicios.length);
 
-              return Card(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    // Navigate to Edit screen
-                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+              return Dismissible(
+                key: ValueKey(rutina.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: Colors.redAccent[700],
+                  child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                ),
+                onDismissed: (_) {
+                  // Haptic feedback
+                  HapticFeedback.mediumImpact();
+
+                  // Delete routine
+                  ref.read(trainingRepositoryProvider).deleteRutina(rutina.id);
+
+                  // Show Undo SnackBar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('RUTINA "${rutina.nombre.toUpperCase()}" ELIMINADA'),
+                      backgroundColor: Colors.grey[900],
+                      action: SnackBarAction(
+                        label: 'DESHACER',
+                        textColor: Colors.redAccent[700],
+                        onPressed: () {
+                          // Restore routine
+                          ref.read(trainingRepositoryProvider).saveRutina(rutina);
+                        },
                       ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                rutina.nombre.toUpperCase(),
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
+                    ),
+                  );
+                },
+                child: Card(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      // Navigate to Edit screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  rutina.nombre.toUpperCase(),
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Icon(Icons.edit, color: Colors.redAccent[700]),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_view_week, size: 18, color: Colors.grey[400]),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${rutina.dias.length} DÍAS',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: Colors.grey[400],
+                              Icon(Icons.edit, color: Colors.redAccent[700]),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_view_week, size: 18, color: Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${rutina.dias.length} DÍAS',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: Colors.grey[400],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$totalExercises EJERCICIOS',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: Colors.grey[400],
+                              const SizedBox(width: 16),
+                              Icon(Icons.fitness_center, size: 18, color: Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text(
+                                '$totalExercises EJERCICIOS',
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  color: Colors.grey[400],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
