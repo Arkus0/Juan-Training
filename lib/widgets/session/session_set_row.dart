@@ -15,6 +15,7 @@ class SessionSetRow extends StatefulWidget {
   final Function(double) onPlateCalc;
   final VoidCallback onLongPress;
   final bool showAdvanced;
+  final bool shouldFocus; // Para auto-focus cuando timer termina
 
   const SessionSetRow({
     super.key,
@@ -28,6 +29,7 @@ class SessionSetRow extends StatefulWidget {
     required this.onPlateCalc,
     required this.onLongPress,
     required this.showAdvanced,
+    this.shouldFocus = false,
   });
 
   @override
@@ -37,17 +39,34 @@ class SessionSetRow extends StatefulWidget {
 class _SessionSetRowState extends State<SessionSetRow> {
   late TextEditingController _weightController;
   late TextEditingController _repsController;
+  final FocusNode _weightFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _weightController = TextEditingController(text: widget.log.peso > 0 ? widget.log.peso.toString() : '');
     _repsController = TextEditingController(text: widget.log.reps > 0 ? widget.log.reps.toString() : '');
+
+    // Auto-focus si es necesario en init
+    if (widget.shouldFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _weightFocusNode.requestFocus();
+      });
+    }
   }
 
   @override
   void didUpdateWidget(SessionSetRow oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    // Auto-focus cuando shouldFocus cambia a true
+    if (widget.shouldFocus && !oldWidget.shouldFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _weightFocusNode.requestFocus();
+        }
+      });
+    }
 
     // Sync weight from external source (e.g. copy previous set, plate calculator)
     if (oldWidget.log.peso != widget.log.peso) {
@@ -70,6 +89,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
   void dispose() {
     _weightController.dispose();
     _repsController.dispose();
+    _weightFocusNode.dispose();
     super.dispose();
   }
 
@@ -159,6 +179,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
                       children: [
                         _ProgressionTextField(
                           controller: _weightController,
+                          focusNode: _weightFocusNode,
                           onChanged: widget.onWeightChanged,
                           hintText: weightHint,
                           isSuggestion: widget.suggestion != null,
@@ -311,6 +332,7 @@ class Tag extends StatelessWidget {
 /// TextField con soporte para hint de progresión/historial.
 class _ProgressionTextField extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final ValueChanged<String> onChanged;
   final bool isInteger;
   final String? hintText;
@@ -318,6 +340,7 @@ class _ProgressionTextField extends StatelessWidget {
 
   const _ProgressionTextField({
     required this.controller,
+    this.focusNode,
     required this.onChanged,
     this.isInteger = false,
     this.hintText,
@@ -328,6 +351,7 @@ class _ProgressionTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: TextInputType.numberWithOptions(decimal: !isInteger),
       textAlign: TextAlign.center,
       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

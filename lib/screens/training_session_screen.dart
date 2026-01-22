@@ -4,7 +4,12 @@ import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../widgets/session/exercise_card.dart';
-import '../widgets/session/rest_timer_panel.dart';
+import '../widgets/session/rest_timer_bar.dart';
+
+/// Provider para comunicar el auto-focus cuando el timer termina
+final timerFinishedFocusProvider = StateProvider<({int exerciseIndex, int setIndex})?>(
+  (ref) => null,
+);
 
 class TrainingSessionScreen extends ConsumerStatefulWidget {
   const TrainingSessionScreen({super.key});
@@ -85,8 +90,43 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
      );
   }
 
-  void _notifyTimerFinished() async {
-    Vibrate.vibrate();
+  /// Callback cuando el timer de descanso termina
+  /// Vibra y notifica para auto-focus al siguiente input
+  void _onTimerFinished({int? lastExerciseIndex, int? lastSetIndex}) async {
+    // La vibración ya se maneja en el TimerBar
+    // Notificar para auto-focus
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+
+    if (nextSet != null) {
+      // Actualizar el provider para que ExerciseCard haga focus
+      ref.read(timerFinishedFocusProvider.notifier).state = nextSet;
+
+      // Scroll hacia el ejercicio si es necesario
+      _scrollToExercise(nextSet.exerciseIndex);
+
+      // Limpiar después de un frame para que el widget pueda reaccionar
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            ref.read(timerFinishedFocusProvider.notifier).state = null;
+          }
+        });
+      });
+    }
+  }
+
+  /// Scroll suave hacia un ejercicio específico
+  void _scrollToExercise(int exerciseIndex) {
+    // Estimar posición del card (aprox 200px por card)
+    final estimatedOffset = exerciseIndex * 220.0;
+    final maxOffset = _scrollController.position.maxScrollExtent;
+
+    _scrollController.animateTo(
+      estimatedOffset.clamp(0.0, maxOffset),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -97,9 +137,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
     final exercisesLength = ref.watch(trainingSessionProvider.select((s) => s.exercises.length));
 
-    // Timer specific selectors
-    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
-    final defaultRestSeconds = ref.watch(trainingSessionProvider.select((s) => s.defaultRestSeconds));
+    // Timer state (nuevo estado avanzado)
+    final restTimerState = ref.watch(trainingSessionProvider.select((s) => s.restTimer));
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
@@ -138,7 +177,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 120), // Space for timer
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Espacio reducido para timer compacto
               itemCount: exercisesLength,
               itemBuilder: (context, index) {
                 // ⚡ Bolt Optimization: Extracted to smart widget
@@ -146,13 +185,16 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               },
             ),
           ),
-          RestTimerPanel(
-            isRestActive: isRestActive,
-            defaultRestSeconds: defaultRestSeconds,
+          // Nuevo Timer Bar no invasivo
+          RestTimerBar(
+            timerState: restTimerState,
             onStartRest: notifier.startRest,
             onStopRest: notifier.stopRest,
+            onPauseRest: notifier.pauseRest,
+            onResumeRest: notifier.resumeRest,
             onDurationChange: notifier.setRestDuration,
-            onTimerFinished: _notifyTimerFinished,
+            onAddTime: notifier.addRestTime,
+            onTimerFinished: _onTimerFinished,
           ),
         ],
       ),

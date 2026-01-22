@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
 import 'services/alternativas_service.dart';
+import 'services/timer_audio_service.dart';
 import 'providers/training_provider.dart';
 
 import 'database/database.dart';
@@ -22,6 +23,9 @@ void main() async {
 
   // Load Alternativas
   await AlternativasService.instance.initialize();
+
+  // Initialize Timer Audio Service
+  await TimerAudioService.instance.initialize();
 
   await initializeDateFormatting('es_ES', null);
 
