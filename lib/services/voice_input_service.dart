@@ -182,18 +182,18 @@ class VoiceInputService {
     _exercisesCache = library.exercises;
 
     // Crear fuzzy matcher con nombres de ejercicios
-    // Configuración optimizada para voz en español
+    // Configuración muy permisiva para voz en español (errores comunes de STT)
     _fuzzyMatcher = Fuzzy<LibraryExercise>(
       _exercisesCache!,
       options: FuzzyOptions(
         keys: [
           WeightedKey(
             name: 'name',
-            getter: (ex) => ex.name.toLowerCase(),
+            getter: (ex) => _normalizeForSearch(ex.name),
             weight: 1.0,
           ),
         ],
-        threshold: 0.45, // Un poco más permisivo para errores de voz
+        threshold: 0.6, // Muy permisivo para errores de voz (0 = exacto, 1 = cualquiera)
         findAllMatches: true,
         isCaseSensitive: false,
       ),
@@ -542,6 +542,22 @@ class VoiceInputService {
     _exerciseHistory.clear();
   }
 
+  /// Normaliza texto para búsqueda (elimina acentos, caracteres especiales)
+  String _normalizeForSearch(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('ñ', 'n')
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   /// Normaliza texto en español (acentos, variaciones)
   String _normalizeSpanish(String text) {
     return text
@@ -695,21 +711,36 @@ class VoiceInputService {
     double confidence = 0.0;
 
     if (_fuzzyMatcher != null) {
-      final results = _fuzzyMatcher!.search(searchTerm.toLowerCase());
+      // Normalizar el término de búsqueda igual que los ejercicios
+      final normalizedSearch = _normalizeForSearch(searchTerm);
+      final results = _fuzzyMatcher!.search(normalizedSearch);
+      
+      _logger.d('Buscando: "$normalizedSearch" (original: "$searchTerm")');
 
       if (results.isNotEmpty) {
         final best = results.first;
         confidence = 1.0 - best.score;
+        
+        _logger.d('Match: "${best.item.name}" score=${best.score} conf=$confidence');
         
         // Si usamos sinónimo, aumentar confianza
         if (_synonymsService.hasSynonym(exercisePart)) {
           confidence = (confidence + 0.2).clamp(0.0, 1.0);
         }
 
-        // Umbral más bajo para voz (más tolerante a errores)
-        if (confidence >= 0.4) {
+        // Umbral muy bajo para voz (muy tolerante a errores de STT)
+        if (confidence >= 0.3) {
           matchedName = best.item.name;
           matchedId = best.item.id;
+        } else if (results.length > 1) {
+          // Intentar con el segundo resultado si el primero no pasa
+          final second = results[1];
+          final secondConf = 1.0 - second.score;
+          if (secondConf >= 0.25) {
+            matchedName = second.item.name;
+            matchedId = second.item.id;
+            confidence = secondConf;
+          }
         }
       }
     }

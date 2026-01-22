@@ -9,7 +9,7 @@ import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
-import '../widgets/voice/voice_training_fab.dart';
+import '../widgets/voice/voice_training_button.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
@@ -238,6 +238,17 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
         ),
         actions: [
+          // Botón de voz en AppBar (al lado de terminar)
+          voiceAvailable.when(
+            data: (available) => available 
+                ? VoiceTrainingButton(
+                    enabled: true,
+                    onCommand: (command) => _handleVoiceCommand(command, notifier),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           IconButton(
             icon: Icon(showAdvanced ? Icons.settings_input_component : Icons.settings_input_component_outlined),
             onPressed: () => notifier.toggleAdvancedOptions(!showAdvanced),
@@ -313,16 +324,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 onRestartRest: notifier.restartRest,
               ),
             ],
-          ),
-
-          // Voice Training FAB (sutil, esquina inferior izquierda)
-          voiceAvailable.when(
-            data: (available) => VoiceTrainingFab(
-              enabled: available,
-              onCommand: (command) => _handleVoiceCommand(command, notifier),
-            ),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ),
