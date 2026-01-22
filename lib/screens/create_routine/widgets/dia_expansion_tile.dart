@@ -376,28 +376,30 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
   bool _isDragOver = false;
   int? _dragOverIndex;
 
-  void _showDeleteSnackbar(BuildContext context, int idx, EjercicioEnRutina removedItem) {
+  void _showDeleteSnackbar(ScaffoldMessengerState messenger, int idx, EjercicioEnRutina removedItem) {
     // Hide any existing snackbar first
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${removedItem.nombre} eliminado',
-          style: GoogleFonts.montserrat(color: Colors.white),
-        ),
-        backgroundColor: Colors.red[900],
-        duration: const Duration(milliseconds: 1500),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-        action: SnackBarAction(
-          label: 'DESHACER',
-          textColor: Colors.white,
-          onPressed: () {
-            widget.onUndoRemove(idx, removedItem);
-          },
-        ),
+    messenger.hideCurrentSnackBar();
+
+    // Create the snackbar with proper auto-dismiss
+    final snackBar = SnackBar(
+      content: Text(
+        '${removedItem.nombre} eliminado',
+        style: GoogleFonts.montserrat(color: Colors.white),
+      ),
+      backgroundColor: Colors.red[900],
+      duration: const Duration(milliseconds: 1500),
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      action: SnackBarAction(
+        label: 'DESHACER',
+        textColor: Colors.white,
+        onPressed: () {
+          widget.onUndoRemove(idx, removedItem);
+        },
       ),
     );
+
+    messenger.showSnackBar(snackBar);
   }
 
   Widget _buildExerciseCard(BuildContext context, int idx, EjercicioEnRutina ex, {bool inSuperset = false}) {
@@ -405,9 +407,11 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       key: Key('exercise_${ex.instanceId}'),
       ejercicio: ex,
       onRemove: () {
+        // Capture messenger BEFORE state change to ensure snackbar works correctly
+        final messenger = ScaffoldMessenger.of(context);
         final removedItem = ex;
         widget.onRemoveExercise(idx);
-        _showDeleteSnackbar(context, idx, removedItem);
+        _showDeleteSnackbar(messenger, idx, removedItem);
       },
       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
       onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
@@ -511,10 +515,13 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         color: Colors.red[900],
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) {
+      confirmDismiss: (_) async {
+        // Capture messenger BEFORE the widget is dismissed and state changes
+        final messenger = ScaffoldMessenger.of(context);
         final removedItem = ex;
         widget.onRemoveExercise(idx);
-        _showDeleteSnackbar(context, idx, removedItem);
+        _showDeleteSnackbar(messenger, idx, removedItem);
+        return true; // Allow dismiss
       },
       child: draggableCard,
     );

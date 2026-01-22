@@ -90,6 +90,63 @@ class EjercicioEnRutina {
       targetRpe: targetRpe == _sentinel ? this.targetRpe : targetRpe as int?,
     );
   }
+
+  /// Serializes the exercise to a JSON-compatible map for export.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'descripcion': descripcion,
+      'musculosPrincipales': musculosPrincipales,
+      'musculosSecundarios': musculosSecundarios,
+      'equipo': equipo,
+      'localImagePath': localImagePath,
+      'series': series,
+      'repsRange': repsRange,
+      'descansoSugeridoSeconds': descansoSugerido?.inSeconds,
+      'notas': notas,
+      'instanceId': instanceId,
+      'supersetId': supersetId,
+      'progressionType': progressionType.value,
+      'weightIncrement': weightIncrement,
+      'targetRpe': targetRpe,
+    };
+  }
+
+  /// Creates an EjercicioEnRutina from a JSON map (for import).
+  /// Note: instanceId will be regenerated with new UUID for imported routines.
+  factory EjercicioEnRutina.fromJson(Map<String, dynamic> json, {String? newInstanceId, String? newSupersetId}) {
+    // Parse descansoSugerido from seconds
+    Duration? descanso;
+    if (json['descansoSugeridoSeconds'] != null) {
+      descanso = Duration(seconds: json['descansoSugeridoSeconds'] as int);
+    }
+
+    return EjercicioEnRutina(
+      id: json['id']?.toString() ?? '',
+      nombre: json['nombre'] as String? ?? '',
+      descripcion: json['descripcion'] as String?,
+      musculosPrincipales: (json['musculosPrincipales'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      musculosSecundarios: (json['musculosSecundarios'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      equipo: json['equipo'] as String? ?? '',
+      localImagePath: json['localImagePath'] as String?,
+      series: json['series'] as int? ?? 3,
+      repsRange: json['repsRange'] as String? ?? '8-12',
+      descansoSugerido: descanso,
+      notas: json['notas'] as String?,
+      instanceId: newInstanceId, // Will generate new UUID if null
+      supersetId: newSupersetId ?? json['supersetId'] as String?,
+      progressionType: ProgressionType.fromString(json['progressionType'] as String?),
+      weightIncrement: (json['weightIncrement'] as num?)?.toDouble() ?? 2.5,
+      targetRpe: json['targetRpe'] as int?,
+    );
+  }
 }
 
 /// Sentinel value used by copyWith to distinguish between null and undefined
