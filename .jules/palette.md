@@ -7,3 +7,7 @@
 ## 2024-05-24 - Destructive Action Safety
 **Learning:** Users hesitate to manage routines if deletion is permanent and immediate. The "Swipe to Delete" pattern requires a safety net.
 **Action:** Always pair destructive list actions (Swipe/Delete) with a prominent "Undo" SnackBar to build user confidence in managing their data.
+
+## 2024-05-25 - Standardizing Interactive Elements
+**Learning:** Custom "buttons" built with `GestureDetector` + `Container` lack native touch feedback (ripples) and accessibility semantics, making the UI feel "dead" and harder to use for screen readers.
+**Action:** Replace ad-hoc interactive containers with `Material` + `InkWell` + `Tooltip` to ensure consistent visual feedback and accessibility compliance across the app.
