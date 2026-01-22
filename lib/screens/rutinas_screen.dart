@@ -63,10 +63,20 @@ class RutinasScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16.0),
             itemBuilder: (context, index) {
               final rutina = rutinas[index];
-              return _RutinaTile(
+              return Dismissible(
                 key: ValueKey(rutina.id),
-                rutina: rutina,
-                onTap: () => _navigateToEdit(context, rutina),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  color: Colors.red[900],
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                onDismissed: (_) => _deleteRutina(context, ref, rutina),
+                child: _RutinaTile(
+                  rutina: rutina,
+                  onTap: () => _navigateToEdit(context, rutina),
+                ),
               );
             },
           );
@@ -95,6 +105,33 @@ class RutinasScreen extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => CreateEditRoutineScreen(rutina: rutina),
+      ),
+    );
+  }
+
+  void _deleteRutina(BuildContext context, WidgetRef ref, Rutina rutina) {
+    ref.read(trainingRepositoryProvider).deleteRutina(rutina.id);
+    Vibrate.feedback(FeedbackType.heavy);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'RUTINA ELIMINADA',
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.red[900],
+        action: SnackBarAction(
+          label: 'DESHACER',
+          textColor: Colors.white,
+          onPressed: () {
+            ref.read(trainingRepositoryProvider).saveRutina(rutina);
+            Vibrate.feedback(FeedbackType.light);
+          },
+        ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
