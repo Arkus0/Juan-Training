@@ -101,16 +101,17 @@ class _EjercicioCardState extends State<EjercicioCard> {
   void _showAlternativasDialog(BuildContext context) {
     showAlternativasDialog(
       context: context,
-      ejercicioNombre: widget.ejercicio.nombre,
-      onReplace: (alternativaNombre) {
+      exerciseId: widget.ejercicio.id,
+      exerciseName: widget.ejercicio.nombre,
+      onReplace: (alternativa) {
         Vibrate.feedback(FeedbackType.success);
         if (widget.onReplace != null) {
-          widget.onReplace!(alternativaNombre);
+          widget.onReplace!(alternativa.name);
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reemplazado por $alternativaNombre',
+              'Reemplazado por ${alternativa.name}',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
             backgroundColor: Colors.red[900],
@@ -291,7 +292,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
             ),
 
             // Alternatives button
-            if (AlternativasService.instance.hasAlternativas(widget.ejercicio.nombre))
+            if (AlternativasService.instance.hasAlternativas(widget.ejercicio.id))
               IconButton(
                 icon: Icon(Icons.swap_horiz, color: Colors.redAccent[700], size: 20),
                 onPressed: () => _showAlternativasDialog(context),

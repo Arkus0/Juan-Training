@@ -2,28 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/alternativas_service.dart';
+import '../../services/exercise_library_service.dart';
+import '../../models/library_exercise.dart';
 
 /// Dialog que muestra las alternativas para un ejercicio.
 /// Permite seleccionar una alternativa para reemplazar el ejercicio actual.
 ///
-/// [ejercicioNombre]: Nombre del ejercicio actual.
-/// [onReplace]: Callback con el nombre de la alternativa seleccionada.
+/// [exerciseId]: ID del ejercicio actual (para buscar alternativas).
+/// [exerciseName]: Nombre del ejercicio actual (para mostrar en el título).
+/// [onReplace]: Callback con el objeto LibraryExercise seleccionado.
 /// [onCancel]: Callback opcional cuando se cancela.
 class AlternativasDialog extends StatelessWidget {
-  final String ejercicioNombre;
-  final void Function(String alternativaNombre) onReplace;
+  final String exerciseId;
+  final String exerciseName;
+  final void Function(LibraryExercise alternativa) onReplace;
   final VoidCallback? onCancel;
 
   const AlternativasDialog({
     super.key,
-    required this.ejercicioNombre,
+    required this.exerciseId,
+    required this.exerciseName,
     required this.onReplace,
     this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final alternativas = AlternativasService.instance.getAlternativas(ejercicioNombre);
+    // 1. Obtener IDs de alternativas
+    final ids = AlternativasService.instance.getAlternativasIds(exerciseId);
+
+    // 2. Resolver IDs a objetos LibraryExercise
+    final List<LibraryExercise> alternativas = ids
+        .map((id) => ExerciseLibraryService.instance.getExerciseById(id))
+        .whereType<LibraryExercise>() // Filtrar nulos
+        .toList();
 
     return AlertDialog(
       backgroundColor: Colors.grey[900],
@@ -52,7 +64,7 @@ class AlternativasDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            ejercicioNombre.toUpperCase(),
+            exerciseName.toUpperCase(),
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -113,7 +125,7 @@ class AlternativasDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildAlternativasList(BuildContext context, List<String> alternativas) {
+  Widget _buildAlternativasList(BuildContext context, List<LibraryExercise> alternativas) {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: alternativas.length,
@@ -124,7 +136,7 @@ class AlternativasDialog extends StatelessWidget {
       itemBuilder: (context, index) {
         final alternativa = alternativas[index];
         return _AlternativaItem(
-          nombre: alternativa,
+          exercise: alternativa,
           isFirst: index == 0,
           onTap: () {
             Vibrate.feedback(FeedbackType.selection);
@@ -138,12 +150,12 @@ class AlternativasDialog extends StatelessWidget {
 }
 
 class _AlternativaItem extends StatelessWidget {
-  final String nombre;
+  final LibraryExercise exercise;
   final bool isFirst;
   final VoidCallback onTap;
 
   const _AlternativaItem({
-    required this.nombre,
+    required this.exercise,
     required this.isFirst,
     required this.onTap,
   });
@@ -162,7 +174,7 @@ class _AlternativaItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    nombre.toUpperCase(),
+                    exercise.name.toUpperCase(),
                     style: GoogleFonts.montserrat(
                       // Primera alternativa destacada, resto en gris suave
                       color: isFirst ? Colors.white : Colors.white38,
@@ -170,13 +182,25 @@ class _AlternativaItem extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                  if (isFirst)
+                  if (exercise.equipment.isNotEmpty)
                     Text(
-                      'RECOMENDADA',
+                      exercise.equipment,
                       style: GoogleFonts.montserrat(
-                        color: Colors.redAccent[700],
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  if (isFirst)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'RECOMENDADA',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.redAccent[700],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                 ],
@@ -210,13 +234,15 @@ class _AlternativaItem extends StatelessWidget {
 /// Función helper para mostrar el dialog de alternativas fácilmente.
 Future<void> showAlternativasDialog({
   required BuildContext context,
-  required String ejercicioNombre,
-  required void Function(String alternativaNombre) onReplace,
+  required String exerciseId,
+  required String exerciseName,
+  required void Function(LibraryExercise alternativa) onReplace,
 }) {
   return showDialog(
     context: context,
     builder: (ctx) => AlternativasDialog(
-      ejercicioNombre: ejercicioNombre,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
       onReplace: onReplace,
     ),
   );

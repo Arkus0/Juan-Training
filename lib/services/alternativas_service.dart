@@ -1,16 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:fuzzy/fuzzy.dart';
 
 /// Servicio singleton que gestiona las alternativas de ejercicios.
-/// Carga el JSON una vez y proporciona búsqueda fuzzy eficiente.
+/// Carga el JSON una vez y proporciona búsqueda por ID.
 class AlternativasService {
   AlternativasService._internal();
   static final AlternativasService instance = AlternativasService._internal();
 
-  Map<String, List<String>> _alternativas = {};
+  // Mapa de ID (String) -> Lista de IDs Alternativos (int)
+  Map<String, List<int>> _alternativas = {};
   bool _initialized = false;
-  Fuzzy<String>? _fuzzy;
 
   /// Inicializa el servicio cargando el JSON de alternativas.
   /// Se llama una vez al iniciar la app.
@@ -24,14 +23,7 @@ class AlternativasService {
       final Map<String, dynamic> data = json.decode(jsonString);
 
       _alternativas = data.map(
-        (key, value) => MapEntry(key, List<String>.from(value))
-      );
-
-      // Pre-computar índice fuzzy para búsqueda
-      final allKeys = _alternativas.keys.toList();
-      _fuzzy = Fuzzy<String>(
-        allKeys,
-        options: FuzzyOptions(threshold: 0.4),
+        (key, value) => MapEntry(key, List<int>.from(value))
       );
 
       _initialized = true;
@@ -42,51 +34,15 @@ class AlternativasService {
     }
   }
 
-  /// Obtiene las alternativas para un ejercicio dado.
-  /// Usa búsqueda fuzzy para encontrar coincidencias cercanas si no hay exacta.
-  List<String> getAlternativas(String ejercicioNombre) {
+  /// Obtiene las alternativas para un ejercicio dado (por ID).
+  /// Retorna una lista de IDs de ejercicios alternativos.
+  List<int> getAlternativasIds(String exerciseId) {
     if (!_initialized || _alternativas.isEmpty) return [];
-
-    // 1. Búsqueda exacta (case-insensitive)
-    final lowerName = ejercicioNombre.toLowerCase().trim();
-
-    for (final entry in _alternativas.entries) {
-      if (entry.key.toLowerCase() == lowerName) {
-        return List<String>.from(entry.value);
-      }
-    }
-
-    // 2. Búsqueda fuzzy si no hay coincidencia exacta
-    if (_fuzzy != null) {
-      final results = _fuzzy!.search(ejercicioNombre);
-      if (results.isNotEmpty && results.first.score < 0.3) {
-        final bestMatch = results.first.item;
-        return List<String>.from(_alternativas[bestMatch] ?? []);
-      }
-    }
-
-    return [];
+    return List<int>.from(_alternativas[exerciseId] ?? []);
   }
 
   /// Verifica si un ejercicio tiene alternativas disponibles.
-  bool hasAlternativas(String ejercicioNombre) {
-    return getAlternativas(ejercicioNombre).isNotEmpty;
-  }
-
-  /// Busca ejercicios que contengan la query en su nombre.
-  /// Útil para sugerir alternativas basadas en búsqueda.
-  List<String> searchAlternativas(String query) {
-    if (!_initialized || _fuzzy == null) return [];
-
-    return _fuzzy!
-        .search(query)
-        .take(5)
-        .map((r) => r.item)
-        .toList();
-  }
-
-  /// Obtiene todos los nombres de ejercicios que tienen alternativas.
-  List<String> get allExercisesWithAlternatives {
-    return _alternativas.keys.toList();
+  bool hasAlternativas(String exerciseId) {
+    return _alternativas.containsKey(exerciseId);
   }
 }

@@ -649,6 +649,15 @@ class ExerciseLibraryService {
   List<LibraryExercise> getExercises() => List.from(_exercises);
   List<LibraryExercise> get exercises => List.from(_exercises);
 
+  /// Get an exercise by its ID.
+  /// Returns null if not found.
+  LibraryExercise? getExerciseById(int id) {
+    for (final ex in _exercises) {
+      if (ex.id == id) return ex;
+    }
+    return null;
+  }
+
   /// Get all favorite exercises
   List<LibraryExercise> get favorites =>
       _exercises.where((e) => e.isFavorite).toList();

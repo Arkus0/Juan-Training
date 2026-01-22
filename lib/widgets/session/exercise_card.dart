@@ -64,7 +64,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
-    final hasAlternativas = AlternativasService.instance.hasAlternativas(exercise.nombre);
+    final hasAlternativas = AlternativasService.instance.hasAlternativas(exercise.libraryId);
 
     showModalBottomSheet(
       context: context,
@@ -107,13 +107,14 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     Navigator.pop(sheetContext);
                     showAlternativasDialog(
                       context: context,
-                      ejercicioNombre: exercise.nombre,
+                      exerciseId: exercise.libraryId,
+                      exerciseName: exercise.nombre,
                       onReplace: (alternativa) {
                         Vibrate.feedback(FeedbackType.selection);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Alternativa: $alternativa (edita la rutina para cambiar permanentemente)',
+                              'Alternativa: ${alternativa.name} (edita la rutina para cambiar permanentemente)',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             backgroundColor: Colors.grey[800],
