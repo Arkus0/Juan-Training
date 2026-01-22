@@ -8,6 +8,7 @@ import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
+import 'package:juan_training/services/routine_sharing_service.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -118,6 +119,41 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     );
   }
 
+  void _exportRoutine(Rutina rutina) {
+    // Validate that routine has content worth exporting
+    if (rutina.nombre.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ponle nombre a tu rutina antes de compartir',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (rutina.dias.isEmpty ||
+        !rutina.dias.any((d) => d.ejercicios.isNotEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Añade ejercicios antes de compartir',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Vibrate.feedback(FeedbackType.selection);
+    RoutineSharingService.instance.shareRoutine(rutina);
+  }
+
   @override
   Widget build(BuildContext context) {
     final routineState = ref.watch(createRoutineProvider(widget.rutina));
@@ -131,6 +167,30 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 22),
         ),
         backgroundColor: Colors.red[900],
+        actions: [
+          // Export button - only show when editing an existing routine with content
+          if (widget.rutina != null || routineState.dias.isNotEmpty)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'export') {
+                  _exportRoutine(routineState);
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'export',
+                  child: Row(
+                    children: [
+                      Icon(Icons.share, size: 20),
+                      SizedBox(width: 8),
+                      Text('Compartir Rutina'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 100), // Space for FAB/Button

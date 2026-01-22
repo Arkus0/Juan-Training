@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'create_edit_routine_screen.dart';
+import '../models/rutina.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
+import '../widgets/routine_import_preview_dialog.dart';
 
 class RutinasScreen extends ConsumerWidget {
   const RutinasScreen({super.key});
@@ -15,6 +18,28 @@ class RutinasScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('MIS RUTINAS'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'import') {
+                _showImportFlow(context, ref);
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    Icon(Icons.download, size: 20),
+                    SizedBox(width: 8),
+                    Text('Importar Rutina'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: rutinasAsync.when(
         loading: () => const AppLoadingIndicator(message: 'Cargando rutinas...'),
@@ -72,6 +97,69 @@ class RutinasScreen extends ConsumerWidget {
         builder: (context) => CreateEditRoutineScreen(rutina: rutina),
       ),
     );
+  }
+
+  Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
+    Vibrate.feedback(FeedbackType.selection);
+
+    // Step 1: Show JSON input dialog
+    final parsedRutina = await showDialog<Rutina>(
+      context: context,
+      builder: (ctx) => const RoutineImportInputDialog(),
+    );
+
+    if (parsedRutina == null || !context.mounted) return;
+
+    // Step 2: Show preview dialog
+    final confirmedRutina = await showDialog<Rutina>(
+      context: context,
+      builder: (ctx) => RoutineImportPreviewDialog(
+        rutina: parsedRutina,
+        onConfirm: () {
+          // This callback is called when user confirms import
+        },
+      ),
+    );
+
+    if (confirmedRutina == null || !context.mounted) return;
+
+    // Step 3: Save the routine to database
+    try {
+      final repository = ref.read(trainingRepositoryProvider);
+      await repository.saveRutina(confirmedRutina);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'RUTINA IMPORTADA: ${confirmedRutina.nombre.toUpperCase()}',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.red[900],
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(milliseconds: 2000),
+          ),
+        );
+        Vibrate.feedback(FeedbackType.success);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al guardar: ${e.toString()}',
+              style: GoogleFonts.montserrat(color: Colors.white),
+            ),
+            backgroundColor: Colors.redAccent[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Vibrate.feedback(FeedbackType.error);
+      }
+    }
   }
 }
 

@@ -27,4 +27,54 @@ class Dia {
       progressionType: progressionType ?? this.progressionType,
     );
   }
+
+  /// Serializes the day to a JSON-compatible map for export.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'progressionType': progressionType,
+      'ejercicios': ejercicios.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  /// Creates a Dia from a JSON map (for import).
+  /// Note: IDs will be regenerated with new UUIDs for imported routines.
+  factory Dia.fromJson(Map<String, dynamic> json, {String? newId, Map<String, String>? supersetIdMap}) {
+    final uuid = const Uuid();
+    supersetIdMap ??= {};
+
+    // Parse exercises with new instance IDs and mapped superset IDs
+    final ejercicios = <EjercicioEnRutina>[];
+    final rawEjercicios = json['ejercicios'] as List<dynamic>? ?? [];
+
+    for (final exJson in rawEjercicios) {
+      final exMap = exJson as Map<String, dynamic>;
+      final oldSupersetId = exMap['supersetId'] as String?;
+      String? newSupersetId;
+
+      // Map old superset IDs to new ones
+      if (oldSupersetId != null) {
+        if (supersetIdMap.containsKey(oldSupersetId)) {
+          newSupersetId = supersetIdMap[oldSupersetId];
+        } else {
+          newSupersetId = uuid.v4();
+          supersetIdMap[oldSupersetId] = newSupersetId;
+        }
+      }
+
+      ejercicios.add(EjercicioEnRutina.fromJson(
+        exMap,
+        newInstanceId: uuid.v4(),
+        newSupersetId: newSupersetId,
+      ));
+    }
+
+    return Dia(
+      id: newId ?? uuid.v4(),
+      nombre: json['nombre'] as String? ?? 'Día',
+      progressionType: json['progressionType'] as String? ?? 'none',
+      ejercicios: ejercicios,
+    );
+  }
 }
