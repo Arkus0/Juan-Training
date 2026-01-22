@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../models/ejercicio_en_rutina.dart';
-import '../../../models/library_exercise.dart';
-import '../../../services/exercise_library_service.dart';
+import 'package:juan_training/models/ejercicio_en_rutina.dart';
+import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/services/exercise_library_service.dart';
 
 /// Payload passed through drag events so the parent knows which item is moving.
 class SupersetDragData {
@@ -45,24 +45,13 @@ class EjercicioCard extends StatelessWidget {
   final bool disableSwipe;
 
   const EjercicioCard({
-    super.key,
+    Key? key,
     required this.ejercicio,
     required this.onRemove,
     required this.onUpdate,
     this.onLink,
     this.onUnlink,
-    this.linkDragData,
-    this.onLinkDragStart,
-    this.onLinkDragAccepted,
-    this.onLinkDragEnd,
-    this.onLinkDragCancel,
-    this.reorderDragData,
-    this.onReorderDragStart,
-    this.onReorderDragAccepted,
-    this.onReorderDragEnd,
-    this.onReorderDragCancel,
-    this.disableSwipe = false,
-  });
+  }) : super(key: key);
 
   void _showProOptions(BuildContext context) {
     showModalBottomSheet(

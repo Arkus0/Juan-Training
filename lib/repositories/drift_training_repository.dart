@@ -222,41 +222,47 @@ class DriftTrainingRepository implements ITrainingRepository {
               ..where((tbl) => tbl.routineId.equals(rutina.id)))
             .go();
 
-        // 3. Insert the new days and exercises.
+        // 3. Insert the new days and exercises using batch.
+        final daysCompanions = <RoutineDaysCompanion>[];
+        final exercisesCompanions = <RoutineExercisesCompanion>[];
+
         for (var i = 0; i < rutina.dias.length; i++) {
           final dia = rutina.dias[i];
-          await db.into(db.routineDays).insert(RoutineDaysCompanion.insert(
-                id: dia.id,
-                routineId: rutina.id,
-                name: dia.nombre,
-                progressionType: Value(dia.progressionType),
-                dayIndex: i,
-              ));
+          daysCompanions.add(RoutineDaysCompanion.insert(
+            id: dia.id,
+            routineId: rutina.id,
+            name: dia.nombre,
+            progressionType: Value(dia.progressionType),
+            dayIndex: i,
+          ));
 
           for (var j = 0; j < dia.ejercicios.length; j++) {
             final ej = dia.ejercicios[j];
-            await db
-                .into(db.routineExercises)
-                .insert(RoutineExercisesCompanion.insert(
-                  id: ej.instanceId,
-                  dayId: dia.id,
-                  libraryId: ej.id,
-                  name: ej.nombre,
-                  description: Value(ej.descripcion),
-                  musclesPrimary: ej.musculosPrincipales,
-                  musclesSecondary: ej.musculosSecundarios,
-                  equipment: ej.equipo,
-                  localImagePath: Value(ej.localImagePath),
-                  series: ej.series,
-                  repsRange: ej.repsRange,
-                  suggestedRestSeconds:
-                      Value(ej.descansoSugerido?.inSeconds ?? 60),
-                  notes: Value(ej.notas ?? ""),
-                  supersetId: Value(ej.supersetId),
-                  exerciseIndex: j,
-                ));
+            exercisesCompanions.add(RoutineExercisesCompanion.insert(
+              id: ej.instanceId,
+              dayId: dia.id,
+              libraryId: ej.id,
+              name: ej.nombre,
+              description: Value(ej.descripcion),
+              musclesPrimary: ej.musculosPrincipales,
+              musclesSecondary: ej.musculosSecundarios,
+              equipment: ej.equipo,
+              localImagePath: Value(ej.localImagePath),
+              series: ej.series,
+              repsRange: ej.repsRange,
+              suggestedRestSeconds:
+                  Value(ej.descansoSugerido?.inSeconds ?? 60),
+              notes: Value(ej.notas ?? ""),
+              supersetId: Value(ej.supersetId),
+              exerciseIndex: j,
+            ));
           }
         }
+
+        await db.batch((batch) {
+          batch.insertAll(db.routineDays, daysCompanions);
+          batch.insertAll(db.routineExercises, exercisesCompanions);
+        });
       });
     } catch (e, s) {
       _logger.e('Failed to create/save routine', error: e, stackTrace: s);

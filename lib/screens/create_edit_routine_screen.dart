@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
-import '../models/rutina.dart';
-import '../models/library_exercise.dart';
-import '../providers/create_routine_provider.dart';
-import 'create_routine/widgets/dia_expansion_tile.dart';
-import 'create_routine/widgets/biblioteca_bottom_sheet.dart';
 import 'package:logger/logger.dart';
+import 'package:juan_training/models/rutina.dart';
+import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/providers/create_routine_provider.dart';
+import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
+import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit

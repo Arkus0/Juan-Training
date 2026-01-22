@@ -2,11 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:io';
 import 'package:logger/logger.dart';
-import '../models/rutina.dart';
-import '../models/dia.dart';
-import '../models/ejercicio_en_rutina.dart';
-import '../models/library_exercise.dart';
-import '../repositories/i_training_repository.dart';
+import 'package:juan_training/models/rutina.dart';
+import 'package:juan_training/models/dia.dart';
+import 'package:juan_training/models/ejercicio_en_rutina.dart';
+import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/repositories/i_training_repository.dart';
 import 'training_provider.dart';
 
 
@@ -114,20 +114,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
-    // Validate local image path to avoid runtime exceptions when the file is missing/corrupt
-    String? validLocalPath;
-    try {
-      if (libExercise.localImagePath != null) {
-        final f = File(libExercise.localImagePath!);
-        if (f.existsSync() && f.lengthSync() > 0) {
-          validLocalPath = libExercise.localImagePath;
-        }
-      }
-    } catch (e) {
-      // If any filesystem error occurs, ignore the path and proceed without image
-      validLocalPath = null;
-    }
-
+    // Add exercise immediately without blocking on filesystem I/O
+    // Image path validation happens asynchronously
     final newExercise = EjercicioEnRutina(
       id: libExercise.id.toString(),
       nombre: libExercise.name,
@@ -135,7 +123,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       musculosPrincipales: libExercise.muscles,
       musculosSecundarios: libExercise.secondaryMuscles,
       equipo: libExercise.equipment,
-      localImagePath: validLocalPath,
+      localImagePath: libExercise.localImagePath,
     );
 
     final day = state.dias[dayIndex];
@@ -143,6 +131,50 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       ejercicios: [...day.ejercicios, newExercise],
     );
 
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+
+    // Asynchronously validate and update the image path if needed
+    if (libExercise.localImagePath != null) {
+      _validateImagePathAsync(dayIndex, day.ejercicios.length, libExercise.localImagePath!);
+    }
+  }
+
+  /// Validates image path asynchronously and updates exercise if path is invalid
+  Future<void> _validateImagePathAsync(int dayIndex, int exerciseIndex, String imagePath) async {
+    try {
+      final file = File(imagePath);
+      final exists = await file.exists();
+      if (!exists) {
+        _clearImagePath(dayIndex, exerciseIndex);
+        return;
+      }
+      
+      final length = await file.length();
+      if (length == 0) {
+        _clearImagePath(dayIndex, exerciseIndex);
+      }
+    } catch (e) {
+      // On any error, clear the image path
+      _clearImagePath(dayIndex, exerciseIndex);
+    }
+  }
+
+  void _clearImagePath(int dayIndex, int exerciseIndex) {
+    // Check if state still has this day and exercise at this index
+    if (dayIndex >= state.dias.length) return;
+    final day = state.dias[dayIndex];
+    if (exerciseIndex >= day.ejercicios.length) return;
+
+    final exercise = day.ejercicios[exerciseIndex];
+    if (exercise.localImagePath == null) return; // Already cleared
+
+    final updatedExercise = exercise.copyWith(localImagePath: null);
+    final newEjercicios = [...day.ejercicios];
+    newEjercicios[exerciseIndex] = updatedExercise;
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
     final newDias = [...state.dias];
     newDias[dayIndex] = updatedDay;
     state = state.copyWith(dias: newDias);
@@ -315,47 +347,72 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         return list.where((e) => e.supersetId == target.supersetId).toList();
       }
 
-      final original = [...day.ejercicios];
-      final sourceGroup = _collectGroup(original, indexA);
-      final targetGroup = _collectGroup(original, indexB);
+      final newEjercicios = [...day.ejercicios];
+      final uuid = const Uuid().v4();
 
-      final sourceIds = sourceGroup.map((e) => e.instanceId).toSet();
-      final targetIds = targetGroup.map((e) => e.instanceId).toSet();
-      final blockIds = {...sourceIds, ...targetIds};
-
-      // Decide which supersetId to keep/assign
-      String idToUse = const Uuid().v4();
-      final sourceId = sourceGroup.first.supersetId;
-      final targetId = targetGroup.first.supersetId;
-      if (targetId != null) {
-        idToUse = targetId;
-      } else if (sourceId != null) {
-        idToUse = sourceId;
+      // Determine the superset ID to use
+      String idToUse = uuid;
+      if (exA.supersetId != null) {
+          idToUse = exA.supersetId!;
+      } else if (exB.supersetId != null) {
+          idToUse = exB.supersetId!;
       }
 
-      // Build remaining list while finding insertion point (before the first target member)
-      final remaining = <EjercicioEnRutina>[];
-      int insertionIndex = 0;
-      for (int i = 0; i < original.length; i++) {
-        final ex = original[i];
-        if (blockIds.contains(ex.instanceId)) {
-          if (targetIds.contains(ex.instanceId)) {
-            insertionIndex = remaining.length; // place block where target started
-          }
-          continue;
+      // If both have different IDs, merge all B's group into A's group
+      if (exA.supersetId != null && exB.supersetId != null && exA.supersetId != exB.supersetId) {
+           final idA = exA.supersetId!;
+           final idB = exB.supersetId!;
+           // Update all exercises with idB to have idA
+           for (int i=0; i<newEjercicios.length; i++) {
+               if (newEjercicios[i].supersetId == idB) {
+                   newEjercicios[i] = newEjercicios[i].copyWith(supersetId: idA);
+               }
+           }
+      } else {
+          // Standard case: assign the superset ID to both exercises
+          newEjercicios[indexA] = exA.copyWith(supersetId: idToUse);
+          newEjercicios[indexB] = exB.copyWith(supersetId: idToUse);
+      }
+
+      // Make exercises with the same supersetId contiguous
+      // Collect all exercises with this superset ID
+      final supersetExercises = <EjercicioEnRutina>[];
+      final otherExercises = <EjercicioEnRutina>[];
+      
+      for (final ex in newEjercicios) {
+        if (ex.supersetId == idToUse) {
+          supersetExercises.add(ex);
+        } else {
+          otherExercises.add(ex);
         }
-        remaining.add(ex);
       }
 
-      // Normalize the block: target group first, then source group, all with the same supersetId
-      final block = [
-        ...targetGroup.map((e) => e.copyWith(supersetId: idToUse)),
-        ...sourceGroup.map((e) => e.copyWith(supersetId: idToUse)),
-      ];
+      // Find the position to insert the superset block
+      // Use the minimum index of the two exercises as the insertion point
+      final minIndex = indexA < indexB ? indexA : indexB;
+      
+      // Rebuild the exercise list with superset exercises contiguous
+      final reorderedExercises = <EjercicioEnRutina>[];
+      int insertedCount = 0;
+      for (int i = 0; i < newEjercicios.length; i++) {
+        if (i == minIndex) {
+          // Insert all superset exercises here
+          reorderedExercises.addAll(supersetExercises);
+          insertedCount = supersetExercises.length;
+        }
+        
+        // Add the original exercise if it's not part of the superset
+        if (newEjercicios[i].supersetId != idToUse) {
+          reorderedExercises.add(newEjercicios[i]);
+        }
+      }
+      
+      // If we haven't inserted yet (minIndex >= length), append at end
+      if (insertedCount == 0) {
+        reorderedExercises.addAll(supersetExercises);
+      }
 
-      final newEjercicios = [...remaining]..insertAll(insertionIndex, block);
-
-      final updatedDay = day.copyWith(ejercicios: newEjercicios);
+      final updatedDay = day.copyWith(ejercicios: reorderedExercises);
       final newDias = [...state.dias];
       newDias[dayIndex] = updatedDay;
       state = state.copyWith(dias: newDias);

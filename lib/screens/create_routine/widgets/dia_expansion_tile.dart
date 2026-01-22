@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
-import '../../../models/dia.dart';
-import '../../../models/ejercicio_en_rutina.dart';
-import 'ejercicio_card.dart';
+import 'package:juan_training/models/dia.dart';
+import 'package:juan_training/models/ejercicio_en_rutina.dart';
+import 'package:juan_training/screens/create_routine/widgets/ejercicio_card.dart';
 
 class DiaExpansionTile extends StatefulWidget {
   final int dayIndex;
@@ -272,258 +271,37 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
-                  Column(
-                    children: [
-                      ImplicitlyAnimatedList<EjercicioEnRutina>(
-                        items: widget.dia.ejercicios,
-                        areItemsTheSame: (a, b) => a.instanceId == b.instanceId,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemBuilder: (context, animation, ex, idx) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SizeTransition(
-                              sizeFactor: animation,
-                              axisAlignment: 0.0,
-                              child: Column(
-                                children: [
-                                  buildInsertionDropZone(idx),
-                                  Builder(
-                                    builder: (ctx) {
-                                      final isInSuperset = ex.supersetId != null;
-                                      return DragTarget<SupersetDragData>(
-                                        onWillAcceptWithDetails: (details) => true,
-                                        onAcceptWithDetails: (details) {
-                                          final data = details.data;
-                                          _dragAccepted = true;
-                                          if (data.supersetId != null) {
-                                            // Merge/create superset with this item
-                                            widget.onCreateSuperset(data.flatIndex, idx);
-                                          } else {
-                                            // Treat as single item move to this position (insert before idx)
-                                            widget.onMoveExercise(data.flatIndex, idx);
-                                          }
+                  ReorderableListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: visualGroups.length,
+                    onReorder: widget.onReorderExercises,
+                    buildDefaultDragHandles: false,
+                    itemBuilder: (context, visualIndex) {
+                      final groupIndices = visualGroups[visualIndex];
+                      final isSuperset = groupIndices.length > 1 || 
+                          (groupIndices.isNotEmpty && 
+                           widget.dia.ejercicios[groupIndices.first].supersetId != null);
 
-                                          _isLinkDragActive = false;
-                                          _dragSourceVisualIndex = null;
-                                          setState(() {});
-                                        },
-                                        builder: (context, candidateData, rejectedData) {
-                                          final hovering = candidateData.isNotEmpty;
-                                          return Dismissible(
-                                            key: Key(ex.instanceId),
-                                            direction: isInSuperset || _isLinkDragActive || _isReorderDragActive ? DismissDirection.none : DismissDirection.endToStart,
-                                            background: Container(
-                                              alignment: Alignment.centerRight,
-                                              padding: const EdgeInsets.only(right: 20),
-                                              color: Colors.red[900],
-                                              child: const Icon(Icons.delete, color: Colors.white),
-                                            ),
-                                            onDismissed: (_) {
-                                              final removedItem = ex;
-                                              widget.onRemoveExercise(idx);
+                      // Identify key for the group
+                      final firstEx = widget.dia.ejercicios[groupIndices.first];
+                      final Key groupKey = Key('group_${firstEx.supersetId ?? firstEx.instanceId}');
 
-                                              BuildContext? dialogCtx;
-                                              showDialog(
-                                                context: context,
-                                                barrierDismissible: false,
-                                                barrierColor: Colors.black26,
-                                                builder: (dialogContext) {
-                                                  dialogCtx = dialogContext;
-                                                  return Center(
-                                                    child: Material(
-                                                      color: Colors.transparent,
-                                                      child: Container(
-                                                        padding: const EdgeInsets.all(16),
-                                                        margin: const EdgeInsets.symmetric(horizontal: 40),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red[900],
-                                                          borderRadius: BorderRadius.circular(12),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              color: Colors.black.withValues(alpha: 77 / 255.0),
-                                                              blurRadius: 10,
-                                                              offset: const Offset(0, 4),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        child: Column(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children: [
-                                                            Text(
-                                                              'Ejercicio eliminado',
-                                                              style: GoogleFonts.montserrat(
-                                                                color: Colors.white,
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.w900,
-                                                              ),
-                                                              textAlign: TextAlign.center,
-                                                            ),
-                                                            const SizedBox(height: 12),
-                                                            ElevatedButton(
-                                                              style: ElevatedButton.styleFrom(
-                                                                backgroundColor: Colors.white,
-                                                                foregroundColor: Colors.red[900],
-                                                                minimumSize: const Size(double.infinity, 40),
-                                                              ),
-                                                              onPressed: () {
-                                                                Navigator.of(dialogContext).pop();
-                                                                widget.onUndoRemove(idx, removedItem);
-                                                              },
-                                                              child: Text(
-                                                                'DESHACER',
-                                                                style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              );
-
-                                              // Auto-close after 1.5 seconds (only this dialog)
-                                              if (mounted) {
-                                                Future.delayed(const Duration(milliseconds: 1500), () {
-                                                  if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
-                                                    Navigator.of(dialogCtx!, rootNavigator: true).pop();
-                                                  }
-                                                });
-                                              }
-                                            },
-                                            child: Container(
-                                              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                              decoration: hovering
-                                                  ? BoxDecoration(
-                                                      border: Border.all(color: Colors.redAccent[700]!, width: 3),
-                                                      borderRadius: BorderRadius.circular(8),
-                                                      color: Colors.redAccent[700]!.withValues(alpha: 0.12),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.redAccent[700]!.withValues(alpha: 31 / 255.0),
-                                                          blurRadius: 12,
-                                                          spreadRadius: 2,
-                                                        )
-                                                      ],
-                                                    )
-                                                  : (isInSuperset
-                                                      ? BoxDecoration(
-                                                          border: const Border(
-                                                            left: BorderSide(color: Colors.redAccent, width: 4),
-                                                          ),
-                                                          color: Colors.grey[900]!.withValues(alpha: 0.6),
-                                                        )
-                                                      : null),
-                                              child: EjercicioCard(
-                                                ejercicio: ex,
-                                                onRemove: () => widget.onRemoveExercise(idx),
-                                                onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-                                                onLink: () {},
-                                                onUnlink: ex.supersetId != null ? () => widget.onRemoveFromSuperset(idx) : null,
-                                                linkDragData: SupersetDragData(
-                                                  visualIndex: -1,
-                                                  flatIndex: idx,
-                                                  supersetId: ex.supersetId,
-                                                ),
-                                                reorderDragData: ReorderDragData(flatIndex: idx),
-                                                onReorderDragStart: () {
-                                                  _isReorderDragActive = true;
-                                                  _reorderSourceFlatIndex = idx;
-                                                _dragSourceVisualIndex = idx;
-                                                _dragAccepted = false;
-                                                setState(() {});
-                                              },
-                                              onReorderDragAccepted: () {
-                                                _dragAccepted = true;
-                                                setState(() {});
-                                              },
-                                              onReorderDragEnd: () {
-                                                // If reorder drag finished without acceptance -> nothing
-                                                _isReorderDragActive = false;
-                                                _reorderSourceFlatIndex = null;
-                                                _dragSourceVisualIndex = null;
-                                                setState(() {});
-                                              },
-                                              onReorderDragCancel: () {
-                                                if (!_dragAccepted && _reorderSourceFlatIndex != null) {
-                                                  // Releasing outside any target -> treat as breaking superset if it was part of one
-                                                  final orig = widget.dia.ejercicios[_reorderSourceFlatIndex!];
-                                                  if (orig.supersetId != null) {
-                                                    widget.onRemoveFromSuperset(_reorderSourceFlatIndex!);
-                                                  }
-                                                }
-                                                _isReorderDragActive = false;
-                                                _reorderSourceFlatIndex = null;
-                                                _dragSourceVisualIndex = null;
-                                                  setState(() {});
-                                                },
-                                                onReorderDragAccepted: () {
-                                                  _dragAccepted = true;
-                                                  setState(() {});
-                                                },
-                                                onReorderDragEnd: () {
-                                                  // If reorder drag finished without acceptance -> nothing
-                                                  _isReorderDragActive = false;
-                                                  _reorderSourceFlatIndex = null;
-                                                  setState(() {});
-                                                },
-                                                onReorderDragCancel: () {
-                                                  if (!_dragAccepted && _reorderSourceFlatIndex != null) {
-                                                    // Releasing outside any target -> treat as breaking superset if it was part of one
-                                                    final orig = widget.dia.ejercicios[_reorderSourceFlatIndex!];
-                                                    if (orig.supersetId != null) {
-                                                      widget.onRemoveFromSuperset(_reorderSourceFlatIndex!);
-                                                    }
-                                                  }
-                                                  _isReorderDragActive = false;
-                                                  _reorderSourceFlatIndex = null;
-                                                  setState(() {});
-                                                },
-                                                onLinkDragStart: () {
-                                                  _isLinkDragActive = true;
-                                                  _dragAccepted = false;
-                                                  _dragSourceVisualIndex = idx;
-                                                  setState(() {});
-                                                },
-                                                onLinkDragAccepted: () {
-                                                  _dragAccepted = true;
-                                                  setState(() {});
-                                                },
-                                                onLinkDragEnd: () {
-                                                  if (!_dragAccepted && ex.supersetId != null) {
-                                                    widget.onRemoveFromSuperset(idx);
-                                                  }
-                                                  _isLinkDragActive = false;
-                                                  _dragSourceVisualIndex = null;
-                                                  setState(() {});
-                                                },
-                                                onLinkDragCancel: () {
-                                                  if (!_dragAccepted && ex.supersetId != null) {
-                                                    widget.onRemoveFromSuperset(idx);
-                                                  }
-                                                  _isLinkDragActive = false;
-                                                  _dragSourceVisualIndex = null;
-                                                  setState(() {});
-                                                },
-                                                disableSwipe: _isLinkDragActive || _isReorderDragActive,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );  // Cierre del DragTarget aquí
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // trailing dropzone
-                      buildInsertionDropZone(widget.dia.ejercicios.length),
-                    ],
+                      return ReorderableDragStartListener(
+                        index: visualIndex,
+                        key: groupKey,
+                        child: _ExerciseGroupWidget(
+                          groupIndices: groupIndices,
+                          exercises: widget.dia.ejercicios,
+                          isSuperset: isSuperset,
+                          onRemoveExercise: widget.onRemoveExercise,
+                          onUpdateExercise: widget.onUpdateExercise,
+                          onCreateSuperset: widget.onCreateSuperset,
+                          onRemoveFromSuperset: widget.onRemoveFromSuperset,
+                          onUndoRemove: widget.onUndoRemove,
+                        ),
+                      );
+                    },
                   ),
 
                 const SizedBox(height: 12),
@@ -544,5 +322,105 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
         ],
       ),
     );
+  }
+}
+
+/// Lightweight widget for rendering a single visual group (either a single exercise or a superset)
+class _ExerciseGroupWidget extends StatelessWidget {
+  final List<int> groupIndices;
+  final List<EjercicioEnRutina> exercises;
+  final bool isSuperset;
+  final Function(int) onRemoveExercise;
+  final Function(int, EjercicioEnRutina) onUpdateExercise;
+  final Function(int, int) onCreateSuperset;
+  final Function(int) onRemoveFromSuperset;
+  final Function(int, EjercicioEnRutina) onUndoRemove;
+
+  const _ExerciseGroupWidget({
+    required this.groupIndices,
+    required this.exercises,
+    required this.isSuperset,
+    required this.onRemoveExercise,
+    required this.onUpdateExercise,
+    required this.onCreateSuperset,
+    required this.onRemoveFromSuperset,
+    required this.onUndoRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isSuperset) {
+      // Render superset group
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+          color: Colors.grey[900]!.withValues(alpha: 0.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: groupIndices.map((idx) {
+            final ex = exercises[idx];
+            return EjercicioCard(
+              key: Key('exercise_${ex.instanceId}'),
+              ejercicio: ex,
+              onRemove: () => onRemoveExercise(idx),
+              onUpdate: (updated) => onUpdateExercise(idx, updated),
+              onLink: (idx < exercises.length - 1)
+                  ? () => onCreateSuperset(idx, idx + 1)
+                  : null,
+              onUnlink: () => onRemoveFromSuperset(idx),
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      // Single item with dismissible behavior
+      final idx = groupIndices.first;
+      final ex = exercises[idx];
+      return Dismissible(
+        key: Key('dismissible_${ex.instanceId}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: Colors.red[900],
+          child: const Icon(Icons.delete, color: Colors.white),
+        ),
+        onDismissed: (_) {
+          final removedItem = ex;
+          onRemoveExercise(idx);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Ejercicio eliminado',
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              backgroundColor: Colors.red[900],
+              action: SnackBarAction(
+                label: 'DESHACER',
+                textColor: Colors.white,
+                onPressed: () {
+                  onUndoRemove(idx, removedItem);
+                },
+              ),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: EjercicioCard(
+            key: Key('exercise_${ex.instanceId}'),
+            ejercicio: ex,
+            onRemove: () => onRemoveExercise(idx),
+            onUpdate: (updated) => onUpdateExercise(idx, updated),
+            onLink: (idx < exercises.length - 1)
+                ? () => onCreateSuperset(idx, idx + 1)
+                : null,
+            onUnlink: null, // No unlink for single item
+          ),
+        ),
+      );
+    }
   }
 }
