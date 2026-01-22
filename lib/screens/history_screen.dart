@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:intl/intl.dart';
 import '../models/sesion.dart';
 import '../models/rutina.dart';
 import 'session_detail_screen.dart';
 import '../providers/training_provider.dart';
+import '../widgets/common/app_widgets.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -19,34 +21,23 @@ class HistoryScreen extends ConsumerWidget {
         title: const Text('LEGADO DE BATALLA'),
       ),
       body: sessionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        loading: () => const AppLoadingIndicator(message: 'Cargando historial...'),
+        error: (err, stack) => ErrorStateWidget(
+          message: err.toString(),
+          onRetry: () => ref.invalidate(sesionesHistoryStreamProvider),
+        ),
         data: (sessions) {
           if (sessions.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.history_toggle_off, size: 80, color: Colors.grey[800]),
-                  const SizedBox(height: 24),
-                  Text(
-                    'SIN HISTORIAL',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tu leyenda comienza con el primer entreno.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-                  ),
-                ],
-              ),
+            return const EmptyStateWidget(
+              icon: Icons.history_toggle_off,
+              title: 'SIN HISTORIAL',
+              subtitle: 'Tu leyenda comienza con el primer entreno.',
             );
           }
 
           return rutinasAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error rutinas: $err')),
+            loading: () => const AppLoadingIndicator(),
+            error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
             data: (rutinas) {
               final rutinasMap = {for (var r in rutinas) r.id: r};
 
@@ -55,7 +46,11 @@ class HistoryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 16, bottom: 16),
                 itemBuilder: (context, index) {
                   final session = sessions[index];
-                  return _SessionTile(session: session, rutinasMap: rutinasMap);
+                  return _SessionTile(
+                    key: ValueKey(session.id),
+                    session: session,
+                    rutinasMap: rutinasMap,
+                  );
                 },
               );
             },
@@ -70,7 +65,7 @@ class _SessionTile extends StatelessWidget {
   final Sesion session;
   final Map<String, Rutina> rutinasMap;
 
-  const _SessionTile({required this.session, required this.rutinasMap});
+  const _SessionTile({super.key, required this.session, required this.rutinasMap});
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +82,7 @@ class _SessionTile extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
+          Vibrate.feedback(FeedbackType.selection);
           Navigator.push(
             context,
             MaterialPageRoute(

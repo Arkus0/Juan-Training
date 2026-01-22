@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
+import '../widgets/common/app_widgets.dart';
 import 'training_session_screen.dart';
 
 class TrainSelectionScreen extends ConsumerWidget {
@@ -17,8 +19,8 @@ class TrainSelectionScreen extends ConsumerWidget {
         title: const Text('SELECCIONAR ENTRENO'),
       ),
       body: activeSessionAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        loading: () => const AppLoadingIndicator(message: 'Cargando...'),
+        error: (err, stack) => ErrorStateWidget(message: err.toString()),
         data: (activeSessionData) {
           if (activeSessionData != null && activeSessionData.activeRutina != null) {
             final Rutina activeRutina = activeSessionData.activeRutina!;
@@ -55,6 +57,7 @@ class TrainSelectionScreen extends ConsumerWidget {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
+                            Vibrate.feedback(FeedbackType.medium);
                             ref.read(trainingSessionProvider.notifier).restoreFromStorage();
                             Navigator.push(
                               context,
@@ -102,27 +105,14 @@ class TrainSelectionScreen extends ConsumerWidget {
           }
 
           return rutinasAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error rutinas: $err')),
+            loading: () => const AppLoadingIndicator(),
+            error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
             data: (rutinas) {
               if (rutinas.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.warning_amber_rounded, size: 80, color: Colors.redAccent[700]),
-                      const SizedBox(height: 24),
-                      Text(
-                        'SIN RUTINAS',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Ve a Rutinas y crea tu plan de batalla.',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                      ),
-                    ],
-                  ),
+                return const EmptyStateWidget(
+                  icon: Icons.warning_amber_rounded,
+                  title: 'SIN RUTINAS',
+                  subtitle: 'Ve a Rutinas y crea tu plan de batalla.',
                 );
               }
 
@@ -132,11 +122,14 @@ class TrainSelectionScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final rutina = rutinas[index];
                   return Card(
+                    key: ValueKey(rutina.id),
                     child: InkWell(
                       onTap: () {
                         if (rutina.dias.isEmpty) return;
+                        Vibrate.feedback(FeedbackType.selection);
 
                         if (rutina.dias.length == 1) {
+                          Vibrate.feedback(FeedbackType.heavy);
                           ref
                               .read(trainingSessionProvider.notifier)
                               .startSession(rutina, rutina.dias.first.ejercicios);
@@ -149,7 +142,7 @@ class TrainSelectionScreen extends ConsumerWidget {
                         } else {
                           showDialog(
                             context: context,
-                            builder: (context) => SimpleDialog(
+                            builder: (dialogContext) => SimpleDialog(
                               title: Text('ELIGE DÍA',
                                   style: TextStyle(
                                       color: Colors.red[900],
@@ -164,7 +157,8 @@ class TrainSelectionScreen extends ConsumerWidget {
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold)),
                                   onPressed: () {
-                                    Navigator.pop(context);
+                                    Vibrate.feedback(FeedbackType.heavy);
+                                    Navigator.pop(dialogContext);
                                     ref
                                         .read(trainingSessionProvider.notifier)
                                         .startSession(rutina, d.ejercicios);
