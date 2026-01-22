@@ -640,6 +640,28 @@ class $RoutineExercisesTable extends RoutineExercises
   late final GeneratedColumn<int> exerciseIndex = GeneratedColumn<int>(
       'exercise_index', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _progressionTypeMeta =
+      const VerificationMeta('progressionType');
+  @override
+  late final GeneratedColumn<String> progressionType = GeneratedColumn<String>(
+      'progression_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('none'));
+  static const VerificationMeta _weightIncrementMeta =
+      const VerificationMeta('weightIncrement');
+  @override
+  late final GeneratedColumn<double> weightIncrement = GeneratedColumn<double>(
+      'weight_increment', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(2.5));
+  static const VerificationMeta _targetRpeMeta =
+      const VerificationMeta('targetRpe');
+  @override
+  late final GeneratedColumn<int> targetRpe = GeneratedColumn<int>(
+      'target_rpe', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -656,7 +678,10 @@ class $RoutineExercisesTable extends RoutineExercises
         suggestedRestSeconds,
         notes,
         supersetId,
-        exerciseIndex
+        exerciseIndex,
+        progressionType,
+        weightIncrement,
+        targetRpe
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -745,6 +770,22 @@ class $RoutineExercisesTable extends RoutineExercises
     } else if (isInserting) {
       context.missing(_exerciseIndexMeta);
     }
+    if (data.containsKey('progression_type')) {
+      context.handle(
+          _progressionTypeMeta,
+          progressionType.isAcceptableOrUnknown(
+              data['progression_type']!, _progressionTypeMeta));
+    }
+    if (data.containsKey('weight_increment')) {
+      context.handle(
+          _weightIncrementMeta,
+          weightIncrement.isAcceptableOrUnknown(
+              data['weight_increment']!, _weightIncrementMeta));
+    }
+    if (data.containsKey('target_rpe')) {
+      context.handle(_targetRpeMeta,
+          targetRpe.isAcceptableOrUnknown(data['target_rpe']!, _targetRpeMeta));
+    }
     return context;
   }
 
@@ -786,6 +827,12 @@ class $RoutineExercisesTable extends RoutineExercises
           .read(DriftSqlType.string, data['${effectivePrefix}superset_id']),
       exerciseIndex: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}exercise_index'])!,
+      progressionType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}progression_type'])!,
+      weightIncrement: attachedDatabase.typeMapping.read(
+          DriftSqlType.double, data['${effectivePrefix}weight_increment'])!,
+      targetRpe: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}target_rpe']),
     );
   }
 
@@ -816,6 +863,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
   final String? notes;
   final String? supersetId;
   final int exerciseIndex;
+  final String progressionType;
+  final double weightIncrement;
+  final int? targetRpe;
   const RoutineExercise(
       {required this.id,
       required this.dayId,
@@ -831,7 +881,10 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       this.suggestedRestSeconds,
       this.notes,
       this.supersetId,
-      required this.exerciseIndex});
+      required this.exerciseIndex,
+      required this.progressionType,
+      required this.weightIncrement,
+      this.targetRpe});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -868,6 +921,11 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       map['superset_id'] = Variable<String>(supersetId);
     }
     map['exercise_index'] = Variable<int>(exerciseIndex);
+    map['progression_type'] = Variable<String>(progressionType);
+    map['weight_increment'] = Variable<double>(weightIncrement);
+    if (!nullToAbsent || targetRpe != null) {
+      map['target_rpe'] = Variable<int>(targetRpe);
+    }
     return map;
   }
 
@@ -897,6 +955,11 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ? const Value.absent()
           : Value(supersetId),
       exerciseIndex: Value(exerciseIndex),
+      progressionType: Value(progressionType),
+      weightIncrement: Value(weightIncrement),
+      targetRpe: targetRpe == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetRpe),
     );
   }
 
@@ -921,6 +984,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       notes: serializer.fromJson<String?>(json['notes']),
       supersetId: serializer.fromJson<String?>(json['supersetId']),
       exerciseIndex: serializer.fromJson<int>(json['exerciseIndex']),
+      progressionType: serializer.fromJson<String>(json['progressionType']),
+      weightIncrement: serializer.fromJson<double>(json['weightIncrement']),
+      targetRpe: serializer.fromJson<int?>(json['targetRpe']),
     );
   }
   @override
@@ -942,6 +1008,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       'notes': serializer.toJson<String?>(notes),
       'supersetId': serializer.toJson<String?>(supersetId),
       'exerciseIndex': serializer.toJson<int>(exerciseIndex),
+      'progressionType': serializer.toJson<String>(progressionType),
+      'weightIncrement': serializer.toJson<double>(weightIncrement),
+      'targetRpe': serializer.toJson<int?>(targetRpe),
     };
   }
 
@@ -960,7 +1029,10 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           Value<int?> suggestedRestSeconds = const Value.absent(),
           Value<String?> notes = const Value.absent(),
           Value<String?> supersetId = const Value.absent(),
-          int? exerciseIndex}) =>
+          int? exerciseIndex,
+          String? progressionType,
+          double? weightIncrement,
+          Value<int?> targetRpe = const Value.absent()}) =>
       RoutineExercise(
         id: id ?? this.id,
         dayId: dayId ?? this.dayId,
@@ -980,6 +1052,9 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
         notes: notes.present ? notes.value : this.notes,
         supersetId: supersetId.present ? supersetId.value : this.supersetId,
         exerciseIndex: exerciseIndex ?? this.exerciseIndex,
+        progressionType: progressionType ?? this.progressionType,
+        weightIncrement: weightIncrement ?? this.weightIncrement,
+        targetRpe: targetRpe.present ? targetRpe.value : this.targetRpe,
       );
   RoutineExercise copyWithCompanion(RoutineExercisesCompanion data) {
     return RoutineExercise(
@@ -1010,6 +1085,13 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       exerciseIndex: data.exerciseIndex.present
           ? data.exerciseIndex.value
           : this.exerciseIndex,
+      progressionType: data.progressionType.present
+          ? data.progressionType.value
+          : this.progressionType,
+      weightIncrement: data.weightIncrement.present
+          ? data.weightIncrement.value
+          : this.weightIncrement,
+      targetRpe: data.targetRpe.present ? data.targetRpe.value : this.targetRpe,
     );
   }
 
@@ -1030,7 +1112,10 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           ..write('suggestedRestSeconds: $suggestedRestSeconds, ')
           ..write('notes: $notes, ')
           ..write('supersetId: $supersetId, ')
-          ..write('exerciseIndex: $exerciseIndex')
+          ..write('exerciseIndex: $exerciseIndex, ')
+          ..write('progressionType: $progressionType, ')
+          ..write('weightIncrement: $weightIncrement, ')
+          ..write('targetRpe: $targetRpe')
           ..write(')'))
         .toString();
   }
@@ -1051,7 +1136,10 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
       suggestedRestSeconds,
       notes,
       supersetId,
-      exerciseIndex);
+      exerciseIndex,
+      progressionType,
+      weightIncrement,
+      targetRpe);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1070,7 +1158,10 @@ class RoutineExercise extends DataClass implements Insertable<RoutineExercise> {
           other.suggestedRestSeconds == this.suggestedRestSeconds &&
           other.notes == this.notes &&
           other.supersetId == this.supersetId &&
-          other.exerciseIndex == this.exerciseIndex);
+          other.exerciseIndex == this.exerciseIndex &&
+          other.progressionType == this.progressionType &&
+          other.weightIncrement == this.weightIncrement &&
+          other.targetRpe == this.targetRpe);
 }
 
 class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
@@ -1089,6 +1180,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
   final Value<String?> notes;
   final Value<String?> supersetId;
   final Value<int> exerciseIndex;
+  final Value<String> progressionType;
+  final Value<double> weightIncrement;
+  final Value<int?> targetRpe;
   final Value<int> rowid;
   const RoutineExercisesCompanion({
     this.id = const Value.absent(),
@@ -1106,6 +1200,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     this.notes = const Value.absent(),
     this.supersetId = const Value.absent(),
     this.exerciseIndex = const Value.absent(),
+    this.progressionType = const Value.absent(),
+    this.weightIncrement = const Value.absent(),
+    this.targetRpe = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RoutineExercisesCompanion.insert({
@@ -1124,6 +1221,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     this.notes = const Value.absent(),
     this.supersetId = const Value.absent(),
     required int exerciseIndex,
+    this.progressionType = const Value.absent(),
+    this.weightIncrement = const Value.absent(),
+    this.targetRpe = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         dayId = Value(dayId),
@@ -1151,6 +1251,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     Expression<String>? notes,
     Expression<String>? supersetId,
     Expression<int>? exerciseIndex,
+    Expression<String>? progressionType,
+    Expression<double>? weightIncrement,
+    Expression<int>? targetRpe,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1170,6 +1273,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       if (notes != null) 'notes': notes,
       if (supersetId != null) 'superset_id': supersetId,
       if (exerciseIndex != null) 'exercise_index': exerciseIndex,
+      if (progressionType != null) 'progression_type': progressionType,
+      if (weightIncrement != null) 'weight_increment': weightIncrement,
+      if (targetRpe != null) 'target_rpe': targetRpe,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1190,6 +1296,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       Value<String?>? notes,
       Value<String?>? supersetId,
       Value<int>? exerciseIndex,
+      Value<String>? progressionType,
+      Value<double>? weightIncrement,
+      Value<int?>? targetRpe,
       Value<int>? rowid}) {
     return RoutineExercisesCompanion(
       id: id ?? this.id,
@@ -1207,6 +1316,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
       notes: notes ?? this.notes,
       supersetId: supersetId ?? this.supersetId,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
+      progressionType: progressionType ?? this.progressionType,
+      weightIncrement: weightIncrement ?? this.weightIncrement,
+      targetRpe: targetRpe ?? this.targetRpe,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1263,6 +1375,15 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
     if (exerciseIndex.present) {
       map['exercise_index'] = Variable<int>(exerciseIndex.value);
     }
+    if (progressionType.present) {
+      map['progression_type'] = Variable<String>(progressionType.value);
+    }
+    if (weightIncrement.present) {
+      map['weight_increment'] = Variable<double>(weightIncrement.value);
+    }
+    if (targetRpe.present) {
+      map['target_rpe'] = Variable<int>(targetRpe.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1287,6 +1408,9 @@ class RoutineExercisesCompanion extends UpdateCompanion<RoutineExercise> {
           ..write('notes: $notes, ')
           ..write('supersetId: $supersetId, ')
           ..write('exerciseIndex: $exerciseIndex, ')
+          ..write('progressionType: $progressionType, ')
+          ..write('weightIncrement: $weightIncrement, ')
+          ..write('targetRpe: $targetRpe, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1309,6 +1433,18 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
   late final GeneratedColumn<String> routineId = GeneratedColumn<String>(
       'routine_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _dayNameMeta =
+      const VerificationMeta('dayName');
+  @override
+  late final GeneratedColumn<String> dayName = GeneratedColumn<String>(
+      'day_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _dayIndexMeta =
+      const VerificationMeta('dayIndex');
+  @override
+  late final GeneratedColumn<int> dayIndex = GeneratedColumn<int>(
+      'day_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _startTimeMeta =
       const VerificationMeta('startTime');
   @override
@@ -1328,8 +1464,15 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
       'completed_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, routineId, startTime, durationSeconds, completedAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        routineId,
+        dayName,
+        dayIndex,
+        startTime,
+        durationSeconds,
+        completedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1348,6 +1491,14 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
     if (data.containsKey('routine_id')) {
       context.handle(_routineIdMeta,
           routineId.isAcceptableOrUnknown(data['routine_id']!, _routineIdMeta));
+    }
+    if (data.containsKey('day_name')) {
+      context.handle(_dayNameMeta,
+          dayName.isAcceptableOrUnknown(data['day_name']!, _dayNameMeta));
+    }
+    if (data.containsKey('day_index')) {
+      context.handle(_dayIndexMeta,
+          dayIndex.isAcceptableOrUnknown(data['day_index']!, _dayIndexMeta));
     }
     if (data.containsKey('start_time')) {
       context.handle(_startTimeMeta,
@@ -1380,6 +1531,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       routineId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}routine_id']),
+      dayName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}day_name']),
+      dayIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}day_index']),
       startTime: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}start_time'])!,
       durationSeconds: attachedDatabase.typeMapping
@@ -1398,12 +1553,16 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
 class Session extends DataClass implements Insertable<Session> {
   final String id;
   final String? routineId;
+  final String? dayName;
+  final int? dayIndex;
   final DateTime startTime;
   final int? durationSeconds;
   final DateTime? completedAt;
   const Session(
       {required this.id,
       this.routineId,
+      this.dayName,
+      this.dayIndex,
       required this.startTime,
       this.durationSeconds,
       this.completedAt});
@@ -1413,6 +1572,12 @@ class Session extends DataClass implements Insertable<Session> {
     map['id'] = Variable<String>(id);
     if (!nullToAbsent || routineId != null) {
       map['routine_id'] = Variable<String>(routineId);
+    }
+    if (!nullToAbsent || dayName != null) {
+      map['day_name'] = Variable<String>(dayName);
+    }
+    if (!nullToAbsent || dayIndex != null) {
+      map['day_index'] = Variable<int>(dayIndex);
     }
     map['start_time'] = Variable<DateTime>(startTime);
     if (!nullToAbsent || durationSeconds != null) {
@@ -1430,6 +1595,12 @@ class Session extends DataClass implements Insertable<Session> {
       routineId: routineId == null && nullToAbsent
           ? const Value.absent()
           : Value(routineId),
+      dayName: dayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayName),
+      dayIndex: dayIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayIndex),
       startTime: Value(startTime),
       durationSeconds: durationSeconds == null && nullToAbsent
           ? const Value.absent()
@@ -1446,6 +1617,8 @@ class Session extends DataClass implements Insertable<Session> {
     return Session(
       id: serializer.fromJson<String>(json['id']),
       routineId: serializer.fromJson<String?>(json['routineId']),
+      dayName: serializer.fromJson<String?>(json['dayName']),
+      dayIndex: serializer.fromJson<int?>(json['dayIndex']),
       startTime: serializer.fromJson<DateTime>(json['startTime']),
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
@@ -1457,6 +1630,8 @@ class Session extends DataClass implements Insertable<Session> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'routineId': serializer.toJson<String?>(routineId),
+      'dayName': serializer.toJson<String?>(dayName),
+      'dayIndex': serializer.toJson<int?>(dayIndex),
       'startTime': serializer.toJson<DateTime>(startTime),
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
@@ -1466,12 +1641,16 @@ class Session extends DataClass implements Insertable<Session> {
   Session copyWith(
           {String? id,
           Value<String?> routineId = const Value.absent(),
+          Value<String?> dayName = const Value.absent(),
+          Value<int?> dayIndex = const Value.absent(),
           DateTime? startTime,
           Value<int?> durationSeconds = const Value.absent(),
           Value<DateTime?> completedAt = const Value.absent()}) =>
       Session(
         id: id ?? this.id,
         routineId: routineId.present ? routineId.value : this.routineId,
+        dayName: dayName.present ? dayName.value : this.dayName,
+        dayIndex: dayIndex.present ? dayIndex.value : this.dayIndex,
         startTime: startTime ?? this.startTime,
         durationSeconds: durationSeconds.present
             ? durationSeconds.value
@@ -1482,6 +1661,8 @@ class Session extends DataClass implements Insertable<Session> {
     return Session(
       id: data.id.present ? data.id.value : this.id,
       routineId: data.routineId.present ? data.routineId.value : this.routineId,
+      dayName: data.dayName.present ? data.dayName.value : this.dayName,
+      dayIndex: data.dayIndex.present ? data.dayIndex.value : this.dayIndex,
       startTime: data.startTime.present ? data.startTime.value : this.startTime,
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
@@ -1496,6 +1677,8 @@ class Session extends DataClass implements Insertable<Session> {
     return (StringBuffer('Session(')
           ..write('id: $id, ')
           ..write('routineId: $routineId, ')
+          ..write('dayName: $dayName, ')
+          ..write('dayIndex: $dayIndex, ')
           ..write('startTime: $startTime, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('completedAt: $completedAt')
@@ -1504,14 +1687,16 @@ class Session extends DataClass implements Insertable<Session> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, routineId, startTime, durationSeconds, completedAt);
+  int get hashCode => Object.hash(id, routineId, dayName, dayIndex, startTime,
+      durationSeconds, completedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Session &&
           other.id == this.id &&
           other.routineId == this.routineId &&
+          other.dayName == this.dayName &&
+          other.dayIndex == this.dayIndex &&
           other.startTime == this.startTime &&
           other.durationSeconds == this.durationSeconds &&
           other.completedAt == this.completedAt);
@@ -1520,6 +1705,8 @@ class Session extends DataClass implements Insertable<Session> {
 class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<String> id;
   final Value<String?> routineId;
+  final Value<String?> dayName;
+  final Value<int?> dayIndex;
   final Value<DateTime> startTime;
   final Value<int?> durationSeconds;
   final Value<DateTime?> completedAt;
@@ -1527,6 +1714,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   const SessionsCompanion({
     this.id = const Value.absent(),
     this.routineId = const Value.absent(),
+    this.dayName = const Value.absent(),
+    this.dayIndex = const Value.absent(),
     this.startTime = const Value.absent(),
     this.durationSeconds = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -1535,6 +1724,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   SessionsCompanion.insert({
     required String id,
     this.routineId = const Value.absent(),
+    this.dayName = const Value.absent(),
+    this.dayIndex = const Value.absent(),
     required DateTime startTime,
     this.durationSeconds = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -1544,6 +1735,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   static Insertable<Session> custom({
     Expression<String>? id,
     Expression<String>? routineId,
+    Expression<String>? dayName,
+    Expression<int>? dayIndex,
     Expression<DateTime>? startTime,
     Expression<int>? durationSeconds,
     Expression<DateTime>? completedAt,
@@ -1552,6 +1745,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (routineId != null) 'routine_id': routineId,
+      if (dayName != null) 'day_name': dayName,
+      if (dayIndex != null) 'day_index': dayIndex,
       if (startTime != null) 'start_time': startTime,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (completedAt != null) 'completed_at': completedAt,
@@ -1562,6 +1757,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   SessionsCompanion copyWith(
       {Value<String>? id,
       Value<String?>? routineId,
+      Value<String?>? dayName,
+      Value<int?>? dayIndex,
       Value<DateTime>? startTime,
       Value<int?>? durationSeconds,
       Value<DateTime?>? completedAt,
@@ -1569,6 +1766,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     return SessionsCompanion(
       id: id ?? this.id,
       routineId: routineId ?? this.routineId,
+      dayName: dayName ?? this.dayName,
+      dayIndex: dayIndex ?? this.dayIndex,
       startTime: startTime ?? this.startTime,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       completedAt: completedAt ?? this.completedAt,
@@ -1584,6 +1783,12 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     }
     if (routineId.present) {
       map['routine_id'] = Variable<String>(routineId.value);
+    }
+    if (dayName.present) {
+      map['day_name'] = Variable<String>(dayName.value);
+    }
+    if (dayIndex.present) {
+      map['day_index'] = Variable<int>(dayIndex.value);
     }
     if (startTime.present) {
       map['start_time'] = Variable<DateTime>(startTime.value);
@@ -1605,6 +1810,8 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     return (StringBuffer('SessionsCompanion(')
           ..write('id: $id, ')
           ..write('routineId: $routineId, ')
+          ..write('dayName: $dayName, ')
+          ..write('dayIndex: $dayIndex, ')
           ..write('startTime: $startTime, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('completedAt: $completedAt, ')
@@ -3590,6 +3797,9 @@ typedef $$RoutineExercisesTableCreateCompanionBuilder
   Value<String?> notes,
   Value<String?> supersetId,
   required int exerciseIndex,
+  Value<String> progressionType,
+  Value<double> weightIncrement,
+  Value<int?> targetRpe,
   Value<int> rowid,
 });
 typedef $$RoutineExercisesTableUpdateCompanionBuilder
@@ -3609,6 +3819,9 @@ typedef $$RoutineExercisesTableUpdateCompanionBuilder
   Value<String?> notes,
   Value<String?> supersetId,
   Value<int> exerciseIndex,
+  Value<String> progressionType,
+  Value<double> weightIncrement,
+  Value<int?> targetRpe,
   Value<int> rowid,
 });
 
@@ -3690,6 +3903,17 @@ class $$RoutineExercisesTableFilterComposer
   ColumnFilters<int> get exerciseIndex => $composableBuilder(
       column: $table.exerciseIndex, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get progressionType => $composableBuilder(
+      column: $table.progressionType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get weightIncrement => $composableBuilder(
+      column: $table.weightIncrement,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get targetRpe => $composableBuilder(
+      column: $table.targetRpe, builder: (column) => ColumnFilters(column));
+
   $$RoutineDaysTableFilterComposer get dayId {
     final $$RoutineDaysTableFilterComposer composer = $composerBuilder(
         composer: this,
@@ -3767,6 +3991,17 @@ class $$RoutineExercisesTableOrderingComposer
       column: $table.exerciseIndex,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get progressionType => $composableBuilder(
+      column: $table.progressionType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get weightIncrement => $composableBuilder(
+      column: $table.weightIncrement,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get targetRpe => $composableBuilder(
+      column: $table.targetRpe, builder: (column) => ColumnOrderings(column));
+
   $$RoutineDaysTableOrderingComposer get dayId {
     final $$RoutineDaysTableOrderingComposer composer = $composerBuilder(
         composer: this,
@@ -3841,6 +4076,15 @@ class $$RoutineExercisesTableAnnotationComposer
   GeneratedColumn<int> get exerciseIndex => $composableBuilder(
       column: $table.exerciseIndex, builder: (column) => column);
 
+  GeneratedColumn<String> get progressionType => $composableBuilder(
+      column: $table.progressionType, builder: (column) => column);
+
+  GeneratedColumn<double> get weightIncrement => $composableBuilder(
+      column: $table.weightIncrement, builder: (column) => column);
+
+  GeneratedColumn<int> get targetRpe =>
+      $composableBuilder(column: $table.targetRpe, builder: (column) => column);
+
   $$RoutineDaysTableAnnotationComposer get dayId {
     final $$RoutineDaysTableAnnotationComposer composer = $composerBuilder(
         composer: this,
@@ -3901,6 +4145,9 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             Value<String?> notes = const Value.absent(),
             Value<String?> supersetId = const Value.absent(),
             Value<int> exerciseIndex = const Value.absent(),
+            Value<String> progressionType = const Value.absent(),
+            Value<double> weightIncrement = const Value.absent(),
+            Value<int?> targetRpe = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               RoutineExercisesCompanion(
@@ -3919,6 +4166,9 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             notes: notes,
             supersetId: supersetId,
             exerciseIndex: exerciseIndex,
+            progressionType: progressionType,
+            weightIncrement: weightIncrement,
+            targetRpe: targetRpe,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -3937,6 +4187,9 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             Value<String?> notes = const Value.absent(),
             Value<String?> supersetId = const Value.absent(),
             required int exerciseIndex,
+            Value<String> progressionType = const Value.absent(),
+            Value<double> weightIncrement = const Value.absent(),
+            Value<int?> targetRpe = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               RoutineExercisesCompanion.insert(
@@ -3955,6 +4208,9 @@ class $$RoutineExercisesTableTableManager extends RootTableManager<
             notes: notes,
             supersetId: supersetId,
             exerciseIndex: exerciseIndex,
+            progressionType: progressionType,
+            weightIncrement: weightIncrement,
+            targetRpe: targetRpe,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -4016,6 +4272,8 @@ typedef $$RoutineExercisesTableProcessedTableManager = ProcessedTableManager<
 typedef $$SessionsTableCreateCompanionBuilder = SessionsCompanion Function({
   required String id,
   Value<String?> routineId,
+  Value<String?> dayName,
+  Value<int?> dayIndex,
   required DateTime startTime,
   Value<int?> durationSeconds,
   Value<DateTime?> completedAt,
@@ -4024,6 +4282,8 @@ typedef $$SessionsTableCreateCompanionBuilder = SessionsCompanion Function({
 typedef $$SessionsTableUpdateCompanionBuilder = SessionsCompanion Function({
   Value<String> id,
   Value<String?> routineId,
+  Value<String?> dayName,
+  Value<int?> dayIndex,
   Value<DateTime> startTime,
   Value<int?> durationSeconds,
   Value<DateTime?> completedAt,
@@ -4066,6 +4326,12 @@ class $$SessionsTableFilterComposer
 
   ColumnFilters<String> get routineId => $composableBuilder(
       column: $table.routineId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dayName => $composableBuilder(
+      column: $table.dayName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get dayIndex => $composableBuilder(
+      column: $table.dayIndex, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get startTime => $composableBuilder(
       column: $table.startTime, builder: (column) => ColumnFilters(column));
@@ -4114,6 +4380,12 @@ class $$SessionsTableOrderingComposer
   ColumnOrderings<String> get routineId => $composableBuilder(
       column: $table.routineId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get dayName => $composableBuilder(
+      column: $table.dayName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get dayIndex => $composableBuilder(
+      column: $table.dayIndex, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get startTime => $composableBuilder(
       column: $table.startTime, builder: (column) => ColumnOrderings(column));
 
@@ -4139,6 +4411,12 @@ class $$SessionsTableAnnotationComposer
 
   GeneratedColumn<String> get routineId =>
       $composableBuilder(column: $table.routineId, builder: (column) => column);
+
+  GeneratedColumn<String> get dayName =>
+      $composableBuilder(column: $table.dayName, builder: (column) => column);
+
+  GeneratedColumn<int> get dayIndex =>
+      $composableBuilder(column: $table.dayIndex, builder: (column) => column);
 
   GeneratedColumn<DateTime> get startTime =>
       $composableBuilder(column: $table.startTime, builder: (column) => column);
@@ -4196,6 +4474,8 @@ class $$SessionsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
             Value<String?> routineId = const Value.absent(),
+            Value<String?> dayName = const Value.absent(),
+            Value<int?> dayIndex = const Value.absent(),
             Value<DateTime> startTime = const Value.absent(),
             Value<int?> durationSeconds = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
@@ -4204,6 +4484,8 @@ class $$SessionsTableTableManager extends RootTableManager<
               SessionsCompanion(
             id: id,
             routineId: routineId,
+            dayName: dayName,
+            dayIndex: dayIndex,
             startTime: startTime,
             durationSeconds: durationSeconds,
             completedAt: completedAt,
@@ -4212,6 +4494,8 @@ class $$SessionsTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             required String id,
             Value<String?> routineId = const Value.absent(),
+            Value<String?> dayName = const Value.absent(),
+            Value<int?> dayIndex = const Value.absent(),
             required DateTime startTime,
             Value<int?> durationSeconds = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
@@ -4220,6 +4504,8 @@ class $$SessionsTableTableManager extends RootTableManager<
               SessionsCompanion.insert(
             id: id,
             routineId: routineId,
+            dayName: dayName,
+            dayIndex: dayIndex,
             startTime: startTime,
             durationSeconds: durationSeconds,
             completedAt: completedAt,
