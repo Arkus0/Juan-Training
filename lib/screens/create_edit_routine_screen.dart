@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:reorderables/reorderables.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:logger/logger.dart';
 import 'package:juan_training/models/rutina.dart';
@@ -188,14 +187,29 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 ),
               )
             else
-              ReorderableColumn(
+              ReorderableListView.builder(
                 key: ValueKey(routineState.dias.length),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                proxyDecorator: (child, index, animation) {
+                  return AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, child) {
+                      return Material(
+                        elevation: animation.value * 8,
+                        color: Colors.transparent,
+                        shadowColor: Colors.red[900],
+                        child: child,
+                      );
+                    },
+                    child: child,
+                  );
+                },
                 onReorder: notifier.reorderDays,
-                draggingWidgetOpacity: 0.8,
-                children: routineState.dias.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final dia = entry.value;
-
+                itemCount: routineState.dias.length,
+                itemBuilder: (context, index) {
+                  final dia = routineState.dias[index];
                   return Container(
                     key: Key(dia.id),
                     padding:
@@ -227,7 +241,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                           notifier.removeFromSuperset(index, exIdx),
                     ),
                   );
-                }).toList(),
+                },
               ),
 
             const SizedBox(height: 24),

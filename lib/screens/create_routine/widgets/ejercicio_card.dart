@@ -65,16 +65,30 @@ class _EjercicioCardState extends State<EjercicioCard> {
   @override
   void didUpdateWidget(EjercicioCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only update if the value changed externally (not from user input)
+    // Only update if the value changed externally AND differs from current controller text
+    // This prevents cursor jumping when the user is actively typing
     if (oldWidget.ejercicio.series != widget.ejercicio.series) {
-      final currentSeries = int.tryParse(_seriesController.text) ?? 0;
-      if (widget.ejercicio.series != currentSeries) {
-        _seriesController.text = widget.ejercicio.series.toString();
+      final currentText = _seriesController.text;
+      final newText = widget.ejercicio.series.toString();
+      if (currentText != newText) {
+        final selection = _seriesController.selection;
+        _seriesController.text = newText;
+        // Restore cursor position if valid
+        if (selection.isValid && selection.end <= newText.length) {
+          _seriesController.selection = selection;
+        }
       }
     }
     if (oldWidget.ejercicio.repsRange != widget.ejercicio.repsRange) {
-      if (widget.ejercicio.repsRange != _repsController.text) {
-        _repsController.text = widget.ejercicio.repsRange;
+      final currentText = _repsController.text;
+      final newText = widget.ejercicio.repsRange;
+      if (currentText != newText) {
+        final selection = _repsController.selection;
+        _repsController.text = newText;
+        // Restore cursor position if valid
+        if (selection.isValid && selection.end <= newText.length) {
+          _repsController.selection = selection;
+        }
       }
     }
   }

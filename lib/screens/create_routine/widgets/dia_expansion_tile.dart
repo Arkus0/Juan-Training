@@ -59,8 +59,17 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
   @override
   void didUpdateWidget(DiaExpansionTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.dia.nombre != widget.dia.nombre) {
+    // Only sync if the external value changed AND it's different from what's in the controller
+    // This prevents cursor jumping when the user is actively typing
+    if (oldWidget.dia.nombre != widget.dia.nombre &&
+        _nameController.text != widget.dia.nombre) {
+      // Preserve selection if possible
+      final selection = _nameController.selection;
       _nameController.text = widget.dia.nombre;
+      // Restore cursor position if valid
+      if (selection.isValid && selection.end <= widget.dia.nombre.length) {
+        _nameController.selection = selection;
+      }
     }
   }
 
@@ -196,9 +205,16 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
             color: Colors.grey[900],
             child: Row(
               children: [
-                GestureDetector(
-                  onLongPress: _showProOptions,
-                  child: Icon(Icons.drag_handle, color: Colors.red[900]),
+                // Drag handle - only this area triggers day reordering
+                ReorderableDragStartListener(
+                  index: widget.dayIndex,
+                  child: GestureDetector(
+                    onLongPress: _showProOptions,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Icon(Icons.drag_handle, color: Colors.red[900]),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -312,8 +328,19 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
   }
 }
 
+/// Data class for superset drag operations
+class _SupersetDragData {
+  final int sourceIndex;
+  final String instanceId;
+
+  const _SupersetDragData({
+    required this.sourceIndex,
+    required this.instanceId,
+  });
+}
+
 /// Lightweight widget for rendering a single visual group (either a single exercise or a superset)
-class _ExerciseGroupWidget extends StatelessWidget {
+class _ExerciseGroupWidget extends StatefulWidget {
   final List<int> groupIndices;
   final List<EjercicioEnRutina> exercises;
   final bool isSuperset;
@@ -336,6 +363,14 @@ class _ExerciseGroupWidget extends StatelessWidget {
     required this.onUndoRemove,
   });
 
+  @override
+  State<_ExerciseGroupWidget> createState() => _ExerciseGroupWidgetState();
+}
+
+class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
+  bool _isDragOver = false;
+  int? _dragOverIndex;
+
   void _showDeleteSnackbar(BuildContext context, int idx, EjercicioEnRutina removedItem) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -352,7 +387,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
           label: 'DESHACER',
           textColor: Colors.white,
           onPressed: () {
-            onUndoRemove(idx, removedItem);
+            widget.onUndoRemove(idx, removedItem);
           },
         ),
       ),
@@ -365,15 +400,95 @@ class _ExerciseGroupWidget extends StatelessWidget {
       ejercicio: ex,
       onRemove: () {
         final removedItem = ex;
-        onRemoveExercise(idx);
+        widget.onRemoveExercise(idx);
         _showDeleteSnackbar(context, idx, removedItem);
       },
-      onUpdate: (updated) => onUpdateExercise(idx, updated),
-      onReplace: (alternativaNombre) => onReplaceExercise(idx, alternativaNombre),
-      onLink: (idx < exercises.length - 1)
-          ? () => onCreateSuperset(idx, idx + 1)
+      onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
+      onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
+      onLink: (idx < widget.exercises.length - 1)
+          ? () => widget.onCreateSuperset(idx, idx + 1)
           : null,
-      onUnlink: inSuperset ? () => onRemoveFromSuperset(idx) : null,
+      onUnlink: inSuperset ? () => widget.onRemoveFromSuperset(idx) : null,
+    );
+
+    // Wrap with LongPressDraggable for superset creation
+    final draggableCard = LongPressDraggable<_SupersetDragData>(
+      data: _SupersetDragData(sourceIndex: idx, instanceId: ex.instanceId),
+      feedback: Material(
+        elevation: 8,
+        color: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          decoration: BoxDecoration(
+            color: Colors.grey[850],
+            border: Border.all(color: Colors.redAccent, width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.link, color: Colors.redAccent),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  ex.nombre.toUpperCase(),
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.4,
+        child: card,
+      ),
+      child: DragTarget<_SupersetDragData>(
+        onWillAcceptWithDetails: (details) {
+          // Accept if it's a different exercise
+          if (details.data.instanceId != ex.instanceId) {
+            setState(() {
+              _isDragOver = true;
+              _dragOverIndex = idx;
+            });
+            return true;
+          }
+          return false;
+        },
+        onLeave: (_) {
+          setState(() {
+            _isDragOver = false;
+            _dragOverIndex = null;
+          });
+        },
+        onAcceptWithDetails: (details) {
+          setState(() {
+            _isDragOver = false;
+            _dragOverIndex = null;
+          });
+          // Create superset between source and target
+          widget.onCreateSuperset(details.data.sourceIndex, idx);
+        },
+        builder: (context, candidateData, rejectedData) {
+          final isHovering = candidateData.isNotEmpty && _dragOverIndex == idx;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              border: isHovering
+                  ? Border.all(color: Colors.redAccent, width: 3)
+                  : null,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: card,
+          );
+        },
+      ),
     );
 
     // Swipe to delete for all exercises (including superset members)
@@ -388,16 +503,16 @@ class _ExerciseGroupWidget extends StatelessWidget {
       ),
       onDismissed: (_) {
         final removedItem = ex;
-        onRemoveExercise(idx);
+        widget.onRemoveExercise(idx);
         _showDeleteSnackbar(context, idx, removedItem);
       },
-      child: card,
+      child: draggableCard,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isSuperset) {
+    if (widget.isSuperset) {
       // Render superset group with swipe-to-delete for each item
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -407,16 +522,16 @@ class _ExerciseGroupWidget extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: groupIndices.map((idx) {
-            final ex = exercises[idx];
+          children: widget.groupIndices.map((idx) {
+            final ex = widget.exercises[idx];
             return _buildExerciseCard(context, idx, ex, inSuperset: true);
           }).toList(),
         ),
       );
     } else {
       // Single item with dismissible behavior
-      final idx = groupIndices.first;
-      final ex = exercises[idx];
+      final idx = widget.groupIndices.first;
+      final ex = widget.exercises[idx];
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         child: _buildExerciseCard(context, idx, ex, inSuperset: false),
