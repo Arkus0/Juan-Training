@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/timer_audio_service.dart';
+import '../../services/timer_notification_service.dart';
 import '../../utils/performance_utils.dart';
 
 /// Callback cuando el timer termina, incluye info para auto-focus
@@ -114,6 +114,9 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     interval: const Duration(milliseconds: 800),
   );
 
+  // Lock screen notification service
+  final TimerNotificationService _notificationService = TimerNotificationService.instance;
+
   @override
   void initState() {
     super.initState();
@@ -137,12 +140,72 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
 
+    // Setup notification callbacks
+    _setupNotificationCallbacks();
+
     if (widget.timerState.isActive) {
       _startTicker();
       _animController.forward();
+      _startLockScreenNotification();
     }
 
     _displaySeconds = widget.timerState.remainingSeconds;
+  }
+
+  /// Setup callbacks for notification button actions
+  void _setupNotificationCallbacks() {
+    _notificationService.onPausePressed = () {
+      if (mounted && widget.timerState.isActive && !widget.timerState.isPaused) {
+        widget.onPauseRest();
+      }
+    };
+    _notificationService.onResumePressed = () {
+      if (mounted && widget.timerState.isActive && widget.timerState.isPaused) {
+        widget.onResumeRest();
+      }
+    };
+    _notificationService.onSkipPressed = () {
+      if (mounted && widget.timerState.isActive) {
+        widget.onStopRest();
+      }
+    };
+    _notificationService.onAddTimePressed = () {
+      if (mounted && widget.timerState.isActive) {
+        widget.onAddTime(30);
+      }
+    };
+  }
+
+  /// Start the lock screen notification
+  Future<void> _startLockScreenNotification() async {
+    final settings = ref.read(settingsProvider);
+    // Only show if lock screen timer is enabled in settings
+    if (!settings.lockScreenTimerEnabled) return;
+
+    if (widget.timerState.endTime != null) {
+      await _notificationService.startTimerNotification(
+        totalSeconds: widget.timerState.totalSeconds,
+        endTime: widget.timerState.endTime!,
+        isPaused: widget.timerState.isPaused,
+      );
+    }
+  }
+
+  /// Update the lock screen notification
+  Future<void> _updateLockScreenNotification() async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.lockScreenTimerEnabled) return;
+
+    await _notificationService.updateTimerNotification(
+      totalSeconds: widget.timerState.totalSeconds,
+      endTime: widget.timerState.endTime,
+      isPaused: widget.timerState.isPaused,
+    );
+  }
+
+  /// Stop the lock screen notification
+  Future<void> _stopLockScreenNotification() async {
+    await _notificationService.stopTimerNotification();
   }
 
   @override
@@ -154,17 +217,20 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       _startTicker();
       _animController.forward();
       _lastVibratedSecond = -1;
+      _startLockScreenNotification();
     }
 
     // Timer se desactivó
     if (!widget.timerState.isActive && oldWidget.timerState.isActive) {
       _stopTicker();
       _animController.reverse();
+      _stopLockScreenNotification();
     }
 
     // Timer se pausó
     if (widget.timerState.isPaused && !oldWidget.timerState.isPaused) {
       _stopTicker();
+      _updateLockScreenNotification();
     }
 
     // Timer se reanudó
@@ -172,6 +238,13 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         oldWidget.timerState.isPaused &&
         widget.timerState.isActive) {
       _startTicker();
+      _updateLockScreenNotification();
+    }
+
+    // Timer duration changed (e.g., +30s)
+    if (widget.timerState.totalSeconds != oldWidget.timerState.totalSeconds ||
+        widget.timerState.endTime != oldWidget.timerState.endTime) {
+      _updateLockScreenNotification();
     }
   }
 
@@ -190,6 +263,11 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     _stopTicker();
     _animController.dispose();
     _vibrationThrottler.dispose();
+    // Clear notification callbacks
+    _notificationService.onPausePressed = null;
+    _notificationService.onResumePressed = null;
+    _notificationService.onSkipPressed = null;
+    _notificationService.onAddTimePressed = null;
     super.dispose();
   }
 

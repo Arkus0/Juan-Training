@@ -61,6 +61,17 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           _SettingsTile(
+            icon: Icons.lock_clock,
+            title: 'Timer en pantalla bloqueada',
+            subtitle: 'Ver y controlar timer sin desbloquear',
+            trailing: Switch(
+              value: settings.lockScreenTimerEnabled,
+              onChanged: notifier.setLockScreenTimerEnabled,
+              activeColor: Colors.redAccent[700],
+            ),
+          ),
+
+          _SettingsTile(
             icon: Icons.timer,
             title: 'Descanso por defecto',
             subtitle: '${settings.defaultRestSeconds} segundos',

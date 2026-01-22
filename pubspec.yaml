@@ -47,6 +47,10 @@ dependencies:
   # Audio (para beeps del timer - ligero, offline-first)
   just_audio: ^0.9.36
 
+  # Notifications & Background Timer
+  flutter_local_notifications: ^17.2.4
+  permission_handler: ^11.3.1
+
   # Icons
   cupertino_icons: ^1.0.2
 
