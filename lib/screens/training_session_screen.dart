@@ -126,6 +126,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       if (!mounted) return;
       final navigator = Navigator.of(context);
 
+      // Stop any active rest timer so UI and state are consistent
+      // Prevents floating timer overlay from still being active after finishing
+      ref.read(trainingSessionProvider.notifier).stopRest();
+
       // Reset progreso
       ref.read(sessionProgressProvider.notifier).reset();
 

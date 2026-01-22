@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:just_audio/just_audio.dart';
 
 /// Servicio singleton para reproducir beeps del timer
@@ -79,10 +80,13 @@ class TimerAudioService {
       }
 
       // Convertir a bytes PCM 16-bit
-      final bytes = _float64ToPcm16(samples);
+      final pcmBytes = _float64ToPcm16(samples);
 
-      // Crear fuente de audio desde bytes
-      final audioSource = _SineWaveAudioSource(bytes, sampleRate);
+      // Envolver en contenedor WAV para que ExoPlayer/Media3 detecte el formato
+      final wavBytes = _pcm16ToWav(pcmBytes, sampleRate, channels: 1, bitsPerSample: 16);
+
+      // Crear fuente de audio desde bytes WAV
+      final audioSource = _SineWaveAudioSource(wavBytes, sampleRate, contentType: 'audio/wav');
       await _player!.setAudioSource(audioSource);
       await _player!.play();
     } catch (e) {
@@ -114,6 +118,46 @@ class TimerAudioService {
     return bytes;
   }
 
+  /// Convierte PCM16 little-endian (mono) en un buffer WAV con cabecera RIFF.
+  Uint8List _pcm16ToWav(Uint8List pcm, int sampleRate, {int channels = 1, int bitsPerSample = 16}) {
+    final byteRate = sampleRate * channels * bitsPerSample ~/ 8;
+    final blockAlign = channels * bitsPerSample ~/ 8;
+    final dataLen = pcm.length;
+    final totalLen = 36 + dataLen; // RIFF chunk size = 36 + dataLen
+    final header = BytesBuilder();
+
+    header.add(ascii.encode('RIFF'));
+    header.add(_u32ToBytesLE(totalLen));
+    header.add(ascii.encode('WAVE'));
+    header.add(ascii.encode('fmt '));
+    header.add(_u32ToBytesLE(16)); // Subchunk1Size for PCM
+    header.add(_u16ToBytesLE(1)); // AudioFormat PCM = 1
+    header.add(_u16ToBytesLE(channels));
+    header.add(_u32ToBytesLE(sampleRate));
+    header.add(_u32ToBytesLE(byteRate));
+    header.add(_u16ToBytesLE(blockAlign));
+    header.add(_u16ToBytesLE(bitsPerSample));
+    header.add(ascii.encode('data'));
+    header.add(_u32ToBytesLE(dataLen));
+    header.add(pcm);
+
+    return header.toBytes();
+  }
+
+  Uint8List _u16ToBytesLE(int value) {
+    final b = Uint8List(2);
+    final bd = ByteData.view(b.buffer);
+    bd.setUint16(0, value, Endian.little);
+    return b;
+  }
+
+  Uint8List _u32ToBytesLE(int value) {
+    final b = Uint8List(4);
+    final bd = ByteData.view(b.buffer);
+    bd.setUint32(0, value, Endian.little);
+    return b;
+  }
+
   /// Libera recursos
   Future<void> dispose() async {
     await _player?.dispose();
@@ -126,8 +170,9 @@ class TimerAudioService {
 class _SineWaveAudioSource extends StreamAudioSource {
   final Uint8List _bytes;
   final int _sampleRate;
+  final String contentType;
 
-  _SineWaveAudioSource(this._bytes, this._sampleRate);
+  _SineWaveAudioSource(this._bytes, this._sampleRate, {this.contentType = 'audio/wav'});
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
@@ -139,7 +184,7 @@ class _SineWaveAudioSource extends StreamAudioSource {
       contentLength: end - start,
       offset: start,
       stream: Stream.value(_bytes.sublist(start, end)),
-      contentType: 'audio/raw',
+      contentType: contentType,
     );
   }
 }
