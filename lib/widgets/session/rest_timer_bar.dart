@@ -78,6 +78,7 @@ class RestTimerBar extends ConsumerStatefulWidget {
   final ValueChanged<int> onAddTime;
   final TimerFinishedCallback onTimerFinished;
   final VoidCallback? onDiscardSession; // Nuevo: borrar sesión
+  final VoidCallback? onRestartRest; // Nuevo: reiniciar descanso dentro de la sesión
 
   const RestTimerBar({
     super.key,
@@ -90,6 +91,7 @@ class RestTimerBar extends ConsumerStatefulWidget {
     required this.onAddTime,
     required this.onTimerFinished,
     this.onDiscardSession,
+    this.onRestartRest,
   });
 
   @override
@@ -313,6 +315,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         onDurationChange: widget.onDurationChange,
         onStartRest: widget.onStartRest,
         onDiscardSession: widget.onDiscardSession,
+        onRestartRest: widget.onRestartRest,
       );
     }
 
@@ -330,7 +333,10 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
             onStopRest: widget.onStopRest,
             onPauseRest: widget.onPauseRest,
             onResumeRest: widget.onResumeRest,
-            onAddTime: () => widget.onAddTime(30),            onDiscardSession: widget.onDiscardSession,          ),
+            onAddTime: () => widget.onAddTime(30),
+            onDiscardSession: widget.onDiscardSession,
+            onRestartRest: widget.onRestartRest,
+          ),
         ),
       ),
     );
@@ -344,12 +350,14 @@ class _InactiveTimerBar extends StatelessWidget {
   final ValueChanged<int> onDurationChange;
   final VoidCallback onStartRest;
   final VoidCallback? onDiscardSession;
+  final VoidCallback? onRestartRest;
 
   const _InactiveTimerBar({
     required this.seconds,
     required this.onDurationChange,
     required this.onStartRest,
     this.onDiscardSession,
+    this.onRestartRest,
   });
 
   @override
@@ -374,15 +382,14 @@ class _InactiveTimerBar extends StatelessWidget {
             // Basura centrada en la barra inactiva
             Expanded(
               child: Center(
-                child: Tooltip(
-                  message: 'Descartar sesión',
-                  child: _CircleButton(
-                    icon: Icons.delete_outline,
-                    size: 36,
-                    color: Colors.grey[800],
-                    onTap: onDiscardSession == null
-                        ? null
-                        : () async {
+                child: (onDiscardSession != null)
+                    ? Tooltip(
+                        message: 'Descartar sesión',
+                        child: _CircleButton(
+                          icon: Icons.delete_outline,
+                          size: 36,
+                          color: Colors.grey[800],
+                          onTap: () async {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
@@ -400,8 +407,30 @@ class _InactiveTimerBar extends StatelessWidget {
                               onDiscardSession!();
                             }
                           },
-                  ),
-                ),
+                        ),
+                      )
+                    : (onRestartRest != null)
+                        ? Tooltip(
+                            message: 'Reiniciar descanso',
+                            child: _CircleButton(
+                              icon: Icons.refresh,
+                              size: 36,
+                              color: Colors.grey[800],
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                onRestartRest!();
+                              },
+                            ),
+                          )
+                        : Tooltip(
+                            message: 'Descartar sesión',
+                            child: _CircleButton(
+                              icon: Icons.delete_outline,
+                              size: 36,
+                              color: Colors.grey[800],
+                              onTap: null,
+                            ),
+                          ),
               ),
             ),
 
@@ -422,6 +451,7 @@ class _ActiveTimerBar extends StatelessWidget {
   final VoidCallback onResumeRest;
   final VoidCallback onAddTime;
   final VoidCallback? onDiscardSession;
+  final VoidCallback? onRestartRest;
 
   const _ActiveTimerBar({
     required this.displaySeconds,
@@ -431,6 +461,7 @@ class _ActiveTimerBar extends StatelessWidget {
     required this.onResumeRest,
     required this.onAddTime,
     this.onDiscardSession,
+    this.onRestartRest,
   });
 
   @override
@@ -495,34 +526,55 @@ class _ActiveTimerBar extends StatelessWidget {
                 // Espacio central: botón de basura en el centro de la barra
                 Expanded(
                   child: Center(
-                    child: Tooltip(
-                      message: 'Descartar sesión',
-                      child: _CircleButton(
-                        icon: Icons.delete_outline,
-                        size: 36,
-                        color: Colors.grey[800],
-                        onTap: onDiscardSession == null
-                            ? null
-                            : () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    backgroundColor: Colors.grey[900],
-                                    title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
-                                    content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
-                                      TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  HapticFeedback.heavyImpact();
-                                  onDiscardSession!();
-                                }
+                    child: (onDiscardSession != null)
+                    ? Tooltip(
+                        message: 'Descartar sesión',
+                        child: _CircleButton(
+                          icon: Icons.delete_outline,
+                          size: 36,
+                          color: Colors.grey[800],
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: Colors.grey[900],
+                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
+                                content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              HapticFeedback.heavyImpact();
+                              onDiscardSession!();
+                            }
+                          },
+                        ),
+                      )
+                    : (onRestartRest != null)
+                        ? Tooltip(
+                            message: 'Reiniciar descanso',
+                            child: _CircleButton(
+                              icon: Icons.refresh,
+                              size: 36,
+                              color: Colors.grey[800],
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                onRestartRest!();
                               },
-                      ),
-                    ),
+                            ),
+                          )
+                        : Tooltip(
+                            message: 'Descartar sesión',
+                            child: _CircleButton(
+                              icon: Icons.delete_outline,
+                              size: 36,
+                              color: Colors.grey[800],
+                              onTap: null,
+                            ),
+                          ),
                   ),
                 ),
 

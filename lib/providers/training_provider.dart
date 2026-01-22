@@ -532,6 +532,31 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _saveRestTimerToPrefs();
   }
 
+  /// Reinicia el timer de descanso al valor por defecto para el ejercicio actual (o al valor por defecto de la sesión).
+  void restartRest() {
+    // Determinar tiempo de descanso objetivo: intentar usar el último ejercicio si existe
+    final lastIndex = state.restTimer.lastCompletedExerciseIndex;
+    int restTime;
+    if (lastIndex != null) {
+      restTime = _getSupersetRestTime(lastIndex);
+    } else {
+      restTime = state.defaultRestSeconds;
+    }
+
+    final endTime = DateTime.now().add(Duration(seconds: restTime));
+
+    state = state.copyWith(
+      restTimer: state.restTimer.copyWith(
+        isActive: true,
+        isPaused: false,
+        totalSeconds: restTime,
+        endTime: endTime,
+      ),
+    );
+    _saveState();
+    _saveRestTimerToPrefs();
+  }
+
   /// Actualiza el tiempo de descanso sugerido para un ejercicio específico
   void updateExerciseRestTime(int exerciseIndex, int seconds) {
     final exercises = [...state.exercises];

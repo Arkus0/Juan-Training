@@ -30,33 +30,8 @@ class _FloatingTimerOverlayState extends ConsumerState<FloatingTimerOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final timerState = ref.watch(trainingSessionProvider.select((s) => s.restTimer));
-    final hasActiveSession = ref.watch(trainingSessionProvider.select((s) => s.exercises.isNotEmpty));
-
-    return Stack(
-      children: [
-        // Contenido principal
-        widget.child,
-
-        // Timer flotante (solo si hay sesión activa y timer activo)
-        if (hasActiveSession && timerState.isActive)
-          Positioned(
-            right: _position.dx,
-            bottom: _position.dy,
-            child: _FloatingTimerBubble(
-              timerState: timerState,
-              onPositionChange: (delta) {
-                setState(() {
-                  _position = Offset(
-                    (_position.dx - delta.dx).clamp(8.0, MediaQuery.of(context).size.width - 80),
-                    (_position.dy - delta.dy).clamp(8.0, MediaQuery.of(context).size.height - 200),
-                  );
-                });
-              },
-            ),
-          ),
-      ],
-    );
+    // Floating timer removed — passthrough to child only
+    return widget.child;
   }
 }
 

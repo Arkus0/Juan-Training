@@ -110,19 +110,6 @@ class TrainSelectionScreen extends ConsumerWidget {
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
-                          // Sugerencia inteligente
-                          suggestionAsync.when(
-                            loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
-                            data: (suggestion) {
-                              if (suggestion == null) return const SizedBox.shrink();
-                              return _SmartSuggestionCard(
-                                suggestion: suggestion,
-                                onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
-                              );
-                            },
-                          ),
-
                           const SizedBox(height: 16),
                           Text(
                             'TODAS LAS RUTINAS',

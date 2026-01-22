@@ -299,6 +299,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             onDurationChange: notifier.setRestDuration,
             onAddTime: notifier.addRestTime,
             onTimerFinished: _onTimerFinished,
+            onRestartRest: notifier.restartRest,
           ),
         ],
       ),
