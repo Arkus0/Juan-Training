@@ -26,7 +26,7 @@ class ReorderDragData {
   const ReorderDragData({required this.flatIndex});
 }
 
-class EjercicioCard extends StatelessWidget {
+class EjercicioCard extends StatefulWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
@@ -42,43 +42,82 @@ class EjercicioCard extends StatelessWidget {
     this.onUnlink,
   });
 
+  @override
+  State<EjercicioCard> createState() => _EjercicioCardState();
+}
+
+class _EjercicioCardState extends State<EjercicioCard> {
+  late TextEditingController _seriesController;
+  late TextEditingController _repsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _seriesController = TextEditingController(text: widget.ejercicio.series.toString());
+    _repsController = TextEditingController(text: widget.ejercicio.repsRange);
+  }
+
+  @override
+  void didUpdateWidget(EjercicioCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only update if the value changed externally (not from user input)
+    if (oldWidget.ejercicio.series != widget.ejercicio.series) {
+      final currentSeries = int.tryParse(_seriesController.text) ?? 0;
+      if (widget.ejercicio.series != currentSeries) {
+        _seriesController.text = widget.ejercicio.series.toString();
+      }
+    }
+    if (oldWidget.ejercicio.repsRange != widget.ejercicio.repsRange) {
+      if (widget.ejercicio.repsRange != _repsController.text) {
+        _repsController.text = widget.ejercicio.repsRange;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _seriesController.dispose();
+    _repsController.dispose();
+    super.dispose();
+  }
+
   void _showProOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
-      builder: (context) {
+      builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
             left: 24, right: 24, top: 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'OPCIONES PRO: ${ejercicio.nombre}',
+                'OPCIONES PRO: ${widget.ejercicio.nombre}',
                 style: GoogleFonts.montserrat(
                   fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const SizedBox(height: 16),
 
-              if (onUnlink != null)
+              if (widget.onUnlink != null)
                 ListTile(
                   leading: const Icon(Icons.link_off, color: Colors.orange),
                   title: const Text('DESVINCULAR (ROMPER SUPERSERIE)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                   onTap: () {
-                    Navigator.pop(context);
-                    onUnlink!();
+                    Navigator.pop(sheetContext);
+                    widget.onUnlink!();
                   },
                 ),
 
               TextFormField(
-                initialValue: ejercicio.notas,
+                initialValue: widget.ejercicio.notas,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(labelText: 'Notas / RPE / Tempo'),
                 onChanged: (val) {
-                  onUpdate(ejercicio.copyWith(notas: val));
+                  widget.onUpdate(widget.ejercicio.copyWith(notas: val));
                 },
               ),
               const SizedBox(height: 16),
@@ -88,13 +127,13 @@ class EjercicioCard extends StatelessWidget {
                   const Text('Descanso (seg): ', style: TextStyle(color: Colors.white)),
                   Expanded(
                     child: TextFormField(
-                      initialValue: ejercicio.descansoSugerido?.inSeconds.toString() ?? '60',
+                      initialValue: widget.ejercicio.descansoSugerido?.inSeconds.toString() ?? '60',
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
                       onChanged: (val) {
                         final sec = int.tryParse(val);
                         if (sec != null) {
-                          onUpdate(ejercicio.copyWith(descansoSugerido: Duration(seconds: sec)));
+                          widget.onUpdate(widget.ejercicio.copyWith(descansoSugerido: Duration(seconds: sec)));
                         }
                       },
                     ),
@@ -104,8 +143,8 @@ class EjercicioCard extends StatelessWidget {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () {
-                  onRemove();
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
+                  widget.onRemove();
                 },
                 icon: const Icon(Icons.delete, color: Colors.white),
                 label: const Text('ELIMINAR EJERCICIO'),
@@ -122,7 +161,7 @@ class EjercicioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Lookup library exercise by library ID (more reliable than matching by name)
-    final int? libId = int.tryParse(ejercicio.id);
+    final int? libId = int.tryParse(widget.ejercicio.id);
     final libraryExercise = libId == null
         ? null
         : ExerciseLibraryService.instance.exercises
@@ -154,7 +193,7 @@ class EjercicioCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ejercicio.nombre.toUpperCase(),
+                    widget.ejercicio.nombre.toUpperCase(),
                     style: GoogleFonts.montserrat(
                       fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
                     maxLines: 2,
@@ -162,18 +201,18 @@ class EjercicioCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    ejercicio.musculosPrincipales.join(', '),
+                    widget.ejercicio.musculosPrincipales.join(', '),
                     style: GoogleFonts.montserrat(
                       fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  // Series x Reps Inputs
+                  // Series x Reps Inputs with controllers to prevent focus loss
                   Row(
                     children: [
                       SizedBox(
                         width: 40,
-                        child: TextFormField(
-                          initialValue: ejercicio.series.toString(),
+                        child: TextField(
+                          controller: _seriesController,
                           keyboardType: TextInputType.number,
                           style: GoogleFonts.montserrat(
                               fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
@@ -184,15 +223,15 @@ class EjercicioCard extends StatelessWidget {
                           ),
                           onChanged: (val) {
                             final s = int.tryParse(val);
-                            if (s != null) onUpdate(ejercicio.copyWith(series: s));
+                            if (s != null) widget.onUpdate(widget.ejercicio.copyWith(series: s));
                           },
                         ),
                       ),
                       Text(' x ', style: TextStyle(color: Colors.grey[600])),
                       SizedBox(
                         width: 60,
-                        child: TextFormField(
-                          initialValue: ejercicio.repsRange,
+                        child: TextField(
+                          controller: _repsController,
                           style: GoogleFonts.montserrat(
                               fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
                           decoration: const InputDecoration(
@@ -201,7 +240,7 @@ class EjercicioCard extends StatelessWidget {
                             border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
                           ),
                           onChanged: (val) {
-                            onUpdate(ejercicio.copyWith(repsRange: val));
+                            widget.onUpdate(widget.ejercicio.copyWith(repsRange: val));
                           },
                         ),
                       ),
@@ -212,10 +251,10 @@ class EjercicioCard extends StatelessWidget {
             ),
 
             // Actions
-            if (onLink != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                child: Icon(Icons.link, color: Colors.white70), // hint only, drag is on long press of card
+            if (widget.onLink != null)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.0),
+                child: Icon(Icons.link, color: Colors.white70),
               ),
 
             // Info Icon / Menu
@@ -253,8 +292,8 @@ class EjercicioCard extends StatelessWidget {
     }
 
     try {
-      if (ejercicio.localImagePath != null) {
-        final f = File(ejercicio.localImagePath!);
+      if (widget.ejercicio.localImagePath != null) {
+        final f = File(widget.ejercicio.localImagePath!);
         if (f.existsSync() && f.lengthSync() > 0) {
           return Image.file(
             f,

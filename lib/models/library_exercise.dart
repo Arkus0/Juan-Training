@@ -9,6 +9,7 @@ class LibraryExercise {
   String? localImagePath;
   final List<String> muscles; // Detailed muscles
   final List<String> secondaryMuscles;
+  bool isFavorite; // User-marked favorite
 
   LibraryExercise({
     required this.id,
@@ -21,6 +22,7 @@ class LibraryExercise {
     this.localImagePath,
     this.muscles = const [],
     this.secondaryMuscles = const [],
+    this.isFavorite = false,
   });
 
   factory LibraryExercise.fromApi(
@@ -70,6 +72,7 @@ class LibraryExercise {
       'localImagePath': localImagePath,
       'muscles': muscles,
       'secondaryMuscles': secondaryMuscles,
+      'isFavorite': isFavorite,
     };
   }
 
@@ -113,6 +116,36 @@ class LibraryExercise {
       localImagePath: json['localImagePath'] as String?,
       muscles: _normalizeStringList(json['muscles'], defaultKey: 'name'),
       secondaryMuscles: _normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+
+  /// Creates a copy with updated fields
+  LibraryExercise copyWith({
+    int? id,
+    String? name,
+    String? muscleGroup,
+    String? equipment,
+    String? description,
+    String? license,
+    List<String>? imageUrls,
+    String? localImagePath,
+    List<String>? muscles,
+    List<String>? secondaryMuscles,
+    bool? isFavorite,
+  }) {
+    return LibraryExercise(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      muscleGroup: muscleGroup ?? this.muscleGroup,
+      equipment: equipment ?? this.equipment,
+      description: description ?? this.description,
+      license: license ?? this.license,
+      imageUrls: imageUrls ?? this.imageUrls,
+      localImagePath: localImagePath ?? this.localImagePath,
+      muscles: muscles ?? this.muscles,
+      secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

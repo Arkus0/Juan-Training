@@ -649,6 +649,33 @@ class ExerciseLibraryService {
   List<LibraryExercise> getExercises() => List.from(_exercises);
   List<LibraryExercise> get exercises => List.from(_exercises);
 
+  /// Get all favorite exercises
+  List<LibraryExercise> get favorites =>
+      _exercises.where((e) => e.isFavorite).toList();
+
+  /// Toggle favorite status for an exercise
+  Future<void> toggleFavorite(int exerciseId) async {
+    final index = _exercises.indexWhere((e) => e.id == exerciseId);
+    if (index == -1) return;
+
+    _exercises[index].isFavorite = !_exercises[index].isFavorite;
+
+    // Save to persist the change
+    await _saveToFile();
+
+    // Notify listeners
+    _updateNotifier();
+  }
+
+  /// Check if an exercise is a favorite
+  bool isFavorite(int exerciseId) {
+    final exercise = _exercises.firstWhere(
+      (e) => e.id == exerciseId,
+      orElse: () => LibraryExercise(id: -1, name: '', muscleGroup: '', equipment: ''),
+    );
+    return exercise.isFavorite;
+  }
+
   void dispose() {
     _connectivitySubscription?.cancel();
     exercisesNotifier.dispose();
