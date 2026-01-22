@@ -28,81 +28,124 @@ class TrainSelectionScreen extends ConsumerWidget {
             final Rutina activeRutina = activeSessionData.activeRutina!;
             final startTime = activeSessionData.startTime;
 
-            return Center(
-              child: Card(
-                color: Colors.red[900],
-                margin: const EdgeInsets.all(24),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.fitness_center, size: 60, color: Colors.white),
-                      const SizedBox(height: 16),
-                      Text(
-                        'SESIÓN ACTIVA',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        activeRutina.nombre.toUpperCase(),
-                        style: Theme.of(context).textTheme.headlineMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      if (startTime != null)
-                        Text(
-                          'Iniciada hace ${DateTime.now().difference(startTime).inMinutes} min',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Vibrate.feedback(FeedbackType.medium);
-                            ref.read(trainingSessionProvider.notifier).restoreFromStorage();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const TrainingSessionScreen(),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.red[900],
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+            // Mostrar una barra discreta en la parte superior con acciones rápidas.
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Card(
+                    color: Colors.red[900],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.fitness_center, color: Colors.white),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('SESIÓN ACTIVA', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white70)),
+                                const SizedBox(height: 2),
+                                Text(activeRutina.nombre.toUpperCase(), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white)),
+                                if (startTime != null) Text('Iniciada hace ${DateTime.now().difference(startTime).inMinutes} min', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                              ],
+                            ),
                           ),
-                          child: const Text('CONTINUAR SESIÓN'),
-                        ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              Vibrate.feedback(FeedbackType.medium);
+                              ref.read(trainingSessionProvider.notifier).restoreFromStorage();
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red[900]),
+                            child: const Text('CONTINUAR'),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white70),
+                            tooltip: 'Descartar sesión',
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('¿Descartar sesión?'),
+                                  content: const Text('Se perderá el progreso actual.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        ref.read(trainingSessionProvider.notifier).clearStorage();
+                                      },
+                                      child: const Text('DESCARTAR', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {
-                           showDialog(
-                             context: context,
-                             builder: (context) => AlertDialog(
-                               title: const Text('¿Descartar sesión?'),
-                               content: const Text('Se perderá el progreso actual.'),
-                               actions: [
-                                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-                                 TextButton(
-                                   onPressed: () {
-                                     Navigator.pop(context);
-                                     ref.read(trainingSessionProvider.notifier).clearStorage();
-                                   },
-                                   child: const Text('DESCARTAR', style: TextStyle(color: Colors.red)),
-                                 ),
-                               ],
-                             ),
-                           );
-                        },
-                        child: const Text('DESCARTAR Y EMPEZAR NUEVA', style: TextStyle(color: Colors.white70)),
-                      )
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                // After the banner, continue to show the normal routines list
+                rutinasAsync.when(
+                  loading: () => const AppLoadingIndicator(),
+                  error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
+                  data: (rutinas) {
+                    if (rutinas.isEmpty) {
+                      return const EmptyStateWidget(
+                        icon: Icons.warning_amber_rounded,
+                        title: 'SIN RUTINAS',
+                        subtitle: 'Ve a Rutinas y crea tu plan de batalla.',
+                      );
+                    }
+
+                    return Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          // Sugerencia inteligente
+                          suggestionAsync.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                            data: (suggestion) {
+                              if (suggestion == null) return const SizedBox.shrink();
+                              return _SmartSuggestionCard(
+                                suggestion: suggestion,
+                                onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+                          Text(
+                            'TODAS LAS RUTINAS',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Lista de rutinas
+                          ...rutinas.map((rutina) => _RutinaCard(
+                            key: ValueKey(rutina.id),
+                            rutina: rutina,
+                            onDaySelected: (dayIndex) => _startSession(context, ref, rutina, dayIndex),
+                          )),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             );
           }
 

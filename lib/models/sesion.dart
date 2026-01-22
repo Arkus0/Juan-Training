@@ -10,6 +10,11 @@ class Sesion {
   final List<Ejercicio> ejerciciosObjetivo;
   final int? durationSeconds;
 
+  // Optional rest timer metadata for active sessions
+  final DateTime? restTimerEndTime;
+  final int? restTimerTotalSeconds;
+  final bool restTimerIsPaused;
+
   Sesion({
     required this.id,
     required this.rutinaId,
@@ -19,6 +24,9 @@ class Sesion {
     required this.ejerciciosCompletados,
     required this.ejerciciosObjetivo,
     this.durationSeconds,
+    this.restTimerEndTime,
+    this.restTimerTotalSeconds,
+    this.restTimerIsPaused = false,
   });
 
   Sesion copyWith({

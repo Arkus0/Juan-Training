@@ -11,6 +11,11 @@ class ActiveSessionData {
   final int defaultRestSeconds;
   final Map<String, List<SerieLog>> history;
 
+  // Rest timer persisted info (nullable)
+  final DateTime? restTimerEndTime;
+  final int? restTimerTotalSeconds;
+  final bool restTimerIsPaused;
+
   ActiveSessionData({
     this.activeRutina,
     required this.exercises,
@@ -18,6 +23,9 @@ class ActiveSessionData {
     this.startTime,
     required this.defaultRestSeconds,
     required this.history,
+    this.restTimerEndTime,
+    this.restTimerTotalSeconds,
+    this.restTimerIsPaused = false,
   });
 }
 

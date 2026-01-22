@@ -361,6 +361,9 @@ class DriftTrainingRepository implements ITrainingRepository {
               ? Value(sesion.fecha
                   .add(Duration(seconds: sesion.durationSeconds ?? 0)))
               : const Value(null),
+          restTimerEndTime: Value(sesion.restTimerEndTime),
+          restTimerTotalSeconds: Value(sesion.restTimerTotalSeconds),
+          restTimerIsPaused: Value(sesion.restTimerIsPaused),
         ));
 
     // 2. Track what we are saving to handle deletions
@@ -500,6 +503,9 @@ class DriftTrainingRepository implements ITrainingRepository {
       durationSeconds: 0,
       ejerciciosCompletados: data.exercises,
       ejerciciosObjetivo: data.targets,
+      restTimerEndTime: data.restTimerEndTime,
+      restTimerTotalSeconds: data.restTimerTotalSeconds,
+      restTimerIsPaused: data.restTimerIsPaused,
     );
 
     final active = await (db.select(db.sessions)
@@ -556,13 +562,29 @@ class DriftTrainingRepository implements ITrainingRepository {
       }
     }
 
+    // Reconstruct history map for each exercise to preserve 'ghost text' on restore
+    final Map<String, List<SerieLog>> historyMap = {};
+    for (final ex in tempSession.ejerciciosCompletados) {
+      final historyList = await getHistoryForExercise(ex.nombre);
+      if (historyList.isNotEmpty) {
+        final lastSession = historyList.first;
+        final match = lastSession.ejerciciosCompletados.firstWhereOrNull((e) => e.nombre == ex.nombre);
+        if (match != null) {
+          historyMap[ex.nombre] = match.logs;
+        }
+      }
+    }
+
     return ActiveSessionData(
       activeRutina: activeRutina,
       exercises: tempSession.ejerciciosCompletados,
       targets: tempSession.ejerciciosObjetivo,
       startTime: tempSession.fecha,
       defaultRestSeconds: 60,
-      history: {},
+      history: historyMap,
+      restTimerEndTime: sessionRow.restTimerEndTime,
+      restTimerTotalSeconds: sessionRow.restTimerTotalSeconds,
+      restTimerIsPaused: sessionRow.restTimerIsPaused,
     );
   }
 

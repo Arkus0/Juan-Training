@@ -95,6 +95,11 @@ class Sessions extends Table {
   // Active Session Flag: If completedAt is null, it's an active session.
   DateTimeColumn get completedAt => dateTime().nullable()();
 
+  // Rest Timer persistence (v4)
+  DateTimeColumn get restTimerEndTime => dateTime().nullable()();
+  IntColumn get restTimerTotalSeconds => integer().nullable()();
+  BoolColumn get restTimerIsPaused => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -200,9 +205,20 @@ class AppDatabase extends _$AppDatabase {
               // Columns might already exist in some edge cases
             }
           }
+
+          // Migration path to version 4: add rest timer fields to sessions
+          if (from < 4) {
+            try {
+              await m.addColumn(sessions, sessions.restTimerEndTime);
+              await m.addColumn(sessions, sessions.restTimerTotalSeconds);
+              await m.addColumn(sessions, sessions.restTimerIsPaused);
+            } catch (e) {
+              // Columns might already exist in some edge cases
+            }
+          }
         },
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 }

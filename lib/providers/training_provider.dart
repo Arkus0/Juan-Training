@@ -619,16 +619,48 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
       if (data != null) {
         // Safe Restore: Load data even if activeRutina is missing (deleted routine)
-        state = TrainingState(
-          activeRutina: data.activeRutina,
-          exercises: data.exercises,
-          targets: data.targets,
-          startTime: data.startTime ?? DateTime.now(),
-          defaultRestSeconds: data.defaultRestSeconds,
-          isRestActive: false, // Do not restore timer state for now
-          history: data.history,
-          showAdvancedOptions: false,
-        );
+        // Determine rest timer state based on persisted data
+      RestTimerState restoredTimer = const RestTimerState();
+
+      if (data.restTimerEndTime != null && data.restTimerTotalSeconds != null) {
+        final end = data.restTimerEndTime!;
+        final total = data.restTimerTotalSeconds!;
+
+        if (data.restTimerIsPaused == true) {
+          // If paused, reconstruct paused state keeping the remaining seconds
+          restoredTimer = RestTimerState(
+            isActive: true,
+            isPaused: true,
+            totalSeconds: total,
+            endTime: null,
+          );
+        } else {
+          final remaining = end.difference(DateTime.now()).inSeconds;
+          if (remaining > 0) {
+            restoredTimer = RestTimerState(
+              isActive: true,
+              isPaused: false,
+              totalSeconds: remaining,
+              endTime: DateTime.now().add(Duration(seconds: remaining)),
+            );
+          } else {
+            // Timer already expired
+            restoredTimer = const RestTimerState(isActive: false, isPaused: false);
+          }
+        }
+      }
+
+      state = TrainingState(
+        activeRutina: data.activeRutina,
+        exercises: data.exercises,
+        targets: data.targets,
+        startTime: data.startTime ?? DateTime.now(),
+        defaultRestSeconds: data.defaultRestSeconds,
+        isRestActive: restoredTimer.isActive,
+        restTimer: restoredTimer,
+        history: data.history,
+        showAdvancedOptions: false,
+      );
       }
     } catch (e) {
       Logger().e('Error restoring session', error: e);
