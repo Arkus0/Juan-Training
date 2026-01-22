@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
@@ -207,7 +208,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   @override
   Widget build(BuildContext context) {
     // ⚡ Bolt Optimization: Only rebuild this specific card when this exercise changes
-    final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises[widget.exerciseIndex]));
+    final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises.length > widget.exerciseIndex ? s.exercises[widget.exerciseIndex] : null));
+    if (exercise == null) return const SizedBox.shrink();
+
     final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.nombre]));
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
     final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
