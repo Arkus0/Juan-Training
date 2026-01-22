@@ -32,12 +32,33 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     super.dispose();
   }
 
+  void _showAddedSnackbar(BuildContext context, String exerciseName) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$exerciseName añadido',
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        backgroundColor: Colors.red[900],
+        duration: const Duration(milliseconds: 1000),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      height: MediaQuery.of(context).size.height * 0.9,
-      child: Column(
+    // Wrap in Scaffold to have its own ScaffoldMessenger for snackbars
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: Column(
         children: [
           // Header
           Container(
@@ -349,6 +370,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               onPressed: () {
                                 Vibrate.feedback(FeedbackType.selection);
                                 widget.onAdd(ex);
+                                _showAddedSnackbar(context, ex.name);
                               },
                               child: const Text('AÑADIR'),
                             ),
@@ -361,7 +383,8 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
               },
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

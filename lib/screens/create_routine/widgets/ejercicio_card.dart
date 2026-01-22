@@ -34,7 +34,6 @@ class EjercicioCard extends StatefulWidget {
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
   final Function(String alternativaNombre)? onReplace;
-  final Function()? onLink;
   final Function()? onUnlink;
 
   const EjercicioCard({
@@ -43,7 +42,6 @@ class EjercicioCard extends StatefulWidget {
     required this.onRemove,
     required this.onUpdate,
     this.onReplace,
-    this.onLink,
     this.onUnlink,
   });
 
@@ -124,8 +122,6 @@ class _EjercicioCardState extends State<EjercicioCard> {
   }
 
   void _showProOptions(BuildContext context) {
-    final hasAlternativas = AlternativasService.instance.hasAlternativas(widget.ejercicio.nombre);
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -140,34 +136,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'OPCIONES PRO: ${widget.ejercicio.nombre}',
+                'OPCIONES: ${widget.ejercicio.nombre}',
                 style: GoogleFonts.montserrat(
                   fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const SizedBox(height: 16),
-
-              // Alternativas button
-              ListTile(
-                leading: Icon(
-                  Icons.swap_horiz,
-                  color: hasAlternativas ? Colors.redAccent[700] : Colors.grey[600],
-                ),
-                title: Text(
-                  'VER ALTERNATIVAS',
-                  style: TextStyle(
-                    color: hasAlternativas ? Colors.white : Colors.white38,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  hasAlternativas ? 'Sustituir por ejercicio similar' : 'Sin alternativas registradas',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-                onTap: () {
-                  Navigator.pop(sheetContext);
-                  _showAlternativasDialog(context);
-                },
-              ),
 
               if (widget.onUnlink != null)
                 ListTile(
@@ -317,11 +290,13 @@ class _EjercicioCardState extends State<EjercicioCard> {
               ),
             ),
 
-            // Actions
-            if (widget.onLink != null)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4.0),
-                child: Icon(Icons.link, color: Colors.white70),
+            // Alternatives button
+            if (AlternativasService.instance.hasAlternativas(widget.ejercicio.nombre))
+              IconButton(
+                icon: Icon(Icons.swap_horiz, color: Colors.redAccent[700], size: 20),
+                onPressed: () => _showAlternativasDialog(context),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Ver alternativas',
               ),
 
             // Info Icon / Menu
