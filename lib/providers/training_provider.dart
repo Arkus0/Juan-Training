@@ -105,11 +105,14 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     // Build History Map
     final Map<String, List<SerieLog>> historyMap = {};
+    final uniqueNames = sessionExercises.map((e) => e.nombre).toSet().toList();
+
+    final historyResults = await _repository.getHistoryForExercises(uniqueNames);
 
     for (var ex in sessionExercises) {
-       final historyList = await _repository.getHistoryForExercise(ex.nombre);
-       if (historyList.isNotEmpty) {
-         // getHistoryForExercise returns sorted list (newest first)
+       final historyList = historyResults[ex.nombre];
+       if (historyList != null && historyList.isNotEmpty) {
+         // getHistoryForExercises returns list (we optimized for latest, so first is latest)
          final lastSession = historyList.first;
          try {
            final match = lastSession.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);

@@ -31,6 +31,7 @@ abstract class ITrainingRepository {
   Stream<List<Sesion>> watchSesionesHistory();
   Future<void> saveSesion(Sesion sesion);
   Future<List<Sesion>> getHistoryForExercise(String exerciseName);
+  Future<Map<String, List<Sesion>>> getHistoryForExercises(List<String> exerciseNames);
 
   // Active Session
   Future<void> saveActiveSession(ActiveSessionData data);

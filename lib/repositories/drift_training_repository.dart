@@ -421,6 +421,69 @@ class DriftTrainingRepository implements ITrainingRepository {
   }
 
   @override
+  Future<Map<String, List<Sesion>>> getHistoryForExercises(List<String> exerciseNames) async {
+    if (exerciseNames.isEmpty) return {};
+
+    // 1. Find the latest session ID for each exercise
+    // Using GROUP BY to efficiently get the most recent session for each exercise
+    final placeholders = exerciseNames.map((_) => '?').join(',');
+    final rows = await db.customSelect(
+      'SELECT se.name, MAX(s.start_time) as max_time, s.id as session_id '
+      'FROM sessions s '
+      'JOIN session_exercises se ON se.session_id = s.id '
+      'WHERE se.name IN ($placeholders) AND se.is_target = 0 '
+      'GROUP BY se.name',
+      variables: exerciseNames.map((e) => Variable.withString(e)).toList(),
+      readsFrom: {db.sessions, db.sessionExercises},
+    ).get();
+
+    final sessionIds = rows.map((r) => r.read<String>('session_id')).toSet().toList();
+
+    if (sessionIds.isEmpty) return {};
+
+    // 2. Fetch data in bulk
+    final sessions = await (db.select(db.sessions)
+          ..where((s) => s.id.isIn(sessionIds)))
+        .get();
+
+    final relevantExercises = await (db.select(db.sessionExercises)
+          ..where((e) => e.sessionId.isIn(sessionIds) & e.name.isIn(exerciseNames)))
+        .get();
+
+    final relevantExerciseIds = relevantExercises.map((e) => e.id).toList();
+
+    final relevantSets = await (db.select(db.workoutSets)
+          ..where((s) => s.sessionExerciseId.isIn(relevantExerciseIds)))
+        .get();
+
+    // 3. Construct result map
+    final Map<String, List<Sesion>> result = {};
+
+    for (var row in rows) {
+      final exerciseName = row.read<String>('name');
+      final sessionId = row.read<String>('session_id');
+
+      final session = sessions.firstWhereOrNull((s) => s.id == sessionId);
+      if (session == null) continue;
+
+      final sExercises = relevantExercises
+          .where((e) => e.sessionId == sessionId && e.name == exerciseName)
+          .toList();
+
+      if (sExercises.isEmpty) continue;
+
+      final sSets = relevantSets
+          .where((st) => sExercises.any((e) => e.id == st.sessionExerciseId))
+          .toList();
+
+      final sesionObj = _mapSesion(session, sExercises, sSets);
+      result[exerciseName] = [sesionObj];
+    }
+
+    return result;
+  }
+
+  @override
   Future<List<Sesion>> getHistoryForExercise(String exerciseName) async {
     // 1. Get top 5 most recent sessions containing this exercise
     // We use distinct to avoid duplicate sessions if the exercise appears multiple times
