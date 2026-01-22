@@ -1,85 +1,116 @@
-# Juan Training App
+# 💪 Juan Training: La Biblioteca del Dolor
 
-![App Banner](assets/img/banner.png) *<!-- Si tienes un banner, sería genial ponerlo aquí -->*
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev/)
+[![Architecture](https://img.shields.io/badge/Architecture-Riverpod%20%2B%20Drift-purple)](https://riverpod.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-Bienvenido a **Juan Training App**, la solución definitiva para gestionar tus entrenamientos de hipertrofia y fuerza. Diseñada para atletas que buscan precisión, flexibilidad y un control total sobre su progreso.
+> *"No pain, no gain. Pero sin datos, solo hay dolor sin gloria."*
 
-Más que una simple libreta digital, es tu **BIBLIOTECA DEL DOLOR**.
+Bienvenido a **Juan Training**, la herramienta definitiva para el culturista serio. Olvida las libretas sudadas y las apps genéricas de fitness. Aquí venimos a levantar pesado, registrar cada gramo y construir un legado.
 
----
-
-## 🚀 Funcionalidades Destacadas
-
-### 🏋️‍♂️ **Gestión Inteligente de Rutinas**
-*   **Editor Dinámico:** Crea y personaliza tus rutinas con facilidad. Arrastra y suelta para reordenar ejercicios o días completos.
-*   **Soporte para Superseries:** Agrupa ejercicios visualmente en superseries. La interfaz las trata como bloques únicos para moverlas y gestionarlas sin caos.
-*   **Duplicación de Días:** ¿Día de pierna similar al anterior? Duplica el día completo con un solo toque y ajusta lo necesario.
-*   **Swipe-to-Dismiss con Undo:** Elimina ejercicios o rutinas deslizando, pero con la seguridad de poder deshacer la acción si te equivocas.
-
-### 📚 **Biblioteca de Ejercicios Avanzada**
-*   **Sincronización Inteligente:** Conexión directa con la API de Wger. Descarga miles de ejercicios, priorizando traducciones al español pero manteniendo el inglés como respaldo.
-*   **Modo Offline Real:** Toda la biblioteca (incluidas imágenes) se descarga localmente. Entrena en el sótano o en la montaña sin preocuparte por la conexión.
-*   **Filtros Potentes:** Busca por nombre, grupo muscular o equipamiento. Encuentra exactamente lo que necesitas en segundos.
-*   **Favoritos:** Marca tus ejercicios clave para acceso rápido.
-
-### ⏱️ **Sesiones de Entrenamiento Pro**
-*   **Registro Preciso:** Anota peso, repeticiones y **RPE (Rate of Perceived Exertion)** para cada serie.
-*   **Temporizador de Descanso:** Al terminar una serie, el temporizador se inicia automáticamente con el tiempo sugerido para ese ejercicio.
-*   **Historial en Contexto (Ghost Values):** Visualiza lo que hiciste en la sesión anterior directamente en el campo de entrada. Toca para copiar y mejorar tu marca.
-*   **Tipos de Serie:** Marca series como *Calentamiento*, *Fallo*, o *Dropset* para un análisis posterior detallado.
-
-### 🔧 **Ingeniería Robusta**
-*   **Base de Datos Drift (SQLite):** Migramos de Hive a Drift para ofrecer un rendimiento superior, consultas complejas y una integridad de datos a prueba de balas.
-*   **Gestión de Estado con Riverpod:** Arquitectura reactiva y testable que asegura una experiencia de usuario fluida y sin errores.
-*   **Haptic Feedback:** Respuesta táctil en cada interacción importante para que *sientas* la app mientras entrenas.
+Esta es tu **Biblioteca del Dolor**. Una app offline-first, rápida como un rayo y sólida como el acero, diseñada para gestionar tus rutinas de hipertrofia y fuerza con precisión quirúrgica.
 
 ---
 
-## 🛠️ Configuración para Desarrolladores
+## 📸 La Sala de Trofeos (Screenshots)
 
-Si eres desarrollador y quieres contribuir o modificar la app, sigue estos pasos.
+*La interfaz visual donde se forjan las leyendas.*
 
-### Requisitos Previos
-*   Flutter SDK (>=3.0.0 <4.0.0)
-*   Dart SDK
+| Pantalla Principal | Editor de Rutinas | Modo Entrenamiento |
+|:---:|:---:|:---:|
+| ![Dashboard](assets/screenshots/dashboard_placeholder.png) | ![Rutinas](assets/screenshots/rutinas_placeholder.png) | ![Entreno](assets/screenshots/workout_placeholder.png) |
 
-### Pasos de Instalación
+---
 
-1.  **Clonar el repositorio:**
+## 🏆 Características de Campeón (Features)
+
+Esta app no es para "tonificar". Es para progresar.
+
+### 🏋️‍♂️ **Gestión de Rutinas "Old School"**
+*   **Drag & Drop Táctico:** Reorganiza tus ejercicios y días arrastrando y soltando. Tan satisfactorio como cargar un disco de 20kg.
+*   **Superseries Reales:** Agrupa ejercicios en superseries visuales. Se mueven juntos, se editan juntos. Sin líos.
+*   **Duplicación de Días:** Copia tu "Leg Day" completo para la semana siguiente. Menos configuración, más hierro.
+*   **Swipe-to-Dismiss con Undo:** ¿Te equivocaste? Desliza para borrar, pero con red de seguridad (Undo) por si te arrepientes.
+
+### 🧠 **Entrenamiento Inteligente**
+*   **Timer No Invasivo:** Barra de progreso discreta y avisos por vibración/sonido. Concéntrate en respirar, no en mirar el móvil.
+*   **Ghost Values 👻:** Visualiza tus marcas anteriores (peso/reps) en gris claro mientras escribes. Supera tu "yo" del pasado en cada serie.
+*   **RPE & Tipos de Serie:** Registra RPE, Fallo, Calentamiento o Dropsets. La data real para un análisis real.
+*   **Auto-Focus & Smart Input:** La app sabe dónde tienes que escribir. Flujo de trabajo optimizado para manos con magnesio.
+
+### 📚 **Biblioteca Masiva (Wger API)**
+*   **700+ Ejercicios:** Base de datos completa, offline y con imágenes.
+*   **Alternativas Biomecánicas:** ¿Máquina ocupada? La app te sugiere alternativas basadas en el mismo grupo muscular.
+*   **Favoritos:** Acceso rápido a tus movimientos "Signature".
+
+---
+
+## ⚙️ Ingeniería Bajo el Capó
+
+Construida con los mejores "esteroides" tecnológicos del ecosistema Flutter 2026.
+
+*   **Flutter 3.x & Dart 3.x:** Última tecnología, null-safety total.
+*   **Drift (SQLite):** Migración completa desde Hive. Base de datos relacional robusta, segura y lista para SQL complejo.
+*   **Riverpod:** Gestión de estado reactiva, testable y modular.
+*   **Arquitectura Limpia:** Separación clara entre UI (`screens`), Lógica (`providers`) y Datos (`repositories`, `database`).
+
+---
+
+## 🚀 Instalación y Despliegue
+
+¿Quieres compilar tu propia versión? Sigue estos pasos, recluta.
+
+### Requisitos
+*   Flutter SDK instalado.
+*   Un editor de código decente (VS Code / Android Studio).
+
+### Pasos
+1.  **Clona el repositorio:**
     ```bash
-    git clone https://github.com/tu-usuario/juan-training.git
-    cd juan-training
+    git clone https://github.com/Arkus0/Juan-Training.git
+    cd Juan-Training
     ```
 
-2.  **Instalar dependencias:**
+2.  **Instala las dependencias:**
     ```bash
     flutter pub get
     ```
 
-3.  **Generar código (Drift & Riverpod):**
-    Este proyecto utiliza generación de código para la base de datos y modelos. Es crucial ejecutar este comando antes de compilar.
+3.  **Generación de Código (CRÍTICO):**
+    Usamos `Drift` y `Riverpod Generator`. Debes correr el build_runner para generar los archivos `.g.dart`.
     ```bash
     dart run build_runner build --delete-conflicting-outputs
     ```
 
-4.  **Ejecutar la aplicación:**
+4.  **Ejecuta la app:**
     ```bash
     flutter run
     ```
 
-## 🏗️ Estructura del Proyecto
+---
 
-*   `lib/database/`: Definiciones de tablas y lógica de conexión de Drift.
-*   `lib/models/`: Modelos de dominio y DTOs.
-*   `lib/providers/`: StateNotifiers y Providers de Riverpod.
-*   `lib/repositories/`: Capa de abstracción de datos (Patrón Repository).
-*   `lib/screens/`: Pantallas de la UI organizadas por funcionalidad.
-*   `lib/services/`: Lógica de negocio externa (ej. sincronización con API Wger).
+## 🗺️ Roadmap (El Camino al Mr. Olympia)
 
-## 🤝 Contribución
+Aún nos queda camino para alcanzar la perfección física (y de software).
 
-¡Las contribuciones son bienvenidas! Si tienes una idea para una nueva funcionalidad o encuentras un bug, abre un issue o envía un pull request.
+- [ ] 🎵 **Integración Spotify:** Controla tu playlist de "Heavy Metal Gym" sin salir de la app.
+- [ ] 👁️ **OCR / Voz:** Importa rutinas de fotos o dicta tus series entre jadeos.
+- [ ] 📈 **Gráficas Avanzadas:** Progresión de volumen, 1RM estimado y frecuencia.
+- [ ] ☁️ **Cloud Sync:** Backup en la nube (Freemium feature).
 
 ---
 
-Desarrollado con ❤️ y mucho café.
+## 🤝 Únete al Equipo (Contribución)
+
+Actualmente buscamos **Beta Testers** valientes.
+
+Si encuentras un bug (que no sea un insecto real en tu gimnasio) o tienes una idea para una feature, **abre un Issue**. El código es open source, así que los Pull Requests son bienvenidos si siguen el estándar de calidad "Pro".
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia **MIT**. Eres libre de usarlo, modificarlo y aprender de él.
+
+> *"Light weight, baby!"* — Ronnie Coleman (Patrón Espiritual del Proyecto)
