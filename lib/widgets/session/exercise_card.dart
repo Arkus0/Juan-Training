@@ -8,6 +8,7 @@ import '../../models/serie_log.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/focus_manager_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
@@ -246,7 +247,15 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
 
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
+    // Usa el provider legacy y el nuevo FocusManager
     final focusTarget = ref.watch(timerFinishedFocusProvider);
+    final focusManagerTarget = ref.watch(focusManagerProvider).currentTarget;
+
+    // Determinar si este ejercicio debe recibir focus (de cualquiera de los dos sistemas)
+    int? focusSetIndexFromManager;
+    if (focusManagerTarget != null && focusManagerTarget.exerciseIndex == widget.exerciseIndex) {
+      focusSetIndexFromManager = focusManagerTarget.setIndex;
+    }
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
@@ -256,7 +265,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       historyLogs: historyLogs,
       showAdvanced: showAdvanced,
       showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
-      focusSetIndex: focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null,
+      focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
       onUpdateReps: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
