@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:io' show Platform;
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../services/media_control_service.dart';
 
-const MethodChannel _mediaChannel = MethodChannel('juan_training/music_launcher');
-
+/// Barra de control multimedia para sesiones de entrenamiento.
+///
+/// Muestra controles de reproducción cuando hay música activa.
+/// Usa [MediaControlService] para comunicación con la plataforma.
 class MusicLauncherBar extends StatefulWidget {
   const MusicLauncherBar({super.key});
 
@@ -15,72 +15,112 @@ class MusicLauncherBar extends StatefulWidget {
 }
 
 class _MusicLauncherBarState extends State<MusicLauncherBar> {
+  final _mediaService = MediaControlService.instance;
+
   bool _isVisible = false;
-  Timer? _pollTimer;
+  bool _isPlaying = false;
+  String? _currentTitle;
+  String? _currentArtist;
+
+  StreamSubscription<MediaSessionInfo>? _sessionSubscription;
 
   @override
   void initState() {
     super.initState();
-    _checkActive();
-    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _checkActive());
+    _initializeMediaService();
+  }
+
+  Future<void> _initializeMediaService() async {
+    await _mediaService.initialize();
+
+    // Verificar estado inicial
+    _updateFromSession(_mediaService.currentSession);
+
+    // Escuchar cambios de sesión
+    _sessionSubscription = _mediaService.sessionStream.listen(_updateFromSession);
+  }
+
+  void _updateFromSession(MediaSessionInfo session) {
+    if (!mounted) return;
+
+    setState(() {
+      _isVisible = session.hasMedia ||
+          session.playbackState == MediaPlaybackState.playing ||
+          session.playbackState == MediaPlaybackState.paused;
+      _isPlaying = session.playbackState == MediaPlaybackState.playing;
+      _currentTitle = session.title;
+      _currentArtist = session.artist;
+    });
   }
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _sessionSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _checkActive() async {
+  Future<void> _onPlayPause() async {
     try {
-      if (!Platform.isAndroid) {
-        // iOS support not added yet; default hide
-        if (_isVisible) setState(() => _isVisible = false);
-        return;
-      }
-      final active = await _mediaChannel.invokeMethod<bool>('isMusicActive');
-      final isActive = active == true;
-      if (mounted && isActive != _isVisible) {
-        setState(() => _isVisible = isActive);
-      }
-    } catch (_) {
-      if (_isVisible) setState(() => _isVisible = false);
-    }
-  }
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
 
-  // Lógica para abrir Spotify
-  Future<void> _launchSpotify(BuildContext context) async {
-    // Intentamos abrir la app nativa (schema spotify://)
-    final Uri spotifyAppUri = Uri.parse('spotify:');
-    // Enlace a la tienda por si no la tienes (web fallback)
-    final Uri spotifyWebUri = Uri.parse('https://open.spotify.com');
+    final result = await _mediaService.playPause();
 
-    try {
-      if (await canLaunchUrl(spotifyAppUri)) {
-        await launchUrl(spotifyAppUri, mode: LaunchMode.externalApplication);
-      } else {
-        // Si falla, abrimos la web
-        await launchUrl(spotifyWebUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
+    if (!mounted) return;
+
+    if (result.success) {
+      // Actualizar estado localmente para feedback inmediato
+      setState(() => _isPlaying = !_isPlaying);
+    } else if (result.fallbackUsed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir Spotify')),
+        const SnackBar(
+          content: Text('Abriendo Spotify'),
+          duration: Duration(milliseconds: 700),
+        ),
       );
     }
   }
 
-  // Intenta enviar comando multimedia vía canal de plataforma (Android).
-  // Devuelve true si se envió, false si no está disponible o falló.
-  Future<bool> _trySendMediaCommand(String method, BuildContext context) async {
-    if (!Platform.isAndroid) return false;
+  Future<void> _onPrevious() async {
     try {
-      await _mediaChannel.invokeMethod(method);
-      return true;
-    } on PlatformException catch (_) {
-      return false;
-    } catch (_) {
-      return false;
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+
+    final result = await _mediaService.previous();
+
+    if (!mounted) return;
+
+    if (!result.success && result.fallbackUsed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Abriendo Spotify — canción anterior'),
+          duration: Duration(milliseconds: 800),
+        ),
+      );
     }
+  }
+
+  Future<void> _onNext() async {
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+
+    final result = await _mediaService.next();
+
+    if (!mounted) return;
+
+    if (!result.success && result.fallbackUsed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Abriendo Spotify — canción siguiente'),
+          duration: Duration(milliseconds: 800),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openSpotify() async {
+    await _mediaService.openSpotify();
   }
 
   @override
@@ -90,7 +130,6 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        // Gradiente sutil estilo "Spotify"
         gradient: LinearGradient(
           colors: [Colors.green[900]!.withOpacity(0.3), Colors.black],
           begin: Alignment.centerLeft,
@@ -103,12 +142,12 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _launchSpotify(context), // <--- AL TOCAR EL RECUADRO
+          onTap: _openSpotify,
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                // 1. Icono de la App (Visual)
+                // Icono de la App
                 Container(
                   width: 40,
                   height: 40,
@@ -120,85 +159,48 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
                 ),
                 const SizedBox(width: 12),
 
-                // 2. Texto "Tu Música"
+                // Información de la canción
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        "Abrir Spotify",
-                        style: TextStyle(
+                      Text(
+                        _currentTitle ?? "Reproduciendo",
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        "Toca para elegir canción",
+                        _currentArtist ?? "Toca para abrir Spotify",
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.6),
                           fontSize: 12,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
 
-                // 3. Botones funcionales (abren Spotify y dan feedback)
-                // Intentamos enviar comando multimedia en Android; si no, abrimos Spotify.
+                // Controles de reproducción
                 _ControlIcon(
                   icon: Icons.skip_previous_rounded,
-                  onTap: () async {
-                    try { HapticFeedback.selectionClick(); } catch (_) {}
-                    final sent = await _trySendMediaCommand('mediaPrevious', context);
-                    if (sent) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Comando anterior enviado'), duration: Duration(milliseconds: 700)),
-                      );
-                      return;
-                    }
-                    // fallback
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Abriendo Spotify — canción anterior'), duration: Duration(milliseconds: 800)),
-                    );
-                    _launchSpotify(context);
-                  },
+                  onTap: _onPrevious,
                 ),
                 _ControlIcon(
-                  icon: Icons.play_arrow_rounded,
+                  icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   isPlay: true,
-                  onTap: () async {
-                    try { HapticFeedback.heavyImpact(); } catch (_) {}
-                    final sent = await _trySendMediaCommand('mediaPlayPause', context);
-                    if (sent) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Comando play/pausa enviado'), duration: Duration(milliseconds: 700)),
-                      );
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Abriendo Spotify'), duration: Duration(milliseconds: 700)),
-                    );
-                    _launchSpotify(context);
-                  },
+                  onTap: _onPlayPause,
                 ),
                 _ControlIcon(
                   icon: Icons.skip_next_rounded,
-                  onTap: () async {
-                    try { HapticFeedback.selectionClick(); } catch (_) {}
-                    final sent = await _trySendMediaCommand('mediaNext', context);
-                    if (sent) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Comando siguiente enviado'), duration: Duration(milliseconds: 700)),
-                      );
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Abriendo Spotify — canción siguiente'), duration: Duration(milliseconds: 800)),
-                    );
-                    _launchSpotify(context);
-                  },
+                  onTap: _onNext,
                 ),
               ],
             ),

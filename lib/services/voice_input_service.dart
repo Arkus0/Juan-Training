@@ -3,40 +3,42 @@ import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
-import 'package:fuzzy/fuzzy.dart';
 import 'package:logger/logger.dart';
 import '../models/library_exercise.dart';
-import 'exercise_library_service.dart';
-import 'exercise_synonyms_service.dart';
+import 'exercise_matching_service.dart';
+import 'exercise_parsing_service.dart';
 import 'voice_audio_feedback_service.dart';
 
 /// Estado del reconocimiento de voz (usado internamente por el servicio)
 enum VoiceServiceState {
-  idle,          // Esperando para iniciar
-  initializing,  // Inicializando el motor de speech
-  listening,     // Escuchando activamente
-  processing,    // Procesando transcripción
-  error,         // Error en el reconocimiento
+  idle, // Esperando para iniciar
+  initializing, // Inicializando el motor de speech
+  listening, // Escuchando activamente
+  processing, // Procesando transcripción
+  error, // Error en el reconocimiento
 }
 
 /// Modo de escucha
 enum VoiceListeningMode {
-  single,     // Escucha única: se detiene automáticamente tras pausa
+  single, // Escucha única: se detiene automáticamente tras pausa
   continuous, // Escucha continua: sigue escuchando hasta detención manual
 }
 
-/// Modelo inmutable de ejercicio parseado desde voz
+/// Modelo inmutable de ejercicio parseado desde voz.
+///
+/// NOTA: Esta clase se mantiene por compatibilidad con código existente.
+/// Internamente usa [ParsedExercise] de [ExerciseParsingService].
 class VoiceParsedExercise {
-  final String rawText;           // Texto original que generó este ejercicio
-  final String? matchedName;      // Nombre del ejercicio encontrado en biblioteca
-  final int? matchedId;           // ID del ejercicio en biblioteca
-  final int series;               // Número de series (default: 3)
-  final String repsRange;         // Rango de reps (ej: "8-12", "5", "10")
-  final double? weight;           // Peso opcional en kg
-  final String? notes;            // Notas adicionales
-  final double confidence;        // Confianza del match (0.0 - 1.0)
-  final bool isSuperset;          // ¿Es parte de superserie?
-  final int supersetGroup;        // Grupo de superserie (0 = no superserie)
+  final String rawText; // Texto original que generó este ejercicio
+  final String? matchedName; // Nombre del ejercicio encontrado en biblioteca
+  final int? matchedId; // ID del ejercicio en biblioteca
+  final int series; // Número de series (default: 3)
+  final String repsRange; // Rango de reps (ej: "8-12", "5", "10")
+  final double? weight; // Peso opcional en kg
+  final String? notes; // Notas adicionales
+  final double confidence; // Confianza del match (0.0 - 1.0)
+  final bool isSuperset; // ¿Es parte de superserie?
+  final int supersetGroup; // Grupo de superserie (0 = no superserie)
 
   const VoiceParsedExercise({
     required this.rawText,
@@ -52,6 +54,22 @@ class VoiceParsedExercise {
   });
 
   bool get isValid => matchedName != null && matchedId != null;
+
+  /// Crea un VoiceParsedExercise desde un ParsedExercise
+  factory VoiceParsedExercise.fromParsedExercise(ParsedExercise parsed) {
+    return VoiceParsedExercise(
+      rawText: parsed.rawText,
+      matchedName: parsed.matchedName,
+      matchedId: parsed.matchedId,
+      series: parsed.series,
+      repsRange: parsed.repsRange,
+      weight: parsed.weight,
+      notes: parsed.notes,
+      confidence: parsed.confidence,
+      isSuperset: parsed.isSuperset,
+      supersetGroup: parsed.supersetGroup,
+    );
+  }
 
   VoiceParsedExercise copyWith({
     String? rawText,
@@ -80,8 +98,11 @@ class VoiceParsedExercise {
   }
 }
 
-/// Servicio singleton para reconocimiento de voz y parsing de comandos de rutina
-/// 
+/// Servicio singleton para reconocimiento de voz y parsing de comandos de rutina.
+///
+/// Este servicio ahora delega el parsing a [ExerciseParsingService] y el matching
+/// a [ExerciseMatchingService] para mantener consistencia con OCR.
+///
 /// Justificación speech_to_text:
 /// - Usa motores nativos on-device (iOS Speech Framework, Android SpeechRecognizer)
 /// - Funciona offline sin enviar audio a servidores externos
@@ -94,8 +115,11 @@ class VoiceInputService {
 
   final _logger = Logger();
   final _speech = SpeechToText();
-  final _synonymsService = ExerciseSynonymsService.instance;
   final _audioFeedback = VoiceAudioFeedbackService.instance;
+
+  // Servicios unificados
+  final _parsingService = ExerciseParsingService.instance;
+  final _matchingService = ExerciseMatchingService.instance;
 
   // State
   VoiceServiceState _state = VoiceServiceState.idle;
@@ -114,7 +138,7 @@ class VoiceInputService {
   VoiceListeningMode _listeningMode = VoiceListeningMode.single;
   VoiceListeningMode get listeningMode => _listeningMode;
   bool _continuousActive = false;
-  
+
   // Historial para correcciones
   final List<VoiceParsedExercise> _exerciseHistory = [];
   List<VoiceParsedExercise> get exerciseHistory => List.unmodifiable(_exerciseHistory);
@@ -134,12 +158,8 @@ class VoiceInputService {
   final _transcriptController = StreamController<String>.broadcast();
   Stream<String> get transcriptStream => _transcriptController.stream;
 
-  // Cache de ejercicios para fuzzy matching
-  List<LibraryExercise>? _exercisesCache;
-  Fuzzy<LibraryExercise>? _fuzzyMatcher;
-
-  /// Inicializa el motor de speech recognition
-  /// Debe llamarse antes de usar el servicio
+  /// Inicializa el motor de speech recognition.
+  /// Debe llamarse antes de usar el servicio.
   Future<bool> initialize() async {
     if (_isInitialized) return true;
 
@@ -148,6 +168,9 @@ class VoiceInputService {
 
       // Inicializar audio feedback
       await _audioFeedback.initialize();
+
+      // Inicializar servicio de matching
+      await _matchingService.initialize();
 
       _isInitialized = await _speech.initialize(
         onStatus: _onStatus,
@@ -173,36 +196,9 @@ class VoiceInputService {
     }
   }
 
-  /// Carga la biblioteca de ejercicios para fuzzy matching
-  Future<void> _ensureExercisesLoaded() async {
-    if (_exercisesCache != null) return;
-
-    final library = ExerciseLibraryService.instance;
-    await library.loadLibrary();
-    _exercisesCache = library.exercises;
-
-    // Crear fuzzy matcher con nombres de ejercicios
-    // Configuración muy permisiva para voz en español (errores comunes de STT)
-    _fuzzyMatcher = Fuzzy<LibraryExercise>(
-      _exercisesCache!,
-      options: FuzzyOptions(
-        keys: [
-          WeightedKey(
-            name: 'name',
-            getter: (ex) => _normalizeForSearch(ex.name),
-            weight: 1.0,
-          ),
-        ],
-        threshold: 0.6, // Muy permisivo para errores de voz (0 = exacto, 1 = cualquiera)
-        findAllMatches: true,
-        isCaseSensitive: false,
-      ),
-    );
-  }
-
-  /// Inicia la escucha de voz
-  /// [onPartialResult] se llama con transcripciones parciales en tiempo real
-  /// [mode] define si es escucha única o continua
+  /// Inicia la escucha de voz.
+  /// [onPartialResult] se llama con transcripciones parciales en tiempo real.
+  /// [mode] define si es escucha única o continua.
   Future<bool> startListening({
     Function(String)? onPartialResult,
     Duration listenFor = const Duration(seconds: 30),
@@ -237,19 +233,19 @@ class VoiceInputService {
       // ignore: deprecated_member_use
       await _speech.listen(
         onResult: (result) => _onResult(result, onPartialResult),
-        listenFor: mode == VoiceListeningMode.continuous 
-            ? const Duration(minutes: 5) // Mucho más largo para modo continuo
+        listenFor: mode == VoiceListeningMode.continuous
+            ? const Duration(minutes: 5)
             : listenFor,
         pauseFor: mode == VoiceListeningMode.continuous
-            ? const Duration(seconds: 10) // Pausa más larga en continuo
+            ? const Duration(seconds: 10)
             : const Duration(seconds: 3),
-        localeId: 'es_ES', // Español de España (soporta acentos)
+        localeId: 'es_ES',
         // ignore: deprecated_member_use
         cancelOnError: false,
         // ignore: deprecated_member_use
         partialResults: true,
         // ignore: deprecated_member_use
-        listenMode: ListenMode.dictation, // Modo dictado para frases largas
+        listenMode: ListenMode.dictation,
       );
 
       _logger.d('Iniciada escucha de voz en modo: $mode');
@@ -262,18 +258,18 @@ class VoiceInputService {
     }
   }
 
-  /// Detiene la escucha y devuelve la transcripción final
+  /// Detiene la escucha y devuelve la transcripción final.
   Future<String> stopListening() async {
     _continuousActive = false;
-    
+
     if (_speech.isListening) {
       await _speech.stop();
-      
+
       // Audio feedback de parada
       if (_audioFeedbackEnabled) {
         await _audioFeedback.playStopListening();
       }
-      
+
       // Vibración de parada
       try {
         HapticFeedback.heavyImpact();
@@ -285,7 +281,7 @@ class VoiceInputService {
     return transcript;
   }
 
-  /// Cancela la escucha sin guardar resultado
+  /// Cancela la escucha sin guardar resultado.
   Future<void> cancelListening() async {
     _continuousActive = false;
     if (_speech.isListening) {
@@ -295,11 +291,11 @@ class VoiceInputService {
     _updateState(VoiceServiceState.idle);
   }
 
-  /// Reinicia la escucha (para modo continuo después de procesar)
+  /// Reinicia la escucha (para modo continuo después de procesar).
   Future<void> _restartListeningIfContinuous(Function(String)? onPartialResult) async {
     if (_continuousActive && _listeningMode == VoiceListeningMode.continuous) {
       await Future.delayed(const Duration(milliseconds: 200));
-      if (_continuousActive) { // Verificar que no se canceló
+      if (_continuousActive) {
         await startListening(
           onPartialResult: onPartialResult,
           mode: VoiceListeningMode.continuous,
@@ -320,8 +316,7 @@ class VoiceInputService {
 
     if (result.finalResult) {
       _logger.i('Transcripción final: $_currentTranscript');
-      
-      // En modo continuo, reiniciar automáticamente después de resultado final
+
       if (_continuousActive) {
         _restartListeningIfContinuous(onPartial);
       }
@@ -333,7 +328,6 @@ class VoiceInputService {
 
     if (status == 'done' || status == 'notListening') {
       if (_state == VoiceServiceState.listening) {
-        // En modo continuo, reiniciar automáticamente
         if (_continuousActive) {
           _restartListeningIfContinuous(null);
         } else {
@@ -346,7 +340,6 @@ class VoiceInputService {
   void _onError(SpeechRecognitionError error) {
     _logger.w('Speech error: ${error.errorMsg} (${error.permanent})');
 
-    // Solo mostrar error si es permanente o severo
     if (error.permanent) {
       _lastError = _translateError(error.errorMsg);
       _updateState(VoiceServiceState.error);
@@ -354,7 +347,6 @@ class VoiceInputService {
   }
 
   String _translateError(String errorMsg) {
-    // Traducir errores comunes a mensajes amigables
     if (errorMsg.contains('no-speech') || errorMsg.contains('no_speech')) {
       return 'No se detectó voz. Intenta de nuevo.';
     }
@@ -375,7 +367,9 @@ class VoiceInputService {
   // =====================================================
   // PARSING DE COMANDOS NATURALES
   // =====================================================
-  // 
+  //
+  // Ahora usa ExerciseParsingService para consistencia con OCR.
+  //
   // Soporta patrones como:
   // - "Añade sentadilla 5 series de 5 reps"
   // - "Press banca 4x8-12"
@@ -384,74 +378,48 @@ class VoiceInputService {
   // - "Peso muerto 5x5 a 100 kilos"
   // - "Nota: usar cinturón"
   // - "No, quise decir press inclinado" (corrección)
-  // - "Banco plano" → "Press de banca" (sinónimos)
   // =====================================================
 
-  /// Parsea la transcripción completa y extrae ejercicios
-  /// Detecta correcciones y aplica sinónimos automáticamente
+  /// Parsea la transcripción completa y extrae ejercicios.
+  /// Detecta correcciones y aplica sinónimos automáticamente.
   Future<List<VoiceParsedExercise>> parseTranscript(String transcript) async {
-    await _ensureExercisesLoaded();
     _updateState(VoiceServiceState.processing);
 
     try {
-      final normalized = _normalizeSpanish(transcript.toLowerCase());
-      
+      final normalized = transcript.toLowerCase();
+
       // Primero detectar si es una corrección
-      final correctionResult = _detectCorrection(normalized);
+      final correctionResult = await _detectCorrection(normalized);
       if (correctionResult != null) {
+        _updateState(VoiceServiceState.idle);
         return correctionResult;
       }
-      
+
+      // Usar el servicio de parsing unificado
+      final parsedExercises = await _parsingService.parseText(
+        transcript,
+        source: ParseSource.voice,
+        validateResults: true,
+      );
+
       final exercises = <VoiceParsedExercise>[];
 
-      // Detectar si hay superseries
-      final supersetMatches = RegExp(
-        r'super\s*serie\s+(?:con|de)?\s*([^,]+?)(?:\s+(?:y|con)\s+([^,]+))?',
-        caseSensitive: false,
-      ).allMatches(normalized);
+      for (final parsed in parsedExercises) {
+        final exercise = VoiceParsedExercise.fromParsedExercise(parsed);
+        exercises.add(exercise);
 
-      int supersetGroup = 0;
-      final supersetSegments = <String>[];
+        // Guardar en historial para correcciones futuras
+        _exerciseHistory.add(exercise);
 
-      for (final match in supersetMatches) {
-        supersetGroup++;
-        final ex1 = match.group(1)?.trim();
-        final ex2 = match.group(2)?.trim();
-        if (ex1 != null) supersetSegments.add(ex1);
-        if (ex2 != null) supersetSegments.add(ex2);
-      }
-
-      // Separar por conectores de ejercicios
-      final segments = _splitByConnectors(normalized);
-
-      for (final segment in segments) {
-        final parsed = await _parseSingleExercise(segment);
-        if (parsed != null) {
-          // Verificar si es parte de superserie
-          final isSuperset = supersetSegments.any(
-            (ss) => segment.contains(ss) || ss.contains(segment.split(' ').take(3).join(' ')),
-          );
-
-          final exercise = parsed.copyWith(
-            isSuperset: isSuperset,
-            supersetGroup: isSuperset ? supersetGroup : 0,
-          );
-          
-          exercises.add(exercise);
-          
-          // Guardar en historial para correcciones futuras
-          _exerciseHistory.add(exercise);
-          
-          // Audio feedback según confianza
-          if (_audioFeedbackEnabled && parsed.isValid) {
-            if (parsed.confidence >= 0.8) {
-              await _audioFeedback.playHighConfidenceMatch();
-            } else if (parsed.confidence >= 0.5) {
-              await _audioFeedback.playMediumConfidenceMatch();
-            }
-          } else if (_audioFeedbackEnabled && !parsed.isValid) {
-            await _audioFeedback.playNoMatch();
+        // Audio feedback según confianza
+        if (_audioFeedbackEnabled && exercise.isValid) {
+          if (exercise.confidence >= 0.8) {
+            await _audioFeedback.playHighConfidenceMatch();
+          } else if (exercise.confidence >= 0.5) {
+            await _audioFeedback.playMediumConfidenceMatch();
           }
+        } else if (_audioFeedbackEnabled && !exercise.isValid) {
+          await _audioFeedback.playNoMatch();
         }
       }
 
@@ -463,10 +431,10 @@ class VoiceInputService {
       return [];
     }
   }
-  
+
   /// Detecta si el texto es una corrección ("No, quise decir...", "Corrección:...")
-  /// Si es corrección, actualiza el último ejercicio del historial
-  List<VoiceParsedExercise>? _detectCorrection(String normalized) {
+  /// Si es corrección, actualiza el último ejercicio del historial.
+  Future<List<VoiceParsedExercise>?> _detectCorrection(String normalized) async {
     // Patrones de corrección
     final correctionPatterns = [
       RegExp(r'^(?:no[,.]?\s+)?quise\s+decir\s+(.+)$', caseSensitive: false),
@@ -476,321 +444,74 @@ class VoiceInputService {
       RegExp(r'^cambiar?\s+(?:a|por)\s+(.+)$', caseSensitive: false),
       RegExp(r'^(?:no[,.]?\s+)?me\s+equivoqu[eé][,.]?\s*(?:era|es|quise\s+decir)?\s*(.+)$', caseSensitive: false),
     ];
-    
+
     for (final pattern in correctionPatterns) {
       final match = pattern.firstMatch(normalized);
       if (match != null && _exerciseHistory.isNotEmpty) {
         final correctedName = match.group(1)?.trim();
         if (correctedName != null && correctedName.isNotEmpty) {
           _logger.i('Corrección detectada: "$correctedName"');
-          
-          // Aplicar corrección al último ejercicio
-          return _applyCorrectionAsync(correctedName);
+          return _applyCorrection(correctedName);
         }
       }
     }
-    
+
     return null;
   }
-  
-  /// Aplica una corrección al último ejercicio
-  List<VoiceParsedExercise>? _applyCorrectionAsync(String correctedName) {
+
+  /// Aplica una corrección al último ejercicio.
+  Future<List<VoiceParsedExercise>?> _applyCorrection(String correctedName) async {
     if (_exerciseHistory.isEmpty) return null;
-    
-    // Resolver sinónimo primero
-    final resolvedName = _synonymsService.resolveSynonym(correctedName);
-    
-    // Buscar el ejercicio corregido
-    if (_fuzzyMatcher != null) {
-      final results = _fuzzyMatcher!.search(resolvedName.toLowerCase());
-      if (results.isNotEmpty) {
-        final best = results.first;
-        final confidence = 1.0 - best.score;
-        
-        if (confidence >= 0.4) {
-          // Actualizar el último ejercicio en historial
-          final lastIndex = _exerciseHistory.length - 1;
-          final lastExercise = _exerciseHistory[lastIndex];
-          
-          final corrected = lastExercise.copyWith(
-            matchedName: best.item.name,
-            matchedId: best.item.id,
-            confidence: 1.0, // Corrección manual = 100% confianza
-            rawText: '${lastExercise.rawText} → $correctedName',
-          );
-          
-          _exerciseHistory[lastIndex] = corrected;
-          
-          // Audio feedback
-          if (_audioFeedbackEnabled) {
-            _audioFeedback.playCorrectionAccepted();
-          }
-          
-          _logger.i('Ejercicio corregido: ${lastExercise.matchedName} → ${best.item.name}');
-          
-          // Devolver el ejercicio corregido
-          return [corrected];
-        }
+
+    // Buscar el ejercicio corregido usando el servicio unificado
+    final matchResult = await _matchingService.match(correctedName, boostSynonyms: true);
+
+    if (matchResult.isValid) {
+      // Actualizar el último ejercicio en historial
+      final lastIndex = _exerciseHistory.length - 1;
+      final lastExercise = _exerciseHistory[lastIndex];
+
+      final corrected = lastExercise.copyWith(
+        matchedName: matchResult.exercise!.name,
+        matchedId: matchResult.exercise!.id,
+        confidence: 1.0, // Corrección manual = 100% confianza
+        rawText: '${lastExercise.rawText} → $correctedName',
+      );
+
+      _exerciseHistory[lastIndex] = corrected;
+
+      // Audio feedback
+      if (_audioFeedbackEnabled) {
+        _audioFeedback.playCorrectionAccepted();
       }
+
+      _logger.i('Ejercicio corregido: ${lastExercise.matchedName} → ${matchResult.exercise!.name}');
+
+      return [corrected];
     }
-    
+
     return null;
   }
-  
-  /// Limpia el historial de ejercicios (útil al iniciar nueva sesión)
+
+  /// Limpia el historial de ejercicios (útil al iniciar nueva sesión).
   void clearExerciseHistory() {
     _exerciseHistory.clear();
   }
 
-  /// Normaliza texto para búsqueda (elimina acentos, caracteres especiales)
-  String _normalizeForSearch(String text) {
-    return text
-        .toLowerCase()
-        .replaceAll('á', 'a')
-        .replaceAll('é', 'e')
-        .replaceAll('í', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ú', 'u')
-        .replaceAll('ü', 'u')
-        .replaceAll('ñ', 'n')
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
-
-  /// Normaliza texto en español (acentos, variaciones)
-  String _normalizeSpanish(String text) {
-    return text
-        // Normalizar separadores de ejercicios
-        .replaceAll(RegExp(r'\s+'), ' ')
-        // Normalizar "x" para series
-        .replaceAll('×', 'x')
-        .replaceAll('*', 'x')
-        // Normalizar números hablados comunes
-        .replaceAll('una serie', '1 serie')
-        .replaceAll('un set', '1 set')
-        .replaceAll('dos series', '2 series')
-        .replaceAll('tres series', '3 series')
-        .replaceAll('cuatro series', '4 series')
-        .replaceAll('cinco series', '5 series')
-        .replaceAll('seis series', '6 series')
-        // Normalizar "repeticiones" a "reps"
-        .replaceAll('repeticiones', 'reps')
-        .replaceAll('repeticion', 'rep')
-        // Normalizar peso
-        .replaceAll('kilogramos', 'kg')
-        .replaceAll('kilos', 'kg')
-        .replaceAll('libras', 'lb')
-        .trim();
-  }
-
-  /// Separa la transcripción en segmentos por ejercicio
-  List<String> _splitByConnectors(String text) {
-    // Patrones de separación
-    final connectors = [
-      r'\s+luego\s+',
-      r'\s+después\s+',
-      r'\s+y\s+(?:después|luego)\s+',
-      r'\s+seguido\s+de\s+',
-      r'\s+también\s+',
-      r',\s*(?:después|luego)?\s*',
-      r'\.\s+',
-    ];
-
-    // Primero separar por conectores
-    String working = text;
-    for (final connector in connectors) {
-      working = working.replaceAll(RegExp(connector, caseSensitive: false), '|||');
-    }
-
-    return working
-        .split('|||')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty && s.length > 3)
-        .toList();
-  }
-
-  /// Parsea un segmento individual en un ejercicio
-  Future<VoiceParsedExercise?> _parseSingleExercise(String segment) async {
-    // Ignorar comandos de control
-    if (segment.startsWith('añade') || segment.startsWith('agrega')) {
-      segment = segment.replaceFirst(RegExp(r'^(añade|agrega)\s+'), '');
-    }
-
-    if (segment.length < 3) return null;
-
-    int series = 3; // Default
-    String repsRange = '10'; // Default
-    double? weight;
-    String? notes;
-    String exercisePart = segment;
-
-    // =====================================================
-    // ORDEN DE EXTRACCIÓN (similar a OCR pero adaptado a voz)
-    // =====================================================
-
-    // 1. Extraer notas (después de "nota:" o "con nota")
-    final notesRegex = RegExp(
-      r'(?:nota[s]?:?\s*|con\s+nota\s*)(.+)$',
-      caseSensitive: false,
-    );
-    final notesMatch = notesRegex.firstMatch(exercisePart);
-    if (notesMatch != null) {
-      notes = notesMatch.group(1)?.trim();
-      exercisePart = exercisePart.replaceAll(notesRegex, '');
-    }
-
-    // 2. Extraer peso (ej: "a 100 kg", "con 50 kilos")
-    final weightRegex = RegExp(
-      r'(?:a\s+|con\s+)?(\d+(?:[.,]\d+)?)\s*(?:kg|lb)',
-      caseSensitive: false,
-    );
-    final weightMatch = weightRegex.firstMatch(exercisePart);
-    if (weightMatch != null) {
-      final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
-      weight = double.tryParse(weightStr);
-      exercisePart = exercisePart.replaceAll(weightRegex, ' ');
-    }
-
-    // 3. Patrón NxM o NxM-P (ej: "4x10", "3x8-12")
-    final nxmRegex = RegExp(r'(\d+)\s*[xX]\s*(\d+)(?:\s*-\s*(\d+))?');
-    final nxmMatch = nxmRegex.firstMatch(exercisePart);
-    if (nxmMatch != null) {
-      series = int.tryParse(nxmMatch.group(1)!) ?? 3;
-      final repsMin = nxmMatch.group(2)!;
-      final repsMax = nxmMatch.group(3);
-      repsRange = repsMax != null ? '$repsMin-$repsMax' : repsMin;
-      exercisePart = exercisePart.replaceAll(nxmRegex, ' ');
-    }
-
-    // 4. Patrón "N series de M reps" o "N series M-P reps"
-    if (nxmMatch == null) {
-      final seriesRepsRegex = RegExp(
-        r'(\d+)\s*(?:series?|sets?)\s*(?:de\s*)?(\d+)(?:\s*-\s*(\d+))?\s*(?:reps?)?',
-        caseSensitive: false,
-      );
-      final seriesRepsMatch = seriesRepsRegex.firstMatch(exercisePart);
-      if (seriesRepsMatch != null) {
-        series = int.tryParse(seriesRepsMatch.group(1)!) ?? 3;
-        final repsMin = seriesRepsMatch.group(2)!;
-        final repsMax = seriesRepsMatch.group(3);
-        repsRange = repsMax != null ? '$repsMin-$repsMax' : repsMin;
-        exercisePart = exercisePart.replaceAll(seriesRepsRegex, ' ');
-      }
-    }
-
-    // 5. Solo "N reps" (series default 3)
-    if (nxmMatch == null) {
-      final repsOnlyRegex = RegExp(
-        r'(\d+)(?:\s*-\s*(\d+))?\s*(?:reps?)',
-        caseSensitive: false,
-      );
-      final repsOnlyMatch = repsOnlyRegex.firstMatch(exercisePart);
-      if (repsOnlyMatch != null) {
-        final repsMin = repsOnlyMatch.group(1)!;
-        final repsMax = repsOnlyMatch.group(2);
-        repsRange = repsMax != null ? '$repsMin-$repsMax' : repsMin;
-        exercisePart = exercisePart.replaceAll(repsOnlyRegex, ' ');
-      }
-    }
-
-    // 6. Limpiar nombre del ejercicio
-    exercisePart = _cleanExerciseName(exercisePart);
-
-    if (exercisePart.length < 3) return null;
-
-    // 7. Aplicar sinónimos antes de fuzzy matching
-    final resolvedExercise = _synonymsService.resolveSynonym(exercisePart);
-    final searchTerm = _synonymsService.hasSynonym(exercisePart) 
-        ? resolvedExercise 
-        : exercisePart;
-
-    // 8. Fuzzy matching contra biblioteca
-    String? matchedName;
-    int? matchedId;
-    double confidence = 0.0;
-
-    if (_fuzzyMatcher != null) {
-      // Normalizar el término de búsqueda igual que los ejercicios
-      final normalizedSearch = _normalizeForSearch(searchTerm);
-      final results = _fuzzyMatcher!.search(normalizedSearch);
-      
-      _logger.d('Buscando: "$normalizedSearch" (original: "$searchTerm")');
-
-      if (results.isNotEmpty) {
-        final best = results.first;
-        confidence = 1.0 - best.score;
-        
-        _logger.d('Match: "${best.item.name}" score=${best.score} conf=$confidence');
-        
-        // Si usamos sinónimo, aumentar confianza
-        if (_synonymsService.hasSynonym(exercisePart)) {
-          confidence = (confidence + 0.2).clamp(0.0, 1.0);
-        }
-
-        // Umbral muy bajo para voz (muy tolerante a errores de STT)
-        if (confidence >= 0.3) {
-          matchedName = best.item.name;
-          matchedId = best.item.id;
-        } else if (results.length > 1) {
-          // Intentar con el segundo resultado si el primero no pasa
-          final second = results[1];
-          final secondConf = 1.0 - second.score;
-          if (secondConf >= 0.25) {
-            matchedName = second.item.name;
-            matchedId = second.item.id;
-            confidence = secondConf;
-          }
-        }
-      }
-    }
-
-    return VoiceParsedExercise(
-      rawText: segment,
-      matchedName: matchedName,
-      matchedId: matchedId,
-      series: series,
-      repsRange: repsRange,
-      weight: weight,
-      notes: notes,
-      confidence: confidence,
-    );
-  }
-
-  /// Limpia el nombre del ejercicio
-  String _cleanExerciseName(String text) {
-    return text
-        .replaceAll(RegExp(r'^\d+\s*'), '') // Números al inicio
-        .replaceAll(RegExp(r'\s*\d+$'), '') // Números al final
-        .replaceAll(RegExp(r'[•\-–—:,;.!?()[\]{}]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
-
-  /// Obtiene un ejercicio de la biblioteca por ID
+  /// Obtiene un ejercicio de la biblioteca por ID.
   Future<LibraryExercise?> getExerciseById(int id) async {
-    await _ensureExercisesLoaded();
-    try {
-      return _exercisesCache?.firstWhere((e) => e.id == id);
-    } catch (_) {
-      return null;
-    }
+    return _matchingService.getById(id);
   }
 
-  /// Busca ejercicios por nombre (para sugerencias alternativas)
+  /// Busca ejercicios por nombre (para sugerencias alternativas).
   Future<List<LibraryExercise>> searchExercises(String query, {int limit = 5}) async {
-    await _ensureExercisesLoaded();
-    if (_fuzzyMatcher == null || query.length < 2) return [];
-
-    final results = _fuzzyMatcher!.search(query.toLowerCase());
-    return results.take(limit).map((r) => r.item).toList();
+    final results = await _matchingService.matchMultiple(query, limit: limit);
+    return results.where((r) => r.exercise != null).map((r) => r.exercise!).toList();
   }
 
-  /// Libera recursos
+  /// Libera recursos.
   void dispose() {
     _stateController.close();
     _transcriptController.close();
-    _exercisesCache = null;
-    _fuzzyMatcher = null;
   }
 }
