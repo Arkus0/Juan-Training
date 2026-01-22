@@ -37,6 +37,7 @@ dependencies:
   connectivity_plus: ^6.1.0
   fuzzy: ^0.5.0
   share_plus: ^7.2.1
+  url_launcher: ^6.2.0
 
   # Audio (para beeps del timer - ligero, offline-first)
   just_audio: ^0.9.36

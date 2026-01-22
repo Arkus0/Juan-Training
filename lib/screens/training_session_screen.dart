@@ -7,6 +7,7 @@ import '../providers/session_progress_provider.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
+import '../widgets/session/music_launcher_bar.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
@@ -269,6 +270,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         children: [
           // Barra de progreso de sesión (no invasiva, top)
           const SessionProgressBar(),
+
+          // Music launcher (Spotify quick open) 🎧
+          const MusicLauncherBar(),
 
           // Lista de ejercicios
           Expanded(
