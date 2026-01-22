@@ -112,24 +112,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(dayIndex, ex);
           Vibrate.feedback(FeedbackType.light);
-
-          // Show floating SnackBar above the exercise list (1 second duration)
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${ex.name} añadido 💪',
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              backgroundColor: Colors.red[900],
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-            ),
-          );
+          // Snackbar is now shown inside BibliotecaBottomSheet
         },
       ),
     );

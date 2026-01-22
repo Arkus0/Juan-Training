@@ -205,15 +205,12 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
             color: Colors.grey[900],
             child: Row(
               children: [
-                // Drag handle - only this area triggers day reordering
+                // Drag handle - long press to drag day
                 ReorderableDragStartListener(
                   index: widget.dayIndex,
-                  child: GestureDetector(
-                    onLongPress: _showProOptions,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Icon(Icons.drag_handle, color: Colors.red[900]),
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Icon(Icons.drag_handle, color: Colors.red[900]),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -238,6 +235,14 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     padding: const EdgeInsets.only(right: 8.0),
                     child: Icon(Icons.auto_graph, color: Colors.redAccent[700], size: 20),
                   ),
+                // PRO options menu button
+                GestureDetector(
+                  onTap: _showProOptions,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+                  ),
+                ),
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -372,7 +377,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
   int? _dragOverIndex;
 
   void _showDeleteSnackbar(BuildContext context, int idx, EjercicioEnRutina removedItem) {
-    ScaffoldMessenger.of(context).clearSnackBars();
+    // Hide any existing snackbar first
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -380,7 +386,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           style: GoogleFonts.montserrat(color: Colors.white),
         ),
         backgroundColor: Colors.red[900],
-        duration: const Duration(milliseconds: 1500),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
         action: SnackBarAction(
@@ -405,13 +411,10 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       },
       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
       onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
-      onLink: (idx < widget.exercises.length - 1)
-          ? () => widget.onCreateSuperset(idx, idx + 1)
-          : null,
       onUnlink: inSuperset ? () => widget.onRemoveFromSuperset(idx) : null,
     );
 
-    // Wrap with LongPressDraggable for superset creation
+    // Wrap with LongPressDraggable for superset creation/breaking
     final draggableCard = LongPressDraggable<_SupersetDragData>(
       data: _SupersetDragData(sourceIndex: idx, instanceId: ex.instanceId),
       feedback: Material(
@@ -428,7 +431,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.link, color: Colors.redAccent),
+              Icon(inSuperset ? Icons.link_off : Icons.link, color: Colors.redAccent),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
@@ -449,6 +452,13 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         opacity: 0.4,
         child: card,
       ),
+      // When drag is cancelled (dropped on empty space), break the superset
+      onDraggableCanceled: (velocity, offset) {
+        if (inSuperset) {
+          // Exercise was in a superset and dragged away - remove from superset
+          widget.onRemoveFromSuperset(idx);
+        }
+      },
       child: DragTarget<_SupersetDragData>(
         onWillAcceptWithDetails: (details) {
           // Accept if it's a different exercise
