@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "com.example.juan_training"
-    compileSdk = flutter.compileSdkVersion
+    // Set concrete compileSdk to satisfy newer AAR metadata (many libraries require >= 34).
+    // Use 36 to be safe and match Flutter's targetSdk.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

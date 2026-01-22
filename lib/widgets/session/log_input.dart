@@ -147,11 +147,44 @@ class _LogInputState extends State<LogInput> {
   void didUpdateWidget(LogInput oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Sync controller con valor externo
-    if (widget.value != oldWidget.value && widget.value != _controller.text) {
-      _controller.text = widget.value;
-      _controller.selection =
-          TextSelection.collapsed(offset: widget.value.length);
+    // Sync controller con valor externo, pero evitando sobrescribir cambios de formato
+    // (p.ej. evitar que "5" se convierta inmediatamente en "5.0" mientras el usuario escribe)
+    if (widget.value != oldWidget.value) {
+      final currentNum = double.tryParse(_controller.text);
+      final widgetNum = double.tryParse(widget.value);
+
+      bool shouldUpdate;
+      if (currentNum == null || widgetNum == null) {
+        // Si no se pueden parsear, fallback a comparación de strings
+        shouldUpdate = widget.value != _controller.text;
+      } else {
+        // Actualizar solo si el valor numérico real cambió (evita 5 == 5.0)
+        shouldUpdate = widgetNum != currentNum;
+      }
+
+      if (shouldUpdate) {
+        // Formateo limpio: quitar ".0" para enteros cuando sea posible
+        String newText;
+        if (widget.isInteger) {
+          final v = widgetNum ?? double.tryParse(widget.value) ?? 0.0;
+          newText = v.truncateToDouble() == v ? v.toInt().toString() : widget.value;
+        } else {
+          if (widgetNum != null && widgetNum.truncateToDouble() == widgetNum) {
+            newText = widgetNum.toInt().toString();
+          } else {
+            newText = widget.value;
+          }
+        }
+
+        // Mantener selección si es válida, sino poner cursor al final
+        final selection = _controller.selection;
+        _controller.text = newText;
+        if (selection.isValid && selection.baseOffset <= newText.length && selection.extentOffset <= newText.length) {
+          _controller.selection = selection;
+        } else {
+          _controller.selection = TextSelection.collapsed(offset: newText.length);
+        }
+      }
     }
 
     // Auto-focus cuando shouldFocus cambia a true
