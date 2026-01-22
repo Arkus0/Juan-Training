@@ -1,13 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_training/models/rutina.dart';
-import 'package:juan_training/models/dia.dart';
-import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/models/sesion.dart';
-import 'package:juan_training/models/ejercicio.dart';
-import 'package:juan_training/models/serie_log.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
+import 'package:juan_training/providers/training_provider.dart';
 import 'package:juan_training/repositories/i_training_repository.dart';
 
 /// Mock implementation of ITrainingRepository for testing
@@ -48,7 +45,11 @@ class MockTrainingRepository implements ITrainingRepository {
 
   @override
   Future<List<Sesion>> getHistoryForExercise(String exerciseName) async {
-    return _sesiones.where((s) => s.ejercicios.any((e) => e.nombre == exerciseName)).toList();
+    // Check both completed and target exercises for history matches
+    return _sesiones.where((s) =>
+      s.ejerciciosCompletados.any((e) => e.nombre == exerciseName) ||
+      s.ejerciciosObjetivo.any((e) => e.nombre == exerciseName)
+    ).toList();
   }
 
   @override
@@ -278,8 +279,6 @@ void main() {
       }
       notifier.createSuperset(0, 0, 1);
       notifier.createSuperset(0, 1, 2);
-
-      final supersetId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].supersetId;
 
       // Remove two exercises
       notifier.removeFromSuperset(0, 0);

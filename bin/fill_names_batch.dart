@@ -26,7 +26,6 @@ Future<void> main(List<String> args) async {
   final missingIdx = <int>[];
   for (var i = 0; i < list.length; i++) {
     final entry = list[i];
-    final id = entry['id'] as int;
     final name = entry['name'] as String?;
     if (_isPlaceholder(name)) missingIdx.add(i);
   }

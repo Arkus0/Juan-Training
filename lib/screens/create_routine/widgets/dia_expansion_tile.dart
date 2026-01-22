@@ -47,13 +47,6 @@ class DiaExpansionTile extends StatefulWidget {
 class _DiaExpansionTileState extends State<DiaExpansionTile> {
   bool _isExpanded = true;
   late TextEditingController _nameController;
-  bool _isLinkDragActive = false;
-  bool _dragAccepted = false;
-
-  // Reorder drag state
-  bool _isReorderDragActive = false;
-  int? _reorderSourceFlatIndex;
-  int? _dragSourceVisualIndex;
 
   @override
   void initState() {
@@ -171,51 +164,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
   @override
   Widget build(BuildContext context) {
-    // Helper: build insertion dropzone for any flat insertion index
-    Widget buildInsertionDropZone(int insertionFlatIndex) {
-      return DragTarget<Object>(
-        onWillAcceptWithDetails: (details) => details.data is SupersetDragData || details.data is ReorderDragData,
-        onAcceptWithDetails: (details) {
-          final data = details.data;
-          _dragAccepted = true;
-          if (data is ReorderDragData) {
-            // Move single exercise by flat indices
-            widget.onMoveExercise(data.flatIndex, insertionFlatIndex);
-          } else if (data is SupersetDragData) {
-            // If it's a superset block, move the whole block
-            if (data.supersetId != null) {
-              widget.onMoveSuperset(data.supersetId!, insertionFlatIndex);
-            } else {
-              // single exercise without superset
-              widget.onMoveExercise(data.flatIndex, insertionFlatIndex);
-            }
-          }
-          _isLinkDragActive = false;
-          _dragSourceVisualIndex = null;
-          _isReorderDragActive = false;
-          _reorderSourceFlatIndex = null;
-          setState(() {});
-        },
-        builder: (context, candidateData, rejectedData) {
-          final isHovering = candidateData.isNotEmpty;
-          final show = isHovering || _isReorderDragActive;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            height: show ? 12 : 8,
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: show
-                ? BoxDecoration(
-                    color: isHovering ? Colors.redAccent[700]!.withValues(alpha: 31 / 255.0) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(6),
-                  )
-                : null,
-            child: isHovering
-                ? Center(child: Container(height: 4, width: double.infinity, color: Colors.redAccent[700]))
-                : null,
-          );
-        },
-      );
-    }
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

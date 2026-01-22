@@ -190,7 +190,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   final synonyms = muscleSynonyms[selectedLower] ?? [];
 
                   filtered = filtered.where((e) {
-                    final mg = (e.muscleGroup ?? '').toLowerCase();
+                    final mg = e.muscleGroup.toLowerCase();
 
                     // Direct matches
                     if (mg.contains(selectedLower)) return true;
@@ -222,7 +222,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   final synonyms = equipmentSynonyms[selectedEq] ?? [];
 
                   filtered = filtered.where((e) {
-                    final eq = (e.equipment ?? '').toLowerCase();
+                    final eq = e.equipment.toLowerCase();
 
                     if (eq.contains(selectedEq)) return true;
                     for (final s in synonyms) {
@@ -230,9 +230,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     }
 
                     // Some library entries use longer names or multiple words; also check name and description
-                    if ((e.name ?? '').toLowerCase().contains(selectedEq)) return true;
+                    if (e.name.toLowerCase().contains(selectedEq)) return true;
                     for (final s in synonyms) {
-                      if ((e.name ?? '').toLowerCase().contains(s)) return true;
+                      if (e.name.toLowerCase().contains(s)) return true;
                     }
 
                     return false;
