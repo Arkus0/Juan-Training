@@ -29,6 +29,58 @@ final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
   return repo.watchActiveSession();
 });
 
+/// Estado avanzado del timer de descanso
+class RestTimerState {
+  final bool isActive;
+  final bool isPaused;
+  final int totalSeconds;
+  final DateTime? endTime; // Tiempo absoluto de fin (para persistir entre rebuilds)
+  final int? lastCompletedExerciseIndex;
+  final int? lastCompletedSetIndex;
+
+  const RestTimerState({
+    this.isActive = false,
+    this.isPaused = false,
+    this.totalSeconds = 90,
+    this.endTime,
+    this.lastCompletedExerciseIndex,
+    this.lastCompletedSetIndex,
+  });
+
+  RestTimerState copyWith({
+    bool? isActive,
+    bool? isPaused,
+    int? totalSeconds,
+    DateTime? endTime,
+    int? lastCompletedExerciseIndex,
+    int? lastCompletedSetIndex,
+    bool clearEndTime = false,
+  }) {
+    return RestTimerState(
+      isActive: isActive ?? this.isActive,
+      isPaused: isPaused ?? this.isPaused,
+      totalSeconds: totalSeconds ?? this.totalSeconds,
+      endTime: clearEndTime ? null : (endTime ?? this.endTime),
+      lastCompletedExerciseIndex: lastCompletedExerciseIndex ?? this.lastCompletedExerciseIndex,
+      lastCompletedSetIndex: lastCompletedSetIndex ?? this.lastCompletedSetIndex,
+    );
+  }
+
+  /// Calcula segundos restantes basado en endTime
+  double get remainingSeconds {
+    if (!isActive || endTime == null) return totalSeconds.toDouble();
+    if (isPaused) return totalSeconds.toDouble(); // Cuando pausado, mantener el valor pausado
+    final remaining = endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  /// Progreso del timer (0.0 a 1.0)
+  double get progress {
+    if (totalSeconds <= 0) return 1.0;
+    return 1.0 - (remainingSeconds / totalSeconds);
+  }
+}
+
 class TrainingState {
   final Rutina? activeRutina;
   final String? dayName; // Nombre del día siendo entrenado
@@ -37,7 +89,8 @@ class TrainingState {
   final List<Ejercicio> targets; // Snapshot of targets
   final DateTime? startTime;
   final int defaultRestSeconds;
-  final bool isRestActive;
+  final bool isRestActive; // DEPRECATED: usar restTimer.isActive
+  final RestTimerState restTimer; // Nuevo estado avanzado del timer
 
   // New State Fields
   final Map<String, List<SerieLog>> history; // Key: Exercise Name, Value: Last Session Logs
@@ -52,6 +105,7 @@ class TrainingState {
     this.startTime,
     this.defaultRestSeconds = 90,
     this.isRestActive = false,
+    this.restTimer = const RestTimerState(),
     this.history = const {},
     this.showAdvancedOptions = false,
   });
@@ -65,6 +119,7 @@ class TrainingState {
     DateTime? startTime,
     int? defaultRestSeconds,
     bool? isRestActive,
+    RestTimerState? restTimer,
     Map<String, List<SerieLog>>? history,
     bool? showAdvancedOptions,
   }) {
@@ -77,9 +132,23 @@ class TrainingState {
       startTime: startTime ?? this.startTime,
       defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
       isRestActive: isRestActive ?? this.isRestActive,
+      restTimer: restTimer ?? this.restTimer,
       history: history ?? this.history,
       showAdvancedOptions: showAdvancedOptions ?? this.showAdvancedOptions,
     );
+  }
+
+  /// Obtiene el índice del siguiente set no completado (para auto-focus)
+  ({int exerciseIndex, int setIndex})? get nextIncompleteSet {
+    for (int exIdx = 0; exIdx < exercises.length; exIdx++) {
+      final exercise = exercises[exIdx];
+      for (int setIdx = 0; setIdx < exercise.logs.length; setIdx++) {
+        if (!exercise.logs[setIdx].completed) {
+          return (exerciseIndex: exIdx, setIndex: setIdx);
+        }
+      }
+    }
+    return null;
   }
 }
 
@@ -203,11 +272,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 
   void setRestDuration(int seconds) {
-    state = state.copyWith(defaultRestSeconds: seconds);
+    state = state.copyWith(
+      defaultRestSeconds: seconds,
+      restTimer: state.restTimer.copyWith(totalSeconds: seconds),
+    );
     _saveState();
   }
 
-  void startRestForExercise(int exerciseIndex) {
+  /// Inicia el timer de descanso para un ejercicio específico
+  /// @param exerciseIndex Índice del ejercicio que acaba de completarse
+  /// @param setIndex Índice del set que acaba de completarse (para auto-focus)
+  void startRestForExercise(int exerciseIndex, {int? setIndex}) {
     final exercise = state.exercises[exerciseIndex];
     int restTime = state.defaultRestSeconds;
 
@@ -222,20 +297,94 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       }
     }
 
+    final endTime = DateTime.now().add(Duration(seconds: restTime));
+
     state = state.copyWith(
       defaultRestSeconds: restTime,
       isRestActive: true,
+      restTimer: RestTimerState(
+        isActive: true,
+        isPaused: false,
+        totalSeconds: restTime,
+        endTime: endTime,
+        lastCompletedExerciseIndex: exerciseIndex,
+        lastCompletedSetIndex: setIndex,
+      ),
     );
     _saveState();
   }
 
   void startRest() {
-    state = state.copyWith(isRestActive: true);
+    final restTime = state.defaultRestSeconds;
+    final endTime = DateTime.now().add(Duration(seconds: restTime));
+
+    state = state.copyWith(
+      isRestActive: true,
+      restTimer: RestTimerState(
+        isActive: true,
+        isPaused: false,
+        totalSeconds: restTime,
+        endTime: endTime,
+      ),
+    );
     _saveState();
   }
 
   void stopRest() {
-    state = state.copyWith(isRestActive: false);
+    state = state.copyWith(
+      isRestActive: false,
+      restTimer: const RestTimerState(isActive: false),
+    );
+    _saveState();
+  }
+
+  /// Pausa el timer de descanso (guarda el tiempo restante)
+  void pauseRest() {
+    if (!state.restTimer.isActive || state.restTimer.isPaused) return;
+
+    final remaining = state.restTimer.remainingSeconds.ceil();
+    state = state.copyWith(
+      restTimer: state.restTimer.copyWith(
+        isPaused: true,
+        totalSeconds: remaining, // Guardar tiempo restante
+        clearEndTime: true,
+      ),
+    );
+    _saveState();
+  }
+
+  /// Reanuda el timer de descanso desde donde estaba pausado
+  void resumeRest() {
+    if (!state.restTimer.isActive || !state.restTimer.isPaused) return;
+
+    final endTime = DateTime.now().add(Duration(seconds: state.restTimer.totalSeconds));
+    state = state.copyWith(
+      restTimer: state.restTimer.copyWith(
+        isPaused: false,
+        endTime: endTime,
+      ),
+    );
+    _saveState();
+  }
+
+  /// Añade tiempo al timer actual
+  void addRestTime(int seconds) {
+    if (!state.restTimer.isActive) return;
+
+    final newTotal = state.restTimer.totalSeconds + seconds;
+    if (state.restTimer.isPaused) {
+      state = state.copyWith(
+        restTimer: state.restTimer.copyWith(totalSeconds: newTotal),
+      );
+    } else {
+      final newEndTime = state.restTimer.endTime?.add(Duration(seconds: seconds));
+      state = state.copyWith(
+        restTimer: state.restTimer.copyWith(
+          totalSeconds: newTotal,
+          endTime: newEndTime,
+        ),
+      );
+    }
     _saveState();
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
+import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import 'session_set_row.dart';
@@ -213,7 +214,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.nombre]));
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
-    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.isRestActive));
+    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
+
+    // Auto-focus: detectar si este ejercicio/set debe recibir focus
+    final focusTarget = ref.watch(timerFinishedFocusProvider);
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
@@ -222,6 +226,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       exercise: exercise,
       historyLogs: historyLogs,
       showAdvanced: showAdvanced,
+      focusSetIndex: focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null,
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
       onUpdateReps: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
@@ -231,8 +236,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
              final log = exercise.logs[setIndex];
              final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
              _triggerCompletionFeedback(log, prevLog);
-             // Auto-advance rest
-             if (!isRestActive) notifier.startRestForExercise(widget.exerciseIndex);
+             // Auto-advance rest con info de ejercicio/serie para auto-focus
+             if (!isRestActive) {
+               notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
+             }
         }
       },
       onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
@@ -246,6 +253,7 @@ class ExerciseCard extends StatelessWidget {
   final Ejercicio exercise;
   final List<SerieLog>? historyLogs;
   final bool showAdvanced;
+  final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
   final Function(int, String) onUpdateReps;
@@ -259,6 +267,7 @@ class ExerciseCard extends StatelessWidget {
     required this.exercise,
     required this.historyLogs,
     required this.showAdvanced,
+    this.focusSetIndex,
     required this.onShowOptions,
     required this.onUpdateWeight,
     required this.onUpdateReps,
@@ -336,6 +345,7 @@ class ExerciseCard extends StatelessWidget {
                 onPlateCalc: (val) => onPlateCalc(setIndex, val),
                 onLongPress: () => onSetLongPress(setIndex),
                 showAdvanced: showAdvanced,
+                shouldFocus: focusSetIndex == setIndex,
               );
             }),
           ],
