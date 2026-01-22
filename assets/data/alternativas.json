@@ -1,0 +1,318 @@
+{
+  "Press Banca": [
+    "Press Banca Inclinado",
+    "Press Mancuernas",
+    "Press Mancuernas Inclinado",
+    "Fondos en Paralelas",
+    "Floor Press"
+  ],
+  "Press Banca Inclinado": [
+    "Press Banca",
+    "Press Mancuernas Inclinado",
+    "Press Mancuernas",
+    "Aperturas Inclinadas"
+  ],
+  "Press Mancuernas": [
+    "Press Banca",
+    "Press Mancuernas Inclinado",
+    "Aperturas Mancuernas",
+    "Crossover Poleas"
+  ],
+  "Press Militar": [
+    "Press Arnold",
+    "Press Mancuernas Hombro",
+    "Press Tras Nuca",
+    "Push Press"
+  ],
+  "Sentadilla": [
+    "Sentadilla Frontal",
+    "Hack Squat",
+    "Prensa Piernas",
+    "Sentadilla Búlgara",
+    "Sentadilla Goblet"
+  ],
+  "Sentadilla Frontal": [
+    "Sentadilla",
+    "Sentadilla Goblet",
+    "Prensa Piernas",
+    "Hack Squat"
+  ],
+  "Peso Muerto": [
+    "Peso Muerto Rumano",
+    "Peso Muerto Sumo",
+    "Hip Thrust",
+    "Buenos Días"
+  ],
+  "Peso Muerto Rumano": [
+    "Peso Muerto",
+    "Curl Femoral",
+    "Hip Thrust",
+    "Buenos Días"
+  ],
+  "Remo con Barra": [
+    "Remo Mancuerna",
+    "Remo T-Bar",
+    "Remo Polea Baja",
+    "Remo Pendlay"
+  ],
+  "Remo Mancuerna": [
+    "Remo con Barra",
+    "Remo T-Bar",
+    "Remo Polea Baja",
+    "Remo Meadows"
+  ],
+  "Dominadas": [
+    "Jalón al Pecho",
+    "Jalón Agarre Neutro",
+    "Dominadas Asistidas",
+    "Remo Invertido"
+  ],
+  "Jalón al Pecho": [
+    "Dominadas",
+    "Jalón Agarre Neutro",
+    "Jalón Tras Nuca",
+    "Pulldown con Cuerda"
+  ],
+  "Curl Bíceps Barra": [
+    "Curl Mancuernas",
+    "Curl Martillo",
+    "Curl Predicador",
+    "Curl Concentrado"
+  ],
+  "Curl Mancuernas": [
+    "Curl Bíceps Barra",
+    "Curl Martillo",
+    "Curl Inclinado",
+    "Curl Cable"
+  ],
+  "Extensión Tríceps Polea": [
+    "Fondos en Banco",
+    "Press Francés",
+    "Patada Tríceps",
+    "Extensión Tríceps Cuerda"
+  ],
+  "Press Francés": [
+    "Extensión Tríceps Polea",
+    "Rompe Cráneos",
+    "Press Agarre Cerrado",
+    "Dips Tríceps"
+  ],
+  "Hip Thrust": [
+    "Peso Muerto Rumano",
+    "Puente de Glúteos",
+    "Extensión de Cadera",
+    "Patadas de Glúteo"
+  ],
+  "Prensa Piernas": [
+    "Sentadilla",
+    "Hack Squat",
+    "Sentadilla Goblet",
+    "Extensión Cuádriceps"
+  ],
+  "Extensión Cuádriceps": [
+    "Sentadilla",
+    "Sentadilla Sissy",
+    "Prensa Piernas",
+    "Zancadas"
+  ],
+  "Curl Femoral": [
+    "Peso Muerto Rumano",
+    "Curl Femoral Tumbado",
+    "Buenos Días",
+    "Nordic Curl"
+  ],
+  "Elevación Lateral": [
+    "Elevación Lateral Cable",
+    "Pájaro",
+    "Face Pull",
+    "Press Arnold"
+  ],
+  "Face Pull": [
+    "Pájaro",
+    "Remo al Mentón",
+    "Elevación Lateral",
+    "Band Pull Apart"
+  ],
+  "Fondos en Paralelas": [
+    "Press Banca Declinado",
+    "Press Banca",
+    "Fondos en Banco",
+    "Press Mancuernas"
+  ],
+  "Zancadas": [
+    "Sentadilla Búlgara",
+    "Step Up",
+    "Sentadilla",
+    "Prensa Piernas Unilateral"
+  ],
+  "Sentadilla Búlgara": [
+    "Zancadas",
+    "Step Up",
+    "Sentadilla",
+    "Pistol Squat"
+  ],
+  "Aperturas Mancuernas": [
+    "Crossover Poleas",
+    "Pec Deck",
+    "Press Mancuernas",
+    "Aperturas Inclinadas"
+  ],
+  "Encogimientos de Hombros": [
+    "Encogimientos Mancuernas",
+    "Encogimientos Barra",
+    "Farmer Walk",
+    "Remo Alto"
+  ],
+  "Crunch Abdominal": [
+    "Crunch Polea",
+    "Elevación Piernas",
+    "Plancha",
+    "Ab Wheel"
+  ],
+  "Plancha": [
+    "Plancha Lateral",
+    "Dead Bug",
+    "Hollow Hold",
+    "Ab Wheel"
+  ],
+  "Elevación Talones": [
+    "Elevación Talones Sentado",
+    "Elevación Talones Prensa",
+    "Calf Raise Máquina",
+    "Donkey Calf Raise"
+  ],
+  "Bench Press": [
+    "Incline Bench Press",
+    "Dumbbell Press",
+    "Dumbbell Incline Press",
+    "Dips",
+    "Floor Press"
+  ],
+  "Incline Bench Press": [
+    "Bench Press",
+    "Incline Dumbbell Press",
+    "Dumbbell Press",
+    "Incline Flyes"
+  ],
+  "Squat": [
+    "Front Squat",
+    "Hack Squat",
+    "Leg Press",
+    "Bulgarian Split Squat",
+    "Goblet Squat"
+  ],
+  "Deadlift": [
+    "Romanian Deadlift",
+    "Sumo Deadlift",
+    "Hip Thrust",
+    "Good Morning"
+  ],
+  "Romanian Deadlift": [
+    "Deadlift",
+    "Leg Curl",
+    "Hip Thrust",
+    "Good Morning"
+  ],
+  "Barbell Row": [
+    "Dumbbell Row",
+    "T-Bar Row",
+    "Cable Row",
+    "Pendlay Row"
+  ],
+  "Pull-up": [
+    "Lat Pulldown",
+    "Neutral Grip Pulldown",
+    "Assisted Pull-up",
+    "Inverted Row"
+  ],
+  "Lat Pulldown": [
+    "Pull-up",
+    "Neutral Grip Pulldown",
+    "Behind Neck Pulldown",
+    "Rope Pulldown"
+  ],
+  "Overhead Press": [
+    "Arnold Press",
+    "Dumbbell Shoulder Press",
+    "Behind Neck Press",
+    "Push Press"
+  ],
+  "Barbell Curl": [
+    "Dumbbell Curl",
+    "Hammer Curl",
+    "Preacher Curl",
+    "Concentration Curl"
+  ],
+  "Tricep Pushdown": [
+    "Bench Dips",
+    "Skull Crushers",
+    "Tricep Kickback",
+    "Rope Pushdown"
+  ],
+  "Leg Press": [
+    "Squat",
+    "Hack Squat",
+    "Goblet Squat",
+    "Leg Extension"
+  ],
+  "Leg Extension": [
+    "Squat",
+    "Sissy Squat",
+    "Leg Press",
+    "Lunges"
+  ],
+  "Leg Curl": [
+    "Romanian Deadlift",
+    "Lying Leg Curl",
+    "Good Morning",
+    "Nordic Curl"
+  ],
+  "Lateral Raise": [
+    "Cable Lateral Raise",
+    "Rear Delt Fly",
+    "Face Pull",
+    "Arnold Press"
+  ],
+  "Dips": [
+    "Decline Bench Press",
+    "Bench Press",
+    "Bench Dips",
+    "Dumbbell Press"
+  ],
+  "Lunges": [
+    "Bulgarian Split Squat",
+    "Step Up",
+    "Squat",
+    "Single Leg Press"
+  ],
+  "Dumbbell Fly": [
+    "Cable Crossover",
+    "Pec Deck",
+    "Dumbbell Press",
+    "Incline Fly"
+  ],
+  "Shrugs": [
+    "Dumbbell Shrugs",
+    "Barbell Shrugs",
+    "Farmer Walk",
+    "Upright Row"
+  ],
+  "Crunches": [
+    "Cable Crunch",
+    "Leg Raise",
+    "Plank",
+    "Ab Wheel"
+  ],
+  "Plank": [
+    "Side Plank",
+    "Dead Bug",
+    "Hollow Hold",
+    "Ab Wheel"
+  ],
+  "Calf Raise": [
+    "Seated Calf Raise",
+    "Leg Press Calf Raise",
+    "Machine Calf Raise",
+    "Donkey Calf Raise"
+  ]
+}

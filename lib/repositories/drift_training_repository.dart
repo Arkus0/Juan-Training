@@ -9,6 +9,7 @@ import '../models/ejercicio.dart';
 import '../models/serie_log.dart';
 import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
+import '../models/progression_type.dart';
 import 'i_training_repository.dart';
 
 class DriftTrainingRepository implements ITrainingRepository {
@@ -50,6 +51,9 @@ class DriftTrainingRepository implements ITrainingRepository {
                       : null,
                   notas: e.notes,
                   supersetId: e.supersetId,
+                  progressionType: ProgressionType.fromString(e.progressionType),
+                  weightIncrement: e.weightIncrement,
+                  targetRpe: e.targetRpe,
                 ))
             .toList(),
       );
@@ -117,6 +121,8 @@ class DriftTrainingRepository implements ITrainingRepository {
     return Sesion(
       id: sessionRow.id,
       rutinaId: sessionRow.routineId ?? '',
+      dayName: sessionRow.dayName,
+      dayIndex: sessionRow.dayIndex,
       fecha: sessionRow.startTime,
       durationSeconds: sessionRow.durationSeconds,
       ejerciciosCompletados: mapExercises(completedRows),
@@ -255,6 +261,9 @@ class DriftTrainingRepository implements ITrainingRepository {
               notes: Value(ej.notas ?? ""),
               supersetId: Value(ej.supersetId),
               exerciseIndex: j,
+              progressionType: Value(ej.progressionType.value),
+              weightIncrement: Value(ej.weightIncrement),
+              targetRpe: Value(ej.targetRpe),
             ));
           }
         }
@@ -344,6 +353,8 @@ class DriftTrainingRepository implements ITrainingRepository {
     await db.into(db.sessions).insertOnConflictUpdate(SessionsCompanion.insert(
           id: sesion.id,
           routineId: Value(sesion.rutinaId),
+          dayName: Value(sesion.dayName),
+          dayIndex: Value(sesion.dayIndex),
           startTime: sesion.fecha,
           durationSeconds: Value(sesion.durationSeconds),
           completedAt: isCompleted

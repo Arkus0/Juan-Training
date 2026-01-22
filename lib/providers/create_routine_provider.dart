@@ -7,6 +7,7 @@ import 'package:juan_training/models/dia.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/repositories/i_training_repository.dart';
+import 'package:juan_training/services/exercise_library_service.dart';
 import 'training_provider.dart';
 
 
@@ -466,6 +467,73 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       final newDias = [...state.dias];
       newDias[dayIndex] = updatedDay;
       state = state.copyWith(dias: newDias);
+  }
+
+  /// Replaces an exercise with an alternative, preserving series, reps, rest, notes, and superset.
+  /// Searches the library for the alternative by name (fuzzy match).
+  void replaceExercise(int dayIndex, int exerciseIndex, String alternativaNombre) {
+    if (dayIndex >= state.dias.length) return;
+    final day = state.dias[dayIndex];
+    if (exerciseIndex >= day.ejercicios.length) return;
+
+    final oldExercise = day.ejercicios[exerciseIndex];
+
+    // Search library for the alternative
+    final library = ExerciseLibraryService.instance.exercises;
+    LibraryExercise? newLibExercise;
+
+    // Try exact match first
+    for (final libEx in library) {
+      if (libEx.name.toLowerCase() == alternativaNombre.toLowerCase()) {
+        newLibExercise = libEx;
+        break;
+      }
+    }
+
+    // If no exact match, try fuzzy/partial match
+    if (newLibExercise == null) {
+      final lowerAlt = alternativaNombre.toLowerCase();
+      for (final libEx in library) {
+        if (libEx.name.toLowerCase().contains(lowerAlt) ||
+            lowerAlt.contains(libEx.name.toLowerCase())) {
+          newLibExercise = libEx;
+          break;
+        }
+      }
+    }
+
+    // Create replacement exercise preserving routine-specific data
+    final EjercicioEnRutina replacement;
+    if (newLibExercise != null) {
+      replacement = EjercicioEnRutina(
+        id: newLibExercise.id.toString(),
+        nombre: newLibExercise.name,
+        descripcion: newLibExercise.description,
+        musculosPrincipales: newLibExercise.muscles,
+        musculosSecundarios: newLibExercise.secondaryMuscles,
+        equipo: newLibExercise.equipment,
+        localImagePath: newLibExercise.localImagePath,
+        // Preserve routine-specific data from old exercise
+        series: oldExercise.series,
+        repsRange: oldExercise.repsRange,
+        descansoSugerido: oldExercise.descansoSugerido,
+        notas: oldExercise.notas,
+        supersetId: oldExercise.supersetId, // Keep superset membership
+      );
+    } else {
+      // Fallback: Just update the name if not found in library
+      replacement = oldExercise.copyWith(
+        nombre: alternativaNombre,
+      );
+    }
+
+    final newEjercicios = [...day.ejercicios];
+    newEjercicios[exerciseIndex] = replacement;
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   final _logger = Logger();

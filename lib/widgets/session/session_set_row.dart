@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/serie_log.dart';
+import '../../models/progression_type.dart';
 import '../../screens/plate_calculator_dialog.dart';
 
 class SessionSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
   final SerieLog? prevLog;
+  final ProgressionSuggestion? suggestion;
   final Function(String) onWeightChanged;
   final Function(String) onRepsChanged;
   final Function(bool?) onCompleted;
@@ -19,6 +21,7 @@ class SessionSetRow extends StatefulWidget {
     required this.index,
     required this.log,
     required this.prevLog,
+    this.suggestion,
     required this.onWeightChanged,
     required this.onRepsChanged,
     required this.onCompleted,
@@ -84,8 +87,29 @@ class _SessionSetRowState extends State<SessionSetRow> {
     );
   }
 
+  void _applySuggestion() {
+    if (widget.suggestion == null) return;
+    HapticFeedback.selectionClick();
+    _weightController.text = widget.suggestion!.suggestedWeight.toString();
+    _repsController.text = widget.suggestion!.suggestedReps.toString();
+    widget.onWeightChanged(_weightController.text);
+    widget.onRepsChanged(_repsController.text);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Determinar hints para mostrar en campos vacíos
+    String? weightHint;
+    String? repsHint;
+
+    if (widget.suggestion != null) {
+      weightHint = widget.suggestion!.suggestedWeight.toString();
+      repsHint = widget.suggestion!.suggestedReps.toString();
+    } else if (widget.prevLog != null) {
+      weightHint = widget.prevLog!.peso.toString();
+      repsHint = widget.prevLog!.reps.toString();
+    }
+
     return GestureDetector(
       onLongPress: widget.onLongPress,
       child: Container(
@@ -106,10 +130,12 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     ),
                   ),
                 ),
-                // Previous History
+                // Previous History / Suggestion Tap Area
                 GestureDetector(
                   onTap: () {
-                    if (widget.prevLog != null) {
+                    if (widget.suggestion != null) {
+                      _applySuggestion();
+                    } else if (widget.prevLog != null) {
                       HapticFeedback.selectionClick();
                       _weightController.text = widget.prevLog!.peso.toString();
                       _repsController.text = widget.prevLog!.reps.toString();
@@ -118,28 +144,24 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     }
                   },
                   child: SizedBox(
-                    width: 50,
+                    width: 55,
                     child: Center(
-                      child: Text(
-                        widget.prevLog != null
-                            ? 'Prev:\n${widget.prevLog!.peso}x${widget.prevLog!.reps}'
-                            : '-',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
+                      child: _buildPrevColumn(),
                     ),
                   ),
                 ),
-                // Weight Input
+                // Weight Input with hint
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Stack(
                       alignment: Alignment.centerRight,
                       children: [
-                        _AggressiveTextField(
+                        _ProgressionTextField(
                           controller: _weightController,
                           onChanged: widget.onWeightChanged,
+                          hintText: weightHint,
+                          isSuggestion: widget.suggestion != null,
                         ),
                         GestureDetector(
                           onTap: _openPlateCalc,
@@ -153,14 +175,16 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     ),
                   ),
                 ),
-                // Reps Input
+                // Reps Input with hint
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _AggressiveTextField(
+                    child: _ProgressionTextField(
                       controller: _repsController,
                       onChanged: widget.onRepsChanged,
                       isInteger: true,
+                      hintText: repsHint,
+                      isSuggestion: widget.suggestion != null,
                     ),
                   ),
                 ),
@@ -185,11 +209,23 @@ class _SessionSetRowState extends State<SessionSetRow> {
                 ),
               ],
             ),
-            if (widget.showAdvanced || (widget.log.rpe != null || (widget.log.notas != null && widget.log.notas!.isNotEmpty)))
+            // Advanced options / suggestion message row
+            if (widget.showAdvanced ||
+                widget.log.rpe != null ||
+                (widget.log.notas != null && widget.log.notas!.isNotEmpty) ||
+                (widget.suggestion?.message != null && widget.suggestion!.isImprovement))
                Padding(
                  padding: const EdgeInsets.only(left: 80, right: 40, top: 4),
                  child: Row(
                    children: [
+                     if (widget.suggestion?.isImprovement == true)
+                       Padding(
+                         padding: const EdgeInsets.only(right: 4),
+                         child: Tag(
+                           text: widget.suggestion!.message ?? 'PROGRESO',
+                           color: Colors.green,
+                         ),
+                       ),
                      if (widget.log.rpe != null)
                        Tag(text: 'RPE ${widget.log.rpe}', color: Colors.orange),
                      if (widget.log.isFailure)
@@ -203,6 +239,52 @@ class _SessionSetRowState extends State<SessionSetRow> {
         ),
       ),
     );
+  }
+
+  Widget _buildPrevColumn() {
+    // Si hay sugerencia de progresión, mostrarla destacada
+    if (widget.suggestion != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'SUG',
+            style: TextStyle(
+              color: widget.suggestion!.isImprovement ? Colors.green[400] : Colors.white38,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '${widget.suggestion!.suggestedWeight}x${widget.suggestion!.suggestedReps}',
+            style: TextStyle(
+              color: widget.suggestion!.isImprovement ? Colors.green[400] : Colors.white38,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Fallback a historial anterior
+    if (widget.prevLog != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Prev',
+            style: TextStyle(color: Colors.grey[600], fontSize: 8),
+          ),
+          Text(
+            '${widget.prevLog!.peso}x${widget.prevLog!.reps}',
+            style: TextStyle(color: Colors.grey[600], fontSize: 10),
+          ),
+        ],
+      );
+    }
+
+    return Text('-', style: TextStyle(color: Colors.grey[700]));
   }
 }
 
@@ -226,15 +308,20 @@ class Tag extends StatelessWidget {
   }
 }
 
-class _AggressiveTextField extends StatelessWidget {
+/// TextField con soporte para hint de progresión/historial.
+class _ProgressionTextField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final bool isInteger;
+  final String? hintText;
+  final bool isSuggestion;
 
-  const _AggressiveTextField({
+  const _ProgressionTextField({
     required this.controller,
     required this.onChanged,
     this.isInteger = false,
+    this.hintText,
+    this.isSuggestion = false,
   });
 
   @override
@@ -249,6 +336,13 @@ class _AggressiveTextField extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         filled: true,
         fillColor: Colors.black,
+        // Hint text en gris claro (sugerencia pasada)
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: isSuggestion ? Colors.green[700]?.withValues(alpha: 0.5) : Colors.white38,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
         border: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.grey[800]!),
         ),

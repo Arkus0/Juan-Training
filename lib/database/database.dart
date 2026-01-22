@@ -74,6 +74,11 @@ class RoutineExercises extends Table {
   TextColumn get supersetId => text().nullable()();
   IntColumn get exerciseIndex => integer()();
 
+  // Progression Config (v3)
+  TextColumn get progressionType => text().withDefault(const Constant('none'))();
+  RealColumn get weightIncrement => real().withDefault(const Constant(2.5))();
+  IntColumn get targetRpe => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -82,6 +87,8 @@ class RoutineExercises extends Table {
 class Sessions extends Table {
   TextColumn get id => text()();
   TextColumn get routineId => text().nullable()(); // Can be null if ad-hoc or deleted routine
+  TextColumn get dayName => text().nullable()(); // Name of the day trained (v3)
+  IntColumn get dayIndex => integer().nullable()(); // Index of day in routine for smart suggestions (v3)
   DateTimeColumn get startTime => dateTime()();
   IntColumn get durationSeconds => integer().nullable()();
 
@@ -178,13 +185,24 @@ class AppDatabase extends _$AppDatabase {
             try {
               await m.addColumn(routineExercises, routineExercises.supersetId);
             } catch (e) {
-              // Log and continue (column might already exist in some edge cases)
-              // Can't use logger here; rethrow to be caught by callers if needed
+              // Column might already exist
+            }
+          }
+          // Migration path to version 3: add progression columns and session day info
+          if (from < 3) {
+            try {
+              await m.addColumn(routineExercises, routineExercises.progressionType);
+              await m.addColumn(routineExercises, routineExercises.weightIncrement);
+              await m.addColumn(routineExercises, routineExercises.targetRpe);
+              await m.addColumn(sessions, sessions.dayName);
+              await m.addColumn(sessions, sessions.dayIndex);
+            } catch (e) {
+              // Columns might already exist in some edge cases
             }
           }
         },
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 }

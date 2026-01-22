@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import 'progression_type.dart';
 
 class EjercicioEnRutina {
   // Embedded Library Data
@@ -18,6 +19,11 @@ class EjercicioEnRutina {
   final String instanceId;
   final String? supersetId;
 
+  // Progression Configuration
+  final ProgressionType progressionType;
+  final double weightIncrement; // Incremento de peso para progresión lineal (ej: 2.5kg)
+  final int? targetRpe; // RPE objetivo para progresión basada en RPE
+
   EjercicioEnRutina({
     required this.id,
     required this.nombre,
@@ -32,6 +38,9 @@ class EjercicioEnRutina {
     this.notas,
     String? instanceId,
     this.supersetId,
+    this.progressionType = ProgressionType.none,
+    this.weightIncrement = 2.5,
+    this.targetRpe,
   }) : instanceId = instanceId ?? const Uuid().v4();
 
   /// Creates a copy with updated fields.
@@ -50,6 +59,9 @@ class EjercicioEnRutina {
     Object? notas = _sentinel,
     String? instanceId,
     Object? supersetId = _sentinel,
+    ProgressionType? progressionType,
+    double? weightIncrement,
+    Object? targetRpe = _sentinel,
   }) {
     return EjercicioEnRutina(
       id: id ?? this.id,
@@ -73,6 +85,9 @@ class EjercicioEnRutina {
       supersetId: supersetId == _sentinel
           ? this.supersetId
           : supersetId as String?,
+      progressionType: progressionType ?? this.progressionType,
+      weightIncrement: weightIncrement ?? this.weightIncrement,
+      targetRpe: targetRpe == _sentinel ? this.targetRpe : targetRpe as int?,
     );
   }
 }

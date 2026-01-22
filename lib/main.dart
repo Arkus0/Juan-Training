@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
+import 'services/alternativas_service.dart';
 import 'providers/training_provider.dart';
 
 import 'database/database.dart';
@@ -18,6 +19,9 @@ void main() async {
 
   // Load Library (Service uses local file now)
   await ExerciseLibraryService.instance.init();
+
+  // Load Alternativas
+  await AlternativasService.instance.initialize();
 
   await initializeDateFormatting('es_ES', null);
 

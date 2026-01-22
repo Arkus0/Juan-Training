@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
+import 'package:juan_training/services/alternativas_service.dart';
+import 'package:juan_training/widgets/common/alternativas_dialog.dart';
 
 /// Payload passed through drag events so the parent knows which item is moving.
 class SupersetDragData {
@@ -30,6 +33,7 @@ class EjercicioCard extends StatefulWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
+  final Function(String alternativaNombre)? onReplace;
   final Function()? onLink;
   final Function()? onUnlink;
 
@@ -38,6 +42,7 @@ class EjercicioCard extends StatefulWidget {
     required this.ejercicio,
     required this.onRemove,
     required this.onUpdate,
+    this.onReplace,
     this.onLink,
     this.onUnlink,
   });
@@ -81,7 +86,32 @@ class _EjercicioCardState extends State<EjercicioCard> {
     super.dispose();
   }
 
+  void _showAlternativasDialog(BuildContext context) {
+    showAlternativasDialog(
+      context: context,
+      ejercicioNombre: widget.ejercicio.nombre,
+      onReplace: (alternativaNombre) {
+        Vibrate.feedback(FeedbackType.success);
+        if (widget.onReplace != null) {
+          widget.onReplace!(alternativaNombre);
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Reemplazado por $alternativaNombre',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.red[900],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+  }
+
   void _showProOptions(BuildContext context) {
+    final hasAlternativas = AlternativasService.instance.hasAlternativas(widget.ejercicio.nombre);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -101,6 +131,29 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
               ),
               const SizedBox(height: 16),
+
+              // Alternativas button
+              ListTile(
+                leading: Icon(
+                  Icons.swap_horiz,
+                  color: hasAlternativas ? Colors.redAccent[700] : Colors.grey[600],
+                ),
+                title: Text(
+                  'VER ALTERNATIVAS',
+                  style: TextStyle(
+                    color: hasAlternativas ? Colors.white : Colors.white38,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  hasAlternativas ? 'Sustituir por ejercicio similar' : 'Sin alternativas registradas',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showAlternativasDialog(context);
+                },
+              ),
 
               if (widget.onUnlink != null)
                 ListTile(

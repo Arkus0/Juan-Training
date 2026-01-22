@@ -15,6 +15,7 @@ class DiaExpansionTile extends StatefulWidget {
   final Function(int) onRemoveExercise;
   final Function(int, EjercicioEnRutina) onUndoRemove;
   final Function(int, EjercicioEnRutina) onUpdateExercise;
+  final Function(int, String) onReplaceExercise;
   final Function() onRemoveDay;
   final Function() onDuplicateDay;
   final Function(int, int) onCreateSuperset;
@@ -33,6 +34,7 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onRemoveExercise,
     required this.onUndoRemove,
     required this.onUpdateExercise,
+    required this.onReplaceExercise,
     required this.onRemoveDay,
     required this.onDuplicateDay,
     required this.onCreateSuperset,
@@ -278,6 +280,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                               isSuperset: isSuperset,
                               onRemoveExercise: widget.onRemoveExercise,
                               onUpdateExercise: widget.onUpdateExercise,
+                              onReplaceExercise: widget.onReplaceExercise,
                               onCreateSuperset: widget.onCreateSuperset,
                               onRemoveFromSuperset: widget.onRemoveFromSuperset,
                               onUndoRemove: widget.onUndoRemove,
@@ -316,6 +319,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
   final bool isSuperset;
   final Function(int) onRemoveExercise;
   final Function(int, EjercicioEnRutina) onUpdateExercise;
+  final Function(int, String) onReplaceExercise;
   final Function(int, int) onCreateSuperset;
   final Function(int) onRemoveFromSuperset;
   final Function(int, EjercicioEnRutina) onUndoRemove;
@@ -326,6 +330,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
     required this.isSuperset,
     required this.onRemoveExercise,
     required this.onUpdateExercise,
+    required this.onReplaceExercise,
     required this.onCreateSuperset,
     required this.onRemoveFromSuperset,
     required this.onUndoRemove,
@@ -364,6 +369,7 @@ class _ExerciseGroupWidget extends StatelessWidget {
         _showDeleteSnackbar(context, idx, removedItem);
       },
       onUpdate: (updated) => onUpdateExercise(idx, updated),
+      onReplace: (alternativaNombre) => onReplaceExercise(idx, alternativaNombre),
       onLink: (idx < exercises.length - 1)
           ? () => onCreateSuperset(idx, idx + 1)
           : null,

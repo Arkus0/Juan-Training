@@ -31,6 +31,8 @@ final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
 
 class TrainingState {
   final Rutina? activeRutina;
+  final String? dayName; // Nombre del día siendo entrenado
+  final int? dayIndex; // Índice del día en la rutina
   final List<Ejercicio> exercises; // The working copy with logs
   final List<Ejercicio> targets; // Snapshot of targets
   final DateTime? startTime;
@@ -43,6 +45,8 @@ class TrainingState {
 
   TrainingState({
     this.activeRutina,
+    this.dayName,
+    this.dayIndex,
     this.exercises = const [],
     this.targets = const [],
     this.startTime,
@@ -54,6 +58,8 @@ class TrainingState {
 
   TrainingState copyWith({
     Rutina? activeRutina,
+    String? dayName,
+    int? dayIndex,
     List<Ejercicio>? exercises,
     List<Ejercicio>? targets,
     DateTime? startTime,
@@ -64,6 +70,8 @@ class TrainingState {
   }) {
     return TrainingState(
       activeRutina: activeRutina ?? this.activeRutina,
+      dayName: dayName ?? this.dayName,
+      dayIndex: dayIndex ?? this.dayIndex,
       exercises: exercises ?? this.exercises,
       targets: targets ?? this.targets,
       startTime: startTime ?? this.startTime,
@@ -81,7 +89,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState());
 
-  Future<void> startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises) async {
+  Future<void> startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises, {String? dayName, int? dayIndex}) async {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
     final sessionExercises = routineExercises.map((e) {
       return Ejercicio(
@@ -122,6 +130,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     state = TrainingState(
       activeRutina: rutina,
+      dayName: dayName,
+      dayIndex: dayIndex,
       exercises: sessionExercises,
       targets: sessionExercises.map((e) => e.copyWith()).toList(), // Snapshot targets
       startTime: DateTime.now(),
@@ -240,6 +250,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final sesion = Sesion(
       id: const Uuid().v4(),
       rutinaId: state.activeRutina?.id ?? '', // Handle null routine
+      dayName: state.dayName,
+      dayIndex: state.dayIndex,
       fecha: endTime,
       ejerciciosCompletados: state.exercises,
       ejerciciosObjetivo: state.targets,
@@ -309,4 +321,83 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 final trainingSessionProvider = StateNotifierProvider<TrainingSessionNotifier, TrainingState>((ref) {
   final repo = ref.watch(trainingRepositoryProvider);
   return TrainingSessionNotifier(ref, repo);
+});
+
+/// Modelo de sugerencia inteligente de próximo día a entrenar.
+class SmartWorkoutSuggestion {
+  final Rutina rutina;
+  final int dayIndex;
+  final String dayName;
+  final String reason;
+
+  const SmartWorkoutSuggestion({
+    required this.rutina,
+    required this.dayIndex,
+    required this.dayName,
+    required this.reason,
+  });
+}
+
+/// Provider que calcula el próximo día sugerido basado en el historial.
+/// Lógica: Mira la última sesión de la rutina activa y sugiere el siguiente día.
+final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) async {
+  final rutinasAsync = ref.watch(rutinasStreamProvider);
+  final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
+
+  final rutinas = rutinasAsync.valueOrNull ?? [];
+  final sessions = sessionsAsync.valueOrNull ?? [];
+
+  if (rutinas.isEmpty) return null;
+
+  // Buscar la rutina más reciente usada en sesiones
+  Rutina? lastUsedRutina;
+  Sesion? lastSession;
+
+  for (final session in sessions) {
+    final matchingRutina = rutinas.firstWhereOrNull((r) => r.id == session.rutinaId);
+    if (matchingRutina != null) {
+      lastUsedRutina = matchingRutina;
+      lastSession = session;
+      break;
+    }
+  }
+
+  // Si no hay historial, sugerir el primer día de la primera rutina
+  if (lastUsedRutina == null) {
+    final firstRutina = rutinas.first;
+    if (firstRutina.dias.isEmpty) return null;
+    return SmartWorkoutSuggestion(
+      rutina: firstRutina,
+      dayIndex: 0,
+      dayName: firstRutina.dias.first.nombre,
+      reason: 'Comienza tu rutina',
+    );
+  }
+
+  // Calcular siguiente día basado en el último entrenado
+  if (lastSession != null && lastUsedRutina.dias.isNotEmpty) {
+    final lastDayIndex = lastSession.dayIndex ?? -1;
+    final totalDays = lastUsedRutina.dias.length;
+
+    // Siguiente día en ciclo
+    final nextDayIndex = (lastDayIndex + 1) % totalDays;
+    final nextDay = lastUsedRutina.dias[nextDayIndex];
+
+    // Determinar razón
+    String reason;
+    if (nextDayIndex == 0 && lastDayIndex >= 0) {
+      reason = 'Nueva semana, reinicia ciclo';
+    } else {
+      reason = 'Siguiente día en tu rutina';
+    }
+
+    return SmartWorkoutSuggestion(
+      rutina: lastUsedRutina,
+      dayIndex: nextDayIndex,
+      dayName: nextDay.nombre,
+      reason: reason,
+    );
+  }
+
+  return null;
 });
