@@ -217,11 +217,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   Widget build(BuildContext context) {
     // ⚡ Bolt Optimization: Use select to only rebuild on specific changes
     final activeRutinaName = ref.watch(trainingSessionProvider.select((s) => s.activeRutina?.nombre));
-    final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
     final exercisesLength = ref.watch(trainingSessionProvider.select((s) => s.exercises.length));
 
     // Timer state (nuevo estado avanzado)
     final restTimerState = ref.watch(trainingSessionProvider.select((s) => s.restTimer));
+    final showTimerBar = ref.watch(trainingSessionProvider.select((s) => s.showTimerBar));
 
     // Progress state
     final progress = ref.watch(sessionProgressProvider);
@@ -250,9 +250,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             error: (_, __) => const SizedBox.shrink(),
           ),
           IconButton(
-            icon: Icon(showAdvanced ? Icons.settings_input_component : Icons.settings_input_component_outlined),
-            onPressed: () => notifier.toggleAdvancedOptions(!showAdvanced),
-            tooltip: 'Opciones Avanzadas',
+            icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),
+            onPressed: () => notifier.toggleTimerBar(!showTimerBar),
+            tooltip: 'Mostrar/ocultar timer',
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -314,6 +314,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               // Nuevo Timer Bar no invasivo
               RestTimerBar(
                 timerState: restTimerState,
+                showInactiveBar: showTimerBar,
                 onStartRest: notifier.startRest,
                 onStopRest: notifier.stopRest,
                 onPauseRest: notifier.pauseRest,

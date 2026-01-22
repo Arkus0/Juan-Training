@@ -98,6 +98,7 @@ class TrainingState {
   // New State Fields
   final Map<String, List<SerieLog>> history; // Key: Exercise Name, Value: Last Session Logs
   final bool showAdvancedOptions;
+  final bool showTimerBar; // Mostrar/ocultar barra inactiva del timer
 
   TrainingState({
     this.activeRutina,
@@ -110,7 +111,8 @@ class TrainingState {
     this.isRestActive = false,
     this.restTimer = const RestTimerState(),
     this.history = const {},
-    this.showAdvancedOptions = false,
+    this.showAdvancedOptions = true, // Siempre visible por defecto
+    this.showTimerBar = false, // Oculto por defecto
   });
 
   TrainingState copyWith({
@@ -125,6 +127,7 @@ class TrainingState {
     RestTimerState? restTimer,
     Map<String, List<SerieLog>>? history,
     bool? showAdvancedOptions,
+    bool? showTimerBar,
   }) {
     return TrainingState(
       activeRutina: activeRutina ?? this.activeRutina,
@@ -138,6 +141,7 @@ class TrainingState {
       restTimer: restTimer ?? this.restTimer,
       history: history ?? this.history,
       showAdvancedOptions: showAdvancedOptions ?? this.showAdvancedOptions,
+      showTimerBar: showTimerBar ?? this.showTimerBar,
     );
   }
 
@@ -282,6 +286,11 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   void toggleAdvancedOptions(bool show) {
     state = state.copyWith(showAdvancedOptions: show);
     _saveState();
+  }
+
+  void toggleTimerBar(bool show) {
+    state = state.copyWith(showTimerBar: show);
+    // No guardar en BD, es solo UI temporal
   }
 
   void setRestDuration(int seconds) {

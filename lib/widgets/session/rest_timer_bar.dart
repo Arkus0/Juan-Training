@@ -70,6 +70,7 @@ class _TimerStyles {
 /// - Mínimo uso de setState
 class RestTimerBar extends ConsumerStatefulWidget {
   final RestTimerState timerState;
+  final bool showInactiveBar; // Mostrar barra inactiva (configurable desde AppBar)
   final VoidCallback onStartRest;
   final VoidCallback onStopRest;
   final VoidCallback onPauseRest;
@@ -83,6 +84,7 @@ class RestTimerBar extends ConsumerStatefulWidget {
   const RestTimerBar({
     super.key,
     required this.timerState,
+    this.showInactiveBar = false,
     required this.onStartRest,
     required this.onStopRest,
     required this.onPauseRest,
@@ -384,8 +386,11 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
 
   @override
   Widget build(BuildContext context) {
-    // Si no está activo, mostrar barra de inicio compacta
+    // Si no está activo, mostrar barra de inicio compacta solo si showInactiveBar es true
     if (!widget.timerState.isActive) {
+      if (!widget.showInactiveBar) {
+        return const SizedBox.shrink(); // Ocultar barra inactiva
+      }
       return _InactiveTimerBar(
         seconds: widget.timerState.totalSeconds,
         onDurationChange: widget.onDurationChange,
