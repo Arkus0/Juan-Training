@@ -4,6 +4,8 @@ import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
+import '../../services/alternativas_service.dart';
+import '../../widgets/common/alternativas_dialog.dart';
 import 'session_set_row.dart';
 import 'advanced_options_modal.dart';
 
@@ -62,11 +64,13 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
+    final hasAlternativas = AlternativasService.instance.hasAlternativas(exercise.nombre);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+      builder: (sheetContext) {
         final historyLogs = ref.read(trainingSessionProvider).history[exercise.nombre];
         return SafeArea(
           child: Padding(
@@ -80,23 +84,51 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   leading: const Icon(Icons.history, color: Colors.white),
                   title: const Text('Ver Historial'),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.swap_horiz, color: Colors.white),
-                  title: const Text('Sustituir Ejercicio'),
+                  leading: Icon(
+                    Icons.swap_horiz,
+                    color: hasAlternativas ? Colors.redAccent[700] : Colors.grey[600],
+                  ),
+                  title: Text(
+                    'Ver Alternativas',
+                    style: TextStyle(
+                      color: hasAlternativas ? Colors.white : Colors.white38,
+                    ),
+                  ),
+                  subtitle: Text(
+                    hasAlternativas ? 'Ejercicios similares disponibles' : 'Sin alternativas registradas',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
                   onTap: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Funcionalidad próximamente: Sustituir Ejercicio')));
+                    Navigator.pop(sheetContext);
+                    showAlternativasDialog(
+                      context: context,
+                      ejercicioNombre: exercise.nombre,
+                      onReplace: (alternativa) {
+                        Vibrate.feedback(FeedbackType.selection);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Alternativa: $alternativa (edita la rutina para cambiar permanentemente)',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            backgroundColor: Colors.grey[800],
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.note_alt_outlined, color: Colors.white),
                   title: const Text('Notas del Ejercicio'),
                   onTap: () {
-                     Navigator.pop(context);
+                     Navigator.pop(sheetContext);
                      _showNotesDialog(context, exercise.nombre);
                   },
                 ),

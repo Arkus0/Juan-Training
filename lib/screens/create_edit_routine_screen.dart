@@ -215,6 +215,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                           notifier.insertExercise(index, exIdx, ex),
                       onUpdateExercise: (exIdx, updated) =>
                           notifier.updateExercise(index, exIdx, updated),
+                      onReplaceExercise: (exIdx, alternativaNombre) =>
+                          notifier.replaceExercise(index, exIdx, alternativaNombre),
                       onRemoveDay: () => notifier.removeDay(index),
                       onDuplicateDay: () => notifier.duplicateDay(index),
                       onCreateSuperset: (idxA, idxB) =>

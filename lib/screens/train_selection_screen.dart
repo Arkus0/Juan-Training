@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
@@ -13,6 +14,7 @@ class TrainSelectionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeSessionAsync = ref.watch(activeSessionStreamProvider);
     final rutinasAsync = ref.watch(rutinasStreamProvider);
+    final suggestionAsync = ref.watch(smartSuggestionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,123 +118,284 @@ class TrainSelectionScreen extends ConsumerWidget {
                 );
               }
 
-              return ListView.builder(
+              return ListView(
                 padding: const EdgeInsets.all(16),
-                itemCount: rutinas.length,
-                itemBuilder: (context, index) {
-                  final rutina = rutinas[index];
-                  return Card(
-                    key: ValueKey(rutina.id),
-                    child: InkWell(
-                      onTap: () {
-                        if (rutina.dias.isEmpty) return;
-                        Vibrate.feedback(FeedbackType.selection);
+                children: [
+                  // Sugerencia inteligente
+                  suggestionAsync.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (suggestion) {
+                      if (suggestion == null) return const SizedBox.shrink();
+                      return _SmartSuggestionCard(
+                        suggestion: suggestion,
+                        onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
+                      );
+                    },
+                  ),
 
-                        if (rutina.dias.length == 1) {
-                          Vibrate.feedback(FeedbackType.heavy);
-                          ref
-                              .read(trainingSessionProvider.notifier)
-                              .startSession(rutina, rutina.dias.first.ejercicios);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TrainingSessionScreen(),
-                            ),
-                          );
-                        } else {
-                          showDialog(
-                            context: context,
-                            builder: (dialogContext) => SimpleDialog(
-                              title: Text('ELIGE DÍA',
-                                  style: TextStyle(
-                                      color: Colors.red[900],
-                                      fontWeight: FontWeight.w900)),
-                              backgroundColor: Colors.grey[900],
-                              children: rutina.dias.map((d) {
-                                return SimpleDialogOption(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Text(d.nombre,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold)),
-                                  onPressed: () {
-                                    Vibrate.feedback(FeedbackType.heavy);
-                                    Navigator.pop(dialogContext);
-                                    ref
-                                        .read(trainingSessionProvider.notifier)
-                                        .startSession(rutina, d.ejercicios);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const TrainingSessionScreen(),
-                                      ),
-                                    );
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                          );
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    rutina.nombre.toUpperCase(),
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[900],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    'START',
-                                    style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '${rutina.dias.length} DÍAS',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: Colors.redAccent[700],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            if (rutina.dias.isNotEmpty)
-                              Text(
-                                rutina.dias.take(3).map((d) => d.nombre).join(' • ').toUpperCase(),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[500],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                          ],
-                        ),
-                      ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'TODAS LAS RUTINAS',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Lista de rutinas
+                  ...rutinas.map((rutina) => _RutinaCard(
+                    key: ValueKey(rutina.id),
+                    rutina: rutina,
+                    onDaySelected: (dayIndex) => _startSession(context, ref, rutina, dayIndex),
+                  )),
+                ],
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  void _startSession(BuildContext context, WidgetRef ref, Rutina rutina, int dayIndex) {
+    if (rutina.dias.isEmpty || dayIndex >= rutina.dias.length) return;
+
+    final day = rutina.dias[dayIndex];
+    Vibrate.feedback(FeedbackType.heavy);
+
+    ref.read(trainingSessionProvider.notifier).startSession(
+      rutina,
+      day.ejercicios,
+      dayName: day.nombre,
+      dayIndex: dayIndex,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
+    );
+  }
+}
+
+/// Card de sugerencia inteligente destacada.
+class _SmartSuggestionCard extends StatelessWidget {
+  final SmartWorkoutSuggestion suggestion;
+  final VoidCallback onStart;
+
+  const _SmartSuggestionCard({
+    required this.suggestion,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.red[900],
+      elevation: 8,
+      child: InkWell(
+        onTap: onStart,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.yellow[600], size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    'SUGERENCIA',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.yellow[600],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'START',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.red[900],
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                suggestion.dayName.toUpperCase(),
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                suggestion.rutina.nombre,
+                style: GoogleFonts.montserrat(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                suggestion.reason,
+                style: GoogleFonts.montserrat(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Card de rutina con selector de día.
+class _RutinaCard extends StatelessWidget {
+  final Rutina rutina;
+  final void Function(int dayIndex) onDaySelected;
+
+  const _RutinaCard({
+    super.key,
+    required this.rutina,
+    required this.onDaySelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: () {
+          if (rutina.dias.isEmpty) return;
+          Vibrate.feedback(FeedbackType.selection);
+
+          if (rutina.dias.length == 1) {
+            onDaySelected(0);
+          } else {
+            _showDaySelector(context);
+          }
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      rutina.nombre.toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red[900],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'START',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${rutina.dias.length} DÍAS',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Colors.redAccent[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (rutina.dias.isNotEmpty)
+                Text(
+                  rutina.dias.take(3).map((d) => d.nombre).join(' • ').toUpperCase(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[500],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDaySelector(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(
+          'ELIGE DÍA',
+          style: GoogleFonts.montserrat(
+            color: Colors.red[900],
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        backgroundColor: Colors.grey[900],
+        children: rutina.dias.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
+          return SimpleDialogOption(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.red[900],
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    day.nombre,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${day.ejercicios.length} ej.',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              onDaySelected(index);
+            },
+          );
+        }).toList(),
       ),
     );
   }
