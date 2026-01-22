@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../models/library_exercise.dart';
 import '../../services/alternativas_service.dart';
 
 /// Dialog que muestra las alternativas para un ejercicio.
-/// Permite seleccionar una alternativa para reemplazar el ejercicio actual.
-///
-/// [ejercicioNombre]: Nombre del ejercicio actual.
-/// [onReplace]: Callback con el nombre de la alternativa seleccionada.
-/// [onCancel]: Callback opcional cuando se cancela.
 class AlternativasDialog extends StatelessWidget {
-  final String ejercicioNombre;
-  final void Function(String alternativaNombre) onReplace;
+  final LibraryExercise ejercicioOriginal;
+  final List<LibraryExercise> allExercises;
+  // Callback devuelve el objeto completo seleccionado
+  final void Function(LibraryExercise seleccion) onReplace;
   final VoidCallback? onCancel;
 
   const AlternativasDialog({
     super.key,
-    required this.ejercicioNombre,
+    required this.ejercicioOriginal,
+    required this.allExercises,
     required this.onReplace,
     this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final alternativas = AlternativasService.instance.getAlternativas(ejercicioNombre);
+    // Obtenemos los objetos reales usando el servicio
+    final alternativas = AlternativasService.instance.getAlternativas(
+      exerciseId: ejercicioOriginal.id,
+      allExercises: allExercises,
+    );
 
     return AlertDialog(
       backgroundColor: Colors.grey[900],
@@ -52,7 +55,7 @@ class AlternativasDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            ejercicioNombre.toUpperCase(),
+            ejercicioOriginal.name.toUpperCase(),
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -100,20 +103,12 @@ class AlternativasDialog extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Prueba buscando en la biblioteca',
-            style: GoogleFonts.montserrat(
-              color: Colors.white24,
-              fontSize: 12,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildAlternativasList(BuildContext context, List<String> alternativas) {
+  Widget _buildAlternativasList(BuildContext context, List<LibraryExercise> alternativas) {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: alternativas.length,
@@ -124,7 +119,7 @@ class AlternativasDialog extends StatelessWidget {
       itemBuilder: (context, index) {
         final alternativa = alternativas[index];
         return _AlternativaItem(
-          nombre: alternativa,
+          exercise: alternativa,
           isFirst: index == 0,
           onTap: () {
             Vibrate.feedback(FeedbackType.selection);
@@ -138,12 +133,12 @@ class AlternativasDialog extends StatelessWidget {
 }
 
 class _AlternativaItem extends StatelessWidget {
-  final String nombre;
+  final LibraryExercise exercise;
   final bool isFirst;
   final VoidCallback onTap;
 
   const _AlternativaItem({
-    required this.nombre,
+    required this.exercise,
     required this.isFirst,
     required this.onTap,
   });
@@ -162,21 +157,31 @@ class _AlternativaItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    nombre.toUpperCase(),
+                    exercise.name.toUpperCase(),
                     style: GoogleFonts.montserrat(
-                      // Primera alternativa destacada, resto en gris suave
                       color: isFirst ? Colors.white : Colors.white38,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                     ),
                   ),
-                  if (isFirst)
+                  if (exercise.equipment.isNotEmpty)
                     Text(
-                      'RECOMENDADA',
+                      exercise.equipment,
                       style: GoogleFonts.montserrat(
-                        color: Colors.redAccent[700],
-                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
                         fontSize: 10,
+                      ),
+                    ),
+                  if (isFirst)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'RECOMENDADA',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.redAccent[700],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                 ],
@@ -192,7 +197,7 @@ class _AlternativaItem extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'REEMPLAZAR',
+                'CAMBIAR',
                 style: GoogleFonts.montserrat(
                   color: Colors.redAccent[100],
                   fontWeight: FontWeight.w800,
@@ -207,16 +212,18 @@ class _AlternativaItem extends StatelessWidget {
   }
 }
 
-/// Función helper para mostrar el dialog de alternativas fácilmente.
+// Función helper actualizada para requerir los objetos
 Future<void> showAlternativasDialog({
   required BuildContext context,
-  required String ejercicioNombre,
-  required void Function(String alternativaNombre) onReplace,
+  required LibraryExercise ejercicioOriginal,
+  required List<LibraryExercise> allExercises,
+  required void Function(LibraryExercise seleccion) onReplace,
 }) {
   return showDialog(
     context: context,
     builder: (ctx) => AlternativasDialog(
-      ejercicioNombre: ejercicioNombre,
+      ejercicioOriginal: ejercicioOriginal,
+      allExercises: allExercises,
       onReplace: onReplace,
     ),
   );

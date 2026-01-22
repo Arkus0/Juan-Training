@@ -98,19 +98,32 @@ class _EjercicioCardState extends State<EjercicioCard> {
     super.dispose();
   }
 
-  void _showAlternativasDialog(BuildContext context) {
+  void _showAlternativasDialog(BuildContext context, LibraryExercise? libExercise) {
+    if (libExercise == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: No se encontró información del ejercicio en la biblioteca')),
+      );
+      return;
+    }
+
+    // Obtenemos la lista completa de ejercicios para que el servicio pueda buscar
+    final allExercises = ExerciseLibraryService.instance.exercises.cast<LibraryExercise>();
+
     showAlternativasDialog(
       context: context,
-      ejercicioNombre: widget.ejercicio.nombre,
-      onReplace: (alternativaNombre) {
+      ejercicioOriginal: libExercise,
+      allExercises: allExercises,
+      onReplace: (LibraryExercise seleccion) {
         Vibrate.feedback(FeedbackType.success);
+
         if (widget.onReplace != null) {
-          widget.onReplace!(alternativaNombre);
+          widget.onReplace!(seleccion.name);
         }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Reemplazado por $alternativaNombre',
+              'Reemplazado por ${seleccion.name}',
               style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
             ),
             backgroundColor: Colors.red[900],
@@ -210,6 +223,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
 
     final imageWidget = _buildImage(libraryExercise);
 
+    // Verificar si hay alternativas usando el ID entero
+    final bool tieneAlternativas = libId != null &&
+        AlternativasService.instance.hasAlternativas(libId);
+
     final card = Card(
       color: Colors.grey[900],
       child: Padding(
@@ -291,10 +308,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
             ),
 
             // Alternatives button
-            if (AlternativasService.instance.hasAlternativas(widget.ejercicio.nombre))
+            if (tieneAlternativas)
               IconButton(
                 icon: Icon(Icons.swap_horiz, color: Colors.redAccent[700], size: 20),
-                onPressed: () => _showAlternativasDialog(context),
+                onPressed: () => _showAlternativasDialog(context, libraryExercise),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Ver alternativas',
               ),
