@@ -75,6 +75,36 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
     super.dispose();
   }
 
+  /// Computes visual groups for display. Each group is a list of flat indices
+  /// that should be displayed together (supersets grouped, singles alone).
+  List<List<int>> _computeVisualGroups(List<EjercicioEnRutina> exercises) {
+    if (exercises.isEmpty) return [];
+
+    final groups = <List<int>>[];
+    final processedIndices = <int>{};
+
+    for (int i = 0; i < exercises.length; i++) {
+      if (processedIndices.contains(i)) continue;
+
+      final ex = exercises[i];
+      if (ex.supersetId != null) {
+        // Find all exercises with same supersetId
+        final group = <int>[];
+        for (int j = 0; j < exercises.length; j++) {
+          if (exercises[j].supersetId == ex.supersetId) {
+            group.add(j);
+            processedIndices.add(j);
+          }
+        }
+        groups.add(group);
+      } else {
+        groups.add([i]);
+        processedIndices.add(i);
+      }
+    }
+    return groups;
+  }
+
   void _showProOptions() {
     showModalBottomSheet(
       context: context,
@@ -271,35 +301,40 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
                 // Exercises List
                 if (widget.dia.ejercicios.isNotEmpty)
-                  ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: visualGroups.length,
-                    onReorder: widget.onReorderExercises,
-                    buildDefaultDragHandles: false,
-                    itemBuilder: (context, visualIndex) {
-                      final groupIndices = visualGroups[visualIndex];
-                      final isSuperset = groupIndices.length > 1 || 
-                          (groupIndices.isNotEmpty && 
-                           widget.dia.ejercicios[groupIndices.first].supersetId != null);
+                  Builder(
+                    builder: (context) {
+                      final visualGroups = _computeVisualGroups(widget.dia.ejercicios);
+                      return ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: visualGroups.length,
+                        onReorder: widget.onReorderExercises,
+                        buildDefaultDragHandles: false,
+                        itemBuilder: (context, visualIndex) {
+                          final groupIndices = visualGroups[visualIndex];
+                          final isSuperset = groupIndices.length > 1 ||
+                              (groupIndices.isNotEmpty &&
+                               widget.dia.ejercicios[groupIndices.first].supersetId != null);
 
-                      // Identify key for the group
-                      final firstEx = widget.dia.ejercicios[groupIndices.first];
-                      final Key groupKey = Key('group_${firstEx.supersetId ?? firstEx.instanceId}');
+                          // Identify key for the group
+                          final firstEx = widget.dia.ejercicios[groupIndices.first];
+                          final Key groupKey = Key('group_${firstEx.supersetId ?? firstEx.instanceId}');
 
-                      return ReorderableDragStartListener(
-                        index: visualIndex,
-                        key: groupKey,
-                        child: _ExerciseGroupWidget(
-                          groupIndices: groupIndices,
-                          exercises: widget.dia.ejercicios,
-                          isSuperset: isSuperset,
-                          onRemoveExercise: widget.onRemoveExercise,
-                          onUpdateExercise: widget.onUpdateExercise,
-                          onCreateSuperset: widget.onCreateSuperset,
-                          onRemoveFromSuperset: widget.onRemoveFromSuperset,
-                          onUndoRemove: widget.onUndoRemove,
-                        ),
+                          return ReorderableDragStartListener(
+                            index: visualIndex,
+                            key: groupKey,
+                            child: _ExerciseGroupWidget(
+                              groupIndices: groupIndices,
+                              exercises: widget.dia.ejercicios,
+                              isSuperset: isSuperset,
+                              onRemoveExercise: widget.onRemoveExercise,
+                              onUpdateExercise: widget.onUpdateExercise,
+                              onCreateSuperset: widget.onCreateSuperset,
+                              onRemoveFromSuperset: widget.onRemoveFromSuperset,
+                              onUndoRemove: widget.onUndoRemove,
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

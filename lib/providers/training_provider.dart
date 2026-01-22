@@ -255,7 +255,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   // --- Persistence ---
 
-  void _saveState() async {
+  Future<void> _saveState() async {
     // Removed strict check for activeRutina to allow Ad-Hoc saves
     if (state.exercises.isEmpty) return;
 
@@ -268,7 +268,11 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       history: state.history,
     );
 
-    await _repository.saveActiveSession(data);
+    try {
+      await _repository.saveActiveSession(data);
+    } catch (e) {
+      Logger().e('Error saving session state', error: e);
+    }
   }
 
   Future<void> clearStorage() async {

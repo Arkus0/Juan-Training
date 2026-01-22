@@ -32,26 +32,15 @@ class EjercicioCard extends StatelessWidget {
   final Function(EjercicioEnRutina) onUpdate;
   final Function()? onLink;
   final Function()? onUnlink;
-  final SupersetDragData? linkDragData;
-  final ReorderDragData? reorderDragData;
-  final VoidCallback? onReorderDragStart;
-  final VoidCallback? onReorderDragAccepted;
-  final VoidCallback? onReorderDragEnd;
-  final VoidCallback? onReorderDragCancel;
-  final VoidCallback? onLinkDragStart;
-  final VoidCallback? onLinkDragAccepted;
-  final VoidCallback? onLinkDragEnd;
-  final VoidCallback? onLinkDragCancel;
-  final bool disableSwipe;
 
   const EjercicioCard({
-    Key? key,
+    super.key,
     required this.ejercicio,
     required this.onRemove,
     required this.onUpdate,
     this.onLink,
     this.onUnlink,
-  }) : super(key: key);
+  });
 
   void _showProOptions(BuildContext context) {
     showModalBottomSheet(
@@ -148,22 +137,8 @@ class EjercicioCard extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-            // Drag Handle (reorder long-press)
-            if (reorderDragData != null)
-              LongPressDraggable<ReorderDragData>(
-                data: reorderDragData,
-                onDragStarted: onReorderDragStart,
-                onDragCompleted: onReorderDragAccepted,
-                onDragEnd: (_) => onReorderDragEnd?.call(),
-                onDraggableCanceled: (_, __) => onReorderDragCancel?.call(),
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: Opacity(opacity: 0.9, child: Icon(Icons.drag_indicator, color: Colors.grey[700], size: 28)),
-                ),
-                child: Icon(Icons.drag_indicator, color: Colors.grey[700]),
-              )
-            else
-              Icon(Icons.drag_indicator, color: Colors.grey[700]),
+            // Drag Handle (reorder handled by parent)
+            Icon(Icons.drag_indicator, color: Colors.grey[700]),
             const SizedBox(width: 8),
 
             // Image
@@ -253,34 +228,6 @@ class EjercicioCard extends StatelessWidget {
         ),
       ),
     );
-
-    if (onLink != null) {
-      return LongPressDraggable<SupersetDragData>(
-        data: linkDragData,
-        onDragStarted: onLinkDragStart,
-        onDragCompleted: onLinkDragAccepted,
-        onDragEnd: (_) => onLinkDragEnd?.call(),
-        onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
-        feedback: Material(
-          color: Colors.transparent,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 340),
-            child: Opacity(
-              opacity: 0.9,
-              child: card,
-            ),
-          ),
-        ),
-        childWhenDragging: Opacity(
-          opacity: 0.3,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 340),
-            child: card,
-          ),
-        ),
-        child: card,
-      );
-    }
 
     return card;
   }

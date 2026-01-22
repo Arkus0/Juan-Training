@@ -340,12 +340,10 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       if (indexA < 0 || indexB < 0) return;
       final day = state.dias[dayIndex];
       if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length) return;
+      if (indexA == indexB) return; // Cannot create superset with self
 
-      List<EjercicioEnRutina> _collectGroup(List<EjercicioEnRutina> list, int index) {
-        final target = list[index];
-        if (target.supersetId == null) return [target];
-        return list.where((e) => e.supersetId == target.supersetId).toList();
-      }
+      final exA = day.ejercicios[indexA];
+      final exB = day.ejercicios[indexB];
 
       final newEjercicios = [...day.ejercicios];
       final uuid = const Uuid().v4();

@@ -46,23 +46,19 @@ class _SessionSetRowState extends State<SessionSetRow> {
   void didUpdateWidget(SessionSetRow oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Check for weight changes from external source (e.g. copy previous set)
-    final double currentWeight = double.tryParse(_weightController.text) ?? 0.0;
-    if (widget.log.peso != currentWeight && widget.log.peso != 0.0) {
-      if (_weightController.text.isNotEmpty && double.tryParse(_weightController.text) == widget.log.peso) {
-         // Identical
-      } else {
-         _weightController.text = widget.log.peso.toString();
+    // Sync weight from external source (e.g. copy previous set, plate calculator)
+    if (oldWidget.log.peso != widget.log.peso) {
+      final controllerValue = double.tryParse(_weightController.text) ?? 0.0;
+      if (widget.log.peso != controllerValue && widget.log.peso > 0) {
+        _weightController.text = widget.log.peso.toString();
       }
     }
 
-    // Check for reps changes
-    final int currentReps = int.tryParse(_repsController.text) ?? 0;
-    if (widget.log.reps != currentReps && widget.log.reps != 0) {
-      if (_repsController.text.isNotEmpty && int.tryParse(_repsController.text) == widget.log.reps) {
-         // Identical
-      } else {
-         _repsController.text = widget.log.reps.toString();
+    // Sync reps from external source
+    if (oldWidget.log.reps != widget.log.reps) {
+      final controllerValue = int.tryParse(_repsController.text) ?? 0;
+      if (widget.log.reps != controllerValue && widget.log.reps > 0) {
+        _repsController.text = widget.log.reps.toString();
       }
     }
   }
