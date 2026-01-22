@@ -34,35 +34,48 @@ class EjercicioEnRutina {
     this.supersetId,
   }) : instanceId = instanceId ?? const Uuid().v4();
 
+  /// Creates a copy with updated fields.
+  /// To explicitly clear nullable fields, pass the special [clearField] value.
   EjercicioEnRutina copyWith({
     String? id,
     String? nombre,
-    String? descripcion,
+    Object? descripcion = _sentinel,
     List<String>? musculosPrincipales,
     List<String>? musculosSecundarios,
     String? equipo,
-    String? localImagePath,
+    Object? localImagePath = _sentinel,
     int? series,
     String? repsRange,
-    Duration? descansoSugerido,
-    String? notas,
+    Object? descansoSugerido = _sentinel,
+    Object? notas = _sentinel,
     String? instanceId,
-    String? supersetId,
+    Object? supersetId = _sentinel,
   }) {
     return EjercicioEnRutina(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
-      descripcion: descripcion ?? this.descripcion,
+      descripcion: descripcion == _sentinel
+          ? this.descripcion
+          : descripcion as String?,
       musculosPrincipales: musculosPrincipales ?? this.musculosPrincipales,
       musculosSecundarios: musculosSecundarios ?? this.musculosSecundarios,
       equipo: equipo ?? this.equipo,
-      localImagePath: localImagePath ?? this.localImagePath,
+      localImagePath: localImagePath == _sentinel
+          ? this.localImagePath
+          : localImagePath as String?,
       series: series ?? this.series,
       repsRange: repsRange ?? this.repsRange,
-      descansoSugerido: descansoSugerido ?? this.descansoSugerido,
-      notas: notas ?? this.notas,
+      descansoSugerido: descansoSugerido == _sentinel
+          ? this.descansoSugerido
+          : descansoSugerido as Duration?,
+      notas: notas == _sentinel ? this.notas : notas as String?,
       instanceId: instanceId ?? this.instanceId,
-      supersetId: supersetId ?? this.supersetId,
+      supersetId: supersetId == _sentinel
+          ? this.supersetId
+          : supersetId as String?,
     );
   }
 }
+
+/// Sentinel value used by copyWith to distinguish between null and undefined
+const _sentinel = Object();
