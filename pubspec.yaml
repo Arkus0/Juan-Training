@@ -40,6 +40,10 @@ dependencies:
   share_plus: ^7.2.1
   url_launcher: ^6.2.0
 
+  # OCR & Image Import
+  google_mlkit_text_recognition: ^0.13.0
+  image_picker: ^1.0.7
+
   # Audio (para beeps del timer - ligero, offline-first)
   just_audio: ^0.9.36
 

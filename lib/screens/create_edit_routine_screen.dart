@@ -9,6 +9,8 @@ import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
 import 'package:juan_training/services/routine_sharing_service.dart';
+import 'package:juan_training/services/routine_ocr_service.dart';
+import 'package:juan_training/widgets/routine_import_dialog.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -157,6 +159,153 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     RoutineSharingService.instance.shareRoutine(rutina);
   }
 
+  /// Importa ejercicios desde imagen usando OCR
+  void _importFromOcr() {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+    
+    // Verificar que hay al menos un día
+    if (routineState.dias.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Primero añade un día a tu rutina',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Mostrar selector de día si hay más de uno
+    final targetDayIndex = routineState.dias.length == 1 
+        ? 0 
+        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+
+    // Si no hay día expandido y hay múltiples días, preguntar
+    if (targetDayIndex < 0 && routineState.dias.length > 1) {
+      _showDaySelectorForImport();
+      return;
+    }
+
+    final dayIndex = targetDayIndex < 0 ? 0 : targetDayIndex;
+
+    RoutineImportDialog.show(
+      context,
+      onConfirm: (candidates) async {
+        await _processOcrCandidates(dayIndex, candidates);
+      },
+    );
+  }
+
+  /// Muestra selector de día para importar
+  void _showDaySelectorForImport() {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '¿A qué día importar?',
+              style: GoogleFonts.montserrat(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...routineState.dias.asMap().entries.map((entry) {
+              final index = entry.key;
+              final dia = entry.value;
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.red[700],
+                  child: Text(
+                    '${index + 1}',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  dia.nombre,
+                  style: GoogleFonts.montserrat(color: Colors.white),
+                ),
+                subtitle: Text(
+                  '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
+                  style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  RoutineImportDialog.show(
+                    context,
+                    onConfirm: (candidates) async {
+                      await _processOcrCandidates(index, candidates);
+                    },
+                  );
+                },
+              );
+            }),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Procesa los candidatos de OCR y los añade al día
+  Future<void> _processOcrCandidates(int dayIndex, List<ParsedExerciseCandidate> candidates) async {
+    final ocrService = RoutineOcrService.instance;
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+
+    final exercises = <LibraryExercise>[];
+    final seriesList = <int>[];
+    final repsRangeList = <String>[];
+
+    for (final candidate in candidates) {
+      if (candidate.matchedExerciseId == null) continue;
+      
+      final exercise = await ocrService.getExerciseById(candidate.matchedExerciseId!);
+      if (exercise != null) {
+        exercises.add(exercise);
+        seriesList.add(candidate.series);
+        repsRangeList.add(candidate.reps.toString());
+      }
+    }
+
+    if (exercises.isNotEmpty) {
+      notifier.addExercisesFromOcr(dayIndex, exercises, seriesList, repsRangeList);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '¡${exercises.length} ejercicio${exercises.length == 1 ? '' : 's'} importado${exercises.length == 1 ? '' : 's'}!',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: Colors.green[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        try { HapticFeedback.heavyImpact(); } catch (_) {}
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final routineState = ref.watch(createRoutineProvider(widget.rutina));
@@ -171,6 +320,12 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         ),
         backgroundColor: Colors.red[900],
         actions: [
+          // OCR Import Button
+          IconButton(
+            icon: const Icon(Icons.document_scanner),
+            tooltip: 'Importar desde imagen',
+            onPressed: _importFromOcr,
+          ),
           // Export button - only show when editing an existing routine with content
           if (widget.rutina != null || routineState.dias.isNotEmpty)
             PopupMenuButton<String>(

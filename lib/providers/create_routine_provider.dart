@@ -163,6 +163,47 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     state = state.copyWith(dias: newDias);
   }
 
+  /// Añade múltiples ejercicios a un día desde importación OCR
+  /// Cada ejercicio se añade con sus series/reps parseados
+  void addExercisesFromOcr(
+    int dayIndex,
+    List<LibraryExercise> exercises,
+    List<int> seriesList,
+    List<String> repsRangeList,
+  ) {
+    if (exercises.isEmpty) return;
+    if (dayIndex >= state.dias.length) return;
+
+    final day = state.dias[dayIndex];
+    final newExercises = <EjercicioEnRutina>[];
+
+    for (var i = 0; i < exercises.length; i++) {
+      final libExercise = exercises[i];
+      final series = i < seriesList.length ? seriesList[i] : 3;
+      final repsRange = i < repsRangeList.length ? repsRangeList[i] : '8-12';
+
+      newExercises.add(EjercicioEnRutina(
+        id: libExercise.id.toString(),
+        nombre: libExercise.name,
+        descripcion: libExercise.description,
+        musculosPrincipales: libExercise.muscles,
+        musculosSecundarios: libExercise.secondaryMuscles,
+        equipo: libExercise.equipment,
+        localImagePath: libExercise.localImagePath,
+        series: series,
+        repsRange: repsRange,
+      ));
+    }
+
+    final updatedDay = day.copyWith(
+      ejercicios: [...day.ejercicios, ...newExercises],
+    );
+
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+  }
+
   void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
     // Add exercise immediately without blocking on filesystem I/O
     // Image path validation happens asynchronously

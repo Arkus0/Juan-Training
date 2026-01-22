@@ -1,10 +1,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Permisos para cámara (OCR de rutinas) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
+    
     <application
         android:label="juan_training"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
+        
+        <!-- ML Kit Text Recognition: Thin Mode (descarga modelo via Play Services) -->
+        <!-- Esto evita inflar el APK ~10MB y descarga el modelo bajo demanda -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="ocr" />
+            
         <activity
             android:name=".MainActivity"
             android:exported="true"
