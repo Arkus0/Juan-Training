@@ -51,7 +51,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                 const Icon(Icons.library_books, color: Colors.white),
                 const SizedBox(width: 8),
                 Text(
-                  'BIBLIOTECA DE DOLOR',
+                  'BIBLIOTECA DEL DOLOR',
                   style: GoogleFonts.montserrat(
                     fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                 ),
