@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/main_provider.dart';
 import '../widgets/common/floating_timer_overlay.dart';
+import '../widgets/session/active_session_bar.dart';
 import 'rutinas_screen.dart';
 import 'train_selection_screen.dart';
 import 'history_screen.dart';
@@ -24,9 +25,19 @@ class MainScreen extends ConsumerWidget {
     // Wrap con FloatingTimerOverlay para mostrar timer fuera de sesión
     return FloatingTimerOverlay(
       child: Scaffold(
-        body: IndexedStack(
-          index: currentIndex,
-          children: _pages,
+        // Usamos Column para poder insertar la ActiveSessionBar en la parte inferior
+        body: Column(
+          children: [
+            Expanded(
+              child: IndexedStack(
+                index: currentIndex,
+                children: _pages,
+              ),
+            ),
+
+            // Barra que aparece solo cuando hay una sesión activa
+            const ActiveSessionBar(),
+          ],
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
