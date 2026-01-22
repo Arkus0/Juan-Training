@@ -398,6 +398,7 @@ class ExerciseCard extends StatelessWidget {
                  IconButton(
                    icon: const Icon(Icons.more_horiz),
                    onPressed: onShowOptions,
+                   tooltip: 'Opciones del ejercicio',
                  )
                ],
              ),
@@ -453,33 +454,39 @@ class _RestTimeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.grey[850],
+    return Tooltip(
+      message: 'Cambiar tiempo de descanso',
+      child: Material(
+        color: Colors.grey[850],
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[700]!, width: 1),
+          side: BorderSide(color: Colors.grey[700]!, width: 1),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.timer_outlined, size: 12, color: Colors.grey[500]),
-            const SizedBox(width: 4),
-            Text(
-              '${seconds}s',
-              style: GoogleFonts.montserrat(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey[400],
-              ),
+        child: InkWell(
+          onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_outlined, size: 12, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  '${seconds}s',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey[400],
+                  ),
+                ),
+                if (onChanged != null) ...[
+                  const SizedBox(width: 2),
+                  Icon(Icons.edit, size: 10, color: Colors.grey[600]),
+                ],
+              ],
             ),
-            if (onChanged != null) ...[
-              const SizedBox(width: 2),
-              Icon(Icons.edit, size: 10, color: Colors.grey[600]),
-            ],
-          ],
+          ),
         ),
       ),
     );
