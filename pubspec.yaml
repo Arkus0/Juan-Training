@@ -28,6 +28,10 @@ dependencies:
   logger: ^2.0.0
   image: ^4.0.17
 
+  # ML & Camera
+  google_mlkit_text_recognition: ^0.13.0
+  image_picker: ^1.1.2
+
   # UI & UX
   flutter_riverpod: ^2.6.1
   # flutter_vibrate removed: replaced by Flutter's built-in HapticFeedback

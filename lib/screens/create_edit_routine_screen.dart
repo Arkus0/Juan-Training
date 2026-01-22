@@ -8,7 +8,9 @@ import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
+import 'package:juan_training/screens/create_routine/widgets/routine_import_dialog.dart';
 import 'package:juan_training/services/routine_sharing_service.dart';
+import 'package:juan_training/models/ejercicio_en_rutina.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -105,6 +107,53 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       return;
     }
   }
+  Future<void> _importRoutine() async {
+    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+    final dayIndex = notifier.expandedDayIndex;
+
+    // Validation: A day must be expanded
+    if (dayIndex == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Despliega un día para importar ejercicios ahí.',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent[700],
+        ),
+      );
+      try { HapticFeedback.vibrate(); } catch (_) {}
+      return;
+    }
+
+    final List<EjercicioEnRutina>? result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const RoutineImportDialog()),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      final currentDay = ref.read(createRoutineProvider(widget.rutina)).dias[dayIndex];
+      int insertIndex = currentDay.ejercicios.length;
+
+      for (final ex in result) {
+        notifier.insertExercise(dayIndex, insertIndex++, ex);
+      }
+
+      try { HapticFeedback.heavyImpact(); } catch (_) {}
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'IMPORTADOS ${result.length} EJERCICIOS',
+            style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white),
+          ),
+          backgroundColor: Colors.red[900],
+        ),
+      );
+    }
+  }
+
   void _addExercise(int dayIndex) {
     showModalBottomSheet(
       context: context,
@@ -171,6 +220,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         ),
         backgroundColor: Colors.red[900],
         actions: [
+          IconButton(
+            icon: const Icon(Icons.document_scanner, color: Colors.white),
+            tooltip: 'Importar Rutina (OCR)',
+            onPressed: _importRoutine,
+          ),
           // Export button - only show when editing an existing routine with content
           if (widget.rutina != null || routineState.dias.isNotEmpty)
             PopupMenuButton<String>(
