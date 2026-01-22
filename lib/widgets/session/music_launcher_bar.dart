@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +7,46 @@ import 'package:url_launcher/url_launcher.dart';
 
 const MethodChannel _mediaChannel = MethodChannel('juan_training/music_launcher');
 
-class MusicLauncherBar extends StatelessWidget {
+class MusicLauncherBar extends StatefulWidget {
   const MusicLauncherBar({super.key});
+
+  @override
+  State<MusicLauncherBar> createState() => _MusicLauncherBarState();
+}
+
+class _MusicLauncherBarState extends State<MusicLauncherBar> {
+  bool _isVisible = false;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActive();
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _checkActive());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkActive() async {
+    try {
+      if (!Platform.isAndroid) {
+        // iOS support not added yet; default hide
+        if (_isVisible) setState(() => _isVisible = false);
+        return;
+      }
+      final active = await _mediaChannel.invokeMethod<bool>('isMusicActive');
+      final isActive = active == true;
+      if (mounted && isActive != _isVisible) {
+        setState(() => _isVisible = isActive);
+      }
+    } catch (_) {
+      if (_isVisible) setState(() => _isVisible = false);
+    }
+  }
 
   // Lógica para abrir Spotify
   Future<void> _launchSpotify(BuildContext context) async {
@@ -46,6 +85,8 @@ class MusicLauncherBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isVisible) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
