@@ -7,9 +7,9 @@
 
 > *"No pain, no gain. Pero sin datos, solo hay dolor sin gloria."*
 
-Bienvenido a **Juan Training**, la herramienta definitiva para el culturista serio. Olvida las libretas sudadas y las apps genéricas de fitness. Aquí venimos a levantar pesado, registrar cada gramo y construir un legado.
+Bienvenido a **Juan Training**, la herramienta definitiva para el culturista serio. Olvida las libretas sudadas y las apps genéricas de fitness que te cobran por respirar. Aquí venimos a levantar pesado, registrar cada gramo y construir un legado.
 
-Esta es tu **Biblioteca del Dolor**. Una app offline-first, rápida como un rayo y sólida como el acero, diseñada para gestionar tus rutinas de hipertrofia y fuerza con precisión quirúrgica.
+Esta es tu **Biblioteca del Dolor**. Una app offline-first, rápida como un rayo y sólida como el acero, diseñada para gestionar tus rutinas de hipertrofia y fuerza con precisión quirúrgica. Creada por y para entusiastas del hierro.
 
 ---
 
@@ -21,6 +21,8 @@ Esta es tu **Biblioteca del Dolor**. Una app offline-first, rápida como un rayo
 |:---:|:---:|:---:|
 | ![Dashboard](assets/screenshots/dashboard_placeholder.png) | ![Rutinas](assets/screenshots/rutinas_placeholder.png) | ![Entreno](assets/screenshots/workout_placeholder.png) |
 
+*(Nota: Screenshots reales en proceso de definición muscular. Próximamente)*
+
 ---
 
 ## 🏆 Características de Campeón (Features)
@@ -29,20 +31,28 @@ Esta app no es para "tonificar". Es para progresar.
 
 ### 🏋️‍♂️ **Gestión de Rutinas "Old School"**
 *   **Drag & Drop Táctico:** Reorganiza tus ejercicios y días arrastrando y soltando. Tan satisfactorio como cargar un disco de 20kg.
-*   **Superseries Reales:** Agrupa ejercicios en superseries visuales. Se mueven juntos, se editan juntos. Sin líos.
+*   **Superseries Reales:** Agrupa ejercicios en superseries visuales. Se mueven juntos, se editan juntos. Sin líos de IDs.
 *   **Duplicación de Días:** Copia tu "Leg Day" completo para la semana siguiente. Menos configuración, más hierro.
-*   **Swipe-to-Dismiss con Undo:** ¿Te equivocaste? Desliza para borrar, pero con red de seguridad (Undo) por si te arrepientes.
+*   **Swipe-to-Dismiss con Undo:** ¿Te equivocaste borrando? Desliza para eliminar, pero con red de seguridad (Undo) por si el pre-entreno te jugó una mala pasada.
+*   **Notas Detalladas:** Añade notas a tus ejercicios (setup del banco, altura del asiento) para no olvidar nunca tu configuración óptima.
 
 ### 🧠 **Entrenamiento Inteligente**
 *   **Timer No Invasivo:** Barra de progreso discreta y avisos por vibración/sonido. Concéntrate en respirar, no en mirar el móvil.
-*   **Ghost Values 👻:** Visualiza tus marcas anteriores (peso/reps) en gris claro mientras escribes. Supera tu "yo" del pasado en cada serie.
-*   **RPE & Tipos de Serie:** Registra RPE, Fallo, Calentamiento o Dropsets. La data real para un análisis real.
+*   **Ghost Values 👻:** Visualiza tus marcas de la sesión anterior (peso/reps) en gris claro justo donde escribes. Supera tu "yo" del pasado en cada serie.
+*   **RPE & Tipos de Serie:** Registra RPE, Fallo, Calentamiento o Dropsets. Data real para un análisis real.
 *   **Auto-Focus & Smart Input:** La app sabe dónde tienes que escribir. Flujo de trabajo optimizado para manos con magnesio.
+*   **Inicio Smart:** La app sugiere automáticamente el día de rutina que toca hoy.
 
 ### 📚 **Biblioteca Masiva (Wger API)**
-*   **700+ Ejercicios:** Base de datos completa, offline y con imágenes.
+*   **700+ Ejercicios:** Base de datos completa, offline y con imágenes (thumbnails).
 *   **Alternativas Biomecánicas:** ¿Máquina ocupada? La app te sugiere alternativas basadas en el mismo grupo muscular.
+*   **Búsqueda Fuzzy:** Encuentra "Press de Banca" aunque escribas "banc pres".
 *   **Favoritos:** Acceso rápido a tus movimientos "Signature".
+
+### 📊 **Progresión y Datos**
+*   **Historial de Sesiones:** Revisa tus entrenamientos pasados y compáralos con lo planeado.
+*   **Progresión Lineal/Doble:** Herramientas integradas para asegurar la sobrecarga progresiva.
+*   **Offline First:** Todo se guarda en tu dispositivo. No necesitas internet para entrenar en la cueva.
 
 ---
 
@@ -51,7 +61,7 @@ Esta app no es para "tonificar". Es para progresar.
 Construida con los mejores "esteroides" tecnológicos del ecosistema Flutter 2026.
 
 *   **Flutter 3.x & Dart 3.x:** Última tecnología, null-safety total.
-*   **Drift (SQLite):** Migración completa desde Hive. Base de datos relacional robusta, segura y lista para SQL complejo.
+*   **Drift (SQLite):** Base de datos relacional robusta (migrada desde Hive). Soporta SQL complejo para consultas de historial y estadísticas.
 *   **Riverpod:** Gestión de estado reactiva, testable y modular.
 *   **Arquitectura Limpia:** Separación clara entre UI (`screens`), Lógica (`providers`) y Datos (`repositories`, `database`).
 
@@ -62,8 +72,9 @@ Construida con los mejores "esteroides" tecnológicos del ecosistema Flutter 202
 ¿Quieres compilar tu propia versión? Sigue estos pasos, recluta.
 
 ### Requisitos
-*   Flutter SDK instalado.
+*   Flutter SDK instalado (Canal Stable).
 *   Un editor de código decente (VS Code / Android Studio).
+*   Ganas de programar (y de entrenar).
 
 ### Pasos
 1.  **Clona el repositorio:**
@@ -78,7 +89,7 @@ Construida con los mejores "esteroides" tecnológicos del ecosistema Flutter 202
     ```
 
 3.  **Generación de Código (CRÍTICO):**
-    Usamos `Drift` y `Riverpod Generator`. Debes correr el build_runner para generar los archivos `.g.dart`.
+    Usamos `Drift` y `Riverpod Generator`. Debes correr el `build_runner` para generar los archivos `.g.dart` (modelos, base de datos, providers).
     ```bash
     dart run build_runner build --delete-conflicting-outputs
     ```
@@ -96,8 +107,9 @@ Aún nos queda camino para alcanzar la perfección física (y de software).
 
 - [ ] 🎵 **Integración Spotify:** Controla tu playlist de "Heavy Metal Gym" sin salir de la app.
 - [ ] 👁️ **OCR / Voz:** Importa rutinas de fotos o dicta tus series entre jadeos.
-- [ ] 📈 **Gráficas Avanzadas:** Progresión de volumen, 1RM estimado y frecuencia.
-- [ ] ☁️ **Cloud Sync:** Backup en la nube (Freemium feature).
+- [ ] 📈 **Gráficas Avanzadas:** Progresión de volumen, 1RM estimado y frecuencia por grupo muscular.
+- [ ] ☁️ **Cloud Sync:** Backup en la nube y sincronización multiplataforma.
+- [ ] 🌍 **Internacionalización:** Traducir la Biblioteca del Dolor a otros idiomas.
 
 ---
 
@@ -105,7 +117,7 @@ Aún nos queda camino para alcanzar la perfección física (y de software).
 
 Actualmente buscamos **Beta Testers** valientes.
 
-Si encuentras un bug (que no sea un insecto real en tu gimnasio) o tienes una idea para una feature, **abre un Issue**. El código es open source, así que los Pull Requests son bienvenidos si siguen el estándar de calidad "Pro".
+Si encuentras un bug (que no sea un insecto real en tu gimnasio) o tienes una idea para una feature, **abre un Issue**. El código es open source, así que los Pull Requests son bienvenidos si siguen el estándar de calidad "Pro". ¡Ayúdanos a hacer la mejor app de culturismo del mundo!
 
 ---
 
