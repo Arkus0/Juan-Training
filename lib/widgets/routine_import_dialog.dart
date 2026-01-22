@@ -448,12 +448,12 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              candidate.rawText,
+                              '${candidate.rawText}${candidate.cleanedText.isNotEmpty ? ' → "${candidate.cleanedText}"' : ''}',
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
                                 color: Colors.white38,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),

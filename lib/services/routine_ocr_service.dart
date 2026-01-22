@@ -16,6 +16,7 @@ class ParsedExerciseCandidate {
   final double? weight;
   final double confidence; // 0.0 - 1.0
   final bool isValid;
+  final String cleanedText; // Texto limpio usado para matching (debug)
 
   const ParsedExerciseCandidate({
     required this.rawText,
@@ -26,6 +27,7 @@ class ParsedExerciseCandidate {
     this.weight,
     this.confidence = 0.0,
     this.isValid = false,
+    this.cleanedText = '',
   });
 
   ParsedExerciseCandidate copyWith({
@@ -37,6 +39,7 @@ class ParsedExerciseCandidate {
     double? weight,
     double? confidence,
     bool? isValid,
+    String? cleanedText,
   }) {
     return ParsedExerciseCandidate(
       rawText: rawText ?? this.rawText,
@@ -47,9 +50,50 @@ class ParsedExerciseCandidate {
       weight: weight ?? this.weight,
       confidence: confidence ?? this.confidence,
       isValid: isValid ?? this.isValid,
+      cleanedText: cleanedText ?? this.cleanedText,
     );
   }
 }
+
+/// Diccionario de sinónimos/aliases comunes de ejercicios
+/// Mapea texto OCR común → nombre normalizado para búsqueda
+const Map<String, List<String>> _exerciseAliases = {
+  // Pecho
+  'press banca': ['press de banca', 'bench press', 'press banco', 'press plano', 'banca plana'],
+  'press inclinado': ['press banca inclinado', 'press inclinado mancuernas', 'incline press'],
+  'aperturas': ['aperturas mancuernas', 'flyes', 'flies', 'aperturas pecho'],
+  'fondos': ['fondos pecho', 'dips', 'fondos paralelas'],
+  'flexiones': ['push ups', 'pushups', 'lagartijas'],
+  
+  // Espalda
+  'dominadas': ['pull ups', 'pullups', 'chin ups', 'chinups', 'jalon'],
+  'remo': ['remo con barra', 'remo mancuerna', 'rowing', 'remo t'],
+  'peso muerto': ['deadlift', 'dead lift', 'peso muerto rumano', 'rdl'],
+  'jalon': ['jalon polea', 'lat pulldown', 'jalon al pecho', 'jalon tras nuca'],
+  
+  // Piernas
+  'sentadilla': ['sentadillas', 'squat', 'squats', 'sentadilla libre'],
+  'prensa': ['prensa piernas', 'leg press', 'prensa 45'],
+  'extension': ['extension cuadriceps', 'leg extension', 'extensiones'],
+  'curl femoral': ['curl pierna', 'leg curl', 'femoral'],
+  'zancadas': ['lunges', 'estocadas', 'tijeras'],
+  'hip thrust': ['empuje cadera', 'puente gluteo'],
+  'gemelos': ['elevacion gemelos', 'calf raises', 'pantorrillas'],
+  
+  // Hombros
+  'press militar': ['press hombro', 'overhead press', 'press arnold', 'press deltoides'],
+  'elevaciones laterales': ['laterales', 'lateral raises', 'elevaciones'],
+  'elevaciones frontales': ['frontales', 'front raises'],
+  'pajaros': ['rear delt', 'face pull', 'elevaciones posteriores'],
+  
+  // Brazos
+  'curl biceps': ['curl barra', 'curl mancuerna', 'bicep curl', 'curl martillo'],
+  'triceps': ['extension triceps', 'tricep pushdown', 'patada triceps', 'fondos triceps'],
+  'curl martillo': ['hammer curl', 'martillo'],
+  
+  // Abdominales
+  'abdominales': ['abs', 'crunch', 'crunches', 'plancha', 'plank'],
+};
 
 /// Servicio de OCR para importar rutinas desde imágenes
 class RoutineOcrService {
@@ -62,6 +106,9 @@ class RoutineOcrService {
   // Cache de ejercicios para fuzzy matching
   List<LibraryExercise>? _exercisesCache;
   Fuzzy<LibraryExercise>? _fuzzyMatcher;
+  
+  // Mapa de nombre normalizado → ejercicio para búsqueda directa
+  Map<String, LibraryExercise>? _exerciseMap;
 
   /// Inicializa el cache de ejercicios para matching
   Future<void> _ensureExercisesLoaded() async {
@@ -71,22 +118,56 @@ class RoutineOcrService {
     await library.loadLibrary();
     _exercisesCache = library.exercises;
     
-    // Crear fuzzy matcher con los nombres de ejercicios
+    // Crear mapa de búsqueda directa (nombre normalizado → ejercicio)
+    _exerciseMap = {};
+    for (final ex in _exercisesCache!) {
+      final normalized = _normalizeText(ex.name);
+      _exerciseMap![normalized] = ex;
+      
+      // También añadir palabras clave principales
+      final words = normalized.split(' ');
+      if (words.length > 1) {
+        // Añadir la primera palabra significativa si tiene > 4 letras
+        for (final word in words) {
+          if (word.length > 4) {
+            _exerciseMap!.putIfAbsent(word, () => ex);
+          }
+        }
+      }
+    }
+    
+    // Crear fuzzy matcher con los nombres de ejercicios normalizados
     _fuzzyMatcher = Fuzzy<LibraryExercise>(
       _exercisesCache!,
       options: FuzzyOptions(
         keys: [
           WeightedKey(
             name: 'name',
-            getter: (ex) => ex.name.toLowerCase(),
+            getter: (ex) => _normalizeText(ex.name),
             weight: 1.0,
           ),
         ],
-        threshold: 0.4, // Umbral de similitud (0 = exacto, 1 = cualquier cosa)
+        threshold: 0.3, // Más estricto (0 = exacto, 1 = cualquier cosa)
         findAllMatches: true,
         isCaseSensitive: false,
       ),
     );
+  }
+
+  /// Normaliza texto para comparación (quita acentos, minúsculas, etc.)
+  String _normalizeText(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ñ', 'n')
+        .replaceAll('ü', 'u')
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   /// Escanea una imagen desde cámara o galería
@@ -261,32 +342,68 @@ class RoutineOcrService {
     // Limpiar el nombre del ejercicio
     exercisePart = _cleanExerciseName(exercisePart);
     
-    if (exercisePart.isEmpty) {
+    if (exercisePart.isEmpty || exercisePart.length < 3) {
       return null;
     }
 
-    // Fuzzy matching para encontrar el ejercicio en la BD
+    // Normalizar para búsqueda
+    final normalizedSearch = _normalizeText(exercisePart);
+    
+    // === ESTRATEGIA DE MATCHING MULTI-NIVEL ===
     String? matchedName;
     int? matchedId;
     double confidence = 0.0;
 
-    if (_fuzzyMatcher != null && exercisePart.length >= 3) {
-      final results = _fuzzyMatcher!.search(exercisePart.toLowerCase());
+    // 1. PRIMERO: Búsqueda exacta en mapa
+    if (_exerciseMap != null && _exerciseMap!.containsKey(normalizedSearch)) {
+      final match = _exerciseMap![normalizedSearch]!;
+      matchedName = match.name;
+      matchedId = match.id;
+      confidence = 1.0;
+      _logger.d('Match exacto: "$normalizedSearch" → "${match.name}"');
+    }
+
+    // 2. SEGUNDO: Buscar por aliases/sinónimos
+    if (matchedName == null) {
+      final aliasMatch = _findByAlias(normalizedSearch);
+      if (aliasMatch != null) {
+        matchedName = aliasMatch.name;
+        matchedId = aliasMatch.id;
+        confidence = 0.95;
+        _logger.d('Match por alias: "$normalizedSearch" → "${aliasMatch.name}"');
+      }
+    }
+
+    // 3. TERCERO: Búsqueda por palabras clave contenidas
+    if (matchedName == null) {
+      final keywordMatch = _findByKeywords(normalizedSearch);
+      if (keywordMatch != null) {
+        matchedName = keywordMatch.exercise.name;
+        matchedId = keywordMatch.exercise.id;
+        confidence = keywordMatch.confidence;
+        _logger.d('Match por keywords: "$normalizedSearch" → "${keywordMatch.exercise.name}" (${(confidence * 100).toInt()}%)');
+      }
+    }
+
+    // 4. CUARTO: Fuzzy matching como fallback
+    if (matchedName == null && _fuzzyMatcher != null) {
+      final results = _fuzzyMatcher!.search(normalizedSearch);
       
       if (results.isNotEmpty) {
         final best = results.first;
         // Score en fuzzy: 0 = perfecto, 1 = no match
-        // Convertimos a confianza: 1 = perfecto, 0 = no match
-        confidence = 1.0 - (best.score);
+        confidence = 1.0 - best.score;
         
-        if (confidence >= 0.5) { // Solo aceptar si hay buena confianza
+        // Más estricto: requiere > 60% de confianza
+        if (confidence >= 0.6) {
           matchedName = best.item.name;
           matchedId = best.item.id;
+          _logger.d('Match fuzzy: "$normalizedSearch" → "${best.item.name}" (${(confidence * 100).toInt()}%)');
         }
       }
     }
 
-    // Determinar si es válido (tiene al menos nombre y algún dato de sets/reps)
+    // Determinar si es válido
     final isValid = matchedName != null && (series != null || reps != null);
 
     return ParsedExerciseCandidate(
@@ -298,7 +415,87 @@ class RoutineOcrService {
       weight: weight,
       confidence: confidence,
       isValid: isValid,
+      cleanedText: normalizedSearch,
     );
+  }
+
+  /// Busca un ejercicio por sus aliases/sinónimos
+  LibraryExercise? _findByAlias(String searchText) {
+    for (final entry in _exerciseAliases.entries) {
+      final mainName = entry.key;
+      final aliases = entry.value;
+      
+      // Verificar si el texto contiene el nombre principal o algún alias
+      if (searchText.contains(mainName) || 
+          aliases.any((alias) => searchText.contains(alias) || alias.contains(searchText))) {
+        // Buscar el ejercicio correspondiente en la BD
+        return _findExerciseByKeyword(mainName);
+      }
+    }
+    return null;
+  }
+
+  /// Busca ejercicio por palabra clave en el nombre
+  LibraryExercise? _findExerciseByKeyword(String keyword) {
+    if (_exercisesCache == null) return null;
+    
+    final normalizedKeyword = _normalizeText(keyword);
+    
+    // Buscar ejercicio cuyo nombre contenga la palabra clave
+    for (final ex in _exercisesCache!) {
+      final normalizedName = _normalizeText(ex.name);
+      if (normalizedName.contains(normalizedKeyword) || 
+          normalizedKeyword.contains(normalizedName)) {
+        return ex;
+      }
+    }
+    return null;
+  }
+
+  /// Clase auxiliar para resultado de búsqueda por keywords
+  /// Busca ejercicios donde el nombre contenga palabras del texto de búsqueda
+  _KeywordMatch? _findByKeywords(String searchText) {
+    if (_exercisesCache == null) return null;
+    
+    final searchWords = searchText.split(' ').where((w) => w.length > 3).toList();
+    if (searchWords.isEmpty) return null;
+
+    LibraryExercise? bestMatch;
+    int bestScore = 0;
+
+    for (final ex in _exercisesCache!) {
+      final exName = _normalizeText(ex.name);
+      final exWords = exName.split(' ');
+      
+      int matchCount = 0;
+      for (final searchWord in searchWords) {
+        for (final exWord in exWords) {
+          // Coincidencia parcial: la palabra del ejercicio contiene la búsqueda o viceversa
+          if (exWord.contains(searchWord) || searchWord.contains(exWord)) {
+            matchCount++;
+            break;
+          }
+        }
+      }
+
+      // También verificar si el nombre completo está contenido
+      if (exName.contains(searchText) || searchText.contains(exName)) {
+        matchCount += 2;
+      }
+
+      if (matchCount > bestScore) {
+        bestScore = matchCount;
+        bestMatch = ex;
+      }
+    }
+
+    if (bestMatch != null && bestScore >= 1) {
+      // Calcular confianza basada en palabras coincidentes
+      final confidence = (bestScore / (searchWords.length + 1)).clamp(0.5, 0.9);
+      return _KeywordMatch(bestMatch, confidence);
+    }
+
+    return null;
   }
 
   /// Limpia el nombre del ejercicio removiendo números sueltos y caracteres especiales
@@ -330,5 +527,14 @@ class RoutineOcrService {
   void clearCache() {
     _exercisesCache = null;
     _fuzzyMatcher = null;
+    _exerciseMap = null;
   }
+}
+
+/// Clase auxiliar para resultados de búsqueda por keywords
+class _KeywordMatch {
+  final LibraryExercise exercise;
+  final double confidence;
+  
+  _KeywordMatch(this.exercise, this.confidence);
 }
