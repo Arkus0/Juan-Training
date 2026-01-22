@@ -376,30 +376,69 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
   bool _isDragOver = false;
   int? _dragOverIndex;
 
-  void _showDeleteSnackbar(ScaffoldMessengerState messenger, int idx, EjercicioEnRutina removedItem) {
-    // Hide any existing snackbar first
-    messenger.hideCurrentSnackBar();
+  OverlayEntry? _currentToast;
 
-    // Create the snackbar with proper auto-dismiss
-    final snackBar = SnackBar(
-      content: Text(
-        '${removedItem.nombre} eliminado',
-        style: GoogleFonts.montserrat(color: Colors.white),
-      ),
-      backgroundColor: Colors.red[900],
-      duration: const Duration(milliseconds: 1500),
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-      action: SnackBarAction(
-        label: 'DESHACER',
-        textColor: Colors.white,
-        onPressed: () {
-          widget.onUndoRemove(idx, removedItem);
-        },
+  void _showDeleteToast(BuildContext context, int idx, EjercicioEnRutina removedItem) {
+    // Remove previous toast if any
+    _currentToast?.remove();
+    _currentToast = null;
+
+    final overlay = Overlay.of(context);
+    bool undoPressed = false;
+
+    final entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        bottom: 100,
+        left: 16,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.red[900],
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${removedItem.nombre} eliminado',
+                    style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (!undoPressed) {
+                      undoPressed = true;
+                      _currentToast?.remove();
+                      _currentToast = null;
+                      widget.onUndoRemove(idx, removedItem);
+                    }
+                  },
+                  child: Text('DESHACER', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
 
-    messenger.showSnackBar(snackBar);
+    _currentToast = entry;
+    overlay.insert(entry);
+
+    // Auto-remove after 1.5 seconds
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!undoPressed && _currentToast == entry) {
+        entry.remove();
+        _currentToast = null;
+      }
+    });
   }
 
   Widget _buildExerciseCard(BuildContext context, int idx, EjercicioEnRutina ex, {bool inSuperset = false}) {
@@ -407,11 +446,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       key: Key('exercise_${ex.instanceId}'),
       ejercicio: ex,
       onRemove: () {
-        // Capture messenger BEFORE state change to ensure snackbar works correctly
-        final messenger = ScaffoldMessenger.of(context);
         final removedItem = ex;
         widget.onRemoveExercise(idx);
-        _showDeleteSnackbar(messenger, idx, removedItem);
+        _showDeleteToast(context, idx, removedItem);
       },
       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
       onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
@@ -516,12 +553,10 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        // Capture messenger BEFORE the widget is dismissed and state changes
-        final messenger = ScaffoldMessenger.of(context);
         final removedItem = ex;
         widget.onRemoveExercise(idx);
-        _showDeleteSnackbar(messenger, idx, removedItem);
-        return true; // Allow dismiss
+        _showDeleteToast(context, idx, removedItem);
+        return true;
       },
       child: draggableCard,
     );
