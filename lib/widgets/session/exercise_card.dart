@@ -113,7 +113,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
                   onTap: () {
-                    if (!hasAlternativas || libId == null) return;
+                    if (!hasAlternativas) return;
 
                     Navigator.pop(sheetContext);
 
