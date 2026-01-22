@@ -2,6 +2,7 @@ import '../models/rutina.dart';
 import '../models/sesion.dart';
 import '../models/ejercicio.dart';
 import '../models/serie_log.dart';
+import '../models/analysis_models.dart';
 
 class ActiveSessionData {
   final Rutina? activeRutina;
@@ -41,4 +42,41 @@ abstract class ITrainingRepository {
   // Notes
   Future<String> getNote(String exerciseName);
   Future<void> saveNote(String exerciseName, String note);
+
+  // ==========================================================================
+  // ANALYSIS METHODS - Centro de Comando Anabólico
+  // ==========================================================================
+
+  /// Get yearly activity map for heatmap visualization
+  /// Returns Map<DateTime (date only), DailyActivity>
+  Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year);
+
+  /// Get muscle volume for the last N days (default 30)
+  /// Used for symmetry radar chart
+  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod({int days = 30});
+
+  /// Get personal records for specified exercises (or all if null)
+  /// Used for Hall of Fame
+  Future<List<PersonalRecord>> getPersonalRecords({List<String>? exerciseNames});
+
+  /// Get last trained date for each muscle group
+  /// Used for recovery monitor
+  Future<Map<String, DateTime>> getLastTrainedDateByMuscle();
+
+  /// Get strength trend data for a specific exercise
+  /// Returns estimated 1RM over time
+  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName, {int months = 6});
+
+  /// Get current and longest streak data
+  Future<StreakData> getStreakData();
+
+  /// Get daily snapshot for a specific date
+  /// Returns null if no session on that date
+  Future<DailySnapshot?> getDailySnapshot(DateTime date);
+
+  /// Get list of all sessions for a specific date
+  Future<List<Sesion>> getSessionsForDate(DateTime date);
+
+  /// Get unique exercise names from history for dropdown selectors
+  Future<List<String>> getExerciseNames();
 }

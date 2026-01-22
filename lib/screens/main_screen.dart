@@ -4,7 +4,7 @@ import '../providers/main_provider.dart';
 import '../widgets/session/active_session_bar.dart';
 import 'rutinas_screen.dart';
 import 'train_selection_screen.dart';
-import 'history_screen.dart';
+import 'analysis_screen.dart';
 import 'settings_screen.dart';
 
 class MainScreen extends ConsumerWidget {
@@ -13,7 +13,7 @@ class MainScreen extends ConsumerWidget {
   static const List<Widget> _pages = [
     RutinasScreen(),
     TrainSelectionScreen(),
-    HistoryScreen(),
+    AnalysisScreen(),
     SettingsScreen(),
   ];
 
@@ -68,8 +68,8 @@ class MainScreen extends ConsumerWidget {
               label: 'ENTRENAR',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'HISTORIAL',
+              icon: Icon(Icons.insights),
+              label: 'ANÁLISIS',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),

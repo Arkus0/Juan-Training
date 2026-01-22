@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
 import 'package:logger/logger.dart';
@@ -10,6 +11,7 @@ import '../models/serie_log.dart';
 import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/progression_type.dart';
+import '../models/analysis_models.dart';
 import 'i_training_repository.dart';
 
 class DriftTrainingRepository implements ITrainingRepository {
@@ -612,5 +614,640 @@ class DriftTrainingRepository implements ITrainingRepository {
       exerciseName: exerciseName,
       note: note,
     ));
+  }
+
+  // ==========================================================================
+  // ANALYSIS METHODS - Centro de Comando Anabólico
+  // ==========================================================================
+
+  @override
+  Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async {
+    // Get all completed sessions for the year with volume calculation
+    final startOfYear = DateTime(year, 1, 1);
+    final endOfYear = DateTime(year + 1, 1, 1);
+
+    // Query sessions with their exercises and sets
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..where((s) => s.startTime.isBiggerOrEqualValue(startOfYear))
+      ..where((s) => s.startTime.isSmallerThanValue(endOfYear)))
+      .get();
+
+    if (sessions.isEmpty) return {};
+
+    // Get all session IDs
+    final sessionIds = sessions.map((s) => s.id).toList();
+
+    // Get exercises for these sessions (non-target only for volume)
+    final exercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds))
+      ..where((e) => e.isTarget.equals(false)))
+      .get();
+
+    final exerciseIds = exercises.map((e) => e.id).toList();
+
+    // Get completed sets for volume calculation
+    final sets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(exerciseIds))
+      ..where((s) => s.completed.equals(true)))
+      .get();
+
+    // Group sets by exercise
+    final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
+
+    // Calculate volume per exercise
+    final volumeByExercise = <String, double>{};
+    for (final entry in setsByExercise.entries) {
+      final volume = entry.value.fold<double>(
+        0, (sum, set) => sum + (set.weight * set.reps));
+      volumeByExercise[entry.key] = volume;
+    }
+
+    // Group exercises by session
+    final exercisesBySession = exercises.groupListsBy((e) => e.sessionId);
+
+    // Build result map
+    final result = <DateTime, DailyActivity>{};
+
+    for (final session in sessions) {
+      // Normalize date to midnight
+      final date = DateTime(session.startTime.year, session.startTime.month, session.startTime.day);
+
+      // Calculate session volume
+      final sessionExercises = exercisesBySession[session.id] ?? [];
+      final sessionVolume = sessionExercises.fold<double>(
+        0, (sum, e) => sum + (volumeByExercise[e.id] ?? 0));
+
+      // Calculate duration in minutes
+      final durationMinutes = (session.durationSeconds ?? 0) ~/ 60;
+
+      // Merge with existing entry for this date (multiple sessions per day)
+      final existing = result[date];
+      if (existing != null) {
+        result[date] = DailyActivity(
+          date: date,
+          sessionsCount: existing.sessionsCount + 1,
+          totalVolume: existing.totalVolume + sessionVolume,
+          durationMinutes: existing.durationMinutes + durationMinutes,
+        );
+      } else {
+        result[date] = DailyActivity(
+          date: date,
+          sessionsCount: 1,
+          totalVolume: sessionVolume,
+          durationMinutes: durationMinutes,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod({int days = 30}) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
+
+    // Get completed sessions in period
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..where((s) => s.startTime.isBiggerOrEqualValue(cutoffDate)))
+      .get();
+
+    if (sessions.isEmpty) return {};
+
+    final sessionIds = sessions.map((s) => s.id).toList();
+
+    // Get exercises (non-target only)
+    final exercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds))
+      ..where((e) => e.isTarget.equals(false)))
+      .get();
+
+    final exerciseIds = exercises.map((e) => e.id).toList();
+
+    // Get completed sets
+    final sets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(exerciseIds))
+      ..where((s) => s.completed.equals(true)))
+      .get();
+
+    // Group sets by exercise
+    final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
+
+    // Create session lookup for dates
+    final sessionById = {for (var s in sessions) s.id: s};
+
+    // Aggregate volume by muscle group
+    final muscleVolumes = <String, _MuscleVolumeAccumulator>{};
+
+    for (final exercise in exercises) {
+      // Parse primary muscles from JSON
+      final primaryMuscles = exercise.musclesPrimary;
+      if (primaryMuscles.isEmpty) continue;
+
+      final exerciseSets = setsByExercise[exercise.id] ?? [];
+      if (exerciseSets.isEmpty) continue;
+
+      // Calculate volume for this exercise
+      final volume = exerciseSets.fold<double>(
+        0, (sum, set) => sum + (set.weight * set.reps));
+      final setsCount = exerciseSets.length;
+
+      // Get session date
+      final session = sessionById[exercise.sessionId];
+      final sessionDate = session?.startTime;
+
+      // Add to each primary muscle
+      for (final muscle in primaryMuscles) {
+        final normalized = normalizeMuscleGroup(muscle);
+
+        final acc = muscleVolumes.putIfAbsent(
+          normalized,
+          () => _MuscleVolumeAccumulator(normalized, getMuscleDisplayName(muscle)),
+        );
+        acc.addVolume(volume, setsCount, sessionDate);
+      }
+    }
+
+    // Convert to MuscleVolume map
+    return muscleVolumes.map((key, acc) => MapEntry(key, acc.toMuscleVolume()));
+  }
+
+  @override
+  Future<List<PersonalRecord>> getPersonalRecords({List<String>? exerciseNames}) async {
+    // Get all completed sessions
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
+      .get();
+
+    if (sessions.isEmpty) return [];
+
+    final sessionIds = sessions.map((s) => s.id).toList();
+    final sessionById = {for (var s in sessions) s.id: s};
+
+    // Get exercises
+    var exercisesQuery = db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds))
+      ..where((e) => e.isTarget.equals(false));
+
+    final exercises = await exercisesQuery.get();
+
+    // Filter by exercise names if provided
+    List<SessionExercise> filteredExercises;
+    if (exerciseNames != null && exerciseNames.isNotEmpty) {
+      // Normalize search names
+      final normalizedSearchNames = exerciseNames.map((n) => n.toLowerCase()).toSet();
+      filteredExercises = exercises.where((e) {
+        final eName = e.name.toLowerCase();
+        // Check direct match or big lift normalized match
+        if (normalizedSearchNames.contains(eName)) return true;
+        final normalized = normalizeBigLift(e.name);
+        if (normalized != null &&
+            normalizedSearchNames.contains(normalized.toLowerCase())) {
+          return true;
+        }
+        return false;
+      }).toList();
+    } else {
+      filteredExercises = exercises;
+    }
+
+    if (filteredExercises.isEmpty) return [];
+
+    final exerciseIds = filteredExercises.map((e) => e.id).toList();
+
+    // Get completed sets
+    final sets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(exerciseIds))
+      ..where((s) => s.completed.equals(true)))
+      .get();
+
+    // Group sets by exercise
+    final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
+
+    // Track best lift per exercise name
+    final bestByExercise = <String, PersonalRecord>{};
+
+    for (final exercise in filteredExercises) {
+      final exerciseSets = setsByExercise[exercise.id] ?? [];
+      if (exerciseSets.isEmpty) continue;
+
+      // Find max weight set
+      WorkoutSet? maxSet;
+      for (final set in exerciseSets) {
+        if (maxSet == null || set.weight > maxSet.weight) {
+          maxSet = set;
+        } else if (set.weight == maxSet.weight && set.reps > maxSet.reps) {
+          maxSet = set;
+        }
+      }
+
+      if (maxSet == null) continue;
+
+      final session = sessionById[exercise.sessionId];
+      if (session == null) continue;
+
+      // Normalize exercise name for grouping
+      final normalized = normalizeBigLift(exercise.name) ?? exercise.name;
+      final estimated1RM = estimateOneRepMax(maxSet.weight, maxSet.reps);
+
+      final current = PersonalRecord(
+        exerciseName: normalized,
+        maxWeight: maxSet.weight,
+        repsAtMax: maxSet.reps,
+        estimated1RM: estimated1RM,
+        achievedAt: session.startTime,
+      );
+
+      // Keep the best
+      final existing = bestByExercise[normalized];
+      if (existing == null || current.maxWeight > existing.maxWeight) {
+        bestByExercise[normalized] = current;
+      } else if (current.maxWeight == existing.maxWeight &&
+                 current.repsAtMax > existing.repsAtMax) {
+        bestByExercise[normalized] = current;
+      }
+    }
+
+    // Sort by weight descending
+    final result = bestByExercise.values.toList()
+      ..sort((a, b) => b.maxWeight.compareTo(a.maxWeight));
+
+    return result;
+  }
+
+  @override
+  Future<Map<String, DateTime>> getLastTrainedDateByMuscle() async {
+    // Get all completed sessions ordered by date (most recent first)
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
+      .get();
+
+    if (sessions.isEmpty) return {};
+
+    final sessionIds = sessions.map((s) => s.id).toList();
+    final sessionById = {for (var s in sessions) s.id: s};
+
+    // Get exercises (non-target only)
+    final exercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds))
+      ..where((e) => e.isTarget.equals(false)))
+      .get();
+
+    // Track last trained date per muscle
+    final lastTrained = <String, DateTime>{};
+
+    for (final exercise in exercises) {
+      final session = sessionById[exercise.sessionId];
+      if (session == null) continue;
+
+      // Process primary muscles
+      for (final muscle in exercise.musclesPrimary) {
+        final normalized = normalizeMuscleGroup(muscle);
+        final existing = lastTrained[normalized];
+        if (existing == null || session.startTime.isAfter(existing)) {
+          lastTrained[normalized] = session.startTime;
+        }
+      }
+    }
+
+    return lastTrained;
+  }
+
+  @override
+  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName, {int months = 6}) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: months * 30));
+
+    // Get completed sessions in period
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..where((s) => s.startTime.isBiggerOrEqualValue(cutoffDate))
+      ..orderBy([(s) => OrderingTerm.asc(s.startTime)]))
+      .get();
+
+    if (sessions.isEmpty) return [];
+
+    final sessionIds = sessions.map((s) => s.id).toList();
+    final sessionById = {for (var s in sessions) s.id: s};
+
+    // Get exercises matching name (case-insensitive)
+    final exercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds))
+      ..where((e) => e.isTarget.equals(false)))
+      .get();
+
+    // Filter by exercise name
+    final searchLower = exerciseName.toLowerCase();
+    final normalizedSearch = normalizeBigLift(exerciseName);
+
+    final filteredExercises = exercises.where((e) {
+      final eName = e.name.toLowerCase();
+      if (eName == searchLower) return true;
+      final normalized = normalizeBigLift(e.name);
+      if (normalized != null && normalizedSearch != null &&
+          normalized.toLowerCase() == normalizedSearch.toLowerCase()) {
+        return true;
+      }
+      // Partial match fallback
+      return eName.contains(searchLower) || searchLower.contains(eName);
+    }).toList();
+
+    if (filteredExercises.isEmpty) return [];
+
+    final exerciseIds = filteredExercises.map((e) => e.id).toList();
+
+    // Get completed sets
+    final sets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(exerciseIds))
+      ..where((s) => s.completed.equals(true)))
+      .get();
+
+    // Group sets by exercise
+    final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
+
+    // Aggregate by date
+    final dataPointsByDate = <DateTime, StrengthDataPoint>{};
+
+    for (final exercise in filteredExercises) {
+      final session = sessionById[exercise.sessionId];
+      if (session == null) continue;
+
+      final exerciseSets = setsByExercise[exercise.id] ?? [];
+      if (exerciseSets.isEmpty) continue;
+
+      // Find best set (highest estimated 1RM)
+      double maxEstimated1RM = 0;
+      double maxWeight = 0;
+      int repsAtMax = 0;
+
+      for (final set in exerciseSets) {
+        final e1RM = estimateOneRepMax(set.weight, set.reps);
+        if (e1RM > maxEstimated1RM) {
+          maxEstimated1RM = e1RM;
+          maxWeight = set.weight;
+          repsAtMax = set.reps;
+        }
+      }
+
+      // Normalize date to midnight
+      final date = DateTime(session.startTime.year, session.startTime.month, session.startTime.day);
+
+      // Keep best for each date
+      final existing = dataPointsByDate[date];
+      if (existing == null || maxEstimated1RM > existing.estimated1RM) {
+        dataPointsByDate[date] = StrengthDataPoint(
+          date: date,
+          estimated1RM: maxEstimated1RM,
+          actualMax: maxWeight,
+          repsAtMax: repsAtMax,
+        );
+      }
+    }
+
+    // Sort by date
+    final result = dataPointsByDate.values.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    return result;
+  }
+
+  @override
+  Future<StreakData> getStreakData() async {
+    // Get all completed session dates
+    final sessions = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
+      .get();
+
+    if (sessions.isEmpty) {
+      return StreakData.empty;
+    }
+
+    // Get unique training dates
+    final trainingDates = <DateTime>{};
+    for (final session in sessions) {
+      final date = DateTime(
+        session.startTime.year,
+        session.startTime.month,
+        session.startTime.day,
+      );
+      trainingDates.add(date);
+    }
+
+    final sortedDates = trainingDates.toList()..sort((a, b) => b.compareTo(a));
+
+    final lastTrainingDate = sortedDates.first;
+    final today = DateTime.now();
+    final todayNormalized = DateTime(today.year, today.month, today.day);
+
+    // Calculate current streak
+    int currentStreak = 0;
+    DateTime checkDate = todayNormalized;
+
+    // If didn't train today, start checking from yesterday
+    if (!trainingDates.contains(todayNormalized)) {
+      final yesterday = todayNormalized.subtract(const Duration(days: 1));
+      if (!trainingDates.contains(yesterday)) {
+        // No training today or yesterday, streak is 0
+        currentStreak = 0;
+      } else {
+        checkDate = yesterday;
+        currentStreak = 1;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      }
+    } else {
+      currentStreak = 1;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+
+    // Count consecutive days backwards
+    if (currentStreak > 0) {
+      while (trainingDates.contains(checkDate)) {
+        currentStreak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      }
+    }
+
+    // Calculate longest streak ever
+    int longestStreak = 0;
+    int tempStreak = 0;
+    DateTime? previousDate;
+
+    for (final date in sortedDates.reversed) {
+      if (previousDate == null) {
+        tempStreak = 1;
+      } else {
+        final diff = date.difference(previousDate).inDays;
+        if (diff == 1) {
+          tempStreak++;
+        } else {
+          if (tempStreak > longestStreak) {
+            longestStreak = tempStreak;
+          }
+          tempStreak = 1;
+        }
+      }
+      previousDate = date;
+    }
+    if (tempStreak > longestStreak) {
+      longestStreak = tempStreak;
+    }
+
+    // Recent dates for display (last 7 days)
+    final recentDates = <DateTime>[];
+    for (int i = 6; i >= 0; i--) {
+      final date = todayNormalized.subtract(Duration(days: i));
+      if (trainingDates.contains(date)) {
+        recentDates.add(date);
+      }
+    }
+
+    return StreakData(
+      currentStreak: currentStreak,
+      longestStreak: longestStreak,
+      lastTrainingDate: lastTrainingDate,
+      recentDates: recentDates,
+    );
+  }
+
+  @override
+  Future<DailySnapshot?> getDailySnapshot(DateTime date) async {
+    final sessions = await getSessionsForDate(date);
+    if (sessions.isEmpty) return null;
+
+    // Aggregate data from all sessions on this date
+    double totalVolume = 0;
+    int totalDuration = 0;
+    int totalSets = 0;
+    BestSetInfo? bestSet;
+    double bestSetVolume = 0;
+    final exerciseNames = <String>{};
+    String? routineName;
+    String? dayName;
+
+    for (final session in sessions) {
+      routineName ??= session.rutinaId.isNotEmpty ? session.rutinaId : null;
+      dayName ??= session.dayName;
+      totalDuration += session.durationSeconds ?? 0;
+
+      for (final exercise in session.ejerciciosCompletados) {
+        exerciseNames.add(exercise.nombre);
+
+        for (final log in exercise.logs) {
+          if (log.completed) {
+            totalSets++;
+            final setVolume = log.peso * log.reps;
+            totalVolume += setVolume;
+
+            // Track best set (by volume)
+            if (setVolume > bestSetVolume) {
+              bestSetVolume = setVolume;
+              bestSet = BestSetInfo(
+                exerciseName: exercise.nombre,
+                weight: log.peso,
+                reps: log.reps,
+                rpe: log.rpe,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    return DailySnapshot(
+      date: date,
+      routineName: routineName,
+      dayName: dayName,
+      totalVolume: totalVolume,
+      durationMinutes: totalDuration ~/ 60,
+      setsCompleted: totalSets,
+      bestSet: bestSet,
+      exerciseNames: exerciseNames.toList(),
+    );
+  }
+
+  @override
+  Future<List<Sesion>> getSessionsForDate(DateTime date) async {
+    // Normalize date to start and end of day
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    // Get sessions for this day
+    final sessionRows = await (db.select(db.sessions)
+      ..where((s) => s.completedAt.isNotNull())
+      ..where((s) => s.startTime.isBiggerOrEqualValue(startOfDay))
+      ..where((s) => s.startTime.isSmallerThanValue(endOfDay))
+      ..orderBy([(s) => OrderingTerm.asc(s.startTime)]))
+      .get();
+
+    if (sessionRows.isEmpty) return [];
+
+    // Get all exercises and sets for these sessions
+    final sessionIds = sessionRows.map((s) => s.id).toList();
+
+    final exercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds)))
+      .get();
+
+    final exerciseIds = exercises.map((e) => e.id).toList();
+
+    final sets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(exerciseIds)))
+      .get();
+
+    // Map to Sesion objects
+    return sessionRows.map((s) {
+      final sExercises = exercises.where((e) => e.sessionId == s.id).toList();
+      final sExerciseIds = sExercises.map((e) => e.id).toSet();
+      final sSets = sets.where((st) => sExerciseIds.contains(st.sessionExerciseId)).toList();
+      return _mapSesion(s, sExercises, sSets);
+    }).toList();
+  }
+
+  @override
+  Future<List<String>> getExerciseNames() async {
+    // Get distinct exercise names from all sessions
+    final results = await (db.selectOnly(db.sessionExercises, distinct: true)
+      ..addColumns([db.sessionExercises.name])
+      ..where(db.sessionExercises.isTarget.equals(false)))
+      .get();
+
+    return results
+        .map((row) => row.read(db.sessionExercises.name))
+        .whereType<String>()
+        .toSet()
+        .toList()
+      ..sort();
+  }
+}
+
+// Helper class for accumulating muscle volume
+class _MuscleVolumeAccumulator {
+  final String muscleName;
+  final String displayName;
+  double totalVolume = 0;
+  int setsCount = 0;
+  DateTime? lastTrained;
+
+  _MuscleVolumeAccumulator(this.muscleName, this.displayName);
+
+  void addVolume(double volume, int sets, DateTime? date) {
+    totalVolume += volume;
+    setsCount += sets;
+    if (date != null && (lastTrained == null || date.isAfter(lastTrained!))) {
+      lastTrained = date;
+    }
+  }
+
+  MuscleVolume toMuscleVolume() {
+    return MuscleVolume(
+      muscleName: muscleName,
+      displayName: displayName,
+      totalVolume: totalVolume,
+      setsCount: setsCount,
+      lastTrained: lastTrained,
+    );
   }
 }
