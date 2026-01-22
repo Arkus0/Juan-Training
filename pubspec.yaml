@@ -52,6 +52,10 @@ dependencies:
   # que funcionan offline sin enviar audio a la nube. Ideal para gym ruidoso con privacidad.
   speech_to_text: ^7.0.0
 
+  # Notifications & Background Timer (lock screen timer)
+  flutter_local_notifications: ^17.2.4
+  permission_handler: ^11.3.1
+
   # Icons
   cupertino_icons: ^1.0.2
 

@@ -6,6 +6,7 @@ import 'screens/main_screen.dart';
 import 'services/exercise_library_service.dart';
 import 'services/alternativas_service.dart';
 import 'services/timer_audio_service.dart';
+import 'services/timer_notification_service.dart';
 import 'providers/training_provider.dart';
 
 import 'database/database.dart';
@@ -26,6 +27,9 @@ void main() async {
 
   // Initialize Timer Audio Service
   await TimerAudioService.instance.initialize();
+
+  // Initialize Timer Notification Service (for lock screen timer)
+  await TimerNotificationService.instance.initialize();
 
   await initializeDateFormatting('es_ES', null);
 

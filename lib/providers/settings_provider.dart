@@ -13,6 +13,7 @@ class SettingsKeys {
   static const String reduceAnimations = 'reduce_animations';
   static const String reduceVibrations = 'reduce_vibrations';
   static const String barWeightKg = 'bar_weight_kg';
+  static const String lockScreenTimerEnabled = 'lock_screen_timer_enabled';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -33,6 +34,9 @@ class UserSettings {
   final bool reduceVibrations;
   final double barWeight; // Default bar weight in kg
 
+  /// Mostrar timer de descanso en pantalla de bloqueo
+  final bool lockScreenTimerEnabled;
+
   const UserSettings({
     this.timerSoundEnabled = false, // Desactivado por defecto (gym = sin sonido)
     this.timerVibrationEnabled = true,
@@ -43,6 +47,7 @@ class UserSettings {
     this.reduceAnimations = false,
     this.reduceVibrations = false,
     this.barWeight = 20.0,
+    this.lockScreenTimerEnabled = true, // Activado por defecto
   });
 
   UserSettings copyWith({
@@ -55,6 +60,7 @@ class UserSettings {
     bool? reduceAnimations,
     bool? reduceVibrations,
     double? barWeight,
+    bool? lockScreenTimerEnabled,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -66,6 +72,7 @@ class UserSettings {
       reduceAnimations: reduceAnimations ?? this.reduceAnimations,
       reduceVibrations: reduceVibrations ?? this.reduceVibrations,
       barWeight: barWeight ?? this.barWeight,
+      lockScreenTimerEnabled: lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
     );
   }
 }
@@ -98,6 +105,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
       reduceAnimations: reduceAnims,
       reduceVibrations: reduceVibes,
       barWeight: prefs.getDouble(SettingsKeys.barWeightKg) ?? 20.0,
+      lockScreenTimerEnabled: prefs.getBool(SettingsKeys.lockScreenTimerEnabled) ?? true,
     );
   }
 
@@ -179,6 +187,13 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     await prefs.setDouble(SettingsKeys.barWeightKg, value);
     state = state.copyWith(barWeight: value);
   }
+
+  /// Activar/desactivar el timer en pantalla de bloqueo
+  Future<void> setLockScreenTimerEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.lockScreenTimerEnabled, value);
+    state = state.copyWith(lockScreenTimerEnabled: value);
+  }
 }
 
 /// Provider global de settings
@@ -212,4 +227,9 @@ final reduceAnimationsProvider = Provider<bool>((ref) {
 /// Provider de conveniencia para reducir vibraciones
 final reduceVibrationsProvider = Provider<bool>((ref) {
   return ref.watch(settingsProvider.select((s) => s.reduceVibrations));
+});
+
+/// Provider de conveniencia para timer en pantalla de bloqueo
+final lockScreenTimerEnabledProvider = Provider<bool>((ref) {
+  return ref.watch(settingsProvider.select((s) => s.lockScreenTimerEnabled));
 });
