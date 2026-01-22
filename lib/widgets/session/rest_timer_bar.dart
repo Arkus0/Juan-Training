@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/timer_audio_service.dart';
+import '../../utils/performance_utils.dart';
 
 /// Callback cuando el timer termina, incluye info para auto-focus
 typedef TimerFinishedCallback = void Function({
@@ -14,16 +15,59 @@ typedef TimerFinishedCallback = void Function({
   int? lastSetIndex,
 });
 
+// ============================================================================
+// PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
+// ============================================================================
+
+class _TimerStyles {
+  static final labelSmall = GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.0,
+  );
+
+  static final countdownLarge = GoogleFonts.montserrat(
+    fontSize: 18,
+    fontWeight: FontWeight.w900,
+  );
+
+  static final countdownNormal = GoogleFonts.montserrat(
+    fontSize: 16,
+    fontWeight: FontWeight.w900,
+  );
+
+  static final buttonLabel = GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    color: Colors.white,
+  );
+
+  static final durationDisplay = GoogleFonts.montserrat(
+    fontSize: 18,
+    fontWeight: FontWeight.w900,
+    color: Colors.white,
+  );
+
+  static final stateLabel = GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.2,
+  );
+
+  static final hintLabel = GoogleFonts.montserrat(
+    fontSize: 9,
+    fontWeight: FontWeight.w500,
+  );
+}
+
 /// Barra de timer de descanso no invasiva (estilo Hevy/Strong)
 ///
-/// Características:
-/// - Compacta (56px altura), no bloquea UI
-/// - Progreso circular + countdown
-/// - Pause/Resume/Skip con gestos y botones
-/// - Vibración progresiva últimos 10 segundos
-/// - Sonido opcional (configurable en settings)
-/// - Animación fade/scale para show/hide
-/// - Accesibilidad con Semantics
+/// Optimizaciones:
+/// - RepaintBoundary para aislar repaints del timer
+/// - Ticker adaptativo (reduce frecuencia en modo performance)
+/// - Widgets const donde posible
+/// - Estilos pre-computados (no GoogleFonts en build)
+/// - Mínimo uso de setState
 class RestTimerBar extends ConsumerStatefulWidget {
   final RestTimerState timerState;
   final VoidCallback onStartRest;
@@ -56,23 +100,33 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   double _displaySeconds = 0;
   int _lastVibratedSecond = -1;
 
-  // Animación para show/hide
+  // Animación para show/hide (optimizada)
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+
+  // Throttler para limitar vibraciones
+  final Throttler _vibrationThrottler = Throttler(
+    interval: const Duration(milliseconds: 800),
+  );
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
+    // Duración de animación adaptativa según modo performance
+    final animDuration = Duration(
+      milliseconds: (250 * PerformanceMode.instance.animationScale).round(),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+    _animController = AnimationController(
+      vsync: this,
+      duration: animDuration,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -110,7 +164,9 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     }
 
     // Timer se reanudó
-    if (!widget.timerState.isPaused && oldWidget.timerState.isPaused && widget.timerState.isActive) {
+    if (!widget.timerState.isPaused &&
+        oldWidget.timerState.isPaused &&
+        widget.timerState.isActive) {
       _startTicker();
     }
   }
@@ -129,12 +185,15 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     WidgetsBinding.instance.removeObserver(this);
     _stopTicker();
     _animController.dispose();
+    _vibrationThrottler.dispose();
     super.dispose();
   }
 
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+    // Usar intervalo adaptativo según modo performance
+    final interval = PerformanceMode.instance.timerTickInterval;
+    _ticker = Timer.periodic(interval, (_) {
       if (!mounted) return;
       _updateDisplay();
     });
@@ -148,7 +207,9 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   void _updateDisplay() {
     final remaining = widget.timerState.remainingSeconds;
 
-    if (remaining <= 0 && widget.timerState.isActive && !widget.timerState.isPaused) {
+    if (remaining <= 0 &&
+        widget.timerState.isActive &&
+        !widget.timerState.isPaused) {
       _stopTicker();
       _triggerFinalFeedback();
       widget.onTimerFinished(
@@ -159,59 +220,74 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
       return;
     }
 
-    setState(() {
-      _displaySeconds = remaining;
-    });
+    // Solo hacer setState si el valor cambió significativamente
+    // (para reducir rebuilds innecesarios)
+    final newSeconds = remaining.ceil();
+    if (newSeconds != _displaySeconds.ceil()) {
+      setState(() {
+        _displaySeconds = remaining;
+      });
 
-    // Vibración y sonido progresivo últimos 10 segundos
-    _handleProgressiveFeedback(remaining);
+      // Vibración y sonido progresivo últimos 10 segundos
+      _handleProgressiveFeedback(remaining);
+    } else {
+      // Actualizar internamente sin rebuild completo
+      _displaySeconds = remaining;
+    }
   }
 
   /// Vibración y sonido progresivo: suave en 10-6s, media en 5-3s, fuerte en 2-1s
-  void _handleProgressiveFeedback(double remaining) async {
+  void _handleProgressiveFeedback(double remaining) {
     final secondInt = remaining.ceil();
 
     // Solo feedback una vez por segundo
-    if (secondInt == _lastVibratedSecond || secondInt > 10 || secondInt <= 0) return;
+    if (secondInt == _lastVibratedSecond || secondInt > 10 || secondInt <= 0) {
+      return;
+    }
     _lastVibratedSecond = secondInt;
 
-    // Leer settings
-    final settings = ref.read(settingsProvider);
-    final vibrationEnabled = settings.timerVibrationEnabled;
-    final soundEnabled = settings.timerSoundEnabled;
+    // Usar throttler para evitar vibraciones excesivas
+    _vibrationThrottler.run(() async {
+      // Leer settings
+      final settings = ref.read(settingsProvider);
+      final vibrationEnabled = settings.timerVibrationEnabled &&
+          !PerformanceMode.instance.reduceVibrations;
+      final soundEnabled = settings.timerSoundEnabled;
 
-    // Vibración
-    if (vibrationEnabled) {
-      final canVibrate = await Vibrate.canVibrate;
-      if (canVibrate) {
-        if (secondInt <= 3) {
-          Vibrate.feedback(FeedbackType.heavy);
-        } else if (secondInt <= 5) {
-          Vibrate.feedback(FeedbackType.medium);
-        } else if (secondInt <= 10) {
-          Vibrate.feedback(FeedbackType.light);
+      // Vibración
+      if (vibrationEnabled) {
+        final canVibrate = await Vibrate.canVibrate;
+        if (canVibrate) {
+          if (secondInt <= 3) {
+            Vibrate.feedback(FeedbackType.heavy);
+          } else if (secondInt <= 5) {
+            Vibrate.feedback(FeedbackType.medium);
+          } else if (secondInt <= 10) {
+            Vibrate.feedback(FeedbackType.light);
+          }
         }
       }
-    }
 
-    // Sonido (solo últimos 3 segundos para no ser molesto)
-    if (soundEnabled && secondInt <= 3) {
-      final audio = TimerAudioService.instance;
-      if (secondInt == 3) {
-        audio.playMediumBeep();
-      } else if (secondInt == 2) {
-        audio.playHighBeep();
-      } else if (secondInt == 1) {
-        audio.playHighBeep();
+      // Sonido (solo últimos 3 segundos para no ser molesto)
+      if (soundEnabled && secondInt <= 3) {
+        final audio = TimerAudioService.instance;
+        if (secondInt == 3) {
+          audio.playMediumBeep();
+        } else if (secondInt == 2) {
+          audio.playHighBeep();
+        } else if (secondInt == 1) {
+          audio.playHighBeep();
+        }
       }
-    }
+    });
   }
 
   void _triggerFinalFeedback() async {
     final settings = ref.read(settingsProvider);
 
     // Vibración final
-    if (settings.timerVibrationEnabled) {
+    if (settings.timerVibrationEnabled &&
+        !PerformanceMode.instance.reduceVibrations) {
       final canVibrate = await Vibrate.canVibrate;
       if (canVibrate) {
         Vibrate.feedback(FeedbackType.success);
@@ -230,22 +306,50 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   Widget build(BuildContext context) {
     // Si no está activo, mostrar barra de inicio compacta
     if (!widget.timerState.isActive) {
-      return _buildInactiveBar(context);
+      return _InactiveTimerBar(
+        seconds: widget.timerState.totalSeconds,
+        onDurationChange: widget.onDurationChange,
+        onStartRest: widget.onStartRest,
+      );
     }
 
     // Timer activo: barra compacta con progreso
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        alignment: Alignment.bottomCenter,
-        child: _buildActiveTimerBar(context),
+    // Usar RepaintBoundary para aislar los repaints del timer
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          alignment: Alignment.bottomCenter,
+          child: _ActiveTimerBar(
+            displaySeconds: _displaySeconds,
+            timerState: widget.timerState,
+            onStopRest: widget.onStopRest,
+            onPauseRest: widget.onPauseRest,
+            onResumeRest: widget.onResumeRest,
+            onAddTime: () => widget.onAddTime(30),
+          ),
+        ),
       ),
     );
   }
+}
 
-  /// Barra inactiva: botón para iniciar descanso + ajuste de tiempo
-  Widget _buildInactiveBar(BuildContext context) {
+/// Barra inactiva: botón para iniciar descanso + ajuste de tiempo
+/// Extraída como widget separado para evitar rebuilds
+class _InactiveTimerBar extends StatelessWidget {
+  final int seconds;
+  final ValueChanged<int> onDurationChange;
+  final VoidCallback onStartRest;
+
+  const _InactiveTimerBar({
+    required this.seconds,
+    required this.onDurationChange,
+    required this.onStartRest,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -258,44 +362,60 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         top: false,
         child: Row(
           children: [
-            // Ajuste de tiempo
             _TimeDurationSelector(
-              seconds: widget.timerState.totalSeconds,
-              onChanged: widget.onDurationChange,
+              seconds: seconds,
+              onChanged: onDurationChange,
             ),
             const Spacer(),
-            // Botón de inicio
-            _StartRestButton(onTap: widget.onStartRest),
+            _StartRestButton(onTap: onStartRest),
           ],
         ),
       ),
     );
   }
+}
 
-  /// Barra activa: timer compacto con controles
-  Widget _buildActiveTimerBar(BuildContext context) {
-    final seconds = _displaySeconds.ceil();
-    final progress = widget.timerState.totalSeconds > 0
-        ? 1.0 - (_displaySeconds / widget.timerState.totalSeconds)
+/// Barra activa: timer compacto con controles
+class _ActiveTimerBar extends StatelessWidget {
+  final double displaySeconds;
+  final RestTimerState timerState;
+  final VoidCallback onStopRest;
+  final VoidCallback onPauseRest;
+  final VoidCallback onResumeRest;
+  final VoidCallback onAddTime;
+
+  const _ActiveTimerBar({
+    required this.displaySeconds,
+    required this.timerState,
+    required this.onStopRest,
+    required this.onPauseRest,
+    required this.onResumeRest,
+    required this.onAddTime,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final seconds = displaySeconds.ceil();
+    final progress = timerState.totalSeconds > 0
+        ? 1.0 - (displaySeconds / timerState.totalSeconds)
         : 1.0;
     final isCritical = seconds <= 10;
-    final isPaused = widget.timerState.isPaused;
+    final isPaused = timerState.isPaused;
 
     return Semantics(
-      label: 'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}',
+      label:
+          'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}',
       child: GestureDetector(
-        // Long press para saltar
         onLongPress: () {
           HapticFeedback.heavyImpact();
-          widget.onStopRest();
+          onStopRest();
         },
-        // Tap para pausar/reanudar
         onTap: () {
           HapticFeedback.selectionClick();
           if (isPaused) {
-            widget.onResumeRest();
+            onResumeRest();
           } else {
-            widget.onPauseRest();
+            onPauseRest();
           }
         },
         child: Container(
@@ -315,70 +435,78 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
                 width: isCritical ? 2 : 1,
               ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (isCritical ? Colors.red[900] : Colors.black)!.withValues(alpha: 0.5),
-                blurRadius: 8,
-                offset: const Offset(0, -2),
-              ),
-            ],
+            // Shadows solo si no está en modo performance
+            boxShadow: PerformanceMode.instance.showShadows
+                ? [
+                    BoxShadow(
+                      color: (isCritical ? Colors.red[900] : Colors.black)!
+                          .withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ]
+                : null,
           ),
           child: SafeArea(
             top: false,
             child: Row(
               children: [
                 const SizedBox(width: 12),
-
                 // Progreso circular con countdown
-                _CircularTimerProgress(
-                  progress: progress,
-                  seconds: seconds,
-                  isCritical: isCritical,
-                  isPaused: isPaused,
-                ),
-
-                const SizedBox(width: 12),
-
-                // Texto de estado
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isPaused ? 'PAUSADO' : 'DESCANSANDO',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isPaused ? Colors.orange[400] : Colors.grey[500],
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      Text(
-                        isPaused ? 'Toca para reanudar' : 'Toca para pausar',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                RepaintBoundary(
+                  child: _CircularTimerProgress(
+                    progress: progress,
+                    seconds: seconds,
+                    isCritical: isCritical,
+                    isPaused: isPaused,
                   ),
                 ),
-
+                const SizedBox(width: 12),
+                // Texto de estado
+                Expanded(
+                  child: _TimerStateLabel(isPaused: isPaused),
+                ),
                 // Botones de control
                 _TimerControlButtons(
                   isPaused: isPaused,
-                  onAddTime: () => widget.onAddTime(30),
-                  onSkip: widget.onStopRest,
+                  onAddTime: onAddTime,
+                  onSkip: onStopRest,
                 ),
-
                 const SizedBox(width: 8),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Label de estado del timer - extraído para evitar rebuilds
+class _TimerStateLabel extends StatelessWidget {
+  final bool isPaused;
+
+  const _TimerStateLabel({required this.isPaused});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isPaused ? 'PAUSADO' : 'DESCANSANDO',
+          style: _TimerStyles.stateLabel.copyWith(
+            color: isPaused ? Colors.orange[400] : Colors.grey[500],
+          ),
+        ),
+        Text(
+          isPaused ? 'Toca para reanudar' : 'Toca para pausar',
+          style: _TimerStyles.hintLabel.copyWith(
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -400,12 +528,7 @@ class _TimeDurationSelector extends StatelessWidget {
       children: [
         Text(
           'DESCANSO',
-          style: GoogleFonts.montserrat(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: Colors.grey[600],
-            letterSpacing: 1.0,
-          ),
+          style: _TimerStyles.labelSmall.copyWith(color: Colors.grey[600]),
         ),
         const SizedBox(width: 8),
         _CircleButton(
@@ -415,14 +538,7 @@ class _TimeDurationSelector extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '${seconds}s',
-            style: GoogleFonts.montserrat(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
+          child: Text('${seconds}s', style: _TimerStyles.durationDisplay),
         ),
         _CircleButton(
           icon: Icons.add,
@@ -459,14 +575,7 @@ class _StartRestButton extends StatelessWidget {
             children: [
               const Icon(Icons.timer_outlined, size: 18, color: Colors.white),
               const SizedBox(width: 6),
-              Text(
-                'DESCANSAR',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
+              Text('DESCANSAR', style: _TimerStyles.buttonLabel),
             ],
           ),
         ),
@@ -476,6 +585,7 @@ class _StartRestButton extends StatelessWidget {
 }
 
 /// Indicador de progreso circular con countdown
+/// Optimizado: usa progress simple en lugar de TweenAnimationBuilder
 class _CircularTimerProgress extends StatelessWidget {
   final double progress;
   final int seconds;
@@ -508,28 +618,20 @@ class _CircularTimerProgress extends StatelessWidget {
             backgroundColor: Colors.grey[800],
             valueColor: AlwaysStoppedAnimation(Colors.grey[800]),
           ),
-          // Progreso
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: progress),
-            duration: const Duration(milliseconds: 100),
-            builder: (context, value, _) {
-              return CircularProgressIndicator(
-                value: value.clamp(0.0, 1.0),
-                strokeWidth: 3,
-                backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation(color),
-              );
-            },
+          // Progreso - sin TweenAnimationBuilder para mejor rendimiento
+          CircularProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            strokeWidth: 3,
+            backgroundColor: Colors.transparent,
+            valueColor: AlwaysStoppedAnimation(color),
           ),
           // Texto del countdown
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 150),
-            style: GoogleFonts.montserrat(
-              fontSize: isCritical ? 18 : 16,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
-            child: Text('$seconds'),
+          Text(
+            '$seconds',
+            style: (isCritical
+                    ? _TimerStyles.countdownLarge
+                    : _TimerStyles.countdownNormal)
+                .copyWith(color: color),
           ),
         ],
       ),
@@ -554,7 +656,6 @@ class _TimerControlButtons extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Añadir 30s
         Tooltip(
           message: '+30 segundos',
           child: _CircleButton(
@@ -567,7 +668,6 @@ class _TimerControlButtons extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Saltar (skip)
         Tooltip(
           message: 'Saltar descanso',
           child: _CircleButton(

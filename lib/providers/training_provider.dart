@@ -9,6 +9,7 @@ import '../models/sesion.dart';
 import '../models/serie_log.dart';
 import 'main_provider.dart';
 import '../repositories/i_training_repository.dart';
+import '../utils/performance_utils.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
   throw UnimplementedError('trainingRepositoryProvider not overridden');
@@ -155,6 +156,14 @@ class TrainingState {
 class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   final Ref ref;
   final ITrainingRepository _repository;
+
+  /// Debouncer para optimizar saves a BD (evitar saves excesivos durante input)
+  final Debouncer _saveDebouncer = Debouncer(
+    delay: const Duration(milliseconds: 500),
+  );
+
+  /// Flag para saber si hay un save pendiente que debe ejecutarse inmediatamente
+  bool _hasPendingSave = false;
 
   TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState());
 
@@ -530,6 +539,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     if (state.startTime == null) return;
     if (state.exercises.isEmpty) return; // Should not save empty session
 
+    // Forzar save pendiente antes de finalizar
+    await flushPendingSave();
+
     final endTime = DateTime.now();
     final durationSeconds = endTime.difference(state.startTime!).inSeconds;
 
@@ -547,13 +559,29 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     await _repository.saveSesion(sesion);
     await clearStorage();
 
+    // Cancelar cualquier debouncer pendiente
+    _saveDebouncer.cancel();
+
     state = TrainingState();
     ref.read(bottomNavIndexProvider.notifier).state = 2;
   }
 
   // --- Persistence ---
 
-  Future<void> _saveState() async {
+  /// Guarda el estado con debounce para evitar saves excesivos durante input rápido.
+  /// Use _saveStateImmediate() para saves que necesitan ser inmediatos.
+  void _saveState() {
+    _hasPendingSave = true;
+    _saveDebouncer.run(() {
+      _saveStateImmediate();
+    });
+  }
+
+  /// Guarda el estado inmediatamente sin debounce.
+  /// Usar para eventos importantes como completar un set o terminar sesión.
+  Future<void> _saveStateImmediate() async {
+    _hasPendingSave = false;
+
     // Removed strict check for activeRutina to allow Ad-Hoc saves
     if (state.exercises.isEmpty) return;
 
@@ -570,6 +598,14 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       await _repository.saveActiveSession(data);
     } catch (e) {
       Logger().e('Error saving session state', error: e);
+    }
+  }
+
+  /// Fuerza el save si hay uno pendiente (llamar antes de operaciones críticas)
+  Future<void> flushPendingSave() async {
+    if (_hasPendingSave) {
+      _saveDebouncer.cancel();
+      await _saveStateImmediate();
     }
   }
 

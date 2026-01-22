@@ -2,15 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/performance_utils.dart';
+
+// ============================================================================
+// PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
+// ============================================================================
+
+class _InputStyles {
+  static final inputText = GoogleFonts.montserrat(
+    fontWeight: FontWeight.w800,
+    fontSize: 18,
+    color: Colors.white,
+  );
+
+  static final ghostText = GoogleFonts.montserrat(
+    color: Colors.white30,
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+
+  static final ghostTextSuggestion = GoogleFonts.montserrat(
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+
+  static final toolbarButtonLabel = GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: Colors.white,
+  );
+}
 
 /// Widget de input optimizado para logging de series en gym
 ///
-/// Características:
-/// - Teclado numérico compacto (no tapa UI)
-/// - Ghost values tocables (tap para copiar valor anterior)
-/// - Swipe vertical para +1/-1 rápido
-/// - Auto-focus suave con vibración
-/// - Diseño oscuro adaptado al tema gym
+/// Optimizaciones aplicadas:
+/// - Estilos pre-computados (sin GoogleFonts en build)
+/// - Animación condicional según PerformanceMode
+/// - RepaintBoundary para aislar repaints
+/// - Mínimo uso de setState
+/// - FocusNode pooling
 class LogInput extends StatefulWidget {
   /// Valor actual del input
   final String value;
@@ -72,18 +102,15 @@ class LogInput extends StatefulWidget {
   State<LogInput> createState() => _LogInputState();
 }
 
-class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin {
+class _LogInputState extends State<LogInput> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _ownsFocusNode = false;
+  bool _hasFocus = false;
 
   // Para swipe gesture
   double _dragAccumulator = 0;
   static const double _swipeThreshold = 30.0; // Pixels para triggear cambio
-
-  // Animación para feedback visual de swipe
-  late AnimationController _feedbackController;
-  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
@@ -97,19 +124,21 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
       _ownsFocusNode = true;
     }
 
-    // Animación de feedback
-    _feedbackController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _feedbackController, curve: Curves.easeOut),
-    );
+    // Listener para tracking de focus (sin rebuild completo)
+    _focusNode.addListener(_onFocusChange);
 
     // Auto-focus inicial si es necesario
     if (widget.shouldFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) _requestFocus();
+      });
+    }
+  }
+
+  void _onFocusChange() {
+    if (_hasFocus != _focusNode.hasFocus) {
+      setState(() {
+        _hasFocus = _focusNode.hasFocus;
       });
     }
   }
@@ -121,12 +150,13 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
     // Sync controller con valor externo
     if (widget.value != oldWidget.value && widget.value != _controller.text) {
       _controller.text = widget.value;
-      _controller.selection = TextSelection.collapsed(offset: widget.value.length);
+      _controller.selection =
+          TextSelection.collapsed(offset: widget.value.length);
     }
 
     // Auto-focus cuando shouldFocus cambia a true
     if (widget.shouldFocus && !oldWidget.shouldFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) _requestFocus();
       });
     }
@@ -135,7 +165,7 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
   @override
   void dispose() {
     _controller.dispose();
-    _feedbackController.dispose();
+    _focusNode.removeListener(_onFocusChange);
     if (_ownsFocusNode) {
       _focusNode.dispose();
     }
@@ -153,6 +183,7 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
   }
 
   Future<void> _triggerLightVibration() async {
+    if (PerformanceMode.instance.reduceVibrations) return;
     final canVibrate = await Vibrate.canVibrate;
     if (canVibrate) {
       Vibrate.feedback(FeedbackType.selection);
@@ -160,6 +191,7 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
   }
 
   Future<void> _triggerMediumVibration() async {
+    if (PerformanceMode.instance.reduceVibrations) return;
     final canVibrate = await Vibrate.canVibrate;
     if (canVibrate) {
       Vibrate.feedback(FeedbackType.light);
@@ -173,9 +205,6 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
     widget.onChanged(widget.ghostValue!);
     widget.onGhostTap?.call();
     _triggerLightVibration();
-
-    // Feedback visual
-    _feedbackController.forward().then((_) => _feedbackController.reverse());
   }
 
   void _handleVerticalDrag(DragUpdateDetails details) {
@@ -183,13 +212,15 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
 
     if (_dragAccumulator.abs() >= _swipeThreshold) {
       final currentValue = _parseCurrentValue();
-      final increment = _dragAccumulator > 0 ? widget.swipeIncrement : -widget.swipeIncrement;
+      final increment =
+          _dragAccumulator > 0 ? widget.swipeIncrement : -widget.swipeIncrement;
       final newValue = (currentValue + increment).clamp(0.0, 9999.0);
 
       // Formatear el nuevo valor
       final formatted = widget.isInteger
           ? newValue.round().toString()
-          : newValue.toStringAsFixed(newValue.truncateToDouble() == newValue ? 0 : 1);
+          : newValue.toStringAsFixed(
+              newValue.truncateToDouble() == newValue ? 0 : 1);
 
       _controller.text = formatted;
       widget.onChanged(formatted);
@@ -197,9 +228,6 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
 
       // Reset accumulator
       _dragAccumulator = 0;
-
-      // Feedback visual
-      _feedbackController.forward().then((_) => _feedbackController.reverse());
     }
   }
 
@@ -223,14 +251,14 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
     final hasGhost = widget.ghostValue != null && widget.ghostValue!.isNotEmpty;
     final isEmpty = _controller.text.isEmpty;
 
-    return GestureDetector(
-      // Swipe vertical para +1/-1
-      onVerticalDragUpdate: _handleVerticalDrag,
-      onVerticalDragEnd: _handleDragEnd,
-      // Tap en ghost para copiar
-      onDoubleTap: hasGhost ? _handleGhostTap : null,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
+    // Usar RepaintBoundary para aislar repaints frecuentes
+    return RepaintBoundary(
+      child: GestureDetector(
+        // Swipe vertical para +1/-1
+        onVerticalDragUpdate: _handleVerticalDrag,
+        onVerticalDragEnd: _handleDragEnd,
+        // Tap en ghost para copiar
+        onDoubleTap: hasGhost ? _handleGhostTap : null,
         child: Container(
           constraints: BoxConstraints(minWidth: widget.minWidth),
           child: Stack(
@@ -245,25 +273,20 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                 ),
                 textInputAction: widget.textInputAction,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
+                style: _InputStyles.inputText,
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                   filled: true,
-                  fillColor: _focusNode.hasFocus ? Colors.grey[900] : Colors.black,
+                  fillColor: _hasFocus ? Colors.grey[900] : Colors.black,
                   // Ghost value como hint
                   hintText: hasGhost ? widget.ghostValue : null,
-                  hintStyle: GoogleFonts.montserrat(
-                    color: widget.isSuggestion
-                        ? Colors.green[600]?.withValues(alpha: 0.6)
-                        : Colors.white30,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  hintStyle: widget.isSuggestion
+                      ? _InputStyles.ghostTextSuggestion.copyWith(
+                          color: Colors.green[600]?.withValues(alpha: 0.6),
+                        )
+                      : _InputStyles.ghostText,
                   // Suffix si existe
                   suffixText: widget.suffix,
                   suffixStyle: TextStyle(
@@ -282,7 +305,8 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.redAccent[700]!, width: 2),
+                    borderSide:
+                        BorderSide(color: Colors.redAccent[700]!, width: 2),
                   ),
                 ),
                 inputFormatters: [
@@ -306,8 +330,8 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                 },
               ),
 
-              // Indicador de swipe (pequeñas flechas)
-              if (_focusNode.hasFocus)
+              // Indicador de swipe (pequeñas flechas) - solo cuando tiene focus
+              if (_hasFocus)
                 Positioned(
                   right: 2,
                   top: 2,
@@ -315,8 +339,10 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.keyboard_arrow_up, size: 10, color: Colors.grey[700]),
-                      Icon(Icons.keyboard_arrow_down, size: 10, color: Colors.grey[700]),
+                      Icon(Icons.keyboard_arrow_up,
+                          size: 10, color: Colors.grey[700]),
+                      Icon(Icons.keyboard_arrow_down,
+                          size: 10, color: Colors.grey[700]),
                     ],
                   ),
                 ),
@@ -327,7 +353,8 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                   left: 4,
                   top: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                     decoration: BoxDecoration(
                       color: widget.isSuggestion
                           ? Colors.green[900]?.withValues(alpha: 0.5)
@@ -338,7 +365,9 @@ class _LogInputState extends State<LogInput> with SingleTickerProviderStateMixin
                       '2x',
                       style: TextStyle(
                         fontSize: 7,
-                        color: widget.isSuggestion ? Colors.green[400] : Colors.grey[500],
+                        color: widget.isSuggestion
+                            ? Colors.green[400]
+                            : Colors.grey[500],
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -530,14 +559,7 @@ class _ToolbarButton extends StatelessWidget {
                 Icon(icon, size: 14, color: Colors.white),
                 const SizedBox(width: 4),
               ],
-              Text(
-                label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
+              Text(label, style: _InputStyles.toolbarButtonLabel),
             ],
           ),
         ),
