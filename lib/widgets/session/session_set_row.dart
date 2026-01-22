@@ -403,90 +403,103 @@ class _PrevValueColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (suggestion != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          decoration: BoxDecoration(
-            color: suggestion!.isImprovement
-                ? Colors.green[900]?.withValues(alpha: 0.3)
-                : Colors.grey[850],
+      final isImprovement = suggestion!.isImprovement;
+      return Tooltip(
+        message: 'Copiar sugerencia',
+        child: Material(
+          color: isImprovement
+              ? Colors.green[900]?.withValues(alpha: 0.3)
+              : Colors.grey[850],
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: suggestion!.isImprovement
+            side: BorderSide(
+              color: isImprovement
                   ? Colors.green[700]!.withValues(alpha: 0.5)
                   : Colors.grey[700]!,
             ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'SUG',
-                style: _SetRowStyles.sugLabel.copyWith(
-                  color: suggestion!.isImprovement
-                      ? Colors.green[400]
-                      : Colors.grey[400],
-                ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              width: 52,
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'SUG',
+                    style: _SetRowStyles.sugLabel.copyWith(
+                      color: isImprovement
+                          ? Colors.green[400]
+                          : Colors.grey[400],
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    '${suggestion!.suggestedWeight}',
+                    style: _SetRowStyles.sugValue.copyWith(
+                      color: isImprovement
+                          ? Colors.green[300]
+                          : Colors.grey[300],
+                    ),
+                  ),
+                  Text(
+                    'x${suggestion!.suggestedReps}',
+                    style: _SetRowStyles.sugReps.copyWith(
+                      color: isImprovement
+                          ? Colors.green[400]
+                          : Colors.grey[400],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 1),
-              Text(
-                '${suggestion!.suggestedWeight}',
-                style: _SetRowStyles.sugValue.copyWith(
-                  color: suggestion!.isImprovement
-                      ? Colors.green[300]
-                      : Colors.grey[300],
-                ),
-              ),
-              Text(
-                'x${suggestion!.suggestedReps}',
-                style: _SetRowStyles.sugReps.copyWith(
-                  color: suggestion!.isImprovement
-                      ? Colors.green[400]
-                      : Colors.grey[400],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
 
     if (prevLog != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey[850],
+      return Tooltip(
+        message: 'Copiar anterior',
+        child: Material(
+          color: Colors.grey[850],
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[800]!),
+            side: BorderSide(color: Colors.grey[800]!),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'PREV',
-                style: _SetRowStyles.prevLabel.copyWith(
-                  color: Colors.grey[500],
-                ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              width: 52,
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'PREV',
+                    style: _SetRowStyles.prevLabel.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    '${prevLog!.peso}',
+                    style: _SetRowStyles.prevValue.copyWith(
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  Text(
+                    'x${prevLog!.reps}',
+                    style: _SetRowStyles.prevReps.copyWith(
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 1),
-              Text(
-                '${prevLog!.peso}',
-                style: _SetRowStyles.prevValue.copyWith(
-                  color: Colors.grey[400],
-                ),
-              ),
-              Text(
-                'x${prevLog!.reps}',
-                style: _SetRowStyles.prevReps.copyWith(
-                  color: Colors.grey[500],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
