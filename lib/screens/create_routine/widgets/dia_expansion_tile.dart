@@ -11,12 +11,14 @@ class DiaExpansionTile extends StatefulWidget {
   final Function(String) onUpdateProgression;
   final Function() onAddExercise;
   final Function(int, int) onReorderExercises;
+  final Function(int, int) onMoveExercise;
   final Function(int) onRemoveExercise;
   final Function(int, EjercicioEnRutina) onUndoRemove;
   final Function(int, EjercicioEnRutina) onUpdateExercise;
   final Function() onRemoveDay;
   final Function() onDuplicateDay;
   final Function(int, int) onCreateSuperset;
+  final Function(String, int) onMoveSuperset;
   final Function(int) onRemoveFromSuperset;
 
   const DiaExpansionTile({
@@ -27,12 +29,14 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onUpdateProgression,
     required this.onAddExercise,
     required this.onReorderExercises,
+    required this.onMoveExercise,
     required this.onRemoveExercise,
     required this.onUndoRemove,
     required this.onUpdateExercise,
     required this.onRemoveDay,
     required this.onDuplicateDay,
     required this.onCreateSuperset,
+    required this.onMoveSuperset,
     required this.onRemoveFromSuperset,
   });
 
@@ -43,6 +47,13 @@ class DiaExpansionTile extends StatefulWidget {
 class _DiaExpansionTileState extends State<DiaExpansionTile> {
   bool _isExpanded = true;
   late TextEditingController _nameController;
+  bool _isLinkDragActive = false;
+  bool _dragAccepted = false;
+
+  // Reorder drag state
+  bool _isReorderDragActive = false;
+  int? _reorderSourceFlatIndex;
+  int? _dragSourceVisualIndex;
 
   @override
   void initState() {
@@ -128,38 +139,53 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
     );
   }
 
-  // Returns list of groups, where each group is a list of indices in the original list
-  List<List<int>> _getVisualGroupIndices() {
-    final groups = <List<int>>[];
-    if (widget.dia.ejercicios.isEmpty) return groups;
-
-    List<int> currentGroup = [];
-    String? currentSupersetId;
-
-    for (int i = 0; i < widget.dia.ejercicios.length; i++) {
-      final ex = widget.dia.ejercicios[i];
-      if (currentGroup.isEmpty) {
-        currentGroup.add(i);
-        currentSupersetId = ex.supersetId;
-      } else {
-        if (ex.supersetId != null && ex.supersetId == currentSupersetId) {
-           currentGroup.add(i);
-        } else {
-           groups.add(currentGroup);
-           currentGroup = [i];
-           currentSupersetId = ex.supersetId;
-        }
-      }
-    }
-    if (currentGroup.isNotEmpty) {
-      groups.add(currentGroup);
-    }
-    return groups;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final visualGroups = _getVisualGroupIndices();
+    // Helper: build insertion dropzone for any flat insertion index
+    Widget buildInsertionDropZone(int insertionFlatIndex) {
+      return DragTarget<Object>(
+        onWillAcceptWithDetails: (details) => details.data is SupersetDragData || details.data is ReorderDragData,
+        onAcceptWithDetails: (details) {
+          final data = details.data;
+          _dragAccepted = true;
+          if (data is ReorderDragData) {
+            // Move single exercise by flat indices
+            widget.onMoveExercise(data.flatIndex, insertionFlatIndex);
+          } else if (data is SupersetDragData) {
+            // If it's a superset block, move the whole block
+            if (data.supersetId != null) {
+              widget.onMoveSuperset(data.supersetId!, insertionFlatIndex);
+            } else {
+              // single exercise without superset
+              widget.onMoveExercise(data.flatIndex, insertionFlatIndex);
+            }
+          }
+          _isLinkDragActive = false;
+          _dragSourceVisualIndex = null;
+          _isReorderDragActive = false;
+          _reorderSourceFlatIndex = null;
+          setState(() {});
+        },
+        builder: (context, candidateData, rejectedData) {
+          final isHovering = candidateData.isNotEmpty;
+          final show = isHovering || _isReorderDragActive;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            height: show ? 12 : 8,
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: show
+                ? BoxDecoration(
+                    color: isHovering ? Colors.redAccent[700]!.withValues(alpha: 31 / 255.0) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  )
+                : null,
+            child: isHovering
+                ? Center(child: Container(height: 4, width: double.infinity, color: Colors.redAccent[700]))
+                : null,
+          );
+        },
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -169,54 +195,64 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.red[900]!.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
+            color: Colors.red[900]!.withValues(alpha: 77 / 255.0),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Colors.red[900]!.withValues(alpha: 51 / 255.0),
+            blurRadius: 12,
+            spreadRadius: -2,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         children: [
           // Header
-          GestureDetector(
-            onLongPress: _showProOptions,
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              color: Colors.grey[900],
-              child: Row(
-                children: [
-                  Icon(Icons.drag_handle, color: Colors.red[900]), // Drag handle for the day itself
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _nameController,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        isDense: true,
-                      ),
-                      onChanged: widget.onUpdateName,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            color: Colors.grey[900],
+            child: Row(
+              children: [
+                GestureDetector(
+                  onLongPress: _showProOptions,
+                  child: Icon(Icons.drag_handle, color: Colors.red[900]),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _nameController,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      isDense: true,
+                      hintText: 'Nombre del día',
+                      hintStyle: TextStyle(color: Colors.white38),
                     ),
+                    onChanged: widget.onUpdateName,
                   ),
-                  if (widget.dia.progressionType != 'none')
-                     Padding(
-                       padding: const EdgeInsets.only(right: 8.0),
-                       child: Icon(Icons.auto_graph, color: Colors.redAccent[700], size: 20),
-                     ),
-                  Icon(
+                ),
+                if (widget.dia.progressionType != 'none')
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.auto_graph, color: Colors.redAccent[700], size: 20),
+                  ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
+                  child: Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: Colors.white,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 

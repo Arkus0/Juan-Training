@@ -107,22 +107,58 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => BibliotecaBottomSheet(
+      builder: (bottomSheetContext) => BibliotecaBottomSheet(
         onAdd: (LibraryExercise ex) {
           ref
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(dayIndex, ex);
           Vibrate.feedback(FeedbackType.light);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 1),
-              content: Text(
-                'Has añadido ${ex.name} 💪',
-                style: GoogleFonts.montserrat(color: Colors.white),
-              ),
-              backgroundColor: Colors.red[900],
-            ),
+          
+          BuildContext? dialogCtx;
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            barrierColor: Colors.black26,
+            builder: (dialogContext) {
+              dialogCtx = dialogContext;
+              return Center(
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    margin: const EdgeInsets.symmetric(horizontal: 40),
+                    decoration: BoxDecoration(
+                      color: Colors.red[900],
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '${ex.name} añadido 💪',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            },
           );
+          
+          // Auto-close after 1 second (only closes this dialog)
+          Future.delayed(const Duration(seconds: 1), () {
+            if (dialogCtx != null && Navigator.of(dialogCtx!, rootNavigator: true).canPop()) {
+              Navigator.of(dialogCtx!, rootNavigator: true).pop();
+            }
+          });
         },
       ),
     );
@@ -211,6 +247,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                       onDuplicateDay: () => notifier.duplicateDay(index),
                       onCreateSuperset: (idxA, idxB) =>
                           notifier.createSuperset(index, idxA, idxB),
+                      onMoveSuperset: (supersetId, toFlat) => notifier.moveSuperset(index, supersetId, toFlat),
+                      onMoveExercise: (fromFlat, toFlat) => notifier.reorderExercises(index, fromFlat, toFlat),
                       onRemoveFromSuperset: (exIdx) =>
                           notifier.removeFromSuperset(index, exIdx),
                     ),

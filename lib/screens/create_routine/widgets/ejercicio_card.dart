@@ -6,12 +6,43 @@ import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
 
+/// Payload passed through drag events so the parent knows which item is moving.
+class SupersetDragData {
+  final int visualIndex;
+  final int flatIndex;
+  final String? supersetId;
+
+  const SupersetDragData({
+    required this.visualIndex,
+    required this.flatIndex,
+    this.supersetId,
+  });
+}
+
+/// Payload for simple reorder drags (single exercise)
+class ReorderDragData {
+  final int flatIndex;
+
+  const ReorderDragData({required this.flatIndex});
+}
+
 class EjercicioCard extends StatelessWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
   final Function(EjercicioEnRutina) onUpdate;
   final Function()? onLink;
   final Function()? onUnlink;
+  final SupersetDragData? linkDragData;
+  final ReorderDragData? reorderDragData;
+  final VoidCallback? onReorderDragStart;
+  final VoidCallback? onReorderDragAccepted;
+  final VoidCallback? onReorderDragEnd;
+  final VoidCallback? onReorderDragCancel;
+  final VoidCallback? onLinkDragStart;
+  final VoidCallback? onLinkDragAccepted;
+  final VoidCallback? onLinkDragEnd;
+  final VoidCallback? onLinkDragCancel;
+  final bool disableSwipe;
 
   const EjercicioCard({
     Key? key,
@@ -111,107 +142,147 @@ class EjercicioCard extends StatelessWidget {
 
     final imageWidget = _buildImage(libraryExercise);
 
-    return GestureDetector(
-      onLongPress: () => _showProOptions(context),
-      child: Card(
-        color: Colors.grey[900],
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              // Drag Handle
+    final card = Card(
+      color: Colors.grey[900],
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            // Drag Handle (reorder long-press)
+            if (reorderDragData != null)
+              LongPressDraggable<ReorderDragData>(
+                data: reorderDragData,
+                onDragStarted: onReorderDragStart,
+                onDragCompleted: onReorderDragAccepted,
+                onDragEnd: (_) => onReorderDragEnd?.call(),
+                onDraggableCanceled: (_, __) => onReorderDragCancel?.call(),
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Opacity(opacity: 0.9, child: Icon(Icons.drag_indicator, color: Colors.grey[700], size: 28)),
+                ),
+                child: Icon(Icons.drag_indicator, color: Colors.grey[700]),
+              )
+            else
               Icon(Icons.drag_indicator, color: Colors.grey[700]),
-              const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-              // Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: imageWidget,
-              ),
-              const SizedBox(width: 12),
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: imageWidget,
+            ),
+            const SizedBox(width: 12),
 
-              // Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ejercicio.nombre.toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      ejercicio.musculosPrincipales.join(', '),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    // Series x Reps Inputs
-                    Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: TextFormField(
-                            initialValue: ejercicio.series.toString(),
-                            keyboardType: TextInputType.number,
-                            style: GoogleFonts.montserrat(
-                                fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                              border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                            ),
-                            onChanged: (val) {
-                              final s = int.tryParse(val);
-                              if (s != null) onUpdate(ejercicio.copyWith(series: s));
-                            },
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ejercicio.nombre.toUpperCase(),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ejercicio.musculosPrincipales.join(', '),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  // Series x Reps Inputs
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        child: TextFormField(
+                          initialValue: ejercicio.series.toString(),
+                          keyboardType: TextInputType.number,
+                          style: GoogleFonts.montserrat(
+                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
                           ),
+                          onChanged: (val) {
+                            final s = int.tryParse(val);
+                            if (s != null) onUpdate(ejercicio.copyWith(series: s));
+                          },
                         ),
-                        Text(' x ', style: TextStyle(color: Colors.grey[600])),
-                        SizedBox(
-                          width: 60,
-                          child: TextFormField(
-                            initialValue: ejercicio.repsRange,
-                            style: GoogleFonts.montserrat(
-                                fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                              border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-                            ),
-                            onChanged: (val) {
-                              onUpdate(ejercicio.copyWith(repsRange: val));
-                            },
+                      ),
+                      Text(' x ', style: TextStyle(color: Colors.grey[600])),
+                      SizedBox(
+                        width: 60,
+                        child: TextFormField(
+                          initialValue: ejercicio.repsRange,
+                          style: GoogleFonts.montserrat(
+                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
                           ),
+                          onChanged: (val) {
+                            onUpdate(ejercicio.copyWith(repsRange: val));
+                          },
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Actions
+            if (onLink != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: Icon(Icons.link, color: Colors.white70), // hint only, drag is on long press of card
               ),
 
-              // Actions
-              if (onLink != null)
-                IconButton(
-                  icon: const Icon(Icons.link, color: Colors.white70),
-                  onPressed: onLink,
-                  tooltip: 'Unir con siguiente',
-                  visualDensity: VisualDensity.compact,
-                ),
-
-              // Info Icon / Menu
-              IconButton(
-                icon: Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                onPressed: () => _showProOptions(context),
-              ),
-            ],
-          ),
+            // Info Icon / Menu
+            IconButton(
+              icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+              onPressed: () => _showProOptions(context),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ),
       ),
     );
+
+    if (onLink != null) {
+      return LongPressDraggable<SupersetDragData>(
+        data: linkDragData,
+        onDragStarted: onLinkDragStart,
+        onDragCompleted: onLinkDragAccepted,
+        onDragEnd: (_) => onLinkDragEnd?.call(),
+        onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
+        feedback: Material(
+          color: Colors.transparent,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Opacity(
+              opacity: 0.9,
+              child: card,
+            ),
+          ),
+        ),
+        childWhenDragging: Opacity(
+          opacity: 0.3,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: card,
+          ),
+        ),
+        child: card,
+      );
+    }
+
+    return card;
   }
 
   Widget _buildImage(LibraryExercise? libExercise) {
