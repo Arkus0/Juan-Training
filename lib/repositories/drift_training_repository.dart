@@ -367,12 +367,19 @@ class DriftTrainingRepository implements ITrainingRepository {
     final visitedExerciseIds = <String>{};
     final visitedSetIds = <String>{};
 
+    // Helper to avoid repeatedly appending the "_target" suffix when IDs already contain it
+    String _stripTargetSuffix(String id) {
+      const suffix = '_target';
+      if (id.endsWith(suffix)) return id.substring(0, id.length - suffix.length);
+      return id;
+    }
+
     Future<void> processExercises(List<Ejercicio> list, bool isTarget) async {
       for (var i = 0; i < list.length; i++) {
         final ex = list[i];
-        // For target exercises, append "_target" to avoid ID collision with completed exercises
-        // This ensures both completed and target data are saved separately
-        final rowId = isTarget ? '${ex.id}_target' : ex.id;
+        // Normalize base ID to strip any existing suffix before applying target marker
+        final baseExId = _stripTargetSuffix(ex.id);
+        final rowId = isTarget ? '${baseExId}_target' : baseExId;
         visitedExerciseIds.add(rowId);
 
         await db.into(db.sessionExercises).insertOnConflictUpdate(
@@ -391,8 +398,9 @@ class DriftTrainingRepository implements ITrainingRepository {
 
         for (var j = 0; j < ex.logs.length; j++) {
           final log = ex.logs[j];
-          // For target sets, append "_target" to avoid ID collision
-          final setId = isTarget ? '${log.id}_target' : log.id;
+          // Normalize set IDs as well to prevent repeated suffix growth
+          final baseSetId = _stripTargetSuffix(log.id);
+          final setId = isTarget ? '${baseSetId}_target' : baseSetId;
           visitedSetIds.add(setId);
 
           await db.into(db.workoutSets).insertOnConflictUpdate(
