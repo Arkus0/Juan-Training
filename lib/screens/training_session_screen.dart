@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
@@ -142,32 +141,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   }
 
   void _checkDiscoveryTooltip() async {
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.swipe, color: Colors.redAccent[400], size: 20),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Tip: Swipe arriba/abajo en inputs para +/- rápido. Doble-tap para copiar valor anterior.',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.grey[900],
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: Colors.redAccent[700]!),
-        ),
-      ),
-    );
+    // Discovery tooltip removed by request - it was showing a swipe hint which is considered noisy.
+    // Left intentionally empty so the callsite remains but it does nothing.
+    return;
   }
 
   /// Callback cuando el timer de descanso termina

@@ -77,6 +77,7 @@ class RestTimerBar extends ConsumerStatefulWidget {
   final ValueChanged<int> onDurationChange;
   final ValueChanged<int> onAddTime;
   final TimerFinishedCallback onTimerFinished;
+  final VoidCallback? onDiscardSession; // Nuevo: borrar sesión
 
   const RestTimerBar({
     super.key,
@@ -88,6 +89,7 @@ class RestTimerBar extends ConsumerStatefulWidget {
     required this.onDurationChange,
     required this.onAddTime,
     required this.onTimerFinished,
+    this.onDiscardSession,
   });
 
   @override
@@ -310,6 +312,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
         seconds: widget.timerState.totalSeconds,
         onDurationChange: widget.onDurationChange,
         onStartRest: widget.onStartRest,
+        onDiscardSession: widget.onDiscardSession,
       );
     }
 
@@ -327,8 +330,7 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
             onStopRest: widget.onStopRest,
             onPauseRest: widget.onPauseRest,
             onResumeRest: widget.onResumeRest,
-            onAddTime: () => widget.onAddTime(30),
-          ),
+            onAddTime: () => widget.onAddTime(30),            onDiscardSession: widget.onDiscardSession,          ),
         ),
       ),
     );
@@ -341,11 +343,13 @@ class _InactiveTimerBar extends StatelessWidget {
   final int seconds;
   final ValueChanged<int> onDurationChange;
   final VoidCallback onStartRest;
+  final VoidCallback? onDiscardSession;
 
   const _InactiveTimerBar({
     required this.seconds,
     required this.onDurationChange,
     required this.onStartRest,
+    this.onDiscardSession,
   });
 
   @override
@@ -366,7 +370,41 @@ class _InactiveTimerBar extends StatelessWidget {
               seconds: seconds,
               onChanged: onDurationChange,
             ),
-            const Spacer(),
+
+            // Basura centrada en la barra inactiva
+            Expanded(
+              child: Center(
+                child: Tooltip(
+                  message: 'Descartar sesión',
+                  child: _CircleButton(
+                    icon: Icons.delete_outline,
+                    size: 36,
+                    color: Colors.grey[800],
+                    onTap: onDiscardSession == null
+                        ? null
+                        : () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: Colors.grey[900],
+                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
+                                content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              HapticFeedback.heavyImpact();
+                              onDiscardSession!();
+                            }
+                          },
+                  ),
+                ),
+              ),
+            ),
+
             _StartRestButton(onTap: onStartRest),
           ],
         ),
@@ -383,6 +421,7 @@ class _ActiveTimerBar extends StatelessWidget {
   final VoidCallback onPauseRest;
   final VoidCallback onResumeRest;
   final VoidCallback onAddTime;
+  final VoidCallback? onDiscardSession;
 
   const _ActiveTimerBar({
     required this.displaySeconds,
@@ -391,6 +430,7 @@ class _ActiveTimerBar extends StatelessWidget {
     required this.onPauseRest,
     required this.onResumeRest,
     required this.onAddTime,
+    this.onDiscardSession,
   });
 
   @override
@@ -452,7 +492,42 @@ class _ActiveTimerBar extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: 12),
-                // Progreso circular con countdown
+                // Espacio central: botón de basura en el centro de la barra
+                Expanded(
+                  child: Center(
+                    child: Tooltip(
+                      message: 'Descartar sesión',
+                      child: _CircleButton(
+                        icon: Icons.delete_outline,
+                        size: 36,
+                        color: Colors.grey[800],
+                        onTap: onDiscardSession == null
+                            ? null
+                            : () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: Colors.grey[900],
+                                    title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
+                                    content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
+                                      TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  HapticFeedback.heavyImpact();
+                                  onDiscardSession!();
+                                }
+                              },
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+                // Progreso circular con countdown (ahora a la derecha)
                 RepaintBoundary(
                   child: _CircularTimerProgress(
                     progress: progress,
@@ -462,11 +537,13 @@ class _ActiveTimerBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Texto de estado
-                Expanded(
+
+                // Texto de estado (compacto) y botones
+                SizedBox(
+                  width: 120,
                   child: _TimerStateLabel(isPaused: isPaused),
                 ),
-                // Botones de control
+                // Botones de control (sin basura aquí)
                 _TimerControlButtons(
                   isPaused: isPaused,
                   onAddTime: onAddTime,
@@ -680,6 +757,7 @@ class _TimerControlButtons extends StatelessWidget {
             },
           ),
         ),
+
       ],
     );
   }

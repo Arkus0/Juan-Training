@@ -9,7 +9,7 @@ import '../widgets/common/app_widgets.dart';
 import '../widgets/routine_import_preview_dialog.dart';
 
 class RutinasScreen extends ConsumerWidget {
-  const RutinasScreen({super.key});
+  const RutinasScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -206,10 +206,10 @@ class _RutinaTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _RutinaTile({
-    super.key,
+    Key? key,
     required this.rutina,
     required this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

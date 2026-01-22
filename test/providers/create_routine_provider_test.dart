@@ -1,12 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
-import 'package:juan_training/models/sesion.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/providers/training_provider.dart';
-import 'package:juan_training/repositories/i_training_repository.dart';
 import '../mocks.dart';
+
 
 void main() {
   late ProviderContainer container;

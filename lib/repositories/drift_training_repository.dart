@@ -292,8 +292,11 @@ class DriftTrainingRepository implements ITrainingRepository {
   // --- Sesiones ---
 
   @override
-  Stream<List<Sesion>> watchSesionesHistory() {
-    return ((db.select(db.sessions)..where((s) => s.completedAt.isNotNull()))
+  Stream<List<Sesion>> watchSesionesHistory({int limit = 50}) {
+    // Limit initial history to avoid loading all past sessions at once (performance)
+    return ((db.select(db.sessions)
+          ..where((s) => s.completedAt.isNotNull())
+          ..limit(limit))
         .join([
       leftOuterJoin(db.sessionExercises,
           db.sessionExercises.sessionId.equalsExp(db.sessions.id)),
@@ -361,9 +364,6 @@ class DriftTrainingRepository implements ITrainingRepository {
               ? Value(sesion.fecha
                   .add(Duration(seconds: sesion.durationSeconds ?? 0)))
               : const Value(null),
-          restTimerEndTime: Value(sesion.restTimerEndTime),
-          restTimerTotalSeconds: Value(sesion.restTimerTotalSeconds),
-          restTimerIsPaused: Value(sesion.restTimerIsPaused),
         ));
 
     // 2. Track what we are saving to handle deletions
@@ -503,9 +503,6 @@ class DriftTrainingRepository implements ITrainingRepository {
       durationSeconds: 0,
       ejerciciosCompletados: data.exercises,
       ejerciciosObjetivo: data.targets,
-      restTimerEndTime: data.restTimerEndTime,
-      restTimerTotalSeconds: data.restTimerTotalSeconds,
-      restTimerIsPaused: data.restTimerIsPaused,
     );
 
     final active = await (db.select(db.sessions)
@@ -582,9 +579,6 @@ class DriftTrainingRepository implements ITrainingRepository {
       startTime: tempSession.fecha,
       defaultRestSeconds: 60,
       history: historyMap,
-      restTimerEndTime: sessionRow.restTimerEndTime,
-      restTimerTotalSeconds: sessionRow.restTimerTotalSeconds,
-      restTimerIsPaused: sessionRow.restTimerIsPaused,
     );
   }
 

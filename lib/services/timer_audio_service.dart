@@ -169,10 +169,9 @@ class TimerAudioService {
 /// Fuente de audio personalizada para ondas sinusoidales
 class _SineWaveAudioSource extends StreamAudioSource {
   final Uint8List _bytes;
-  final int _sampleRate;
   final String contentType;
 
-  _SineWaveAudioSource(this._bytes, this._sampleRate, {this.contentType = 'audio/wav'});
+  _SineWaveAudioSource(this._bytes, int _sampleRate, {this.contentType = 'audio/wav'});
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {

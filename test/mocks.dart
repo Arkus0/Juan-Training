@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/sesion.dart';
 import 'package:juan_training/repositories/i_training_repository.dart';
@@ -49,7 +48,8 @@ class MockTrainingRepository implements ITrainingRepository {
   }
 
   @override
-  Stream<List<Sesion>> watchSesionesHistory() {
+  Stream<List<Sesion>> watchSesionesHistory({int limit = 50}) {
+    // Ignore the limit in the mock, but accept the parameter to match interface
     return Stream.value(_sesiones);
   }
 

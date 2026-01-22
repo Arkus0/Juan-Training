@@ -373,7 +373,6 @@ class _ExerciseGroupWidget extends StatefulWidget {
 }
 
 class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
-  bool _isDragOver = false;
   int? _dragOverIndex;
 
   OverlayEntry? _currentToast;
@@ -505,7 +504,6 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           // Accept if it's a different exercise
           if (details.data.instanceId != ex.instanceId) {
             setState(() {
-              _isDragOver = true;
               _dragOverIndex = idx;
             });
             return true;
@@ -514,13 +512,11 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         },
         onLeave: (_) {
           setState(() {
-            _isDragOver = false;
             _dragOverIndex = null;
           });
         },
         onAcceptWithDetails: (details) {
           setState(() {
-            _isDragOver = false;
             _dragOverIndex = null;
           });
           // Create superset between source and target

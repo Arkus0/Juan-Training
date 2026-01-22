@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/library_exercise.dart';
 import '../../providers/paginated_exercises_provider.dart';
-import '../../utils/performance_utils.dart';
 import 'optimized_exercise_image.dart';
-import 'skeleton_loaders.dart';
 
 /// Lista virtualizada de ejercicios para la biblioteca (700+ items)
 ///

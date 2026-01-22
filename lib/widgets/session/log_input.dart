@@ -108,6 +108,9 @@ class _LogInputState extends State<LogInput> {
   bool _ownsFocusNode = false;
   bool _hasFocus = false;
 
+  // Overlay toolbar entry shown when this input has focus
+  OverlayEntry? _toolbarEntry;
+
   // Para swipe gesture
   double _dragAccumulator = 0;
   static const double _swipeThreshold = 30.0; // Pixels para triggear cambio
@@ -140,6 +143,13 @@ class _LogInputState extends State<LogInput> {
       setState(() {
         _hasFocus = _focusNode.hasFocus;
       });
+
+      // Show or hide overlay toolbar
+      if (_focusNode.hasFocus) {
+        _insertToolbarOverlay();
+      } else {
+        _removeToolbarOverlay();
+      }
     }
   }
 
@@ -199,6 +209,7 @@ class _LogInputState extends State<LogInput> {
   void dispose() {
     _controller.dispose();
     _focusNode.removeListener(_onFocusChange);
+    _removeToolbarOverlay();
     if (_ownsFocusNode) {
       _focusNode.dispose();
     }
@@ -277,6 +288,56 @@ class _LogInputState extends State<LogInput> {
 
   void _handleDragEnd(DragEndDetails details) {
     _dragAccumulator = 0;
+  }
+
+  // Overlay toolbar management
+  void _insertToolbarOverlay() {
+    if (_toolbarEntry != null) return;
+
+    _toolbarEntry = OverlayEntry(
+      builder: (context) {
+        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+        return Positioned(
+          left: 0,
+          right: 0,
+          bottom: bottomInset,
+          child: Material(
+            color: Colors.transparent,
+            child: LogInputToolbar(
+              onCopyPrevious: widget.onGhostTap,
+              onDecrement: () {
+                final current = _parseCurrentValue();
+                final newValue = (current - widget.swipeIncrement).clamp(0.0, 9999.0);
+                final formatted = widget.isInteger ? newValue.round().toString() : (newValue.truncateToDouble() == newValue ? newValue.toInt().toString() : newValue.toStringAsFixed(1));
+                _controller.text = formatted;
+                widget.onChanged(formatted);
+              },
+              onIncrement: () {
+                final current = _parseCurrentValue();
+                final newValue = (current + widget.swipeIncrement).clamp(0.0, 9999.0);
+                final formatted = widget.isInteger ? newValue.round().toString() : (newValue.truncateToDouble() == newValue ? newValue.toInt().toString() : newValue.toStringAsFixed(1));
+                _controller.text = formatted;
+                widget.onChanged(formatted);
+              },
+              onDone: () {
+                // Close keyboard and remove overlay
+                FocusScope.of(context).unfocus();
+                _removeToolbarOverlay();
+                if (widget.onEditingComplete != null) widget.onEditingComplete!();
+              },
+              incrementLabel: widget.swipeIncrement % 1 == 0 ? '+${widget.swipeIncrement.toInt()}' : '+${widget.swipeIncrement}',
+            ),
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_toolbarEntry!);
+  }
+
+  void _removeToolbarOverlay() {
+    _toolbarEntry?.remove();
+    _toolbarEntry = null;
   }
 
   @override

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
@@ -400,6 +402,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       ),
     );
     _saveState();
+    _saveRestTimerToPrefs();
     return true;
   }
 
@@ -417,6 +420,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       ),
     );
     _saveState();
+    _saveRestTimerToPrefs();
   }
 
   void stopRest({bool saveRestTime = true}) {
@@ -443,6 +447,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       restTimer: const RestTimerState(isActive: false),
     );
     _saveState();
+    _saveRestTimerToPrefs();
   }
 
   /// Actualiza el tiempo de descanso en un SerieLog específico (para analytics)
@@ -487,6 +492,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       ),
     );
     _saveState();
+    _saveRestTimerToPrefs();
   }
 
   /// Reanuda el timer de descanso desde donde estaba pausado
@@ -501,6 +507,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       ),
     );
     _saveState();
+    _saveRestTimerToPrefs();
   }
 
   /// Añade tiempo al timer actual
@@ -522,6 +529,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       );
     }
     _saveState();
+    _saveRestTimerToPrefs();
   }
 
   /// Actualiza el tiempo de descanso sugerido para un ejercicio específico
@@ -596,6 +604,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     try {
       await _repository.saveActiveSession(data);
+      // Persist rest timer to SharedPreferences (separate key)
+      await _saveRestTimerToPrefs();
     } catch (e) {
       Logger().e('Error saving session state', error: e);
     }
@@ -611,6 +621,77 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   Future<void> clearStorage() async {
     await _repository.clearActiveSession();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('rest_timer');
+  }
+
+  Future<void> _saveRestTimerToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rt = state.restTimer;
+      if (!rt.isActive) {
+        await prefs.remove('rest_timer');
+        return;
+      }
+
+      final map = {
+        'isActive': rt.isActive,
+        'isPaused': rt.isPaused,
+        'totalSeconds': rt.totalSeconds,
+        'endTimeMs': rt.endTime?.millisecondsSinceEpoch,
+        'lastExerciseIndex': rt.lastCompletedExerciseIndex,
+        'lastSetIndex': rt.lastCompletedSetIndex,
+      };
+
+      await prefs.setString('rest_timer', json.encode(map));
+    } catch (e) {
+      Logger().e('Error saving rest timer to prefs', error: e);
+    }
+  }
+
+  Future<void> _loadRestTimerFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString('rest_timer');
+      if (s == null) return;
+      final Map<String, dynamic> m = json.decode(s);
+
+      final bool isActive = m['isActive'] == true;
+      final bool isPaused = m['isPaused'] == true;
+      final int totalSeconds = (m['totalSeconds'] as num?)?.toInt() ?? state.defaultRestSeconds;
+      final int? endTimeMs = (m['endTimeMs'] as num?)?.toInt();
+      final int? lastExerciseIndex = (m['lastExerciseIndex'] as num?)?.toInt();
+      final int? lastSetIndex = (m['lastSetIndex'] as num?)?.toInt();
+
+      DateTime? endTime;
+      if (endTimeMs != null) endTime = DateTime.fromMillisecondsSinceEpoch(endTimeMs);
+
+      // Restore into state only if active and endTime in future or paused
+      if (isActive) {
+        var rt = RestTimerState(
+          isActive: true,
+          isPaused: isPaused,
+          totalSeconds: totalSeconds,
+          endTime: endTime,
+          lastCompletedExerciseIndex: lastExerciseIndex,
+          lastCompletedSetIndex: lastSetIndex,
+        );
+
+        // If not paused and endTime in past, treat as finished
+        if (!rt.isPaused && rt.endTime != null && rt.remainingSeconds <= 0) {
+          // Timer already finished while app was closed
+          // We call onTimerFinished behavior: stop and trigger the callbacks when appropriate in UI
+          rt = const RestTimerState(isActive: false);
+        }
+
+        state = state.copyWith(
+          restTimer: rt,
+          isRestActive: rt.isActive,
+        );
+      }
+    } catch (e) {
+      Logger().e('Error loading rest timer from prefs', error: e);
+    }
   }
 
   Future<void> restoreFromStorage() async {
@@ -619,48 +700,19 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
       if (data != null) {
         // Safe Restore: Load data even if activeRutina is missing (deleted routine)
-        // Determine rest timer state based on persisted data
-      RestTimerState restoredTimer = const RestTimerState();
-
-      if (data.restTimerEndTime != null && data.restTimerTotalSeconds != null) {
-        final end = data.restTimerEndTime!;
-        final total = data.restTimerTotalSeconds!;
-
-        if (data.restTimerIsPaused == true) {
-          // If paused, reconstruct paused state keeping the remaining seconds
-          restoredTimer = RestTimerState(
-            isActive: true,
-            isPaused: true,
-            totalSeconds: total,
-            endTime: null,
-          );
-        } else {
-          final remaining = end.difference(DateTime.now()).inSeconds;
-          if (remaining > 0) {
-            restoredTimer = RestTimerState(
-              isActive: true,
-              isPaused: false,
-              totalSeconds: remaining,
-              endTime: DateTime.now().add(Duration(seconds: remaining)),
-            );
-          } else {
-            // Timer already expired
-            restoredTimer = const RestTimerState(isActive: false, isPaused: false);
-          }
-        }
-      }
-
-      state = TrainingState(
+        state = TrainingState(
         activeRutina: data.activeRutina,
         exercises: data.exercises,
         targets: data.targets,
         startTime: data.startTime ?? DateTime.now(),
         defaultRestSeconds: data.defaultRestSeconds,
-        isRestActive: restoredTimer.isActive,
-        restTimer: restoredTimer,
+        isRestActive: false, // Do not restore timer active flag until we check prefs
         history: data.history,
         showAdvancedOptions: false,
       );
+
+        // Try to restore active rest timer from SharedPreferences
+        await _loadRestTimerFromPrefs();
       }
     } catch (e) {
       Logger().e('Error restoring session', error: e);

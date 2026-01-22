@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/rutina.dart';
-import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/library_exercise.dart';
 import 'exercise_library_service.dart';
