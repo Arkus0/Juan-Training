@@ -5,15 +5,72 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/serie_log.dart';
 import '../../models/progression_type.dart';
 import '../../screens/plate_calculator_dialog.dart';
+import '../../utils/performance_utils.dart';
 import 'log_input.dart';
+
+// ============================================================================
+// PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
+// ============================================================================
+
+class _SetRowStyles {
+  static final setNumberText = GoogleFonts.montserrat(
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    color: Colors.white,
+  );
+
+  static final prevLabel = GoogleFonts.montserrat(
+    fontSize: 7,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.5,
+  );
+
+  static final prevValue = GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+  );
+
+  static final prevReps = GoogleFonts.montserrat(
+    fontSize: 9,
+    fontWeight: FontWeight.w500,
+  );
+
+  static final sugLabel = GoogleFonts.montserrat(
+    fontSize: 7,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0.5,
+  );
+
+  static final sugValue = GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+  );
+
+  static final sugReps = GoogleFonts.montserrat(
+    fontSize: 9,
+    fontWeight: FontWeight.w600,
+  );
+
+  static final tagText = GoogleFonts.montserrat(
+    fontSize: 8,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.3,
+  );
+
+  static final noteText = GoogleFonts.montserrat(
+    fontSize: 9,
+    fontStyle: FontStyle.italic,
+  );
+}
 
 /// Widget de fila para logging de una serie individual
 ///
-/// Características mejoradas:
-/// - Inputs con LogInput (swipe +/-, ghost tap, auto-focus)
-/// - Ghost values tocables (doble tap para copiar)
-/// - Indicadores visuales de estado
-/// - Opciones avanzadas via long-press
+/// Optimizaciones aplicadas:
+/// - Estilos pre-computados (sin GoogleFonts en build)
+/// - Animación condicional según PerformanceMode
+/// - RepaintBoundary para inputs
+/// - Widgets const donde posible
+/// - Minimizado número de setState
 class SessionSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
@@ -48,39 +105,21 @@ class SessionSetRow extends StatefulWidget {
   State<SessionSetRow> createState() => _SessionSetRowState();
 }
 
-class _SessionSetRowState extends State<SessionSetRow>
-    with SingleTickerProviderStateMixin {
+class _SessionSetRowState extends State<SessionSetRow> {
   final FocusNode _weightFocusNode = FocusNode();
   final FocusNode _repsFocusNode = FocusNode();
-
-  // Animación para feedback de completado
-  late AnimationController _completeAnimController;
-  late Animation<double> _completeScaleAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    _completeAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-
-    _completeScaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.1), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 50),
-    ]).animate(CurvedAnimation(
-      parent: _completeAnimController,
-      curve: Curves.easeInOut,
-    ));
-
     // Auto-focus inicial si es necesario
     if (widget.shouldFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) _weightFocusNode.requestFocus();
       });
     } else if (widget.shouldFocusReps) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) _repsFocusNode.requestFocus();
       });
     }
@@ -92,7 +131,7 @@ class _SessionSetRowState extends State<SessionSetRow>
 
     // Auto-focus cuando shouldFocus cambia a true
     if (widget.shouldFocus && !oldWidget.shouldFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) {
           _weightFocusNode.requestFocus();
           _triggerFocusVibration();
@@ -102,16 +141,11 @@ class _SessionSetRowState extends State<SessionSetRow>
 
     // Auto-focus en reps
     if (widget.shouldFocusReps && !oldWidget.shouldFocusReps) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      afterFrame(() {
         if (mounted) {
           _repsFocusNode.requestFocus();
         }
       });
-    }
-
-    // Animación cuando se completa
-    if (widget.log.completed && !oldWidget.log.completed) {
-      _completeAnimController.forward(from: 0);
     }
   }
 
@@ -119,11 +153,11 @@ class _SessionSetRowState extends State<SessionSetRow>
   void dispose() {
     _weightFocusNode.dispose();
     _repsFocusNode.dispose();
-    _completeAnimController.dispose();
     super.dispose();
   }
 
   Future<void> _triggerFocusVibration() async {
+    if (PerformanceMode.instance.reduceVibrations) return;
     final canVibrate = await Vibrate.canVibrate;
     if (canVibrate) {
       Vibrate.feedback(FeedbackType.selection);
@@ -155,7 +189,7 @@ class _SessionSetRowState extends State<SessionSetRow>
   }
 
   void _handleComplete(bool? value) {
-    if (value == true) {
+    if (value == true && !PerformanceMode.instance.reduceVibrations) {
       HapticFeedback.mediumImpact();
     }
     widget.onCompleted(value);
@@ -185,8 +219,7 @@ class _SessionSetRowState extends State<SessionSetRow>
 
     return GestureDetector(
       onLongPress: widget.onLongPress,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         decoration: BoxDecoration(
           color: rowColor,
@@ -216,13 +249,15 @@ class _SessionSetRowState extends State<SessionSetRow>
 
                 const SizedBox(width: 8),
 
-                // Input de peso (KG)
+                // Input de peso (KG) - con RepaintBoundary
                 Expanded(
                   child: Stack(
                     alignment: Alignment.centerRight,
                     children: [
                       LogInput(
-                        value: widget.log.peso > 0 ? widget.log.peso.toString() : '',
+                        value: widget.log.peso > 0
+                            ? widget.log.peso.toString()
+                            : '',
                         ghostValue: weightGhost,
                         onChanged: widget.onWeightChanged,
                         onGhostTap: () => widget.onWeightChanged(weightGhost!),
@@ -260,7 +295,8 @@ class _SessionSetRowState extends State<SessionSetRow>
                 // Input de reps
                 Expanded(
                   child: LogInput(
-                    value: widget.log.reps > 0 ? widget.log.reps.toString() : '',
+                    value:
+                        widget.log.reps > 0 ? widget.log.reps.toString() : '',
                     ghostValue: repsGhost,
                     onChanged: widget.onRepsChanged,
                     onGhostTap: () => widget.onRepsChanged(repsGhost!),
@@ -279,12 +315,9 @@ class _SessionSetRowState extends State<SessionSetRow>
                 const SizedBox(width: 8),
 
                 // Checkbox de completado
-                ScaleTransition(
-                  scale: _completeScaleAnimation,
-                  child: _CompletedCheckbox(
-                    isCompleted: isCompleted,
-                    onChanged: _handleComplete,
-                  ),
+                _CompletedCheckbox(
+                  isCompleted: isCompleted,
+                  onChanged: _handleComplete,
                 ),
               ],
             ),
@@ -337,7 +370,8 @@ class _SetNumber extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        boxShadow: isCompleted
+        // Shadows solo si no está en modo performance
+        boxShadow: isCompleted && PerformanceMode.instance.showShadows
             ? [
                 BoxShadow(
                   color: Colors.red[900]!.withValues(alpha: 0.4),
@@ -348,14 +382,7 @@ class _SetNumber extends StatelessWidget {
             : null,
       ),
       child: Center(
-        child: Text(
-          label,
-          style: GoogleFonts.montserrat(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
+        child: Text(label, style: _SetRowStyles.setNumberText),
       ),
     );
   }
@@ -397,21 +424,16 @@ class _PrevValueColumn extends StatelessWidget {
             children: [
               Text(
                 'SUG',
-                style: GoogleFonts.montserrat(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w800,
+                style: _SetRowStyles.sugLabel.copyWith(
                   color: suggestion!.isImprovement
                       ? Colors.green[400]
                       : Colors.grey[400],
-                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 1),
               Text(
                 '${suggestion!.suggestedWeight}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                style: _SetRowStyles.sugValue.copyWith(
                   color: suggestion!.isImprovement
                       ? Colors.green[300]
                       : Colors.grey[300],
@@ -419,9 +441,7 @@ class _PrevValueColumn extends StatelessWidget {
               ),
               Text(
                 'x${suggestion!.suggestedReps}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+                style: _SetRowStyles.sugReps.copyWith(
                   color: suggestion!.isImprovement
                       ? Colors.green[400]
                       : Colors.grey[400],
@@ -449,27 +469,20 @@ class _PrevValueColumn extends StatelessWidget {
             children: [
               Text(
                 'PREV',
-                style: GoogleFonts.montserrat(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w700,
+                style: _SetRowStyles.prevLabel.copyWith(
                   color: Colors.grey[500],
-                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 1),
               Text(
                 '${prevLog!.peso}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                style: _SetRowStyles.prevValue.copyWith(
                   color: Colors.grey[400],
                 ),
               ),
               Text(
                 'x${prevLog!.reps}',
-                style: GoogleFonts.montserrat(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
+                style: _SetRowStyles.prevReps.copyWith(
                   color: Colors.grey[500],
                 ),
               ),
@@ -567,18 +580,18 @@ class _TagsRow extends StatelessWidget {
               color: Colors.orange,
             ),
           if (log.isFailure)
-            _Tag(
+            const _Tag(
               text: 'FALLO',
               color: Colors.red,
               icon: Icons.warning_amber_rounded,
             ),
           if (log.isDropset)
-            _Tag(
+            const _Tag(
               text: 'DROP',
               color: Colors.purple,
             ),
           if (log.isWarmup)
-            _Tag(
+            const _Tag(
               text: 'WARM',
               color: Colors.blue,
             ),
@@ -586,10 +599,8 @@ class _TagsRow extends StatelessWidget {
             Expanded(
               child: Text(
                 log.notas!,
-                style: GoogleFonts.montserrat(
+                style: _SetRowStyles.noteText.copyWith(
                   color: Colors.grey[500],
-                  fontSize: 9,
-                  fontStyle: FontStyle.italic,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -631,12 +642,7 @@ class _Tag extends StatelessWidget {
           ],
           Text(
             text,
-            style: GoogleFonts.montserrat(
-              color: color,
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
+            style: _SetRowStyles.tagText.copyWith(color: color),
           ),
         ],
       ),
