@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
+import '../utils/performance_utils.dart';
 import '../models/ejercicio.dart';
 import 'training_provider.dart';
 
@@ -206,27 +207,25 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
 
   /// Vibración de celebración en milestones
   Future<void> _triggerMilestoneVibration(int milestone) async {
-    final canVibrate = await Vibrate.canVibrate;
-    if (!canVibrate) return;
+    if (PerformanceMode.instance.reduceVibrations) return;
 
-    switch (milestone) {
-      case 50:
-        // Vibración media al 50%
-        Vibrate.feedback(FeedbackType.medium);
-        break;
-      case 75:
-        // Vibración más fuerte al 75%
-        Vibrate.feedback(FeedbackType.heavy);
-        break;
-      case 100:
-        // Vibración de celebración al 100%
-        Vibrate.feedback(FeedbackType.success);
-        await Future.delayed(const Duration(milliseconds: 150));
-        Vibrate.feedback(FeedbackType.success);
-        await Future.delayed(const Duration(milliseconds: 150));
-        Vibrate.feedback(FeedbackType.success);
-        break;
-    }
+    try {
+      switch (milestone) {
+        case 50:
+          try { HapticFeedback.mediumImpact(); } catch (_) {}
+          break;
+        case 75:
+          try { HapticFeedback.heavyImpact(); } catch (_) {}
+          break;
+        case 100:
+          try { HapticFeedback.vibrate(); } catch (_) {}
+          await Future.delayed(const Duration(milliseconds: 150));
+          try { HapticFeedback.vibrate(); } catch (_) {}
+          await Future.delayed(const Duration(milliseconds: 150));
+          try { HapticFeedback.vibrate(); } catch (_) {}
+          break;
+      }
+    } catch (_) {}
   }
 
   /// Reinicia el tracking de milestones (para nueva sesión)

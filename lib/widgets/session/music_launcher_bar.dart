@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const MethodChannel _mediaChannel = MethodChannel('juan_training/music_launcher');
@@ -150,7 +150,7 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
                 _ControlIcon(
                   icon: Icons.skip_previous_rounded,
                   onTap: () async {
-                    Vibrate.feedback(FeedbackType.selection);
+                    try { HapticFeedback.selectionClick(); } catch (_) {}
                     final sent = await _trySendMediaCommand('mediaPrevious', context);
                     if (sent) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -169,7 +169,7 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
                   icon: Icons.play_arrow_rounded,
                   isPlay: true,
                   onTap: () async {
-                    Vibrate.feedback(FeedbackType.heavy);
+                    try { HapticFeedback.heavyImpact(); } catch (_) {}
                     final sent = await _trySendMediaCommand('mediaPlayPause', context);
                     if (sent) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -186,7 +186,7 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
                 _ControlIcon(
                   icon: Icons.skip_next_rounded,
                   onTap: () async {
-                    Vibrate.feedback(FeedbackType.selection);
+                    try { HapticFeedback.selectionClick(); } catch (_) {}
                     final sent = await _trySendMediaCommand('mediaNext', context);
                     if (sent) {
                       ScaffoldMessenger.of(context).showSnackBar(

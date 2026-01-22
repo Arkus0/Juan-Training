@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
@@ -136,7 +136,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                       ejercicioOriginal: libraryExercise,
                       allExercises: allExercises,
                       onReplace: (alternativa) {
-                        Vibrate.feedback(FeedbackType.selection);
+                        try { HapticFeedback.selectionClick(); } catch (_) {}
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -208,9 +209,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
   void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
     // Basic completion feedback
-    // if (await Vibrate.canVibrate) {
-    //   Vibrate.vibrate();
-    // }
+    // Haptic feedback example (use HapticFeedback.* instead of flutter_vibrate)
+    // try { HapticFeedback.vibrate(); } catch (_) {}
 
     // Check for "PR" or better performance
     if (previous != null) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
@@ -50,7 +50,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             backgroundColor: Colors.redAccent[700],
           ),
         );
-        Vibrate.feedback(FeedbackType.error);
+        try { HapticFeedback.vibrate(); } catch (_) {}
         return;
       }
 
@@ -66,11 +66,14 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       });
       overlay.insert(entry);
 
-      // Vibrate
-      Vibrate.vibrateWithPauses([
-        const Duration(milliseconds: 50),
-        const Duration(milliseconds: 200),
-      ]); // Simulate heavy impact
+      // Vibrate approximation using HapticFeedback
+      try {
+        HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 50));
+        HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 200));
+      } catch (_) {} // best-effort haptic feedback
+
 
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,7 +99,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           backgroundColor: Colors.redAccent[700],
         ),
       );
-      Vibrate.feedback(FeedbackType.error);
+      try { HapticFeedback.vibrate(); } catch (_) {}
       final logger = Logger();
       logger.e('Unexpected error in _saveRoutine', error: e, stackTrace: s);
       return;
@@ -112,7 +115,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           ref
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(dayIndex, ex);
-          Vibrate.feedback(FeedbackType.light);
+          try { HapticFeedback.lightImpact(); } catch (_) {}
           // Snackbar is now shown inside BibliotecaBottomSheet
         },
       ),
@@ -150,7 +153,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       return;
     }
 
-    Vibrate.feedback(FeedbackType.selection);
+    try { HapticFeedback.selectionClick(); } catch (_) {}
     RoutineSharingService.instance.shareRoutine(rutina);
   }
 
@@ -314,7 +317,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 heroTag: 'add_day_fab',
                 onPressed: () {
                   notifier.addDay();
-                  Vibrate.feedback(FeedbackType.light);
+                  try { HapticFeedback.lightImpact(); } catch (_) {}
                 },
                 icon: const Icon(Icons.add, size: 32),
                 label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),

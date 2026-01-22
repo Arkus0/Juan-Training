@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/serie_log.dart';
 import '../../models/progression_type.dart';
@@ -158,10 +158,10 @@ class _SessionSetRowState extends State<SessionSetRow> {
 
   Future<void> _triggerFocusVibration() async {
     if (PerformanceMode.instance.reduceVibrations) return;
-    final canVibrate = await Vibrate.canVibrate;
-    if (canVibrate) {
-      Vibrate.feedback(FeedbackType.selection);
-    }
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+
   }
 
   void _openPlateCalc() {

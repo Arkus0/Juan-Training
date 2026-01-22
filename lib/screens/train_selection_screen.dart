@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
@@ -56,7 +56,7 @@ class TrainSelectionScreen extends ConsumerWidget {
                           const SizedBox(width: 12),
                           ElevatedButton(
                             onPressed: () {
-                              Vibrate.feedback(FeedbackType.medium);
+                              try { HapticFeedback.mediumImpact(); } catch (_) {}
                               ref.read(trainingSessionProvider.notifier).restoreFromStorage();
                               Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
                             },
@@ -194,7 +194,7 @@ class TrainSelectionScreen extends ConsumerWidget {
     if (rutina.dias.isEmpty || dayIndex >= rutina.dias.length) return;
 
     final day = rutina.dias[dayIndex];
-    Vibrate.feedback(FeedbackType.heavy);
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
 
     ref.read(trainingSessionProvider.notifier).startSession(
       rutina,
@@ -314,7 +314,7 @@ class _RutinaCard extends StatelessWidget {
       child: InkWell(
         onTap: () {
           if (rutina.dias.isEmpty) return;
-          Vibrate.feedback(FeedbackType.selection);
+          try { HapticFeedback.selectionClick(); } catch (_) {}
 
           if (rutina.dias.length == 1) {
             onDaySelected(0);

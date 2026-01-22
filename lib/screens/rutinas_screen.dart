@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'create_edit_routine_screen.dart';
 import '../models/rutina.dart';
@@ -92,7 +92,7 @@ class RutinasScreen extends ConsumerWidget {
   }
 
   void _navigateToCreate(BuildContext context) {
-    Vibrate.feedback(FeedbackType.light);
+    try { HapticFeedback.lightImpact(); } catch (_) {}
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const CreateEditRoutineScreen(),
@@ -101,7 +101,7 @@ class RutinasScreen extends ConsumerWidget {
   }
 
   void _navigateToEdit(BuildContext context, dynamic rutina) {
-    Vibrate.feedback(FeedbackType.selection);
+    try { HapticFeedback.selectionClick(); } catch (_) {}
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => CreateEditRoutineScreen(rutina: rutina),
@@ -111,7 +111,7 @@ class RutinasScreen extends ConsumerWidget {
 
   void _deleteRutina(BuildContext context, WidgetRef ref, Rutina rutina) {
     ref.read(trainingRepositoryProvider).deleteRutina(rutina.id);
-    Vibrate.feedback(FeedbackType.heavy);
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -128,7 +128,7 @@ class RutinasScreen extends ConsumerWidget {
           textColor: Colors.white,
           onPressed: () {
             ref.read(trainingRepositoryProvider).saveRutina(rutina);
-            Vibrate.feedback(FeedbackType.light);
+            try { HapticFeedback.lightImpact(); } catch (_) {}
           },
         ),
         duration: const Duration(seconds: 4),
@@ -137,7 +137,7 @@ class RutinasScreen extends ConsumerWidget {
   }
 
   Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
-    Vibrate.feedback(FeedbackType.selection);
+    try { HapticFeedback.selectionClick(); } catch (_) {}
 
     // Step 1: Show JSON input dialog
     final parsedRutina = await showDialog<Rutina>(
@@ -180,7 +180,7 @@ class RutinasScreen extends ConsumerWidget {
             duration: const Duration(milliseconds: 2000),
           ),
         );
-        Vibrate.feedback(FeedbackType.success);
+        try { HapticFeedback.vibrate(); } catch (_) {}
       }
     } catch (e) {
       if (context.mounted) {
@@ -194,7 +194,7 @@ class RutinasScreen extends ConsumerWidget {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Vibrate.feedback(FeedbackType.error);
+        try { HapticFeedback.vibrate(); } catch (_) {}
       }
     }
   }

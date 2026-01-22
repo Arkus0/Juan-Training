@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fuzzy/fuzzy.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
 
@@ -318,7 +318,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                   right: 4,
                                   child: GestureDetector(
                                     onTap: () async {
-                                      Vibrate.feedback(FeedbackType.selection);
+                                      try { HapticFeedback.selectionClick(); } catch (_) {}
                                       await ExerciseLibraryService.instance.toggleFavorite(ex.id);
                                       setState(() {}); // Refresh UI
                                     },
@@ -368,7 +368,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                 padding: EdgeInsets.zero,
                               ),
                               onPressed: () {
-                                Vibrate.feedback(FeedbackType.selection);
+                                try { HapticFeedback.selectionClick(); } catch (_) {}
                                 widget.onAdd(ex);
                                 _showAddedSnackbar(context, ex.name);
                               },

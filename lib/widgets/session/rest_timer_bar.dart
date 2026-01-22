@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -260,16 +260,15 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
 
       // Vibración
       if (vibrationEnabled) {
-        final canVibrate = await Vibrate.canVibrate;
-        if (canVibrate) {
+        try {
           if (secondInt <= 3) {
-            Vibrate.feedback(FeedbackType.heavy);
+            HapticFeedback.heavyImpact();
           } else if (secondInt <= 5) {
-            Vibrate.feedback(FeedbackType.medium);
+            HapticFeedback.mediumImpact();
           } else if (secondInt <= 10) {
-            Vibrate.feedback(FeedbackType.light);
+            HapticFeedback.lightImpact();
           }
-        }
+        } catch (_) {}
       }
 
       // Sonido (solo últimos 3 segundos para no ser molesto)
@@ -292,12 +291,11 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     // Vibración final
     if (settings.timerVibrationEnabled &&
         !PerformanceMode.instance.reduceVibrations) {
-      final canVibrate = await Vibrate.canVibrate;
-      if (canVibrate) {
-        Vibrate.feedback(FeedbackType.success);
+      try {
+        HapticFeedback.vibrate();
         await Future.delayed(const Duration(milliseconds: 150));
-        Vibrate.feedback(FeedbackType.success);
-      }
+        HapticFeedback.vibrate();
+      } catch (_) {}
     }
 
     // Sonido final

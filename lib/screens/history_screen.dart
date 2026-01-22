@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -227,13 +227,13 @@ class _SessionTileState extends State<_SessionTile> {
         children: [
           InkWell(
             onTap: () {
-              Vibrate.feedback(FeedbackType.selection);
+              try { HapticFeedback.selectionClick(); } catch (_) {}
               setState(() {
                 _isExpanded = !_isExpanded;
               });
             },
             onLongPress: () {
-              Vibrate.feedback(FeedbackType.medium);
+              try { HapticFeedback.mediumImpact(); } catch (_) {}
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -438,7 +438,7 @@ class _SessionTileState extends State<_SessionTile> {
   }
 
   void _exportSession(BuildContext context, Sesion session) {
-    Vibrate.feedback(FeedbackType.selection);
+    try { HapticFeedback.selectionClick(); } catch (_) {}
 
     final buffer = StringBuffer();
     buffer.writeln('=== JUAN TRAINING ===');

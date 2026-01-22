@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/library_exercise.dart';
 import '../../services/alternativas_service.dart';
@@ -122,7 +122,7 @@ class AlternativasDialog extends StatelessWidget {
           exercise: alternativa,
           isFirst: index == 0,
           onTap: () {
-            Vibrate.feedback(FeedbackType.selection);
+            try { HapticFeedback.selectionClick(); } catch (_) {}
             Navigator.pop(context);
             onReplace(alternativa);
           },

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
+import '../utils/performance_utils.dart';
 
 /// Estado inmutable que representa el target de focus actual
 class FocusTarget {
@@ -140,9 +141,8 @@ class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
 
   /// Vibración suave para feedback de focus
   Future<void> _triggerFocusVibration() async {
-    final canVibrate = await Vibrate.canVibrate;
-    if (canVibrate) {
-      Vibrate.feedback(FeedbackType.selection);
+    if (!PerformanceMode.instance.reduceVibrations) {
+      try { HapticFeedback.selectionClick(); } catch (_) {}
     }
   }
 }

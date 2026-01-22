@@ -29,9 +29,14 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
     super.initState();
     _weightController = TextEditingController(text: widget.currentWeight.toString());
 
-    // Load persisted bar weight from settings provider
-    final settings = ref.read(settingsProvider);
-    _barWeight = settings.barWeight;
+    // Read persisted bar weight from settings after first frame and recalculate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final defaultBar = ref.read(settingsProvider).barWeight;
+      setState(() {
+        _barWeight = defaultBar;
+      });
+      _calculatePlates(double.tryParse(_weightController.text) ?? widget.currentWeight);
+    });
 
     // Listen for runtime changes in the settings so the dialog updates live
     ref.listen<UserSettings>(settingsProvider, (previous, next) {
@@ -43,10 +48,19 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
       }
     });
 
+    // Initial calculation based on passed weight
     _calculatePlates(widget.currentWeight);
   }
 
   void _calculatePlates(double targetWeight) {
+    // Protección: si el campo está vacío, limpiamos resultado y salimos
+    if (_weightController.text.isEmpty) {
+      setState(() {
+        _calculatedPlates = [];
+      });
+      return;
+    }
+
     double remaining = (targetWeight - _barWeight) / 2;
     List<double> plates = [];
 
@@ -68,6 +82,13 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
   }
 
   void _updateWeight(String value) {
+    if (value.isEmpty) {
+      setState(() {
+        _calculatedPlates = [];
+      });
+      return;
+    }
+
     final weight = double.tryParse(value);
     if (weight != null) {
       _calculatePlates(weight);
@@ -88,11 +109,12 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: Colors.red[900]!, width: 2),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Text(
               'CALCULADORA DE PLACAS',
               style: GoogleFonts.montserrat(
@@ -213,6 +235,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

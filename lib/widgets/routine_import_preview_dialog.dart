@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import '../models/rutina.dart';
 import '../services/routine_sharing_service.dart';
 
@@ -196,7 +196,7 @@ class _RoutineImportPreviewDialogState
                       onPressed: _nameController.text.trim().isEmpty
                           ? null
                           : () {
-                              Vibrate.feedback(FeedbackType.success);
+                              try { HapticFeedback.vibrate(); } catch (_) {}
                               Navigator.of(context).pop(_editedRutina);
                               widget.onConfirm();
                             },
@@ -471,7 +471,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
         _jsonController.text = data!.text!;
         _errorMessage = null;
       });
-      Vibrate.feedback(FeedbackType.selection);
+      try { HapticFeedback.selectionClick(); } catch (_) {}
     }
   }
 
@@ -489,10 +489,11 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
     });
 
     if (result.isSuccess) {
-      Vibrate.feedback(FeedbackType.success);
+      try { HapticFeedback.vibrate(); } catch (_) {}
+
       Navigator.of(context).pop(result.rutina);
     } else {
-      Vibrate.feedback(FeedbackType.error);
+      try { HapticFeedback.vibrate(); } catch (_) {}
       setState(() {
         _errorMessage = result.error;
       });

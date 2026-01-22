@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/performance_utils.dart';
 
@@ -228,18 +228,12 @@ class _LogInputState extends State<LogInput> {
 
   Future<void> _triggerLightVibration() async {
     if (PerformanceMode.instance.reduceVibrations) return;
-    final canVibrate = await Vibrate.canVibrate;
-    if (canVibrate) {
-      Vibrate.feedback(FeedbackType.selection);
-    }
+    try { HapticFeedback.selectionClick(); } catch (_) {}
   }
 
   Future<void> _triggerMediumVibration() async {
     if (PerformanceMode.instance.reduceVibrations) return;
-    final canVibrate = await Vibrate.canVibrate;
-    if (canVibrate) {
-      Vibrate.feedback(FeedbackType.light);
-    }
+    try { HapticFeedback.lightImpact(); } catch (_) {}
   }
 
   void _handleGhostTap() {

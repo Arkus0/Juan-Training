@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
@@ -114,7 +114,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
       ejercicioOriginal: libExercise,
       allExercises: allExercises,
       onReplace: (LibraryExercise seleccion) {
-        Vibrate.feedback(FeedbackType.success);
+        try { HapticFeedback.vibrate(); } catch (_) {}
+
 
         if (widget.onReplace != null) {
           widget.onReplace!(seleccion.name);

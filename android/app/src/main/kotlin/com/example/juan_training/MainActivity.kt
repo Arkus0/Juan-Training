@@ -28,15 +28,7 @@ class MainActivity : FlutterActivity() {
                     }
                     "isMusicActive" -> {
                         val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-                        if (audioManager != null) {
-                            result.success(audioManager.isMusicActive)
-                        } else {
-                            result.error(
-                                "AUDIO_MANAGER_UNAVAILABLE",
-                                "AudioManager service is not available",
-                                null
-                            )
-                        }
+                        val isMusicActive = audioManager?.isMusicActive ?: false
                         result.success(isMusicActive)
                     }
                     else -> result.notImplemented()
