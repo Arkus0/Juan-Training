@@ -21,6 +21,8 @@ class DiaExpansionTile extends StatefulWidget {
   final Function(int, int) onCreateSuperset;
   final Function(String, int) onMoveSuperset;
   final Function(int) onRemoveFromSuperset;
+  final bool initiallyExpanded;
+  final ValueChanged<bool>? onExpansionChanged;
 
   const DiaExpansionTile({
     super.key,
@@ -40,6 +42,8 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onCreateSuperset,
     required this.onMoveSuperset,
     required this.onRemoveFromSuperset,
+    this.initiallyExpanded = true,
+    this.onExpansionChanged,
   });
 
   @override
@@ -47,19 +51,26 @@ class DiaExpansionTile extends StatefulWidget {
 }
 
 class _DiaExpansionTileState extends State<DiaExpansionTile> {
-  bool _isExpanded = true;
+  late bool _isExpanded;
   late TextEditingController _nameController;
 
   @override
   void initState() {
     super.initState();
+    _isExpanded = widget.initiallyExpanded;
     _nameController = TextEditingController(text: widget.dia.nombre);
   }
 
   @override
   void didUpdateWidget(DiaExpansionTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Only sync if the external value changed AND it's different from what's in the controller
+
+    // Sync expansion when parent-controlled value changes
+    if (widget.initiallyExpanded != oldWidget.initiallyExpanded) {
+      _isExpanded = widget.initiallyExpanded;
+    }
+
+    // Only sync name if the external value changed AND it's different from what's in the controller
     // This prevents cursor jumping when the user is actively typing
     if (oldWidget.dia.nombre != widget.dia.nombre &&
         _nameController.text != widget.dia.nombre) {
@@ -248,6 +259,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     setState(() {
                       _isExpanded = !_isExpanded;
                     });
+                    widget.onExpansionChanged?.call(_isExpanded);
                   },
                   child: Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,

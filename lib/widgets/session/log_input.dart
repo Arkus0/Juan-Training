@@ -304,7 +304,15 @@ class _LogInputState extends State<LogInput> {
           child: Material(
             color: Colors.transparent,
             child: LogInputToolbar(
-              onCopyPrevious: widget.onGhostTap,
+              onCopyPrevious: (widget.ghostValue != null && widget.ghostValue!.isNotEmpty) ? () {
+                final val = widget.ghostValue!;
+                // Sobrescribimos sin piedad
+                _controller.text = val;
+                // Mover cursor al final
+                _controller.selection = TextSelection.fromPosition(TextPosition(offset: val.length));
+                widget.onChanged(val);
+                HapticFeedback.selectionClick();
+              } : null,
               onDecrement: () {
                 final current = _parseCurrentValue();
                 final newValue = (current - widget.swipeIncrement).clamp(0.0, 9999.0);

@@ -30,6 +30,28 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     }
   }
 
+  // UI state: control which day (index) is expanded in the UI.
+  // Default: first day open (0). Use -1 to represent all collapsed.
+  int _expandedDayIndex = 0;
+  int get expandedDayIndex => _expandedDayIndex;
+
+  /// Cierra todos los días (usa -1 como indicador)
+  void collapseAllDays() {
+    if (_expandedDayIndex != -1) {
+      _expandedDayIndex = -1;
+      // Trigger listeners by assigning a new Rutina instance (copy)
+      state = state.copyWith();
+    }
+  }
+
+  /// Abre un día específico
+  void setExpandedDay(int index) {
+    if (_expandedDayIndex != index) {
+      _expandedDayIndex = index;
+      state = state.copyWith();
+    }
+  }
+
   static Rutina _createEmptyRoutine() {
     return Rutina(
       id: const Uuid().v4(),
@@ -55,6 +77,19 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
   void removeDay(int index) {
     final newDias = [...state.dias]..removeAt(index);
+
+    // Adjust expanded index if necessary
+    if (_expandedDayIndex >= newDias.length) {
+      // Removed last or out of range -> collapse
+      _expandedDayIndex = -1;
+    } else if (_expandedDayIndex > index) {
+      // Shift left one position
+      _expandedDayIndex -= 1;
+    } else if (_expandedDayIndex == index) {
+      // Removed the expanded day -> collapse
+      _expandedDayIndex = -1;
+    }
+
     state = state.copyWith(dias: newDias);
   }
 
@@ -96,9 +131,23 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     if (oldIndex < newIndex) {
       newIndex -= 1;
     }
+
+    // Preserve an identifier for the currently expanded day (if any)
+    final String? expandedDayId = (_expandedDayIndex >= 0 && _expandedDayIndex < state.dias.length)
+        ? state.dias[_expandedDayIndex].id
+        : null;
+
     final newDias = [...state.dias];
     final item = newDias.removeAt(oldIndex);
     newDias.insert(newIndex, item);
+
+    // Remap the expanded index to the new list; if not found, collapse
+    if (expandedDayId == null) {
+      _expandedDayIndex = -1;
+    } else {
+      _expandedDayIndex = newDias.indexWhere((d) => d.id == expandedDayId);
+    }
+
     state = state.copyWith(dias: newDias);
   }
 

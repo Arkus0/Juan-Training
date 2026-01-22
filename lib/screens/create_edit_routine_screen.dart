@@ -236,6 +236,14 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
                 proxyDecorator: (child, index, animation) {
+                  // Detectamos el inicio del arrastre y colapsamos cualquier día abierto para evitar glitches visuales
+                  Future.microtask(() {
+                    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
+                    if (notifier.expandedDayIndex != -1) {
+                      notifier.collapseAllDays();
+                    }
+                  });
+
                   return AnimatedBuilder(
                     animation: animation,
                     builder: (context, child) {
@@ -260,6 +268,16 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                     child: DiaExpansionTile(
                       dayIndex: index,
                       dia: dia,
+                      // Ensure this item rebuilds when routine state changes (watch),
+                      // but read the notifier to get the UI-only expanded index.
+                      initiallyExpanded: ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex == index,
+                      onExpansionChanged: (val) {
+                        if (val) {
+                          ref.read(createRoutineProvider(widget.rutina).notifier).setExpandedDay(index);
+                        } else {
+                          ref.read(createRoutineProvider(widget.rutina).notifier).collapseAllDays();
+                        }
+                      },
                       onUpdateName: (val) => notifier.updateDayName(index, val),
                       onUpdateProgression: (val) =>
                           notifier.updateDayProgression(index, val),
