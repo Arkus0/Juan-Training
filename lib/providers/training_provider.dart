@@ -112,7 +112,7 @@ class TrainingState {
     this.restTimer = const RestTimerState(),
     this.history = const {},
     this.showAdvancedOptions = true, // Siempre visible por defecto
-    this.showTimerBar = false, // Oculto por defecto
+    this.showTimerBar = true, // UX: Visible por defecto - core feature del gym
   });
 
   TrainingState copyWith({

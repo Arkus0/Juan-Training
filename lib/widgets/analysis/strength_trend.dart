@@ -269,7 +269,7 @@ class StrengthTrend extends ConsumerWidget {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => const Color(0xFF2A2A2A),
+                  tooltipBgColor: const Color(0xFF2A2A2A),
                   tooltipRoundedRadius: 8,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {

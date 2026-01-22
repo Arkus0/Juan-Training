@@ -28,7 +28,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   final ScrollController _scrollController = ScrollController();
 
   // Per-card keys used for precise scrolling via Scrollable.ensureVisible (stable per exercise id)
-  final Map<String, GlobalKey> _exerciseKeys = {}; 
+  final Map<String, GlobalKey> _exerciseKeys = {};
+  
+  // Track last known incomplete set for auto-scroll detection
+  ({int exerciseIndex, int setIndex})? _lastKnownIncompleteSet;
 
   @override
   void initState() {
@@ -38,6 +41,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       _checkDiscoveryTooltip();
       // Inicializar el progreso de sesión
       ref.read(sessionProgressProvider.notifier).recalculate();
+      // Initialize tracking
+      _lastKnownIncompleteSet = ref.read(trainingSessionProvider).nextIncompleteSet;
     });
   }
 
@@ -231,6 +236,20 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
+    // 🎯 UX CRÍTICO: Auto-scroll al siguiente ejercicio cuando se completa una serie
+    final currentIncompleteSet = ref.watch(trainingSessionProvider.select((s) => s.nextIncompleteSet));
+    if (_lastKnownIncompleteSet != null && 
+        currentIncompleteSet != null &&
+        currentIncompleteSet.exerciseIndex != _lastKnownIncompleteSet!.exerciseIndex) {
+      // El ejercicio cambió - scroll suave al nuevo
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _scrollToExercise(currentIncompleteSet.exerciseIndex);
+        }
+      });
+    }
+    _lastKnownIncompleteSet = currentIncompleteSet;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -369,8 +388,49 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         break;
 
       case VoiceCommandType.addNote:
-        // TODO: Implementar añadir nota por voz
+        if (command.note != null && command.note!.isNotEmpty) {
+          _addNoteToCurrentSet(command.note!, notifier);
+        }
         break;
+    }
+  }
+
+  void _addNoteToCurrentSet(String note, dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      // Añadir nota a la serie actual
+      notifier.updateLog(
+        nextSet.exerciseIndex, 
+        nextSet.setIndex, 
+        notas: note,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.note_add, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nota: $note',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.blue[700],
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/main_provider.dart';
+import '../providers/training_provider.dart';
 import '../widgets/session/active_session_bar.dart';
 import 'rutinas_screen.dart';
 import 'train_selection_screen.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
+import 'training_session_screen.dart';
 
 class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
@@ -20,6 +24,11 @@ class MainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
+    
+    // 🎯 UX MEDIO: FAB con sugerencia inteligente
+    final suggestionAsync = ref.watch(smartSuggestionProvider);
+    final activeSession = ref.watch(trainingSessionProvider);
+    final hasActiveSession = activeSession.startTime != null;
 
       // Floating timer removed — devolvemos el Scaffold directamente
     return Scaffold(
@@ -37,6 +46,30 @@ class MainScreen extends ConsumerWidget {
           const ActiveSessionBar(),
         ],
       ),
+      // 🎯 UX MEDIO: FAB flotante para acceso rápido a entrenar
+      floatingActionButton: hasActiveSession 
+          ? null  // No mostrar FAB si ya hay sesión activa (ActiveSessionBar la maneja)
+          : suggestionAsync.when(
+              data: (suggestion) {
+                if (suggestion == null) return null;
+                return FloatingActionButton.extended(
+                  heroTag: 'quick_start_fab',
+                  onPressed: () => _startSuggestedSession(context, ref, suggestion),
+                  backgroundColor: Colors.red[900],
+                  icon: const Icon(Icons.play_arrow, size: 28),
+                  label: Text(
+                    suggestion.dayName.toUpperCase(),
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              },
+              loading: () => null,
+              error: (_, __) => null,
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
@@ -78,6 +111,29 @@ class MainScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+  
+  /// Inicia la sesión sugerida directamente desde el FAB
+  void _startSuggestedSession(BuildContext context, WidgetRef ref, SmartWorkoutSuggestion suggestion) {
+    final rutina = suggestion.rutina;
+    final dayIndex = suggestion.dayIndex;
+    
+    if (rutina.dias.isEmpty || dayIndex >= rutina.dias.length) return;
+    
+    final day = rutina.dias[dayIndex];
+    try { HapticFeedback.heavyImpact(); } catch (_) {}
+    
+    ref.read(trainingSessionProvider.notifier).startSession(
+      rutina,
+      day.ejercicios,
+      dayName: day.nombre,
+      dayIndex: dayIndex,
+    );
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
     );
   }
 }

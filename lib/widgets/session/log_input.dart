@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/performance_utils.dart';
 
@@ -15,10 +14,14 @@ class _InputStyles {
     color: Colors.white,
   );
 
+  // 🎯 UX MEDIO: Ghost values más visibles (white30 -> white54 + underline hint)
   static final ghostText = GoogleFonts.montserrat(
-    color: Colors.white30,
+    color: Colors.white54,
     fontWeight: FontWeight.w600,
     fontSize: 16,
+    decoration: TextDecoration.underline,
+    decorationColor: Colors.white24,
+    decorationStyle: TextDecorationStyle.dotted,
   );
 
   static final ghostTextSuggestion = GoogleFonts.montserrat(
@@ -72,7 +75,7 @@ class LogInput extends StatefulWidget {
   /// Suffix del input (ej: "kg", "reps")
   final String? suffix;
 
-  /// Ancho mínimo del input
+  /// Ancho mínimo del input (88px mínimo para uso con dedos sudados)
   final double minWidth;
 
   /// Callback cuando se completa edición (submit)
@@ -93,7 +96,7 @@ class LogInput extends StatefulWidget {
     this.swipeIncrement = 1.0,
     this.isSuggestion = false,
     this.suffix,
-    this.minWidth = 70,
+    this.minWidth = 88, // UX: Mayor tamaño para uso en gym con dedos sudados
     this.onEditingComplete,
     this.textInputAction = TextInputAction.next,
   });

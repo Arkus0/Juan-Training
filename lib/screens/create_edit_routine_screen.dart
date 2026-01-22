@@ -310,6 +310,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   }
 
   /// Importa ejercicios usando dictado por voz
+  /// Se mantiene para compatibilidad aunque el flujo principal usa _showUnifiedImportSheet
+  // ignore: unused_element
   void _importFromVoice() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
 
@@ -473,6 +475,167 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     }
   }
   
+  /// 🎯 UX ALTO: Sheet unificado para todas las formas de añadir ejercicios
+  void _showUnifiedImportSheet() {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+
+    // Verificar que hay al menos un día
+    if (routineState.dias.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Primero añade un día a tu rutina',
+            style: GoogleFonts.montserrat(color: Colors.white),
+          ),
+          backgroundColor: Colors.redAccent[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try { HapticFeedback.selectionClick(); } catch (_) {}
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[700],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'AÑADIR EJERCICIOS',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Opción 1: Biblioteca (principal y más usada)
+              _ImportOptionTile(
+                icon: Icons.search,
+                iconColor: Colors.redAccent[400]!,
+                title: 'Buscar en Biblioteca',
+                subtitle: 'Busca ejercicios por nombre o músculo',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _handleAddFromLibrary();
+                },
+              ),
+              const SizedBox(height: 12),
+              // Opción 2: Smart Import (detecta automático)
+              _ImportOptionTile(
+                icon: Icons.auto_awesome,
+                iconColor: Colors.amber[400]!,
+                title: 'Import Inteligente',
+                subtitle: 'Pega texto o dicta tus ejercicios',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showSmartImport();
+                },
+              ),
+              const SizedBox(height: 12),
+              // Opción 3: Escanear imagen
+              _ImportOptionTile(
+                icon: Icons.document_scanner,
+                iconColor: Colors.blue[400]!,
+                title: 'Escanear Imagen',
+                subtitle: 'Importa desde foto de rutina',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _importFromOcr();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  /// Añade ejercicio desde biblioteca (determina día automáticamente)
+  void _handleAddFromLibrary() {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+    final targetDayIndex = routineState.dias.length == 1
+        ? 0
+        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+
+    if (targetDayIndex < 0 && routineState.dias.length > 1) {
+      // Mostrar selector de día y luego biblioteca
+      _showDaySelectorThenLibrary();
+    } else {
+      _addExercise(targetDayIndex < 0 ? 0 : targetDayIndex);
+    }
+  }
+  
+  /// Selector de día antes de mostrar biblioteca
+  void _showDaySelectorThenLibrary() {
+    final routineState = ref.read(createRoutineProvider(widget.rutina));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            '¿A qué día añadir?',
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(routineState.dias.length, (index) {
+            final dia = routineState.dias[index];
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.red[700],
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              title: Text(
+                dia.nombre,
+                style: GoogleFonts.montserrat(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _addExercise(index);
+              },
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
   /// Muestra el sheet de Smart Import (Voz + OCR unificado)
   void _showSmartImport() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
@@ -634,17 +797,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         ),
         backgroundColor: Colors.red[900],
         actions: [
-          // Smart Import Button (Voice + OCR unified)
+          // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
           IconButton(
-            icon: const Icon(Icons.auto_awesome),
-            tooltip: 'Import Smart (Voz + OCR)',
-            onPressed: _showSmartImport,
-          ),
-          // Voice Input Button (quick access)
-          IconButton(
-            icon: const Icon(Icons.mic),
-            tooltip: 'Dictar ejercicios',
-            onPressed: _importFromVoice,
+            icon: const Icon(Icons.add_circle_outline, size: 28),
+            tooltip: 'Añadir ejercicios',
+            onPressed: _showUnifiedImportSheet,
           ),
           // Export button - only show when editing an existing routine with content
           if (widget.rutina != null || routineState.dias.isNotEmpty)
@@ -653,21 +810,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               onSelected: (value) {
                 if (value == 'export') {
                   _exportRoutine(routineState);
-                } else if (value == 'ocr') {
-                  _importFromOcr();
                 }
               },
               itemBuilder: (ctx) => [
-                const PopupMenuItem(
-                  value: 'ocr',
-                  child: Row(
-                    children: [
-                      Icon(Icons.document_scanner, size: 20),
-                      SizedBox(width: 8),
-                      Text('Escanear Imagen (OCR)'),
-                    ],
-                  ),
-                ),
                 const PopupMenuItem(
                   value: 'export',
                   child: Row(
@@ -832,6 +977,75 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           child: Text(
             'GUARDAR RUTINA',
             style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget reutilizable para opciones de importación
+class _ImportOptionTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ImportOptionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.grey[850],
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey[400],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey[600]),
+            ],
           ),
         ),
       ),

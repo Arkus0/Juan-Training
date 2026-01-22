@@ -310,6 +310,8 @@ class _RutinaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showInlineChips = rutina.dias.length > 1 && rutina.dias.length <= 3;
+    
     return Card(
       child: InkWell(
         onTap: () {
@@ -318,9 +320,11 @@ class _RutinaCard extends StatelessWidget {
 
           if (rutina.dias.length == 1) {
             onDaySelected(0);
-          } else {
+          } else if (rutina.dias.length > 3) {
+            // Solo mostrar dialog para 4+ días
             _showDaySelector(context);
           }
+          // Para 2-3 días, los chips inline manejan la selección
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -339,17 +343,18 @@ class _RutinaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.red[900],
-                      borderRadius: BorderRadius.circular(20),
+                  if (!showInlineChips)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red[900],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'START',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
+                      ),
                     ),
-                    child: Text(
-                      'START',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -360,7 +365,32 @@ class _RutinaCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              if (rutina.dias.isNotEmpty)
+              // 🎯 UX ALTO: Chips inline para 2-3 días (elimina modal)
+              if (showInlineChips)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: rutina.dias.asMap().entries.map((entry) {
+                    return ActionChip(
+                      label: Text(
+                        entry.value.nombre.toUpperCase(),
+                        style: GoogleFonts.montserrat(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      backgroundColor: Colors.red[900],
+                      side: BorderSide.none,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      onPressed: () {
+                        try { HapticFeedback.selectionClick(); } catch (_) {}
+                        onDaySelected(entry.key);
+                      },
+                    );
+                  }).toList(),
+                )
+              else if (rutina.dias.isNotEmpty)
                 Text(
                   rutina.dias.take(3).map((d) => d.nombre).join(' • ').toUpperCase(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(

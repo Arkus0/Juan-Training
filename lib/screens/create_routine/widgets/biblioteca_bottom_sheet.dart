@@ -6,6 +6,7 @@ import 'package:fuzzy/fuzzy.dart';
 import 'package:flutter/services.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
+import 'package:juan_training/widgets/common/create_exercise_dialog.dart';
 
 class BibliotecaBottomSheet extends StatefulWidget {
   final Function(LibraryExercise) onAdd;
@@ -51,6 +52,111 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     );
   }
 
+  void _showCustomExerciseOptions(BuildContext context, LibraryExercise ex) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[700],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              ex.name,
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.purple[700],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'EJERCICIO PERSONALIZADO',
+                style: GoogleFonts.montserrat(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.edit, color: Colors.blue[400]),
+              title: const Text('Editar ejercicio', style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final result = await CreateExerciseDialog.show(context, exerciseToEdit: ex);
+                if (result != null && mounted) {
+                  setState(() {});
+                  _showAddedSnackbar(context, '${result.name} actualizado');
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete, color: Colors.red[400]),
+              title: const Text('Eliminar ejercicio', style: TextStyle(color: Colors.white)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    backgroundColor: Colors.grey[900],
+                    title: const Text('¿ELIMINAR EJERCICIO?', style: TextStyle(color: Colors.white)),
+                    content: Text(
+                      'Se eliminará "${ex.name}" de tu biblioteca. Esta acción no se puede deshacer.',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, false),
+                        child: const Text('CANCELAR'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(c, true),
+                        child: Text('ELIMINAR', style: TextStyle(color: Colors.red[400])),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await ExerciseLibraryService.instance.deleteCustomExercise(ex.id);
+                  if (mounted) {
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${ex.name} eliminado'),
+                        backgroundColor: Colors.red[700],
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Wrap in Scaffold to have its own ScaffoldMessenger for snackbars
@@ -77,6 +183,18 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                 ),
                 const Spacer(),
+                // Botón crear ejercicio custom
+                IconButton(
+                  icon: const Icon(Icons.add_circle, color: Colors.white),
+                  tooltip: 'Crear ejercicio',
+                  onPressed: () async {
+                    final result = await CreateExerciseDialog.show(context);
+                    if (result != null && mounted) {
+                      HapticFeedback.mediumImpact();
+                      _showAddedSnackbar(context, '${result.name} creado');
+                    }
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
@@ -293,13 +411,18 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final ex = filtered[index];
-                    return Card(
+                    final isCustom = ex.id < 0; // Ejercicios custom tienen ID negativo
+                    return GestureDetector(
+                      onLongPress: isCustom ? () => _showCustomExerciseOptions(context, ex) : null,
+                      child: Card(
                       color: Colors.grey[900],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          color: ex.isFavorite ? Colors.amber : Colors.grey[800]!,
-                          width: ex.isFavorite ? 2 : 1,
+                          color: isCustom 
+                              ? Colors.purple[400]! 
+                              : (ex.isFavorite ? Colors.amber : Colors.grey[800]!),
+                          width: (ex.isFavorite || isCustom) ? 2 : 1,
                         ),
                       ),
                       child: Column(
@@ -312,6 +435,27 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                                   child: SizedBox.expand(child: _buildImage(ex)),
                                 ),
+                                // Badge CUSTOM para ejercicios personalizados
+                                if (isCustom)
+                                  Positioned(
+                                    top: 4,
+                                    left: 4,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple[700],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'CUSTOM',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 // Favorite star button
                                 Positioned(
                                   top: 4,
@@ -377,6 +521,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                           ),
                         ],
                       ),
+                    ),
                     );
                   },
                 );

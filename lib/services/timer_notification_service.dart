@@ -55,7 +55,7 @@ class TimerNotificationService {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // iOS settings (for future use)
-    const darwinSettings = DarwinInitializationSettings(
+    final darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
@@ -71,7 +71,7 @@ class TimerNotificationService {
       ],
     );
 
-    const initSettings = InitializationSettings(
+    final initSettings = InitializationSettings(
       android: androidSettings,
       iOS: darwinSettings,
     );
@@ -209,8 +209,8 @@ class TimerNotificationService {
     if (_isPaused) {
       _updateTimer?.cancel();
       _updateTimer = null;
-    } else if (_updateTimer == null) {
-      _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    } else {
+      _updateTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         _showNotification();
       });
     }

@@ -685,6 +685,104 @@ class ExerciseLibraryService {
     return exercise.isFavorite;
   }
 
+  /// Añade un ejercicio personalizado a la biblioteca
+  /// Los ejercicios custom usan IDs negativos para distinguirlos de los de la API
+  Future<LibraryExercise> addCustomExercise({
+    required String name,
+    required String muscleGroup,
+    required String equipment,
+    String? description,
+    List<String> muscles = const [],
+    List<String> secondaryMuscles = const [],
+  }) async {
+    // Generar ID negativo único para ejercicios custom
+    int customId = -1;
+    for (final ex in _exercises) {
+      if (ex.id < 0 && ex.id <= customId) {
+        customId = ex.id - 1;
+      }
+    }
+
+    final newExercise = LibraryExercise(
+      id: customId,
+      name: name.trim(),
+      muscleGroup: muscleGroup,
+      equipment: equipment,
+      description: description,
+      muscles: muscles,
+      secondaryMuscles: secondaryMuscles,
+      isFavorite: true, // Los custom empiezan como favoritos
+    );
+
+    _exercises.insert(0, newExercise); // Añadir al principio
+    await _saveToFile();
+    _updateNotifier();
+
+    _logger.i('Added custom exercise: $name (ID: $customId)');
+    return newExercise;
+  }
+
+  /// Elimina un ejercicio personalizado (solo los custom con ID negativo)
+  Future<bool> deleteCustomExercise(int exerciseId) async {
+    if (exerciseId >= 0) {
+      _logger.w('Cannot delete non-custom exercise (ID: $exerciseId)');
+      return false;
+    }
+
+    final index = _exercises.indexWhere((e) => e.id == exerciseId);
+    if (index == -1) return false;
+
+    _exercises.removeAt(index);
+    await _saveToFile();
+    _updateNotifier();
+
+    _logger.i('Deleted custom exercise with ID: $exerciseId');
+    return true;
+  }
+
+  /// Actualiza un ejercicio personalizado
+  Future<bool> updateCustomExercise({
+    required int exerciseId,
+    String? name,
+    String? muscleGroup,
+    String? equipment,
+    String? description,
+    List<String>? muscles,
+    List<String>? secondaryMuscles,
+  }) async {
+    if (exerciseId >= 0) {
+      _logger.w('Cannot update non-custom exercise (ID: $exerciseId)');
+      return false;
+    }
+
+    final index = _exercises.indexWhere((e) => e.id == exerciseId);
+    if (index == -1) return false;
+
+    final old = _exercises[index];
+    _exercises[index] = LibraryExercise(
+      id: old.id,
+      name: name?.trim() ?? old.name,
+      muscleGroup: muscleGroup ?? old.muscleGroup,
+      equipment: equipment ?? old.equipment,
+      description: description ?? old.description,
+      imageUrls: old.imageUrls,
+      localImagePath: old.localImagePath,
+      muscles: muscles ?? old.muscles,
+      secondaryMuscles: secondaryMuscles ?? old.secondaryMuscles,
+      isFavorite: old.isFavorite,
+    );
+
+    await _saveToFile();
+    _updateNotifier();
+
+    _logger.i('Updated custom exercise with ID: $exerciseId');
+    return true;
+  }
+
+  /// Obtiene todos los ejercicios personalizados
+  List<LibraryExercise> get customExercises =>
+      _exercises.where((e) => e.id < 0).toList();
+
   void dispose() {
     _connectivitySubscription?.cancel();
     exercisesNotifier.dispose();

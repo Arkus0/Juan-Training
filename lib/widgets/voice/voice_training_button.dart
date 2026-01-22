@@ -164,6 +164,16 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       }
     }
 
+    // Comando: "Nota: texto" / "Anotar: texto" / "Apuntar: texto"
+    final noteMatch = RegExp(r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)', caseSensitive: false).firstMatch(normalized);
+    if (noteMatch != null) {
+      final noteText = noteMatch.group(1)!.trim();
+      if (noteText.isNotEmpty) {
+        try { HapticFeedback.selectionClick(); } catch (_) {}
+        return VoiceTrainingCommand(type: VoiceCommandType.addNote, note: noteText);
+      }
+    }
+
     // No reconocido
     return null;
   }

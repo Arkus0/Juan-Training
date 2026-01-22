@@ -159,37 +159,17 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
               height: 16,
               child: Row(
                 children: List.generate(12, (month) {
-                  // Calculate position of first week of month
-                  final firstOfMonth = DateTime(year, month + 1, 1);
-                  final weekOfMonth = ((firstOfMonth.difference(startOfYear).inDays) / 7).floor();
-                  return Padding(
-                    padding: EdgeInsets.only(left: weekOfMonth > 0 ? (cellSize + gap) * 4 : 0),
-                    child: SizedBox(
-                      width: (cellSize + gap) * 4,
-                      child: Text(
-                        monthLabels[month],
-                        style: GoogleFonts.montserrat(
-                          fontSize: 10,
-                          color: Colors.grey[600],
-                        ),
+                  return SizedBox(
+                    width: (cellSize + gap) * (weeks / 12).floor(),
+                    child: Text(
+                      monthLabels[month],
+                      style: GoogleFonts.montserrat(
+                        fontSize: 10,
+                        color: Colors.grey[600],
                       ),
                     ),
                   );
-                }).take(1).toList() + [
-                  // Simplified: just show months evenly spaced
-                  ...List.generate(12, (month) {
-                    return SizedBox(
-                      width: (cellSize + gap) * (weeks / 12).floor(),
-                      child: Text(
-                        monthLabels[month],
-                        style: GoogleFonts.montserrat(
-                          fontSize: 10,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    );
-                  }),
-                ],
+                }),
               ),
             ),
 
