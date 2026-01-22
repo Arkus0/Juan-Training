@@ -47,6 +47,11 @@ dependencies:
   # Audio (para beeps del timer - ligero, offline-first)
   just_audio: ^0.9.36
 
+  # Speech Recognition (on-device, offline-first para dictado de rutinas)
+  # Justificación: speech_to_text usa motores nativos (iOS Speech, Android SpeechRecognizer)
+  # que funcionan offline sin enviar audio a la nube. Ideal para gym ruidoso con privacidad.
+  speech_to_text: ^7.0.0
+
   # Icons
   cupertino_icons: ^1.0.2
 

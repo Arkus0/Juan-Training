@@ -4,10 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
+import '../providers/voice_input_provider.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
+import '../widgets/voice/voice_training_fab.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
@@ -224,6 +226,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     // Progress state
     final progress = ref.watch(sessionProgressProvider);
 
+    // Voice available
+    final voiceAvailable = ref.watch(voiceAvailableProvider);
+
     final notifier = ref.read(trainingSessionProvider.notifier);
 
     return Scaffold(
@@ -266,47 +271,222 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Barra de progreso de sesión (no invasiva, top)
-          const SessionProgressBar(),
+          Column(
+            children: [
+              // Barra de progreso de sesión (no invasiva, top)
+              const SessionProgressBar(),
 
-          // Music launcher (Spotify quick open) 🎧
-          const MusicLauncherBar(),
+              // Music launcher (Spotify quick open) 🎧
+              const MusicLauncherBar(),
 
-          // Lista de ejercicios
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Espacio para timer compacto
-              itemCount: exercisesLength,
-              itemBuilder: (context, index) {
-                // ⚡ Bolt Optimization: Extracted to smart widget
-                final exercises = ref.read(trainingSessionProvider).exercises;
-                final id = exercises.length > index ? exercises[index].id : index.toString();
-                final key = _exerciseKeys.putIfAbsent(id, () => GlobalKey());
-                return Container(
-                  key: key,
-                  child: ExerciseCardContainer(exerciseIndex: index),
-                );
-              },
-            ),
+              // Lista de ejercicios
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Espacio para timer compacto
+                  itemCount: exercisesLength,
+                  itemBuilder: (context, index) {
+                    // ⚡ Bolt Optimization: Extracted to smart widget
+                    final exercises = ref.read(trainingSessionProvider).exercises;
+                    final id = exercises.length > index ? exercises[index].id : index.toString();
+                    final key = _exerciseKeys.putIfAbsent(id, () => GlobalKey());
+                    return Container(
+                      key: key,
+                      child: ExerciseCardContainer(exerciseIndex: index),
+                    );
+                  },
+                ),
+              ),
+
+              // Nuevo Timer Bar no invasivo
+              RestTimerBar(
+                timerState: restTimerState,
+                onStartRest: notifier.startRest,
+                onStopRest: notifier.stopRest,
+                onPauseRest: notifier.pauseRest,
+                onResumeRest: notifier.resumeRest,
+                onDurationChange: notifier.setRestDuration,
+                onAddTime: notifier.addRestTime,
+                onTimerFinished: _onTimerFinished,
+                onRestartRest: notifier.restartRest,
+              ),
+            ],
           ),
 
-          // Nuevo Timer Bar no invasivo
-          RestTimerBar(
-            timerState: restTimerState,
-            onStartRest: notifier.startRest,
-            onStopRest: notifier.stopRest,
-            onPauseRest: notifier.pauseRest,
-            onResumeRest: notifier.resumeRest,
-            onDurationChange: notifier.setRestDuration,
-            onAddTime: notifier.addRestTime,
-            onTimerFinished: _onTimerFinished,
-            onRestartRest: notifier.restartRest,
+          // Voice Training FAB (sutil, esquina inferior izquierda)
+          voiceAvailable.when(
+            data: (available) => VoiceTrainingFab(
+              enabled: available,
+              onCommand: (command) => _handleVoiceCommand(command, notifier),
+            ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ),
     );
+  }
+
+  /// Maneja comandos de voz durante el entrenamiento
+  void _handleVoiceCommand(VoiceTrainingCommand command, dynamic notifier) {
+    switch (command.type) {
+      case VoiceCommandType.markDone:
+        // Marcar la serie actual como completada
+        _markCurrentSetDone(notifier);
+        break;
+
+      case VoiceCommandType.nextSet:
+        // Navegar a la siguiente serie
+        _navigateToNextSet();
+        break;
+
+      case VoiceCommandType.setWeight:
+        if (command.value != null) {
+          _setCurrentWeight(command.value!, notifier);
+        }
+        break;
+
+      case VoiceCommandType.setReps:
+        if (command.value != null) {
+          _setCurrentReps(command.value!.toInt(), notifier);
+        }
+        break;
+
+      case VoiceCommandType.setRpe:
+        if (command.value != null) {
+          _setCurrentRpe(command.value!, notifier);
+        }
+        break;
+
+      case VoiceCommandType.startRest:
+        final duration = command.value?.toInt() ?? 90;
+        notifier.setRestDuration(duration);
+        notifier.startRest();
+        break;
+
+      case VoiceCommandType.addNote:
+        // TODO: Implementar añadir nota por voz
+        break;
+    }
+  }
+
+  void _markCurrentSetDone(dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      // Marcar la serie como completada (toggle done)
+      notifier.toggleSetDone(nextSet.exerciseIndex, nextSet.setIndex);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '¡Serie completada!',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green[700],
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _navigateToNextSet() {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      _scrollToExercise(nextSet.exerciseIndex);
+      ref.read(focusManagerProvider.notifier).requestFocus(
+        exerciseIndex: nextSet.exerciseIndex,
+        setIndex: nextSet.setIndex,
+        field: FocusField.weight,
+        vibrate: true,
+      );
+    }
+  }
+
+  void _setCurrentWeight(double weight, dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      notifier.updateWeight(nextSet.exerciseIndex, nextSet.setIndex, weight);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Peso: ${weight.toStringAsFixed(1)} kg',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.grey[800],
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _setCurrentReps(int reps, dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      notifier.updateReps(nextSet.exerciseIndex, nextSet.setIndex, reps);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Reps: $reps',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.grey[800],
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _setCurrentRpe(double rpe, dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+    
+    if (nextSet != null) {
+      notifier.updateRpe(nextSet.exerciseIndex, nextSet.setIndex, rpe);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'RPE: ${rpe.toStringAsFixed(1)}',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: Colors.grey[800],
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
