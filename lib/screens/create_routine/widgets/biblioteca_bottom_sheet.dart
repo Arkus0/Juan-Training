@@ -21,6 +21,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   String _selectedMuscle = 'Todos';
   String _selectedEquipment = 'Todos';
   String _query = '';
+  bool _showFavoritesOnly = false;
 
   List<String> get _muscles => ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Brazos', 'Hombros', 'Abdominales', 'Gemelos', 'Cardio'];
   List<String> get _equipment => ['Todos', 'Barra', 'Mancuerna', 'Máquina', 'Polea', 'Peso corporal', 'Banco'];
@@ -82,10 +83,35 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 12),
+                // Favorites filter at the top
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          avatar: Icon(
+                            _showFavoritesOnly ? Icons.star : Icons.star_border,
+                            color: _showFavoritesOnly ? Colors.amber : Colors.white70,
+                            size: 18,
+                          ),
+                          label: const Text('Favoritos'),
+                          selected: _showFavoritesOnly,
+                          onSelected: (sel) {
+                            setState(() {
+                              _showFavoritesOnly = sel;
+                            });
+                          },
+                          checkmarkColor: Colors.amber,
+                          selectedColor: Colors.amber.withValues(alpha: 0.3),
+                          backgroundColor: Colors.grey[800],
+                          labelStyle: TextStyle(
+                            color: _showFavoritesOnly ? Colors.amber : Colors.white70,
+                            fontWeight: _showFavoritesOnly ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
                       ..._muscles.map((m) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
@@ -140,6 +166,11 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
               builder: (context, exercises, _) {
                 // Filter
                 var filtered = exercises;
+
+                // Favorites filter (first priority)
+                if (_showFavoritesOnly) {
+                  filtered = filtered.where((e) => e.isFavorite).toList();
+                }
 
                 if (_selectedMuscle != 'Todos') {
                   final selectedLower = _selectedMuscle.toLowerCase();
@@ -234,7 +265,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   padding: const EdgeInsets.all(8),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 0.75,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
@@ -245,15 +276,46 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       color: Colors.grey[900],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey[800]!),
+                        side: BorderSide(
+                          color: ex.isFavorite ? Colors.amber : Colors.grey[800]!,
+                          width: ex.isFavorite ? 2 : 1,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              child: _buildImage(ex),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                  child: SizedBox.expand(child: _buildImage(ex)),
+                                ),
+                                // Favorite star button
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      Vibrate.feedback(FeedbackType.selection);
+                                      await ExerciseLibraryService.instance.toggleFavorite(ex.id);
+                                      setState(() {}); // Refresh UI
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Icon(
+                                        ex.isFavorite ? Icons.star : Icons.star_border,
+                                        color: ex.isFavorite ? Colors.amber : Colors.white70,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           Padding(

@@ -382,30 +382,79 @@ class _ExerciseGroupWidget extends StatelessWidget {
     required this.onUndoRemove,
   });
 
+  void _showDeleteSnackbar(BuildContext context, int idx, EjercicioEnRutina removedItem) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${removedItem.nombre} eliminado',
+          style: GoogleFonts.montserrat(color: Colors.white),
+        ),
+        backgroundColor: Colors.red[900],
+        duration: const Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+        action: SnackBarAction(
+          label: 'DESHACER',
+          textColor: Colors.white,
+          onPressed: () {
+            onUndoRemove(idx, removedItem);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExerciseCard(BuildContext context, int idx, EjercicioEnRutina ex, {bool inSuperset = false}) {
+    final card = EjercicioCard(
+      key: Key('exercise_${ex.instanceId}'),
+      ejercicio: ex,
+      onRemove: () {
+        final removedItem = ex;
+        onRemoveExercise(idx);
+        _showDeleteSnackbar(context, idx, removedItem);
+      },
+      onUpdate: (updated) => onUpdateExercise(idx, updated),
+      onLink: (idx < exercises.length - 1)
+          ? () => onCreateSuperset(idx, idx + 1)
+          : null,
+      onUnlink: inSuperset ? () => onRemoveFromSuperset(idx) : null,
+    );
+
+    // Swipe to delete for all exercises (including superset members)
+    return Dismissible(
+      key: Key('dismissible_${ex.instanceId}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        color: Colors.red[900],
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (_) {
+        final removedItem = ex;
+        onRemoveExercise(idx);
+        _showDeleteSnackbar(context, idx, removedItem);
+      },
+      child: card,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isSuperset) {
-      // Render superset group
+      // Render superset group with swipe-to-delete for each item
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+          border: const Border(left: BorderSide(color: Colors.redAccent, width: 4)),
           color: Colors.grey[900]!.withValues(alpha: 0.5),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: groupIndices.map((idx) {
             final ex = exercises[idx];
-            return EjercicioCard(
-              key: Key('exercise_${ex.instanceId}'),
-              ejercicio: ex,
-              onRemove: () => onRemoveExercise(idx),
-              onUpdate: (updated) => onUpdateExercise(idx, updated),
-              onLink: (idx < exercises.length - 1)
-                  ? () => onCreateSuperset(idx, idx + 1)
-                  : null,
-              onUnlink: () => onRemoveFromSuperset(idx),
-            );
+            return _buildExerciseCard(context, idx, ex, inSuperset: true);
           }).toList(),
         ),
       );
@@ -413,48 +462,9 @@ class _ExerciseGroupWidget extends StatelessWidget {
       // Single item with dismissible behavior
       final idx = groupIndices.first;
       final ex = exercises[idx];
-      return Dismissible(
-        key: Key('dismissible_${ex.instanceId}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          color: Colors.red[900],
-          child: const Icon(Icons.delete, color: Colors.white),
-        ),
-        onDismissed: (_) {
-          final removedItem = ex;
-          onRemoveExercise(idx);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Ejercicio eliminado',
-                style: GoogleFonts.montserrat(color: Colors.white),
-              ),
-              backgroundColor: Colors.red[900],
-              action: SnackBarAction(
-                label: 'DESHACER',
-                textColor: Colors.white,
-                onPressed: () {
-                  onUndoRemove(idx, removedItem);
-                },
-              ),
-            ),
-          );
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: EjercicioCard(
-            key: Key('exercise_${ex.instanceId}'),
-            ejercicio: ex,
-            onRemove: () => onRemoveExercise(idx),
-            onUpdate: (updated) => onUpdateExercise(idx, updated),
-            onLink: (idx < exercises.length - 1)
-                ? () => onCreateSuperset(idx, idx + 1)
-                : null,
-            onUnlink: null, // No unlink for single item
-          ),
-        ),
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        child: _buildExerciseCard(context, idx, ex, inSuperset: false),
       );
     }
   }
