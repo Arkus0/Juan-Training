@@ -44,7 +44,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
           ),
         ),
         backgroundColor: Colors.red[900],
-        duration: const Duration(seconds: 1),
+        duration: const Duration(milliseconds: 1000),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       ),

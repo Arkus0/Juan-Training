@@ -386,7 +386,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           style: GoogleFonts.montserrat(color: Colors.white),
         ),
         backgroundColor: Colors.red[900],
-        duration: const Duration(seconds: 3),
+        duration: const Duration(milliseconds: 1500),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
         action: SnackBarAction(
