@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../providers/settings_provider.dart';
 
-class PlateCalculatorDialog extends StatefulWidget {
+class PlateCalculatorDialog extends ConsumerStatefulWidget {
   final double currentWeight;
   final Function(double) onWeightSelected;
 
@@ -12,19 +14,35 @@ class PlateCalculatorDialog extends StatefulWidget {
   });
 
   @override
-  State<PlateCalculatorDialog> createState() => _PlateCalculatorDialogState();
+  ConsumerState<PlateCalculatorDialog> createState() => _PlateCalculatorDialogState();
 }
 
-class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
+class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
   late TextEditingController _weightController;
   double _barWeight = 20.0;
-  final List<double> _availablePlates = [25, 20, 15, 10, 5, 2.5, 1.25];
+  // Use common commercial plate denominations (as requested)
+  final List<double> _availablePlates = [20, 15, 10, 5, 2, 1, 0.5, 0.25];
   List<double> _calculatedPlates = [];
 
   @override
   void initState() {
     super.initState();
     _weightController = TextEditingController(text: widget.currentWeight.toString());
+
+    // Load persisted bar weight from settings provider
+    final settings = ref.read(settingsProvider);
+    _barWeight = settings.barWeight;
+
+    // Listen for runtime changes in the settings so the dialog updates live
+    ref.listen<UserSettings>(settingsProvider, (previous, next) {
+      if (previous?.barWeight != next.barWeight) {
+        setState(() {
+          _barWeight = next.barWeight;
+          _updateWeight(_weightController.text);
+        });
+      }
+    });
+
     _calculatePlates(widget.currentWeight);
   }
 
@@ -88,31 +106,31 @@ class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
                 border: Border.all(color: Colors.grey[800]!),
               ),
               child: Center(
-                child: Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    // Bar
-                    Container(
-                      height: 12,
-                      width: double.infinity,
-                      color: Colors.grey[400],
-                    ),
-                    // Plates
-                    if (_calculatedPlates.isNotEmpty)
-                      SingleChildScrollView(
+                child: _calculatedPlates.isNotEmpty
+                    ? SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                             const SizedBox(width: 40), // Space for collar/handle
+                            const SizedBox(width: 16),
+                            // Left side plates (mirror)
+                            ..._calculatedPlates.reversed.map((plate) => _buildPlateWidget(plate)),
+                            const SizedBox(width: 8),
+                            // Bar center (flexible)
+                            Container(
+                              height: 12,
+                              width: 220,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(width: 8),
+                            // Right side plates
                             ..._calculatedPlates.map((plate) => _buildPlateWidget(plate)),
+                            const SizedBox(width: 16),
                           ],
                         ),
                       )
-                    else
-                      Center(child: Text('BARRA VACÍA', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold))),
-                  ],
-                ),
+                    : Center(child: Text('BARRA VACÍA', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold))),
               ),
             ),
             const SizedBox(height: 20),
@@ -147,6 +165,8 @@ class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
                       _barWeight = val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
                       _updateWeight(_weightController.text);
                     });
+                    // Persist the selection in settings
+                    ref.read(settingsProvider.notifier).setBarWeight(_barWeight);
                   },
                 ),
               ],
@@ -184,23 +204,34 @@ class _PlateCalculatorDialogState extends State<PlateCalculatorDialog> {
     double height = 40;
     Color color = Colors.grey;
 
-    // Standard Plate Colors & Sizes
-    if (weight >= 25) { height = 90; color = Colors.red; }
-    else if (weight >= 20) { height = 90; color = Colors.blue; }
-    else if (weight >= 15) { height = 80; color = Colors.yellow; }
-    else if (weight >= 10) { height = 70; color = Colors.green; }
-    else if (weight >= 5) { height = 55; color = Colors.white; }
-    else { height = 40; color = Colors.grey; }
+    // Plate colors/sizes (approx)
+    if (weight >= 20) { height = 90; color = Colors.red; }
+    else if (weight >= 15) { height = 80; color = Colors.blue; }
+    else if (weight >= 10) { height = 70; color = Colors.yellow; }
+    else if (weight >= 5) { height = 55; color = Colors.green; }
+    else if (weight >= 2) { height = 45; color = Colors.white; }
+    else { height = 36; color = Colors.grey; }
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      width: 12,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.black, width: 1),
-      ),
+    String label;
+    if ((weight % 1) == 0) label = '${weight.toInt()}kg';
+    else label = '${weight}kg';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: 18,
+          height: height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.black, width: 1),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.white)),
+      ],
     );
   }
 }

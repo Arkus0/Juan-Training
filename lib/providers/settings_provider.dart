@@ -12,6 +12,7 @@ class SettingsKeys {
   static const String performanceModeEnabled = 'performance_mode_enabled';
   static const String reduceAnimations = 'reduce_animations';
   static const String reduceVibrations = 'reduce_vibrations';
+  static const String barWeightKg = 'bar_weight_kg';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -30,6 +31,7 @@ class UserSettings {
 
   /// Reducir vibraciones
   final bool reduceVibrations;
+  final double barWeight; // Default bar weight in kg
 
   const UserSettings({
     this.timerSoundEnabled = false, // Desactivado por defecto (gym = sin sonido)
@@ -40,6 +42,7 @@ class UserSettings {
     this.performanceModeEnabled = false,
     this.reduceAnimations = false,
     this.reduceVibrations = false,
+    this.barWeight = 20.0,
   });
 
   UserSettings copyWith({
@@ -51,6 +54,7 @@ class UserSettings {
     bool? performanceModeEnabled,
     bool? reduceAnimations,
     bool? reduceVibrations,
+    double? barWeight,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -61,6 +65,7 @@ class UserSettings {
       performanceModeEnabled: performanceModeEnabled ?? this.performanceModeEnabled,
       reduceAnimations: reduceAnimations ?? this.reduceAnimations,
       reduceVibrations: reduceVibrations ?? this.reduceVibrations,
+      barWeight: barWeight ?? this.barWeight,
     );
   }
 }
@@ -92,6 +97,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
       performanceModeEnabled: performanceMode,
       reduceAnimations: reduceAnims,
       reduceVibrations: reduceVibes,
+      barWeight: prefs.getDouble(SettingsKeys.barWeightKg) ?? 20.0,
     );
   }
 
@@ -165,6 +171,13 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     PerformanceMode.instance.reduceVibrations = value;
 
     state = state.copyWith(reduceVibrations: value);
+  }
+
+  /// Persistir preferencia de peso de la barra
+  Future<void> setBarWeight(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(SettingsKeys.barWeightKg, value);
+    state = state.copyWith(barWeight: value);
   }
 }
 

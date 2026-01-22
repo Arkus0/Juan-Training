@@ -25,6 +25,9 @@ class TrainingSessionScreen extends ConsumerStatefulWidget {
 class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   final ScrollController _scrollController = ScrollController();
 
+  // Per-card keys used for precise scrolling via Scrollable.ensureVisible (stable per exercise id)
+  final Map<String, GlobalKey> _exerciseKeys = {}; 
+
   @override
   void initState() {
     super.initState();
@@ -203,8 +206,24 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   }
 
   /// Scroll suave hacia un ejercicio específico
-  void _scrollToExercise(int exerciseIndex) {
-    // Estimar posición del card (aprox 200px por card + 32px progress bar)
+  void _scrollToExercise(int exerciseIndex) async {
+    // Try precise scroll using the exercise's GlobalKey and ensureVisible.
+    final exercises = ref.read(trainingSessionProvider).exercises;
+    final id = exercises.length > exerciseIndex ? exercises[exerciseIndex].id : null;
+    if (id != null) {
+      final key = _exerciseKeys[id];
+      if (key != null && key.currentContext != null) {
+        await Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          alignment: 0.1,
+        );
+        return;
+      }
+    }
+
+    // Fallback: estimate position (legacy behavior) to keep previous UX for edge cases
     final estimatedOffset = (exerciseIndex * 220.0) + 40;
     final maxOffset = _scrollController.position.maxScrollExtent;
 
@@ -283,7 +302,13 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               itemCount: exercisesLength,
               itemBuilder: (context, index) {
                 // ⚡ Bolt Optimization: Extracted to smart widget
-                return ExerciseCardContainer(exerciseIndex: index);
+                final exercises = ref.read(trainingSessionProvider).exercises;
+                final id = exercises.length > index ? exercises[index].id : index.toString();
+                final key = _exerciseKeys.putIfAbsent(id, () => GlobalKey());
+                return Container(
+                  key: key,
+                  child: ExerciseCardContainer(exerciseIndex: index),
+                );
               },
             ),
           ),
