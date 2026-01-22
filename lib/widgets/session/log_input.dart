@@ -291,10 +291,13 @@ class _LogInputState extends State<LogInput> {
     _toolbarEntry = OverlayEntry(
       builder: (context) {
         final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+        // Añadir espacio extra para el RestTimerBar (64px + SafeArea bottom padding)
+        // que está siempre visible en la pantalla de entrenamiento
+        final timerBarHeight = 64.0 + MediaQuery.of(context).padding.bottom;
         return Positioned(
           left: 0,
           right: 0,
-          bottom: bottomInset,
+          bottom: bottomInset + timerBarHeight,
           child: Material(
             color: Colors.transparent,
             child: LogInputToolbar(
