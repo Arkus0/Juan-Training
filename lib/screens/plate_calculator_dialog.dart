@@ -74,6 +74,12 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
     }
   }
 
+  String _getAccessibilityLabel() {
+    if (_calculatedPlates.isEmpty) return 'Barra vacía';
+    final platesString = _calculatedPlates.map((p) => '${p}kg').join(', ');
+    return 'Placas por lado: $platesString';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -97,40 +103,46 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
             ),
             const SizedBox(height: 20),
             // Bar Representation
-            Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[800]!),
-              ),
-              child: Center(
-                child: _calculatedPlates.isNotEmpty
-                    ? SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const SizedBox(width: 16),
-                            // Left side plates (mirror)
-                            ..._calculatedPlates.reversed.map((plate) => _buildPlateWidget(plate)),
-                            const SizedBox(width: 8),
-                            // Bar center (flexible)
-                            Container(
-                              height: 12,
-                              width: 220,
-                              color: Colors.grey[400],
+            Tooltip(
+              message: _getAccessibilityLabel(),
+              child: Semantics(
+                label: _getAccessibilityLabel(),
+                child: Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[800]!),
+                  ),
+                  child: Center(
+                    child: _calculatedPlates.isNotEmpty
+                        ? SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const SizedBox(width: 16),
+                                // Left side plates (mirror)
+                                ..._calculatedPlates.reversed.map((plate) => _buildPlateWidget(plate)),
+                                const SizedBox(width: 8),
+                                // Bar center (flexible)
+                                Container(
+                                  height: 12,
+                                  width: 220,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(width: 8),
+                                // Right side plates
+                                ..._calculatedPlates.map((plate) => _buildPlateWidget(plate)),
+                                const SizedBox(width: 16),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            // Right side plates
-                            ..._calculatedPlates.map((plate) => _buildPlateWidget(plate)),
-                            const SizedBox(width: 16),
-                          ],
-                        ),
-                      )
-                    : Center(child: Text('BARRA VACÍA', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold))),
+                          )
+                        : Center(child: Text('BARRA VACÍA', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold))),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -157,17 +169,22 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Barra: ${_barWeight}kg', style: const TextStyle(color: Colors.white70)),
-                Switch(
-                  value: _barWeight == 20.0,
-                  activeThumbColor: Colors.redAccent[700],
-                  onChanged: (val) {
-                    setState(() {
-                      _barWeight = val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
-                      _updateWeight(_weightController.text);
-                    });
-                    // Persist the selection in settings
-                    ref.read(settingsProvider.notifier).setBarWeight(_barWeight);
-                  },
+                Semantics(
+                  label: 'Peso de la barra',
+                  value: '${_barWeight}kg',
+                  hint: 'Toca para cambiar entre 10kg y 20kg',
+                  child: Switch(
+                    value: _barWeight == 20.0,
+                    activeThumbColor: Colors.redAccent[700],
+                    onChanged: (val) {
+                      setState(() {
+                        _barWeight = val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
+                        _updateWeight(_weightController.text);
+                      });
+                      // Persist the selection in settings
+                      ref.read(settingsProvider.notifier).setBarWeight(_barWeight);
+                    },
+                  ),
                 ),
               ],
             ),
