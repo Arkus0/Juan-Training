@@ -19,6 +19,13 @@ class SupersetDragData {
   });
 }
 
+/// Payload for simple reorder drags (single exercise)
+class ReorderDragData {
+  final int flatIndex;
+
+  const ReorderDragData({required this.flatIndex});
+}
+
 class EjercicioCard extends StatelessWidget {
   final EjercicioEnRutina ejercicio;
   final Function() onRemove;
@@ -26,7 +33,13 @@ class EjercicioCard extends StatelessWidget {
   final Function()? onLink;
   final Function()? onUnlink;
   final SupersetDragData? linkDragData;
+  final ReorderDragData? reorderDragData;
+  final VoidCallback? onReorderDragStart;
+  final VoidCallback? onReorderDragAccepted;
+  final VoidCallback? onReorderDragEnd;
+  final VoidCallback? onReorderDragCancel;
   final VoidCallback? onLinkDragStart;
+  final VoidCallback? onLinkDragAccepted;
   final VoidCallback? onLinkDragEnd;
   final VoidCallback? onLinkDragCancel;
   final bool disableSwipe;
@@ -40,8 +53,14 @@ class EjercicioCard extends StatelessWidget {
     this.onUnlink,
     this.linkDragData,
     this.onLinkDragStart,
+    this.onLinkDragAccepted,
     this.onLinkDragEnd,
     this.onLinkDragCancel,
+    this.reorderDragData,
+    this.onReorderDragStart,
+    this.onReorderDragAccepted,
+    this.onReorderDragEnd,
+    this.onReorderDragCancel,
     this.disableSwipe = false,
   });
 
@@ -140,8 +159,22 @@ class EjercicioCard extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-            // Drag Handle (visual only)
-            Icon(Icons.drag_indicator, color: Colors.grey[700]),
+            // Drag Handle (reorder long-press)
+            if (reorderDragData != null)
+              LongPressDraggable<ReorderDragData>(
+                data: reorderDragData,
+                onDragStarted: onReorderDragStart,
+                onDragCompleted: onReorderDragAccepted,
+                onDragEnd: (_) => onReorderDragEnd?.call(),
+                onDraggableCanceled: (_, __) => onReorderDragCancel?.call(),
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Opacity(opacity: 0.9, child: Icon(Icons.drag_indicator, color: Colors.grey[700], size: 28)),
+                ),
+                child: Icon(Icons.drag_indicator, color: Colors.grey[700]),
+              )
+            else
+              Icon(Icons.drag_indicator, color: Colors.grey[700]),
             const SizedBox(width: 8),
 
             // Image
@@ -236,6 +269,7 @@ class EjercicioCard extends StatelessWidget {
       return LongPressDraggable<SupersetDragData>(
         data: linkDragData,
         onDragStarted: onLinkDragStart,
+        onDragCompleted: onLinkDragAccepted,
         onDragEnd: (_) => onLinkDragEnd?.call(),
         onDraggableCanceled: (_, __) => onLinkDragCancel?.call(),
         feedback: Material(

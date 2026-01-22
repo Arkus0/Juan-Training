@@ -361,6 +361,30 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       state = state.copyWith(dias: newDias);
   }
 
+  /// Move a whole superset block (by supersetId) to a new insertion index in the flat list
+  void moveSuperset(int dayIndex, String supersetId, int insertionIndex) {
+    final day = state.dias[dayIndex];
+    final original = [...day.ejercicios];
+
+    final block = original.where((e) => e.supersetId == supersetId).toList();
+    if (block.isEmpty) return;
+
+    // Remove block
+    final remaining = original.where((e) => e.supersetId != supersetId).toList();
+
+    // Clamp insertionIndex
+    if (insertionIndex < 0) insertionIndex = 0;
+    if (insertionIndex > remaining.length) insertionIndex = remaining.length;
+
+    // Insert block at insertionIndex preserving block order
+    final newEjercicios = [...remaining]..insertAll(insertionIndex, block);
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+  }
+
   void removeFromSuperset(int dayIndex, int exerciseIndex) {
       final day = state.dias[dayIndex];
       final ex = day.ejercicios[exerciseIndex];
