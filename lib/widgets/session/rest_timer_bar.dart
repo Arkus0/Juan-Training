@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/timer_audio_service.dart';
 
 /// Callback cuando el timer termina, incluye info para auto-focus
 typedef TimerFinishedCallback = void Function({
@@ -18,9 +21,10 @@ typedef TimerFinishedCallback = void Function({
 /// - Progreso circular + countdown
 /// - Pause/Resume/Skip con gestos y botones
 /// - Vibración progresiva últimos 10 segundos
+/// - Sonido opcional (configurable en settings)
 /// - Animación fade/scale para show/hide
 /// - Accesibilidad con Semantics
-class RestTimerBar extends StatefulWidget {
+class RestTimerBar extends ConsumerStatefulWidget {
   final RestTimerState timerState;
   final VoidCallback onStartRest;
   final VoidCallback onStopRest;
@@ -43,10 +47,10 @@ class RestTimerBar extends StatefulWidget {
   });
 
   @override
-  State<RestTimerBar> createState() => _RestTimerBarState();
+  ConsumerState<RestTimerBar> createState() => _RestTimerBarState();
 }
 
-class _RestTimerBarState extends State<RestTimerBar>
+class _RestTimerBarState extends ConsumerState<RestTimerBar>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   Timer? _ticker;
   double _displaySeconds = 0;
@@ -146,7 +150,7 @@ class _RestTimerBarState extends State<RestTimerBar>
 
     if (remaining <= 0 && widget.timerState.isActive && !widget.timerState.isPaused) {
       _stopTicker();
-      _triggerFinalVibration();
+      _triggerFinalFeedback();
       widget.onTimerFinished(
         lastExerciseIndex: widget.timerState.lastCompletedExerciseIndex,
         lastSetIndex: widget.timerState.lastCompletedSetIndex,
@@ -159,40 +163,66 @@ class _RestTimerBarState extends State<RestTimerBar>
       _displaySeconds = remaining;
     });
 
-    // Vibración progresiva últimos 10 segundos
-    _handleProgressiveVibration(remaining);
+    // Vibración y sonido progresivo últimos 10 segundos
+    _handleProgressiveFeedback(remaining);
   }
 
-  /// Vibración progresiva: suave en 10-6s, media en 5-3s, fuerte en 2-1s
-  void _handleProgressiveVibration(double remaining) async {
+  /// Vibración y sonido progresivo: suave en 10-6s, media en 5-3s, fuerte en 2-1s
+  void _handleProgressiveFeedback(double remaining) async {
     final secondInt = remaining.ceil();
 
-    // Solo vibrar una vez por segundo
+    // Solo feedback una vez por segundo
     if (secondInt == _lastVibratedSecond || secondInt > 10 || secondInt <= 0) return;
     _lastVibratedSecond = secondInt;
 
-    final canVibrate = await Vibrate.canVibrate;
-    if (!canVibrate) return;
+    // Leer settings
+    final settings = ref.read(settingsProvider);
+    final vibrationEnabled = settings.timerVibrationEnabled;
+    final soundEnabled = settings.timerSoundEnabled;
 
-    if (secondInt <= 3) {
-      // Fuerte en últimos 3 segundos
-      Vibrate.feedback(FeedbackType.heavy);
-    } else if (secondInt <= 5) {
-      // Media en 4-5 segundos
-      Vibrate.feedback(FeedbackType.medium);
-    } else if (secondInt <= 10) {
-      // Suave en 6-10 segundos
-      Vibrate.feedback(FeedbackType.light);
+    // Vibración
+    if (vibrationEnabled) {
+      final canVibrate = await Vibrate.canVibrate;
+      if (canVibrate) {
+        if (secondInt <= 3) {
+          Vibrate.feedback(FeedbackType.heavy);
+        } else if (secondInt <= 5) {
+          Vibrate.feedback(FeedbackType.medium);
+        } else if (secondInt <= 10) {
+          Vibrate.feedback(FeedbackType.light);
+        }
+      }
+    }
+
+    // Sonido (solo últimos 3 segundos para no ser molesto)
+    if (soundEnabled && secondInt <= 3) {
+      final audio = TimerAudioService.instance;
+      if (secondInt == 3) {
+        audio.playMediumBeep();
+      } else if (secondInt == 2) {
+        audio.playHighBeep();
+      } else if (secondInt == 1) {
+        audio.playHighBeep();
+      }
     }
   }
 
-  void _triggerFinalVibration() async {
-    final canVibrate = await Vibrate.canVibrate;
-    if (canVibrate) {
-      // Patrón de vibración final: dos vibraciones cortas
-      Vibrate.feedback(FeedbackType.success);
-      await Future.delayed(const Duration(milliseconds: 150));
-      Vibrate.feedback(FeedbackType.success);
+  void _triggerFinalFeedback() async {
+    final settings = ref.read(settingsProvider);
+
+    // Vibración final
+    if (settings.timerVibrationEnabled) {
+      final canVibrate = await Vibrate.canVibrate;
+      if (canVibrate) {
+        Vibrate.feedback(FeedbackType.success);
+        await Future.delayed(const Duration(milliseconds: 150));
+        Vibrate.feedback(FeedbackType.success);
+      }
+    }
+
+    // Sonido final
+    if (settings.timerSoundEnabled) {
+      TimerAudioService.instance.playFinalBeep();
     }
   }
 

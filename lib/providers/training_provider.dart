@@ -171,6 +171,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         reps: int.tryParse(e.repsRange.split('-').first) ?? 0, // Best effort parse
         peso: 0.0,
         notas: e.notas,
+        supersetId: e.supersetId, // Copiar superset para lógica de timer encadenado
+        descansoSugeridoSeconds: e.descansoSugerido?.inSeconds,
         logs: List.generate(e.series, (_) => SerieLog(
           // ID is generated automatically in constructor
           peso: 0.0,
@@ -279,15 +281,92 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _saveState();
   }
 
+  /// Verifica si el ejercicio es el último de su superset que tiene sets pendientes
+  /// Retorna true si debe iniciar el timer, false si hay más ejercicios en el superset
+  bool _shouldStartTimerForSuperset(int exerciseIndex, int setIndex) {
+    final exercise = state.exercises[exerciseIndex];
+
+    // Si no está en superset, siempre iniciar timer
+    if (!exercise.isInSuperset) return true;
+
+    final supersetId = exercise.supersetId!;
+
+    // Encontrar todos los ejercicios del mismo superset
+    final supersetExercises = <int>[];
+    for (int i = 0; i < state.exercises.length; i++) {
+      if (state.exercises[i].supersetId == supersetId) {
+        supersetExercises.add(i);
+      }
+    }
+
+    // Si solo hay un ejercicio en el superset (raro pero posible), iniciar timer
+    if (supersetExercises.length <= 1) return true;
+
+    // Verificar si el ejercicio actual es el último del superset en orden
+    final currentPositionInSuperset = supersetExercises.indexOf(exerciseIndex);
+    final isLastInSuperset = currentPositionInSuperset == supersetExercises.length - 1;
+
+    // Si es el último del superset, iniciar timer
+    if (isLastInSuperset) return true;
+
+    // Si no es el último, verificar si el siguiente ejercicio del superset
+    // tiene el mismo set (round) pendiente - si no, iniciar timer
+    final nextInSuperset = supersetExercises[currentPositionInSuperset + 1];
+    final nextExercise = state.exercises[nextInSuperset];
+
+    // Si el siguiente ejercicio ya tiene ese set completado, es que estamos
+    // terminando una ronda completa del superset
+    if (setIndex < nextExercise.logs.length && nextExercise.logs[setIndex].completed) {
+      // La ronda ya fue completada, verificar si hay más rondas
+      final allRoundsComplete = supersetExercises.every((idx) {
+        final ex = state.exercises[idx];
+        return setIndex >= ex.logs.length - 1 || ex.logs[setIndex].completed;
+      });
+      return allRoundsComplete;
+    }
+
+    // El siguiente ejercicio del superset tiene ese set pendiente, no iniciar timer
+    return false;
+  }
+
+  /// Obtiene el tiempo de descanso sugerido para un superset (del último ejercicio)
+  int _getSupersetRestTime(int exerciseIndex) {
+    final exercise = state.exercises[exerciseIndex];
+
+    if (!exercise.isInSuperset) {
+      return exercise.descansoSugeridoSeconds ?? state.defaultRestSeconds;
+    }
+
+    final supersetId = exercise.supersetId!;
+
+    // Buscar el último ejercicio del superset para usar su descanso
+    int? lastSupersetRestTime;
+    for (int i = state.exercises.length - 1; i >= 0; i--) {
+      if (state.exercises[i].supersetId == supersetId) {
+        lastSupersetRestTime = state.exercises[i].descansoSugeridoSeconds;
+        break;
+      }
+    }
+
+    return lastSupersetRestTime ?? state.defaultRestSeconds;
+  }
+
   /// Inicia el timer de descanso para un ejercicio específico
   /// @param exerciseIndex Índice del ejercicio que acaba de completarse
   /// @param setIndex Índice del set que acaba de completarse (para auto-focus)
-  void startRestForExercise(int exerciseIndex, {int? setIndex}) {
-    final exercise = state.exercises[exerciseIndex];
-    int restTime = state.defaultRestSeconds;
+  /// @return true si el timer se inició, false si estamos en medio de un superset
+  bool startRestForExercise(int exerciseIndex, {int? setIndex}) {
+    // Verificar lógica de superseries
+    if (setIndex != null && !_shouldStartTimerForSuperset(exerciseIndex, setIndex)) {
+      // Estamos en medio de un superset, no iniciar timer
+      return false;
+    }
 
-    // Try to find configured rest time in the active routine
-    if (state.activeRutina != null) {
+    final exercise = state.exercises[exerciseIndex];
+    int restTime = _getSupersetRestTime(exerciseIndex);
+
+    // Fallback: Try to find configured rest time in the active routine
+    if (restTime == state.defaultRestSeconds && state.activeRutina != null) {
       for (final day in state.activeRutina!.dias) {
         final match = day.ejercicios.firstWhereOrNull((e) => e.instanceId == exercise.id);
         if (match != null && match.descansoSugerido != null) {
@@ -312,6 +391,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       ),
     );
     _saveState();
+    return true;
   }
 
   void startRest() {
@@ -330,12 +410,59 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _saveState();
   }
 
-  void stopRest() {
+  void stopRest({bool saveRestTime = true}) {
+    // Guardar el tiempo de descanso en el SerieLog si corresponde
+    if (saveRestTime && state.restTimer.isActive) {
+      final exerciseIndex = state.restTimer.lastCompletedExerciseIndex;
+      final setIndex = state.restTimer.lastCompletedSetIndex;
+
+      if (exerciseIndex != null && setIndex != null) {
+        // Calcular el tiempo real descansado
+        final totalTime = state.restTimer.totalSeconds;
+        final remainingTime = state.restTimer.remainingSeconds.ceil();
+        final actualRestTime = totalTime - remainingTime;
+
+        // Solo guardar si descansó al menos un poco
+        if (actualRestTime > 0) {
+          _updateLogRestTime(exerciseIndex, setIndex, actualRestTime);
+        }
+      }
+    }
+
     state = state.copyWith(
       isRestActive: false,
       restTimer: const RestTimerState(isActive: false),
     );
     _saveState();
+  }
+
+  /// Actualiza el tiempo de descanso en un SerieLog específico (para analytics)
+  void _updateLogRestTime(int exerciseIndex, int setIndex, int restSeconds) {
+    final exercises = [...state.exercises];
+    if (exerciseIndex >= exercises.length) return;
+
+    final exercise = exercises[exerciseIndex];
+    if (setIndex >= exercise.logs.length) return;
+
+    final logs = [...exercise.logs];
+    final log = logs[setIndex];
+
+    logs[setIndex] = SerieLog(
+      id: log.id,
+      peso: log.peso,
+      reps: log.reps,
+      completed: log.completed,
+      rpe: log.rpe,
+      notas: log.notas,
+      restSeconds: restSeconds,
+      isFailure: log.isFailure,
+      isDropset: log.isDropset,
+      isWarmup: log.isWarmup,
+    );
+
+    exercises[exerciseIndex] = exercise.copyWith(logs: logs);
+    state = state.copyWith(exercises: exercises);
+    // No llamar _saveState() aquí, se llamará en stopRest()
   }
 
   /// Pausa el timer de descanso (guarda el tiempo restante)
@@ -385,6 +512,16 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         ),
       );
     }
+    _saveState();
+  }
+
+  /// Actualiza el tiempo de descanso sugerido para un ejercicio específico
+  void updateExerciseRestTime(int exerciseIndex, int seconds) {
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+
+    exercises[exerciseIndex] = exercise.copyWith(descansoSugeridoSeconds: seconds);
+    state = state.copyWith(exercises: exercises);
     _saveState();
   }
 

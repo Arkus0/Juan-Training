@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../providers/training_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
@@ -216,6 +219,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
     final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
 
+    // Settings
+    final autoStartTimer = ref.watch(autoStartTimerProvider);
+    final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
+
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
     final focusTarget = ref.watch(timerFinishedFocusProvider);
 
@@ -226,6 +233,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       exercise: exercise,
       historyLogs: historyLogs,
       showAdvanced: showAdvanced,
+      showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
       focusSetIndex: focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null,
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
@@ -236,15 +244,21 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
              final log = exercise.logs[setIndex];
              final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
              _triggerCompletionFeedback(log, prevLog);
-             // Auto-advance rest con info de ejercicio/serie para auto-focus
-             if (!isRestActive) {
+             // Auto-advance rest con info de ejercicio/serie para auto-focus (si está habilitado)
+             if (autoStartTimer && !isRestActive) {
                notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
              }
         }
       },
       onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onSetLongPress: (setIndex) => _showAdvancedOptions(context, setIndex),
+      onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
     );
+  }
+
+  void _updateExerciseRestTime(int seconds) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    notifier.updateExerciseRestTime(widget.exerciseIndex, seconds);
   }
 }
 
@@ -253,6 +267,7 @@ class ExerciseCard extends StatelessWidget {
   final Ejercicio exercise;
   final List<SerieLog>? historyLogs;
   final bool showAdvanced;
+  final bool showSupersetBadge;
   final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
@@ -260,6 +275,7 @@ class ExerciseCard extends StatelessWidget {
   final Function(int, bool?) onUpdateCompleted;
   final Function(int, double) onPlateCalc;
   final Function(int) onSetLongPress;
+  final Function(int)? onRestTimeChange;
 
   const ExerciseCard({
     super.key,
@@ -267,6 +283,7 @@ class ExerciseCard extends StatelessWidget {
     required this.exercise,
     required this.historyLogs,
     required this.showAdvanced,
+    this.showSupersetBadge = false,
     this.focusSetIndex,
     required this.onShowOptions,
     required this.onUpdateWeight,
@@ -274,10 +291,13 @@ class ExerciseCard extends StatelessWidget {
     required this.onUpdateCompleted,
     required this.onPlateCalc,
     required this.onSetLongPress,
+    this.onRestTimeChange,
   });
 
   @override
   Widget build(BuildContext context) {
+    final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -292,20 +312,55 @@ class ExerciseCard extends StatelessWidget {
                    child: Column(
                      crossAxisAlignment: CrossAxisAlignment.start,
                      children: [
-                       Text(
-                        exercise.nombre.toUpperCase(),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.redAccent[700],
-                          shadows: [
-                            Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
-                          ],
-                        ),
-                                           ),
-                       if (historyLogs != null && historyLogs!.isNotEmpty)
-                         Text(
-                           'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
-                           style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
-                         ),
+                       Row(
+                         children: [
+                           Flexible(
+                             child: Text(
+                              exercise.nombre.toUpperCase(),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.redAccent[700],
+                                shadows: [
+                                  Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
+                                ],
+                              ),
+                             ),
+                           ),
+                           if (showSupersetBadge) ...[
+                             const SizedBox(width: 8),
+                             Container(
+                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                               decoration: BoxDecoration(
+                                 color: Colors.orange[800],
+                                 borderRadius: BorderRadius.circular(4),
+                               ),
+                               child: Text(
+                                 'SS',
+                                 style: GoogleFonts.montserrat(
+                                   fontSize: 10,
+                                   fontWeight: FontWeight.w900,
+                                   color: Colors.white,
+                                 ),
+                               ),
+                             ),
+                           ],
+                         ],
+                       ),
+                       const SizedBox(height: 4),
+                       Row(
+                         children: [
+                           if (historyLogs != null && historyLogs!.isNotEmpty)
+                             Text(
+                               'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
+                               style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
+                             ),
+                           const Spacer(),
+                           // Selector de tiempo de descanso inline
+                           _RestTimeChip(
+                             seconds: restSeconds,
+                             onChanged: onRestTimeChange,
+                           ),
+                         ],
+                       ),
                      ],
                    ),
                  ),
@@ -316,7 +371,7 @@ class ExerciseCard extends StatelessWidget {
                ],
              ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Header Row
             const Row(
@@ -352,5 +407,225 @@ class ExerciseCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Chip compacto para mostrar y editar el tiempo de descanso por ejercicio
+class _RestTimeChip extends StatelessWidget {
+  final int seconds;
+  final Function(int)? onChanged;
+
+  const _RestTimeChip({
+    required this.seconds,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey[850],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[700]!, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.timer_outlined, size: 12, color: Colors.grey[500]),
+            const SizedBox(width: 4),
+            Text(
+              '${seconds}s',
+              style: GoogleFonts.montserrat(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey[400],
+              ),
+            ),
+            if (onChanged != null) ...[
+              const SizedBox(width: 2),
+              Icon(Icons.edit, size: 10, color: Colors.grey[600]),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRestTimePicker(BuildContext context) {
+    HapticFeedback.selectionClick();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _RestTimePickerSheet(
+        initialSeconds: seconds,
+        onSelected: (newSeconds) {
+          onChanged?.call(newSeconds);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+}
+
+/// Bottom sheet para seleccionar tiempo de descanso
+class _RestTimePickerSheet extends StatefulWidget {
+  final int initialSeconds;
+  final Function(int) onSelected;
+
+  const _RestTimePickerSheet({
+    required this.initialSeconds,
+    required this.onSelected,
+  });
+
+  @override
+  State<_RestTimePickerSheet> createState() => _RestTimePickerSheetState();
+}
+
+class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
+  late int _selectedSeconds;
+
+  // Opciones predefinidas de tiempo
+  static const List<int> _presets = [30, 45, 60, 90, 120, 150, 180, 240, 300];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSeconds = widget.initialSeconds;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'TIEMPO DE DESCANSO',
+              style: GoogleFonts.montserrat(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Controles +/-
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, size: 32),
+                  onPressed: _selectedSeconds > 10
+                      ? () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedSeconds -= 10);
+                        }
+                      : null,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  '${_selectedSeconds}s',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline, size: 32),
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedSeconds += 10);
+                  },
+                  color: Colors.redAccent[700],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Presets
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: _presets.map((preset) {
+                final isSelected = preset == _selectedSeconds;
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedSeconds = preset);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.redAccent[700] : Colors.grey[800],
+                      borderRadius: BorderRadius.circular(8),
+                      border: isSelected
+                          ? null
+                          : Border.all(color: Colors.grey[700]!),
+                    ),
+                    child: Text(
+                      _formatPreset(preset),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Botón confirmar
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  widget.onSelected(_selectedSeconds);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent[700],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text(
+                  'CONFIRMAR',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatPreset(int seconds) {
+    if (seconds >= 60) {
+      final mins = seconds ~/ 60;
+      final secs = seconds % 60;
+      if (secs == 0) return '${mins}m';
+      return '${mins}m ${secs}s';
+    }
+    return '${seconds}s';
   }
 }

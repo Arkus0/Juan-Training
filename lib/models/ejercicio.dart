@@ -11,6 +11,8 @@ class Ejercicio {
   final double peso;
   final String? notas;
   final List<SerieLog> logs;
+  final String? supersetId; // Para agrupar ejercicios en superseries
+  final int? descansoSugeridoSeconds; // Descanso sugerido en segundos
 
   Ejercicio({
     required this.id,
@@ -23,6 +25,8 @@ class Ejercicio {
     this.peso = 0.0,
     this.notas,
     List<SerieLog>? logs,
+    this.supersetId,
+    this.descansoSugeridoSeconds,
   }) : logs = logs ?? [];
 
   // Helper to create a copy with new values if needed
@@ -37,6 +41,9 @@ class Ejercicio {
     double? peso,
     String? notas,
     List<SerieLog>? logs,
+    String? supersetId,
+    int? descansoSugeridoSeconds,
+    bool clearSupersetId = false,
   }) {
     return Ejercicio(
       id: id ?? this.id,
@@ -49,6 +56,11 @@ class Ejercicio {
       peso: peso ?? this.peso,
       notas: notas ?? this.notas,
       logs: logs ?? this.logs,
+      supersetId: clearSupersetId ? null : (supersetId ?? this.supersetId),
+      descansoSugeridoSeconds: descansoSugeridoSeconds ?? this.descansoSugeridoSeconds,
     );
   }
+
+  /// Verifica si este ejercicio pertenece a un superset
+  bool get isInSuperset => supersetId != null && supersetId!.isNotEmpty;
 }
