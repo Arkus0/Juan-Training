@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
+import '../../models/library_exercise.dart';
 import '../../providers/training_provider.dart';
 import '../../services/alternativas_service.dart';
+import '../../services/exercise_library_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import 'session_set_row.dart';
 import 'advanced_options_modal.dart';
@@ -64,7 +66,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
-    final hasAlternativas = AlternativasService.instance.hasAlternativas(exercise.libraryId);
+    // Convert string ID to int safely
+    final int? libId = int.tryParse(exercise.libraryId);
+
+    final hasAlternativas = libId != null && AlternativasService.instance.hasAlternativas(libId);
 
     showModalBottomSheet(
       context: context,
@@ -104,11 +109,27 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
                   onTap: () {
+                    if (!hasAlternativas || libId == null) return;
+
                     Navigator.pop(sheetContext);
+
+                    // Resolve LibraryExercise object
+                    final libraryExercise = ExerciseLibraryService.instance.getExerciseById(libId);
+
+                    if (libraryExercise == null) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error: No se encontró información del ejercicio en la biblioteca')),
+                      );
+                      return;
+                    }
+
+                    // Get full list for service
+                    final allExercises = ExerciseLibraryService.instance.exercises.cast<LibraryExercise>();
+
                     showAlternativasDialog(
                       context: context,
-                      exerciseId: exercise.libraryId,
-                      exerciseName: exercise.nombre,
+                      ejercicioOriginal: libraryExercise,
+                      allExercises: allExercises,
                       onReplace: (alternativa) {
                         Vibrate.feedback(FeedbackType.selection);
                         ScaffoldMessenger.of(context).showSnackBar(

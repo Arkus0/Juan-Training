@@ -1,41 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vibrate/flutter_vibrate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/alternativas_service.dart';
-import '../../services/exercise_library_service.dart';
 import '../../models/library_exercise.dart';
+import '../../services/alternativas_service.dart';
 
 /// Dialog que muestra las alternativas para un ejercicio.
-/// Permite seleccionar una alternativa para reemplazar el ejercicio actual.
-///
-/// [exerciseId]: ID del ejercicio actual (para buscar alternativas).
-/// [exerciseName]: Nombre del ejercicio actual (para mostrar en el título).
-/// [onReplace]: Callback con el objeto LibraryExercise seleccionado.
-/// [onCancel]: Callback opcional cuando se cancela.
 class AlternativasDialog extends StatelessWidget {
-  final String exerciseId;
-  final String exerciseName;
-  final void Function(LibraryExercise alternativa) onReplace;
+  final LibraryExercise ejercicioOriginal;
+  final List<LibraryExercise> allExercises;
+  // Callback devuelve el objeto completo seleccionado
+  final void Function(LibraryExercise seleccion) onReplace;
   final VoidCallback? onCancel;
 
   const AlternativasDialog({
     super.key,
-    required this.exerciseId,
-    required this.exerciseName,
+    required this.ejercicioOriginal,
+    required this.allExercises,
     required this.onReplace,
     this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 1. Obtener IDs de alternativas
-    final ids = AlternativasService.instance.getAlternativasIds(exerciseId);
-
-    // 2. Resolver IDs a objetos LibraryExercise
-    final List<LibraryExercise> alternativas = ids
-        .map((id) => ExerciseLibraryService.instance.getExerciseById(id))
-        .whereType<LibraryExercise>() // Filtrar nulos
-        .toList();
+    // Obtenemos los objetos reales usando el servicio
+    final alternativas = AlternativasService.instance.getAlternativas(
+      exerciseId: ejercicioOriginal.id,
+      allExercises: allExercises,
+    );
 
     return AlertDialog(
       backgroundColor: Colors.grey[900],
@@ -64,7 +55,7 @@ class AlternativasDialog extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            exerciseName.toUpperCase(),
+            ejercicioOriginal.name.toUpperCase(),
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w700,
@@ -110,14 +101,6 @@ class AlternativasDialog extends StatelessWidget {
             style: GoogleFonts.montserrat(
               color: Colors.white38,
               fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Prueba buscando en la biblioteca',
-            style: GoogleFonts.montserrat(
-              color: Colors.white24,
-              fontSize: 12,
             ),
           ),
         ],
@@ -176,7 +159,6 @@ class _AlternativaItem extends StatelessWidget {
                   Text(
                     exercise.name.toUpperCase(),
                     style: GoogleFonts.montserrat(
-                      // Primera alternativa destacada, resto en gris suave
                       color: isFirst ? Colors.white : Colors.white38,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -186,9 +168,8 @@ class _AlternativaItem extends StatelessWidget {
                     Text(
                       exercise.equipment,
                       style: GoogleFonts.montserrat(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[500],
+                        fontSize: 10,
                       ),
                     ),
                   if (isFirst)
@@ -216,7 +197,7 @@ class _AlternativaItem extends StatelessWidget {
                 ),
               ),
               child: Text(
-                'REEMPLAZAR',
+                'CAMBIAR',
                 style: GoogleFonts.montserrat(
                   color: Colors.redAccent[100],
                   fontWeight: FontWeight.w800,
@@ -231,18 +212,18 @@ class _AlternativaItem extends StatelessWidget {
   }
 }
 
-/// Función helper para mostrar el dialog de alternativas fácilmente.
+// Función helper actualizada para requerir los objetos
 Future<void> showAlternativasDialog({
   required BuildContext context,
-  required String exerciseId,
-  required String exerciseName,
-  required void Function(LibraryExercise alternativa) onReplace,
+  required LibraryExercise ejercicioOriginal,
+  required List<LibraryExercise> allExercises,
+  required void Function(LibraryExercise seleccion) onReplace,
 }) {
   return showDialog(
     context: context,
     builder: (ctx) => AlternativasDialog(
-      exerciseId: exerciseId,
-      exerciseName: exerciseName,
+      ejercicioOriginal: ejercicioOriginal,
+      allExercises: allExercises,
       onReplace: onReplace,
     ),
   );
