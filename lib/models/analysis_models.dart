@@ -338,15 +338,32 @@ String normalizeMuscleGroup(String muscle) {
 
 /// Estimate 1 Rep Max using Brzycki formula
 /// Formula: weight × (36 / (37 - reps))
+///
+/// PROTECCIÓN ANTI-OUTLIER: El resultado tiene un techo de 600kg para
+/// evitar que errores de entrada arruinen las gráficas de tendencia.
+/// (El récord mundial de peso muerto es ~501kg)
 double estimateOneRepMax(double weight, int reps) {
+  // Constante: Máximo 1RM razonable en el mundo real
+  const double max1RMCeiling = 600.0;
+
   if (reps <= 0 || weight <= 0) return 0;
-  if (reps == 1) return weight;
-  if (reps > 12) {
+  if (reps == 1) return weight.clamp(0, max1RMCeiling);
+
+  // FIX: Limitar reps para evitar cálculos absurdos
+  // Reps > 30 no tiene sentido para calcular 1RM
+  final clampedReps = reps.clamp(1, 30);
+
+  double estimated;
+  if (clampedReps > 12) {
     // Brzycki becomes inaccurate above 12 reps
     // Use a conservative estimate
-    return weight * 1.33;
+    estimated = weight * 1.33;
+  } else {
+    estimated = weight * (36 / (37 - clampedReps));
   }
-  return weight * (36 / (37 - reps));
+
+  // Aplicar techo para evitar outliers que arruinen gráficas
+  return estimated.clamp(0, max1RMCeiling);
 }
 
 // =============================================================================

@@ -69,12 +69,33 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     if (progress.isComplete) {
       if (!mounted) return;
       final navigator = Navigator.of(context);
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
 
       // Stop any active rest timer
       ref.read(trainingSessionProvider.notifier).stopRest();
       ref.read(sessionProgressProvider.notifier).reset();
 
       await ref.read(trainingSessionProvider.notifier).finishSession();
+
+      // 🎯 FIX: Mostrar feedback de sesión guardada ANTES de pop
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '¡Sesión guardada!',
+                style: AppTypography.labelEmphasis.copyWith(color: AppColors.textOnAccent),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.completedGreen,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       navigator.pop();
       return;
     }
@@ -138,6 +159,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     if (shouldFinish == true) {
       if (!mounted) return;
       final navigator = Navigator.of(context);
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
 
       // Stop any active rest timer so UI and state are consistent
       // Prevents floating timer overlay from still being active after finishing
@@ -147,6 +169,26 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       ref.read(sessionProgressProvider.notifier).reset();
 
       await ref.read(trainingSessionProvider.notifier).finishSession();
+
+      // 🎯 FIX: Mostrar feedback de sesión guardada
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '¡Sesión guardada!',
+                style: AppTypography.labelEmphasis.copyWith(color: AppColors.textOnAccent),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.completedGreen,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       navigator.pop();
     }
   }
@@ -254,7 +296,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final notifier = ref.read(trainingSessionProvider.notifier);
 
     // 🎯 ERROR TOLERANCE: Mostrar diálogo de datos sospechosos
+    // FIX: Marcar inmediatamente como "mostrando" para evitar múltiples diálogos
     if (suspiciousData.hasSuspiciousData) {
+      // Marcar ANTES del postFrameCallback para evitar race condition
+      ref.read(suspiciousDataProvider.notifier).markDialogShowing();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _showSuspiciousDataDialog(suspiciousData);

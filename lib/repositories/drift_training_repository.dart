@@ -648,6 +648,21 @@ class DriftTrainingRepository implements ITrainingRepository {
     await (db.delete(db.sessions)..where((s) => s.completedAt.isNull())).go();
   }
 
+  /// FIX: Atomiza guardar sesión completada + limpiar sesión activa
+  /// Esto evita estado inconsistente si hay un crash entre las dos operaciones.
+  /// Si usas esta función, NO necesitas llamar a clearActiveSession por separado.
+  @override
+  Future<void> finishAndClearSession(Sesion sesion) async {
+    await db.transaction(() async {
+      // 1. Guardar la sesión como completada
+      await _saveSessionInternal(sesion, isCompleted: true);
+
+      // 2. Limpiar cualquier sesión activa (sin completedAt)
+      // Nota: La sesión que acabamos de guardar ya tiene completedAt, así que no se borra
+      await (db.delete(db.sessions)..where((s) => s.completedAt.isNull())).go();
+    });
+  }
+
   @override
   Future<String> getNote(String exerciseName) async {
     final row = await (db.select(db.exerciseNotes)
@@ -1074,13 +1089,20 @@ class DriftTrainingRepository implements ITrainingRepository {
       return StreakData.empty;
     }
 
-    // Get unique training dates
+    // FIX: Usar timezone local para normalizar fechas correctamente
+    // Esto evita problemas cuando el usuario viaja o cambia DST
+    final now = DateTime.now();
+    final todayNormalized = DateTime(now.year, now.month, now.day);
+
+    // Get unique training dates (normalized to local timezone midnight)
     final trainingDates = <DateTime>{};
     for (final session in sessions) {
+      // Convertir a local y normalizar a medianoche
+      final localTime = session.startTime.toLocal();
       final date = DateTime(
-        session.startTime.year,
-        session.startTime.month,
-        session.startTime.day,
+        localTime.year,
+        localTime.month,
+        localTime.day,
       );
       trainingDates.add(date);
     }
@@ -1088,8 +1110,6 @@ class DriftTrainingRepository implements ITrainingRepository {
     final sortedDates = trainingDates.toList()..sort((a, b) => b.compareTo(a));
 
     final lastTrainingDate = sortedDates.first;
-    final today = DateTime.now();
-    final todayNormalized = DateTime(today.year, today.month, today.day);
 
     // Calculate current streak
     int currentStreak = 0;

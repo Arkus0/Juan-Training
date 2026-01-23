@@ -118,7 +118,61 @@ enum ToleranceSeverity {
 // ════════════════════════════════════════════════════════════════════════════
 
 class ErrorToleranceRules {
-  
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CONSTANTES GLOBALES DE PROTECCIÓN
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Peso máximo absoluto permitido en la app (récord mundial + margen)
+  /// Protege contra errores de entrada que arruinen gráficas
+  static const double absoluteMaxWeight = 600.0;
+
+  /// Peso mínimo permitido (negativo es claramente error)
+  static const double absoluteMinWeight = 0.0;
+
+  /// Reps máximas razonables por serie (más es probablemente error)
+  static const int absoluteMaxReps = 100;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // VALIDACIÓN FORZADA (HARD LIMITS)
+  // ─────────────────────────────────────────────────────────────────────────
+  //
+  // A diferencia de las otras reglas que "sugieren", estas FUERZAN corrección.
+  // Se aplican silenciosamente para proteger la integridad de los datos.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Aplica límites duros al peso. Retorna el peso corregido.
+  /// Esta función SIEMPRE modifica valores imposibles.
+  static double enforceWeightLimits(double weight) {
+    if (weight < absoluteMinWeight) return absoluteMinWeight;
+    if (weight > absoluteMaxWeight) return absoluteMaxWeight;
+    return weight;
+  }
+
+  /// Aplica límites duros a las reps. Retorna las reps corregidas.
+  static int enforceRepsLimits(int reps) {
+    if (reps < 0) return 0;
+    if (reps > absoluteMaxReps) return absoluteMaxReps;
+    return reps;
+  }
+
+  /// Valida y corrige datos de entrada forzosamente.
+  /// Retorna un record con los valores corregidos y si hubo corrección.
+  static ({double weight, int reps, bool wasCorrected}) enforceDataLimits({
+    required double weight,
+    required int reps,
+  }) {
+    final correctedWeight = enforceWeightLimits(weight);
+    final correctedReps = enforceRepsLimits(reps);
+    final wasCorrected = correctedWeight != weight || correctedReps != reps;
+
+    return (
+      weight: correctedWeight,
+      reps: correctedReps,
+      wasCorrected: wasCorrected,
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // REGLA 1: SERIE FALLIDA
   // ─────────────────────────────────────────────────────────────────────────

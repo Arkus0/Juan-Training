@@ -472,15 +472,16 @@ class _InactiveTimerBar extends StatelessWidget {
                           size: 36,
                           color: AppColors.bgDeep,
                           onTap: () async {
+                            // FIX: Diálogo simplificado para uso en gimnasio (nadie lee textos largos)
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
                                 backgroundColor: AppColors.bgElevated,
-                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: AppColors.textPrimary)),
-                                content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
+                                title: const Text('¿Descartar sesión?', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+                                content: const Text('Se perderán los datos.', style: TextStyle(color: AppColors.textSecondary)),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('NO')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed))),
                                 ],
                               ),
                             );
@@ -617,15 +618,16 @@ class _ActiveTimerBar extends StatelessWidget {
                           size: 36,
                           color: AppColors.bgDeep,
                           onTap: () async {
+                            // FIX: Diálogo simplificado para uso en gimnasio (nadie lee textos largos)
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
                                 backgroundColor: AppColors.bgElevated,
-                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: AppColors.textPrimary)),
-                                content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
+                                title: const Text('¿Descartar sesión?', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+                                content: const Text('Se perderán los datos.', style: TextStyle(color: AppColors.textSecondary)),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('NO')),
+                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed))),
                                 ],
                               ),
                             );

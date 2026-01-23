@@ -167,18 +167,32 @@ class SuspiciousDataState {
   final double? suggestedWeight;
   final int? exerciseIndex;
   final int? setIndex;
-  
+  /// Flag para evitar mostrar múltiples diálogos (race condition en rebuild)
+  final bool dialogShowing;
+
   const SuspiciousDataState({
     this.exerciseName,
     this.enteredWeight,
     this.suggestedWeight,
     this.exerciseIndex,
     this.setIndex,
+    this.dialogShowing = false,
   });
-  
-  bool get hasSuspiciousData => exerciseName != null && enteredWeight != null;
-  
+
+  /// Solo tiene datos sospechosos si hay datos Y no se está mostrando ya el diálogo
+  bool get hasSuspiciousData =>
+      exerciseName != null && enteredWeight != null && !dialogShowing;
+
   SuspiciousDataState clear() => const SuspiciousDataState();
+
+  SuspiciousDataState markDialogShowing() => SuspiciousDataState(
+    exerciseName: exerciseName,
+    enteredWeight: enteredWeight,
+    suggestedWeight: suggestedWeight,
+    exerciseIndex: exerciseIndex,
+    setIndex: setIndex,
+    dialogShowing: true,
+  );
 }
 
 class SuspiciousDataNotifier extends StateNotifier<SuspiciousDataState> {
@@ -201,6 +215,11 @@ class SuspiciousDataNotifier extends StateNotifier<SuspiciousDataState> {
     );
   }
   
+  /// Marca que el diálogo se está mostrando (previene múltiples diálogos)
+  void markDialogShowing() {
+    state = state.markDialogShowing();
+  }
+
   /// Limpia los datos sospechosos
   void clear() {
     state = state.clear();
