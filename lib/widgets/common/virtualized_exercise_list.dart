@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/library_exercise.dart';
@@ -172,13 +173,13 @@ class _ListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.grey[900],
+      color: AppColors.bgElevated,
       child: Row(
         children: [
           Text(
             '$loaded de $total ejercicios',
             style: TextStyle(
-              color: Colors.grey[500],
+              color: AppColors.textTertiary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -190,7 +191,7 @@ class _ListHeader extends StatelessWidget {
               height: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.grey[600],
+                color: AppColors.textTertiary,
               ),
             ),
           ],
@@ -223,7 +224,7 @@ class _ExerciseListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: isSelected
-          ? Colors.redAccent[700]!.withValues(alpha: 0.2)
+          ? AppColors.neonPrimary!.withValues(alpha: 0.2)
           : Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -232,7 +233,7 @@ class _ExerciseListItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: Colors.grey[850]!),
+              bottom: BorderSide(color: AppColors.bgElevated!),
             ),
           ),
           child: Row(
@@ -267,12 +268,12 @@ class _ExerciseListItem extends StatelessWidget {
                       children: [
                         _InfoChip(
                           text: exercise.muscleGroup,
-                          color: Colors.redAccent[700]!,
+                          color: AppColors.neonPrimary!,
                         ),
                         const SizedBox(width: 6),
                         _InfoChip(
                           text: exercise.equipment,
-                          color: Colors.grey[700]!,
+                          color: AppColors.border!,
                         ),
                       ],
                     ),
@@ -284,7 +285,7 @@ class _ExerciseListItem extends StatelessWidget {
               if (isSelected)
                 Icon(
                   Icons.check_circle,
-                  color: Colors.redAccent[700],
+                  color: AppColors.neonPrimary,
                   size: 24,
                 )
               else if (showFavorite)
@@ -295,7 +296,7 @@ class _ExerciseListItem extends StatelessWidget {
                         ? Icons.favorite
                         : Icons.favorite_border,
                     color:
-                        exercise.isFavorite ? Colors.red[400] : Colors.grey[600],
+                        exercise.isFavorite ? AppColors.neonPrimary : AppColors.textTertiary,
                     size: 22,
                   ),
                   padding: EdgeInsets.zero,
@@ -378,13 +379,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.search_off,
             size: 64,
-            color: Colors.grey[700],
+            color: AppColors.border,
           ),
           const SizedBox(height: 16),
           Text(
             'No se encontraron ejercicios',
             style: TextStyle(
-              color: Colors.grey[500],
+              color: AppColors.textTertiary,
               fontSize: 16,
             ),
           ),
@@ -392,7 +393,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             'Intenta con otros filtros',
             style: TextStyle(
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
               fontSize: 14,
             ),
           ),
@@ -443,11 +444,11 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Buscar ejercicio...',
-          hintStyle: TextStyle(color: Colors.grey[600]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+          hintStyle: TextStyle(color: AppColors.textTertiary),
+          prefixIcon: Icon(Icons.search, color: AppColors.textTertiary),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey[600]),
+                  icon: Icon(Icons.clear, color: AppColors.textTertiary),
                   onPressed: () {
                     _controller.clear();
                     ref.read(paginatedExercisesProvider.notifier).search('');
@@ -455,7 +456,7 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
                 )
               : null,
           filled: true,
-          fillColor: Colors.grey[900],
+          fillColor: AppColors.bgElevated,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -525,7 +526,7 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isSelected ? Colors.redAccent[700] : Colors.grey[850],
+      color: isSelected ? AppColors.neonPrimary : AppColors.bgElevated,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,

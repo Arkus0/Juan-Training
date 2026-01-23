@@ -155,7 +155,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       title: Row(
         children: [
           Icon(
@@ -188,9 +188,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Nombre del ejercicio *',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
                     filled: true,
-                    fillColor: Colors.grey[850],
+                    fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -214,13 +214,13 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Grupo muscular
                 DropdownButtonFormField<String>(
                   value: _selectedMuscleGroup,
-                  dropdownColor: Colors.grey[850],
+                  dropdownColor: AppColors.bgElevated,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Grupo muscular',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
                     filled: true,
-                    fillColor: Colors.grey[850],
+                    fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -248,13 +248,13 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 // Equipamiento
                 DropdownButtonFormField<String>(
                   value: _selectedEquipment,
-                  dropdownColor: Colors.grey[850],
+                  dropdownColor: AppColors.bgElevated,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Equipamiento',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
                     filled: true,
-                    fillColor: Colors.grey[850],
+                    fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -281,7 +281,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   Text(
                     'Músculos trabajados (opcional)',
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -325,9 +325,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Descripción (opcional)',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
                     filled: true,
-                    fillColor: Colors.grey[850],
+                    fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -346,7 +346,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
           child: Text(
             'CANCELAR',
-            style: TextStyle(color: Colors.grey[400]),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
         ),
         ElevatedButton(

@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -123,7 +124,7 @@ class WeekSection extends StatelessWidget {
               Text(
                 weekLabel,
                 style: GoogleFonts.montserrat(
-                  color: Colors.redAccent[700],
+                  color: AppColors.neonPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -131,7 +132,7 @@ class WeekSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '$totalSessions sesiones • ${(totalVolume / 1000).toStringAsFixed(1)}t vol',
-                style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                style: TextStyle(color: AppColors.textTertiary, fontSize: 11),
               ),
             ],
           ),
@@ -209,7 +210,7 @@ class _SessionTileState extends State<SessionTile> {
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[800]!),
+                      border: Border.all(color: AppColors.bgDeep!),
                     ),
                     child: Column(
                       children: [
@@ -227,7 +228,7 @@ class _SessionTileState extends State<SessionTile> {
                           style: GoogleFonts.montserrat(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Colors.redAccent[700],
+                            color: AppColors.neonPrimary,
                           ),
                         ),
                       ],
@@ -257,7 +258,7 @@ class _SessionTileState extends State<SessionTile> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[900]?.withOpacity(0.3),
+                                  color: AppColors.live?.withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -274,27 +275,27 @@ class _SessionTileState extends State<SessionTile> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                            Icon(Icons.access_time, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               timeStr,
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
-                                color: Colors.grey[500],
+                                color: AppColors.textTertiary,
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Icon(Icons.timer_outlined, size: 12, color: Colors.grey[600]),
+                            Icon(Icons.timer_outlined, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               durationText,
                               style: GoogleFonts.montserrat(
                                 fontSize: 11,
-                                color: Colors.grey[500],
+                                color: AppColors.textTertiary,
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Icon(Icons.fitness_center, size: 12, color: Colors.grey[600]),
+                            Icon(Icons.fitness_center, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               '${(widget.session.totalVolume / 1000).toStringAsFixed(1)}t',
@@ -311,7 +312,7 @@ class _SessionTileState extends State<SessionTile> {
                   ),
                   Icon(
                     _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.grey[600],
+                    color: AppColors.textTertiary,
                     size: 22,
                   ),
                 ],
@@ -336,7 +337,7 @@ class _SessionTileState extends State<SessionTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: Colors.grey[800], height: 1),
+          Divider(color: AppColors.bgDeep, height: 1),
           const SizedBox(height: 10),
           // Exercise list
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
@@ -353,7 +354,7 @@ class _SessionTileState extends State<SessionTile> {
                       ejercicio.nombre,
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
-                        color: Colors.grey[400],
+                        color: AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -363,7 +364,7 @@ class _SessionTileState extends State<SessionTile> {
                     '$completedSets series',
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
-                      color: Colors.grey[600],
+                      color: AppColors.textTertiary,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -386,7 +387,7 @@ class _SessionTileState extends State<SessionTile> {
                 '+${widget.session.ejerciciosCompletados.length - 5} ejercicios más',
                 style: GoogleFonts.montserrat(
                   fontSize: 10,
-                  color: Colors.grey[600],
+                  color: AppColors.textTertiary,
                 ),
               ),
             ),
@@ -407,8 +408,8 @@ class _SessionTileState extends State<SessionTile> {
                   icon: const Icon(Icons.visibility, size: 16),
                   label: const Text('DETALLE'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey[400],
-                    side: BorderSide(color: Colors.grey[700]!),
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: AppColors.border!),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     textStyle: GoogleFonts.montserrat(
                       fontSize: 11,
@@ -424,7 +425,7 @@ class _SessionTileState extends State<SessionTile> {
                 label: const Text('EXPORT'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent[200],
-                  side: BorderSide(color: Colors.red[900]!),
+                  side: BorderSide(color: AppColors.live!),
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   textStyle: GoogleFonts.montserrat(
                     fontSize: 11,

@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -203,7 +204,7 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
             child: FloatingActionButton.small(
               heroTag: 'voice_training_fab',
               onPressed: _onTap,
-              backgroundColor: isListening ? Colors.red[600] : Colors.grey[850],
+              backgroundColor: isListening ? Colors.red[600] : AppColors.bgElevated,
               foregroundColor: Colors.white,
               elevation: isListening ? 8 : 4,
               child: Icon(
@@ -228,12 +229,12 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey[900]?.withValues(alpha: 0.95),
+          color: AppColors.bgElevated?.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: voiceState.isListening 
-                ? Colors.red[700]!.withValues(alpha: 0.5)
-                : Colors.grey[700]!,
+                ? AppColors.error!.withValues(alpha: 0.5)
+                : AppColors.border!,
           ),
           boxShadow: [
             BoxShadow(

@@ -1,3 +1,4 @@
+import '../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,7 +50,7 @@ class _RoutineImportPreviewDialogState
     final stats = RoutineSharingService.instance.getImportStats(_editedRutina);
 
     return Dialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -63,7 +64,7 @@ class _RoutineImportPreviewDialogState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[900],
+                color: AppColors.live,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -104,7 +105,7 @@ class _RoutineImportPreviewDialogState
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[500],
+                        color: AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -117,21 +118,21 @@ class _RoutineImportPreviewDialogState
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.grey[850],
+                        fillColor: AppColors.bgElevated,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                          borderSide: BorderSide(color: AppColors.border!),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[700]!),
+                          borderSide: BorderSide(color: AppColors.border!),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.red[900]!),
+                          borderSide: BorderSide(color: AppColors.live!),
                         ),
                         hintText: 'Nombre de la rutina',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(color: AppColors.textTertiary),
                       ),
                       onChanged: _updateName,
                     ),
@@ -149,7 +150,7 @@ class _RoutineImportPreviewDialogState
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey[500],
+                        color: AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -166,7 +167,7 @@ class _RoutineImportPreviewDialogState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[850],
+                color: AppColors.bgElevated,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -178,8 +179,8 @@ class _RoutineImportPreviewDialogState
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[400],
-                        side: BorderSide(color: Colors.grey[700]!),
+                        foregroundColor: AppColors.textSecondary,
+                        side: BorderSide(color: AppColors.border!),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
@@ -200,10 +201,10 @@ class _RoutineImportPreviewDialogState
                               widget.onConfirm();
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
+                        backgroundColor: AppColors.live,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        disabledBackgroundColor: Colors.grey[700],
+                        disabledBackgroundColor: AppColors.border,
                       ),
                       child: Text(
                         'IMPORTAR',
@@ -227,9 +228,9 @@ class _RoutineImportPreviewDialogState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[850],
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[700]!),
+        border: Border.all(color: AppColors.border!),
       ),
       child: Column(
         children: [
@@ -278,7 +279,7 @@ class _RoutineImportPreviewDialogState
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.red[900]?.withOpacity(0.3),
+                    color: AppColors.live?.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -305,7 +306,7 @@ class _RoutineImportPreviewDialogState
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: Colors.redAccent[700], size: 20),
+          Icon(icon, color: AppColors.neonPrimary, size: 20),
           const SizedBox(height: 4),
           Text(
             value,
@@ -319,7 +320,7 @@ class _RoutineImportPreviewDialogState
             label,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.grey[500],
+              color: AppColors.textTertiary,
             ),
           ),
         ],
@@ -333,9 +334,9 @@ class _RoutineImportPreviewDialogState
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[850]?.withOpacity(0.5),
+        color: AppColors.bgElevated?.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,7 +346,7 @@ class _RoutineImportPreviewDialogState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.red[900]?.withOpacity(0.5),
+                  color: AppColors.live?.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -372,7 +373,7 @@ class _RoutineImportPreviewDialogState
               Text(
                 '${dia.ejercicios.length} ej.',
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: AppColors.textTertiary,
                   fontSize: 12,
                 ),
               ),
@@ -400,14 +401,14 @@ class _RoutineImportPreviewDialogState
                     Icon(
                       Icons.fitness_center,
                       size: 12,
-                      color: Colors.grey[600],
+                      color: AppColors.textTertiary,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         ejercicio.nombre,
                         style: TextStyle(
-                          color: Colors.grey[400],
+                          color: AppColors.textSecondary,
                           fontSize: 12,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -416,7 +417,7 @@ class _RoutineImportPreviewDialogState
                     Text(
                       '${ejercicio.series}x${ejercicio.repsRange}',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: AppColors.textTertiary,
                         fontSize: 11,
                       ),
                     ),
@@ -430,7 +431,7 @@ class _RoutineImportPreviewDialogState
                 child: Text(
                   '+${dia.ejercicios.length - 3} más',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppColors.textTertiary,
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
                   ),
@@ -502,7 +503,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -516,7 +517,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[900],
+                color: AppColors.live,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -555,7 +556,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       children: [
                         Text(
                           'Pega el JSON de la rutina:',
-                          style: TextStyle(color: Colors.grey[400]),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                         const Spacer(),
                         TextButton.icon(
@@ -581,21 +582,21 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                         ),
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.grey[850],
+                          fillColor: AppColors.bgElevated,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[700]!),
+                            borderSide: BorderSide(color: AppColors.border!),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[700]!),
+                            borderSide: BorderSide(color: AppColors.border!),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.red[900]!),
+                            borderSide: BorderSide(color: AppColors.live!),
                           ),
                           hintText: '{\n  "nombre": "...",\n  "dias": [...]\n}',
-                          hintStyle: TextStyle(color: Colors.grey[700]),
+                          hintStyle: TextStyle(color: AppColors.border),
                         ),
                       ),
                     ),
@@ -604,7 +605,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.red[900]?.withOpacity(0.3),
+                          color: AppColors.live?.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -634,7 +635,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[850],
+                color: AppColors.bgElevated,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -646,8 +647,8 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.grey[400],
-                        side: BorderSide(color: Colors.grey[700]!),
+                        foregroundColor: AppColors.textSecondary,
+                        side: BorderSide(color: AppColors.border!),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
@@ -664,10 +665,10 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                           ? null
                           : _parseAndContinue,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[900],
+                        backgroundColor: AppColors.live,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        disabledBackgroundColor: Colors.grey[700],
+                        disabledBackgroundColor: AppColors.border,
                       ),
                       child: _isLoading
                           ? const SizedBox(

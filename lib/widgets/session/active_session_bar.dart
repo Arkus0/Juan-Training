@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +27,7 @@ class ActiveSessionBar extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.red[900],
+        color: AppColors.live,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -98,7 +99,7 @@ class ActiveSessionBar extends ConsumerWidget {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      backgroundColor: Colors.grey[900],
+                      backgroundColor: AppColors.bgElevated,
                       title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
                       content: const Text('¿Estás seguro de que quieres descartar la sesión actual?'),
                       actions: [
@@ -224,9 +225,9 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isPaused ? Colors.orange[900] : (isCritical ? Colors.red[900] : Colors.grey[850]),
+                  color: isPaused ? AppColors.goldAccent : (isCritical ? AppColors.live : AppColors.bgElevated),
                   border: Border.all(
-                    color: isPaused ? Colors.orange[400]! : (isCritical ? Colors.redAccent[700]! : Colors.grey[700]!),
+                    color: isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : AppColors.border!),
                     width: 2,
                   ),
                 ),
@@ -240,7 +241,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
                   value: progress.clamp(0.0, 1.0),
                   strokeWidth: 3,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation(isPaused ? Colors.orange[400]! : (isCritical ? Colors.redAccent[700]! : Colors.white)),
+                  valueColor: AlwaysStoppedAnimation(isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : Colors.white)),
                 ),
               ),
 
@@ -256,7 +257,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
                     Icon(
                       Icons.pause,
                       size: 10,
-                      color: Colors.orange[400],
+                      color: AppColors.warning,
                     ),
                 ],
               ),

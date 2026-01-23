@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -114,7 +115,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
               onPressed: widget.onStopRest,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                foregroundColor: Colors.red[900],
+                foregroundColor: AppColors.live,
                 minimumSize: const Size(200, 50),
               ),
               child: const Text('¡A LA CARGA! (SALTAR)'),
@@ -128,7 +129,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        border: Border(top: BorderSide(color: Colors.redAccent[700]!, width: 2)),
+        border: Border(top: BorderSide(color: AppColors.neonPrimary!, width: 2)),
       ),
       child: SafeArea(
         child: Row(
@@ -154,7 +155,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     IconButton(
-                      icon: Icon(Icons.add_circle, color: Colors.redAccent[700]),
+                      icon: Icon(Icons.add_circle, color: AppColors.neonPrimary),
                       onPressed: () {
                         widget.onDurationChange(widget.defaultRestSeconds + 10);
                       },
@@ -166,7 +167,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
             ElevatedButton(
               onPressed: widget.onStartRest,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent[700],
+                backgroundColor: AppColors.neonPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
               child: const Text('DESCANSAR'),
@@ -237,10 +238,10 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with S
             style: GoogleFonts.montserrat(
               fontSize: 120,
               fontWeight: FontWeight.w900,
-              color: isCritical ? Colors.redAccent[700] : Colors.white,
+              color: isCritical ? AppColors.neonPrimary : Colors.white,
               shadows: [
                 Shadow(
-                  color: (isCritical ? Colors.red : Colors.red[900])!.withValues(alpha: 0.8),
+                  color: (isCritical ? Colors.red : AppColors.live)!.withValues(alpha: 0.8),
                   blurRadius: isCritical ? 20 : 10,
                   offset: const Offset(0, 0),
                 )

@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,7 +108,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             'No hay ejercicios válidos para añadir',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.red[700],
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -138,7 +139,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
 
     final selected = await showModalBottomSheet<LibraryExercise>(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -185,7 +186,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Padding(
@@ -198,7 +199,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[700],
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -220,7 +221,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                   : 'Di los ejercicios con series y repeticiones',
               style: GoogleFonts.montserrat(
                 fontSize: 14,
-                color: voiceState.isContinuousMode ? Colors.green[400] : Colors.white54,
+                color: voiceState.isContinuousMode ? AppColors.neonCyan : Colors.white54,
               ),
             ),
             const SizedBox(height: 12),
@@ -244,9 +245,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green[900]?.withValues(alpha: 0.3),
+                  color: AppColors.neonCyanSubtle?.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.green[700]!.withValues(alpha: 0.5)),
+                  border: Border.all(color: AppColors.success!.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -258,7 +259,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       style: GoogleFonts.montserrat(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green[400],
+                        color: AppColors.neonCyan,
                       ),
                     ),
                   ],
@@ -278,19 +279,19 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red[900]?.withValues(alpha: 0.3),
+                  color: AppColors.live?.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[700]!),
+                  border: Border.all(color: AppColors.error!),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red[400], size: 20),
+                    Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         voiceState.errorMessage ?? 'Error desconocido',
                         style: GoogleFonts.montserrat(
-                          color: Colors.red[400],
+                          color: AppColors.neonPrimary,
                           fontSize: 13,
                         ),
                       ),
@@ -300,7 +301,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       child: Text(
                         'REINTENTAR',
                         style: GoogleFonts.montserrat(
-                          color: Colors.red[400],
+                          color: AppColors.neonPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -378,9 +379,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                     child: ElevatedButton(
                       onPressed: voiceState.validExercises.isNotEmpty ? _onConfirm : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[700],
+                        backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.grey[800],
+                        disabledBackgroundColor: AppColors.bgDeep,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
@@ -441,9 +442,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[850],
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
+        border: Border.all(color: AppColors.border!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +472,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(Icons.format_quote, size: 16, color: Colors.red[400]),
+          Icon(Icons.format_quote, size: 16, color: AppColors.neonPrimary),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -520,10 +521,10 @@ class _ParsedExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? Colors.grey[850] : Colors.red[900]?.withValues(alpha: 0.2),
+        color: isValid ? AppColors.bgElevated : AppColors.live?.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isValid ? Colors.grey[700]! : Colors.red[700]!,
+          color: isValid ? AppColors.border! : AppColors.error!,
         ),
       ),
       child: Column(
@@ -550,7 +551,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                         'No encontrado',
                         style: GoogleFonts.montserrat(
                           fontWeight: FontWeight.bold,
-                          color: Colors.red[400],
+                          color: AppColors.neonPrimary,
                           fontSize: 15,
                         ),
                       ),
@@ -592,7 +593,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                 onPressed: onChangeExercise,
                 icon: Icon(
                   Icons.swap_horiz,
-                  color: Colors.grey[400],
+                  color: AppColors.textSecondary,
                   size: 20,
                 ),
                 tooltip: 'Cambiar ejercicio',
@@ -604,7 +605,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                 onPressed: onRemove,
                 icon: Icon(
                   Icons.close,
-                  color: Colors.red[400],
+                  color: AppColors.neonPrimary,
                   size: 20,
                 ),
                 tooltip: 'Eliminar',
@@ -643,7 +644,7 @@ class _ParsedExerciseCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.grey[800],
+                    color: AppColors.bgDeep,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -665,19 +666,19 @@ class _ParsedExerciseCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.orange[900]?.withValues(alpha: 0.3),
+                color: AppColors.goldAccent?.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange[700]!.withValues(alpha: 0.5)),
+                border: Border.all(color: AppColors.goldAccent!.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.link, size: 14, color: Colors.orange[400]),
+                  Icon(Icons.link, size: 14, color: AppColors.warning),
                   const SizedBox(width: 4),
                   Text(
                     'Superserie',
                     style: GoogleFonts.montserrat(
-                      color: Colors.orange[400],
+                      color: AppColors.warning,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -705,9 +706,9 @@ class _ParsedExerciseCard extends StatelessWidget {
   }
 
   Color _getConfidenceColor(double confidence) {
-    if (confidence >= 0.8) return Colors.green[400]!;
+    if (confidence >= 0.8) return AppColors.neonCyan!;
     if (confidence >= 0.6) return Colors.yellow[600]!;
-    return Colors.orange[400]!;
+    return AppColors.warning!;
   }
 }
 
@@ -751,7 +752,7 @@ class _CompactField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.grey[800],
+            fillColor: AppColors.bgDeep,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -841,7 +842,7 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
               hintStyle: GoogleFonts.montserrat(color: Colors.white38),
               prefixIcon: const Icon(Icons.search, color: Colors.white54),
               filled: true,
-              fillColor: Colors.grey[800],
+              fillColor: AppColors.bgDeep,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -862,7 +863,7 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
-                      backgroundColor: Colors.red[900],
+                      backgroundColor: AppColors.live,
                       child: Text(
                         exercise.name[0].toUpperCase(),
                         style: GoogleFonts.montserrat(
@@ -927,12 +928,12 @@ class _ModeToggleChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive 
               ? activeColor.withValues(alpha: 0.2) 
-              : Colors.grey[800],
+              : AppColors.bgDeep,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive 
                 ? activeColor.withValues(alpha: 0.6) 
-                : Colors.grey[700]!,
+                : AppColors.border!,
           ),
         ),
         child: Row(
@@ -941,7 +942,7 @@ class _ModeToggleChip extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: isActive ? activeColor : Colors.grey[500],
+              color: isActive ? activeColor : AppColors.textTertiary,
             ),
             const SizedBox(width: 6),
             Text(
@@ -949,7 +950,7 @@ class _ModeToggleChip extends StatelessWidget {
               style: GoogleFonts.montserrat(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isActive ? activeColor : Colors.grey[500],
+                color: isActive ? activeColor : AppColors.textTertiary,
               ),
             ),
           ],

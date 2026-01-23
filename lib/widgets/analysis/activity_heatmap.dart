@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,14 +91,14 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           style: GoogleFonts.montserrat(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: Colors.grey[400],
+            color: AppColors.textSecondary,
             letterSpacing: 1.2,
           ),
         ),
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.chevron_left, color: Colors.grey[600], size: 20),
+              icon: Icon(Icons.chevron_left, color: AppColors.textTertiary, size: 20),
               onPressed: () {
                 HapticFeedback.selectionClick();
                 ref.read(selectedYearProvider.notifier).state = year - 1;
@@ -114,7 +115,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.chevron_right, color: Colors.grey[600], size: 20),
+              icon: Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
               onPressed: year < DateTime.now().year
                   ? () {
                       HapticFeedback.selectionClick();
@@ -165,7 +166,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
                       monthLabels[month],
                       style: GoogleFonts.montserrat(
                         fontSize: 10,
-                        color: Colors.grey[600],
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   );
@@ -257,7 +258,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
         child: Text(
           'Error cargando datos',
           style: GoogleFonts.montserrat(
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
             fontSize: 12,
           ),
         ),
@@ -273,7 +274,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           'Menos',
           style: GoogleFonts.montserrat(
             fontSize: 10,
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
           ),
         ),
         const SizedBox(width: 4),
@@ -293,7 +294,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
           'Más',
           style: GoogleFonts.montserrat(
             fontSize: 10,
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
           ),
         ),
       ],

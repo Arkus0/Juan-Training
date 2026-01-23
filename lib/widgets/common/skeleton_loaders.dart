@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import '../../utils/performance_utils.dart';
 
@@ -89,8 +90,8 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shimmer = ShimmerController.of(context);
-    final base = baseColor ?? Colors.grey[850]!;
-    final highlight = highlightColor ?? Colors.grey[800]!;
+    final base = baseColor ?? AppColors.bgElevated!;
+    final highlight = highlightColor ?? AppColors.bgDeep!;
 
     // Sin animación en modo performance
     if (PerformanceMode.instance.reduceAnimations || shimmer == null) {
@@ -147,8 +148,8 @@ class SkeletonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shimmer = ShimmerController.of(context);
-    final base = baseColor ?? Colors.grey[850]!;
-    final highlight = highlightColor ?? Colors.grey[800]!;
+    final base = baseColor ?? AppColors.bgElevated!;
+    final highlight = highlightColor ?? AppColors.bgDeep!;
 
     // Sin animación en modo performance
     if (PerformanceMode.instance.reduceAnimations || shimmer == null) {
@@ -209,7 +210,7 @@ class ExerciseListItemSkeleton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey[850]!),
+          bottom: BorderSide(color: AppColors.bgElevated!),
         ),
       ),
       child: Row(
@@ -290,9 +291,9 @@ class ExerciseCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,9 +382,9 @@ class RutinaCardSkeleton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[850]!),
+        border: Border.all(color: AppColors.bgElevated!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -449,7 +450,7 @@ class HistoryItemSkeleton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

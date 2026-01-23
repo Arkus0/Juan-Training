@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,7 +54,7 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(child: Container(width: 40, height: 4, color: Colors.grey[700])),
+          Center(child: Container(width: 40, height: 4, color: AppColors.border)),
           const SizedBox(height: 16),
           Text('OPCIONES PRO', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.redAccent)),
           const SizedBox(height: 16),
@@ -65,7 +66,7 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
             min: 0,
             max: 10,
             divisions: 10,
-            activeColor: Colors.redAccent[700],
+            activeColor: AppColors.neonPrimary,
             onChanged: (val) {
               notifier.updateLog(widget.exerciseIndex, widget.setIndex, rpe: val == 0 ? null : val.toInt());
             },
@@ -78,14 +79,14 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                 label: const Text('FALLO MUSCULAR'),
                 selected: log.isFailure,
                 onSelected: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, isFailure: val),
-                selectedColor: Colors.red[900],
+                selectedColor: AppColors.live,
               ),
               const SizedBox(width: 8),
               FilterChip(
                 label: const Text('DROPSET'),
                 selected: log.isDropset,
                 onSelected: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, isDropset: val),
-                selectedColor: Colors.orange[900],
+                selectedColor: AppColors.goldAccent,
               ),
             ],
           ),

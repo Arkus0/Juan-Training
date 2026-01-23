@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/serie_log.dart';
@@ -35,7 +36,7 @@ class ProgressionChart extends StatelessWidget {
           style: GoogleFonts.montserrat(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: Colors.redAccent[700],
+            color: AppColors.neonPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -51,9 +52,9 @@ class ProgressionChart extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _LegendItem(color: Colors.redAccent[700]!, label: 'Peso'),
+            _LegendItem(color: AppColors.neonPrimary!, label: 'Peso'),
             const SizedBox(width: 16),
-            _LegendItem(color: Colors.blue[400]!, label: 'Volumen'),
+            _LegendItem(color: AppColors.info!, label: 'Volumen'),
           ],
         ),
         const SizedBox(height: 8),
@@ -68,7 +69,7 @@ class ProgressionChart extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.show_chart, size: 40, color: Colors.grey[700]),
+          Icon(Icons.show_chart, size: 40, color: AppColors.border),
           const SizedBox(height: 8),
           Text(
             'Sin datos de progresión',
@@ -102,7 +103,7 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(color: Colors.grey[500], fontSize: 10),
+          style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
         ),
       ],
     );
@@ -123,13 +124,13 @@ class _HistoryRow extends StatelessWidget {
         children: [
           Text(
             dateStr,
-            style: TextStyle(color: Colors.grey[600], fontSize: 10),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
           ),
           const SizedBox(width: 8),
           Text(
             '${entry.maxWeight}kg',
             style: TextStyle(
-              color: Colors.redAccent[700],
+              color: AppColors.neonPrimary,
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -137,12 +138,12 @@ class _HistoryRow extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '×${entry.bestReps}',
-            style: TextStyle(color: Colors.grey[500], fontSize: 10),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
           ),
           const Spacer(),
           Text(
             '${entry.volume.toStringAsFixed(0)}kg vol',
-            style: TextStyle(color: Colors.blue[400], fontSize: 10),
+            style: TextStyle(color: AppColors.info, fontSize: 10),
           ),
         ],
       ),
@@ -161,17 +162,17 @@ class _ChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final weightPaint = Paint()
-      ..color = Colors.redAccent[700]!
+      ..color = AppColors.neonPrimary!
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final volumePaint = Paint()
-      ..color = Colors.blue[400]!
+      ..color = AppColors.info!
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final dotPaint = Paint()
-      ..color = Colors.redAccent[700]!
+      ..color = AppColors.neonPrimary!
       ..style = PaintingStyle.fill;
 
     // Encontrar min/max para normalizar

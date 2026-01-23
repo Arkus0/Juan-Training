@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -159,14 +160,14 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
           height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isPaused ? Colors.orange[900] : (isCritical ? Colors.red[900] : Colors.grey[850]),
+            color: isPaused ? AppColors.goldAccent : (isCritical ? AppColors.live : AppColors.bgElevated),
             border: Border.all(
-              color: isPaused ? Colors.orange[400]! : (isCritical ? Colors.redAccent[700]! : Colors.grey[700]!),
+              color: isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : AppColors.border!),
               width: 3,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isCritical ? Colors.red[900] : Colors.black)!.withValues(alpha: 0.6),
+                color: (isCritical ? AppColors.live : Colors.black)!.withValues(alpha: 0.6),
                 blurRadius: 12,
                 spreadRadius: 2,
               ),
@@ -182,9 +183,9 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
                 child: CircularProgressIndicator(
                   value: progress,
                   strokeWidth: 3,
-                  backgroundColor: Colors.grey[800],
+                  backgroundColor: AppColors.bgDeep,
                   valueColor: AlwaysStoppedAnimation(
-                    isPaused ? Colors.orange[400]! : (isCritical ? Colors.redAccent[700]! : Colors.white),
+                    isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : Colors.white),
                   ),
                 ),
               ),
@@ -197,14 +198,14 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
                     style: GoogleFonts.montserrat(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
-                      color: isPaused ? Colors.orange[400] : Colors.white,
+                      color: isPaused ? AppColors.warning : Colors.white,
                     ),
                   ),
                   if (isPaused)
                     Icon(
                       Icons.pause,
                       size: 10,
-                      color: Colors.orange[400],
+                      color: AppColors.warning,
                     ),
                 ],
               ),

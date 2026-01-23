@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,7 +85,7 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
               height: widget.size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isListening ? Colors.red[700] : Colors.red[900],
+                color: isListening ? AppColors.error : AppColors.live,
                 boxShadow: isListening
                     ? [
                         BoxShadow(
@@ -119,7 +120,7 @@ class _VoiceMicButtonState extends ConsumerState<VoiceMicButton>
               style: GoogleFonts.montserrat(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isListening ? Colors.red[400] : Colors.white70,
+                color: isListening ? AppColors.neonPrimary : Colors.white70,
               ),
             ),
           ),
@@ -196,7 +197,7 @@ class _PulsingDotState extends State<_PulsingDot>
               height: widget.size * 0.6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.red[400],
+                color: AppColors.neonPrimary,
               ),
             ),
           ),
@@ -233,12 +234,12 @@ class VoiceTranscriptPreview extends ConsumerWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.grey[900]?.withValues(alpha: 0.8),
+        color: AppColors.bgElevated?.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: voiceState.isListening 
-              ? Colors.red[700]!.withValues(alpha: 0.5)
-              : Colors.grey[700]!,
+              ? AppColors.error!.withValues(alpha: 0.5)
+              : AppColors.border!,
         ),
       ),
       child: Column(
@@ -255,7 +256,7 @@ class VoiceTranscriptPreview extends ConsumerWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.red[400],
+                    color: AppColors.neonPrimary,
                   ),
                 ),
               ],
