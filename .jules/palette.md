@@ -15,3 +15,7 @@
 ## 2026-01-22 - Accessible Visualizations
 **Learning:** Purely visual representations (like the plate calculator) are invisible to screen readers, excluding users from key information.
 **Action:** Always wrap custom visual widgets in `Semantics` with a descriptive `label` that summarizes the visual data (e.g., "Plates: 20kg, 10kg").
+
+## 2026-05-25 - Micro-Interactions in Inputs
+**Learning:** Icon buttons inside input fields (like calculators) often lack touch targets and semantics when implemented with raw `GestureDetector`.
+**Action:** Use composed `Tooltip` + `Material` + `InkWell` patterns even for small secondary actions to maintain accessibility and consistency.
