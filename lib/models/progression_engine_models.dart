@@ -275,29 +275,29 @@ class SessionSummary {
   final List<SetSummary> sets;
   final int targetReps;
   final double weight;
-  
+
   const SessionSummary({
     required this.date,
     required this.sets,
     required this.targetReps,
     required this.weight,
   });
-  
+
   /// Promedio de reps en la sesión
   double get averageReps {
     if (sets.isEmpty) return 0;
     return sets.map((s) => s.reps).reduce((a, b) => a + b) / sets.length;
   }
-  
+
   /// Número de sets que alcanzaron el objetivo
   int get setsHitTarget => sets.where((s) => s.hitTarget).length;
-  
+
   /// Porcentaje de éxito (0.0 - 1.0)
   double get successRate {
     if (sets.isEmpty) return 0;
     return setsHitTarget / sets.length;
   }
-  
+
   /// Evalúa el resultado de la sesión
   SessionResult evaluate() {
     final rate = successRate;
@@ -306,12 +306,54 @@ class SessionSummary {
     if (rate >= 0.5) return SessionResult.partial;
     return SessionResult.failed;
   }
-  
+
   /// RPE promedio (si hay datos)
   double? get averageRpe {
     final rpes = sets.map((s) => s.rpe).whereType<int>().toList();
     if (rpes.isEmpty) return null;
     return rpes.reduce((a, b) => a + b) / rpes.length;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // MÉTODOS ADICIONALES PARA CIENCIA CLÁSICA
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// LYLE McDONALD: ¿TODAS las series alcanzaron las reps máximas?
+  ///
+  /// Criterio estricto de doble progresión:
+  /// "Once you can complete ALL sets at the top of the rep range, add weight."
+  ///
+  /// El promedio NO es suficiente - todas deben estar en max.
+  bool allSetsHitMaxReps(int maxReps) {
+    if (sets.isEmpty) return false;
+    return sets.every((s) => s.reps >= maxReps);
+  }
+
+  /// ¿TODAS las series completaron el objetivo mínimo?
+  ///
+  /// Para lineal: Si todas las series alcanzan target, sesión exitosa.
+  bool get allSetsHitTarget {
+    if (sets.isEmpty) return false;
+    return sets.every((s) => s.hitTarget);
+  }
+
+  /// Mínimo de reps en la sesión (para detectar fatiga)
+  int get minReps {
+    if (sets.isEmpty) return 0;
+    return sets.map((s) => s.reps).reduce((a, b) => a < b ? a : b);
+  }
+
+  /// Máximo de reps en la sesión
+  int get maxReps {
+    if (sets.isEmpty) return 0;
+    return sets.map((s) => s.reps).reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Volumen total de la sesión (peso × reps × series)
+  ///
+  /// Métrica importante para hipertrofia según Lyle McDonald.
+  double get totalVolume {
+    return sets.fold(0.0, (sum, s) => sum + (s.weight * s.reps));
   }
 }
 
@@ -320,28 +362,28 @@ class ExerciseProgressionContext {
   final String exerciseId;
   final String exerciseName;
   final ProgressionState state;
-  
+
   /// Últimas sesiones (máximo 4, ordenadas de más reciente a más antiguo)
   final List<SessionSummary> recentSessions;
-  
+
   /// Sesiones exitosas consecutivas (para confirmación)
   final int consecutiveSuccesses;
-  
+
   /// Sesiones fallidas consecutivas
   final int consecutiveFailures;
-  
+
   /// Semanas en el mismo peso (para detectar plateau)
   final int weeksAtCurrentWeight;
-  
+
   /// Tipo de ejercicio
   final ExerciseCategory category;
-  
+
   /// Peso "confirmado" (baseline validado, no último intento)
   final double confirmedWeight;
-  
+
   /// Rango de reps (min, max)
   final (int, int) repsRange;
-  
+
   const ExerciseProgressionContext({
     required this.exerciseId,
     required this.exerciseName,
@@ -354,17 +396,67 @@ class ExerciseProgressionContext {
     required this.confirmedWeight,
     required this.repsRange,
   });
-  
+
   /// Target de reps actual (mínimo del rango)
   int get targetReps => repsRange.$1;
-  
+
   /// Máximo de reps del rango
   int get maxReps => repsRange.$2;
-  
+
   /// Si hay suficientes datos para tomar decisiones confiables
   bool get hasEnoughData => recentSessions.length >= 2;
-  
+
   /// Última sesión (si existe)
-  SessionSummary? get lastSession => 
+  SessionSummary? get lastSession =>
       recentSessions.isNotEmpty ? recentSessions.first : null;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // MÉTODOS PARA STALL DETECTION (Rippetoe/StrongLifts)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// RIPPETOE: Cuenta fallos consecutivos AL MISMO PESO
+  ///
+  /// Un "stall" es fallar 3 veces al MISMO peso, no cualquier fallo.
+  /// Esto es crítico: si subes peso y fallas, eso no es stall del peso anterior.
+  ///
+  /// "A stall is defined as failing to complete the work sets for three
+  /// consecutive workouts at the same weight."
+  /// — Starting Strength, 3rd Edition, p.303
+  int get failuresAtCurrentWeight {
+    int count = 0;
+    for (final session in recentSessions) {
+      // Solo contar si el peso es el mismo que el confirmado
+      if ((session.weight - confirmedWeight).abs() > 0.1) break;
+
+      final result = session.evaluate();
+      if (result == SessionResult.partial || result == SessionResult.failed) {
+        count++;
+      } else {
+        break; // Un éxito rompe la racha de fallos
+      }
+    }
+    return count;
+  }
+
+  /// ¿Es un stall según Rippetoe? (3 fallos al mismo peso)
+  bool get isStall => failuresAtCurrentWeight >= 3;
+
+  /// ¿La última sesión fue exitosa en todas las series?
+  ///
+  /// Criterio más estricto que SessionResult.complete:
+  /// Todas las series deben alcanzar el target, no solo 100% success rate.
+  bool get lastSessionAllSetsSuccessful {
+    final last = lastSession;
+    if (last == null) return false;
+    return last.allSetsHitTarget;
+  }
+
+  /// ¿La última sesión alcanzó max reps en TODAS las series?
+  ///
+  /// Criterio de Lyle McDonald para doble progresión.
+  bool get lastSessionAllSetsAtMaxReps {
+    final last = lastSession;
+    if (last == null) return false;
+    return last.allSetsHitMaxReps(maxReps);
+  }
 }

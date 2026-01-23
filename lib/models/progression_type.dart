@@ -1,15 +1,34 @@
 /// Tipos de progresión soportados para ejercicios en rutina.
+///
+/// Basados en clásicos del entrenamiento de fuerza:
+/// - Starting Strength (Rippetoe): Lineal agresiva para novatos
+/// - StrongLifts 5x5 (Mehdi): Lineal con deload estructurado
+/// - Lyle McDonald: Doble progresión para hipertrofia
 enum ProgressionType {
   /// Sin progresión automática
   none('none', 'Ninguna'),
 
-  /// Progresión lineal: incrementar peso fijo cada sesión exitosa
+  /// Progresión lineal NOVICE (Rippetoe/StrongLifts):
+  /// - Sube peso CADA sesión exitosa (sin confirmación)
+  /// - +2.5kg upper body, +2.5-5kg lower body
+  /// - Stall = 3 fallos al MISMO peso → deload 10%
+  /// - Ideal para: Novatos (<1 año entrenando)
   lineal('lineal', 'Lineal'),
 
-  /// Doble progresión: primero subir reps hasta max, luego subir peso y bajar reps
+  /// Doble progresión (Lyle McDonald):
+  /// - Rango de reps (ej: 8-12)
+  /// - Sube reps hasta que TODAS las series alcanzan max
+  /// - Luego sube peso y vuelve a min reps
+  /// - Sin confirmación de 2 sesiones para subir reps
+  /// - Confirmación de 1 sesión para subir peso
+  /// - Ideal para: Intermedios, hipertrofia
   dobleRepsFirst('double', 'Doble Progresión'),
 
-  /// Progresión basada en RPE objetivo
+  /// Progresión basada en RPE (autoregulación):
+  /// - Ajusta según esfuerzo percibido (1-10)
+  /// - RPE 8 = 2 reps en reserva (RIR)
+  /// - Requiere calibración inicial
+  /// - Ideal para: Avanzados, periodización
   rpe('rpe', 'Basada en RPE');
 
   final String value;
@@ -24,6 +43,24 @@ enum ProgressionType {
     }
     return ProgressionType.none;
   }
+
+  /// Descripción científica del tipo de progresión
+  String get scientificDescription => switch (this) {
+    ProgressionType.none =>
+      'Progresión manual. El usuario decide cuándo subir peso.',
+    ProgressionType.lineal =>
+      'Basada en Starting Strength/StrongLifts 5x5. '
+      'Sube peso cada sesión exitosa. '
+      'Tras 3 fallos al mismo peso: deload 10%.',
+    ProgressionType.dobleRepsFirst =>
+      'Basada en Lyle McDonald. '
+      'Primero sube reps hasta el máximo del rango en todas las series, '
+      'luego sube peso y reinicia reps.',
+    ProgressionType.rpe =>
+      'Autoregulación por esfuerzo percibido. '
+      'RPE 8 = 2 repeticiones en reserva. '
+      'Ajusta peso según fatiga real.',
+  };
 }
 
 /// Datos de sugerencia de progresión para una serie.

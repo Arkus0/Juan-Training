@@ -364,21 +364,24 @@ abstract class ProgressionModel {
   });
 }
 
-/// Modelo: Progresión Lineal
-/// 
-/// Reglas:
-/// - Si éxito → subir peso
-/// - Si fracaso → mantener
-/// - Si 3+ fracasos → bajar peso
+/// Modelo: Progresión Lineal (Starting Strength / StrongLifts 5x5)
+///
+/// Reglas según Rippetoe y Mehdi:
+/// - Sesión exitosa → subir peso INMEDIATAMENTE (sin confirmación)
+/// - Stall = 3 fallos al MISMO peso → deload 10%
+/// - Después de deload, volver a subir progresivamente
+///
+/// "Add weight to the bar every workout for as long as possible."
+/// — Mark Rippetoe, Starting Strength 3rd Ed.
 class LinearProgressionModel implements ProgressionModel {
   const LinearProgressionModel();
-  
+
   @override
-  String get name => 'Lineal';
-  
+  String get name => 'Lineal (Starting Strength)';
+
   @override
-  String get description => 
-      'Sube peso cada vez que completes el objetivo. Simple y efectivo.';
+  String get description =>
+      'Sube peso cada sesión exitosa. 3 fallos = deload 10%. Ideal novatos.';
   
   @override
   ProgressionDecision calculate({
@@ -394,87 +397,78 @@ class LinearProgressionModel implements ProgressionModel {
         sessionNumber: 1,
       );
     }
-    
+
     final result = lastSession.evaluate();
-    
-    // En plateau o deload → sugerir peso reducido
-    if (currentState == ControllerState.plateau || 
+
+    // ════════════════════════════════════════════════════════════════════════
+    // STALL DETECTION (Rippetoe): 3 fallos al MISMO peso
+    // ════════════════════════════════════════════════════════════════════════
+    // Calcular fallos al peso actual
+    int failuresAtWeight = 0;
+    for (final session in data.sessionHistory) {
+      if ((session.weight - data.confirmedWeight).abs() > 0.1) break;
+      if (!session.isSuccess) failuresAtWeight++;
+    }
+
+    // Stall = 3 fallos → DELOAD 10%
+    if (failuresAtWeight >= 3 ||
+        currentState == ControllerState.plateau ||
         currentState == ControllerState.deloading) {
-      final newWeight = data.confirmedWeight - data.increment;
+      final deloadAmount = data.confirmedWeight * 0.10; // 10% deload (Rippetoe)
+      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity);
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
-        suggestedWeight: newWeight.clamp(0, double.infinity),
+        suggestedWeight: newWeight,
         suggestedReps: data.targetReps,
-        reason: 'Deload: consolidando base',
-        userMessage: 'Baja a ${_fmt(newWeight)}kg para consolidar.',
+        reason: 'Stall: 3 fallos → deload 10% (Rippetoe)',
+        userMessage: 'Deload a ${_fmt(newWeight)}kg y vuelve a subir.',
         confidence: ProgressionConfidence.high,
+        nextStepPreview: 'Volverás a ${_fmt(data.confirmedWeight)}kg en ~3 semanas',
       );
     }
-    
-    // Confirmando → esperando 2do éxito
-    if (currentState == ControllerState.confirming) {
-      if (result == SessionResult.complete || result == SessionResult.acceptable) {
-        // ¡Confirmado! Subir peso
-        final newWeight = data.confirmedWeight + data.increment;
-        return ProgressionDecision(
-          action: ProgressionAction.increaseWeight,
-          suggestedWeight: newWeight,
-          suggestedReps: data.targetReps,
-          reason: 'Confirmado: ${thresholds.confirmationSessions} sesiones exitosas',
-          userMessage: '¡Sube a ${_fmt(newWeight)}kg!',
-          confidence: ProgressionConfidence.high,
-          isImprovement: true,
-          nextStepPreview: 'Próximo: ${_fmt(newWeight)}kg × ${data.targetReps}',
-        );
-      } else {
-        // Fracaso en confirmación → volver a progressing
-        return ProgressionDecision(
-          action: ProgressionAction.maintain,
-          suggestedWeight: data.confirmedWeight,
-          suggestedReps: data.targetReps,
-          reason: 'Confirmación fallida, reintentar',
-          userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg × ${data.targetReps}.',
-          confidence: ProgressionConfidence.medium,
-        );
-      }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SESIÓN COMPLETA: Subir peso INMEDIATAMENTE (Rippetoe/StrongLifts)
+    // ════════════════════════════════════════════════════════════════════════
+    // "Add weight every workout" - NO hay confirmación de 2 sesiones
+    if (result == SessionResult.complete) {
+      final newWeight = data.confirmedWeight + data.increment;
+      return ProgressionDecision(
+        action: ProgressionAction.increaseWeight,
+        suggestedWeight: newWeight,
+        suggestedReps: data.targetReps,
+        reason: 'Sesión completa → +peso (Rippetoe)',
+        userMessage: '¡Sube a ${_fmt(newWeight)}kg!',
+        confidence: ProgressionConfidence.high,
+        isImprovement: true,
+        nextStepPreview: 'Si éxito: ${_fmt(newWeight + data.increment)}kg',
+      );
     }
-    
-    // Progressing normal
-    if (result == SessionResult.complete || result == SessionResult.acceptable) {
-      if (data.consecutiveSuccesses >= thresholds.confirmationSessions - 1) {
-        // Suficientes éxitos → confirmar
-        final newWeight = data.confirmedWeight + data.increment;
-        return ProgressionDecision(
-          action: ProgressionAction.increaseWeight,
-          suggestedWeight: newWeight,
-          suggestedReps: data.targetReps,
-          reason: 'Éxito confirmado',
-          userMessage: '¡Sube a ${_fmt(newWeight)}kg!',
-          confidence: ProgressionConfidence.high,
-          isImprovement: true,
-        );
-      } else {
-        // Primer éxito → esperando confirmación
-        return ProgressionDecision(
-          action: ProgressionAction.maintain,
-          suggestedWeight: data.confirmedWeight,
-          suggestedReps: data.targetReps,
-          reason: 'Confirmando (${data.consecutiveSuccesses + 1}/${thresholds.confirmationSessions})',
-          userMessage: 'Repite para confirmar. Éxito = +${_fmt(data.increment)}kg.',
-          confidence: ProgressionConfidence.medium,
-          nextStepPreview: 'Si éxito: ${_fmt(data.confirmedWeight + data.increment)}kg',
-        );
-      }
+
+    // Sesión aceptable: Repetir antes de subir
+    if (result == SessionResult.acceptable) {
+      return ProgressionDecision(
+        action: ProgressionAction.maintain,
+        suggestedWeight: data.confirmedWeight,
+        suggestedReps: data.targetReps,
+        reason: 'Casi completa, repetir',
+        userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg. Casi lo tienes.',
+        confidence: ProgressionConfidence.medium,
+        nextStepPreview: 'Si completas todas: +${_fmt(data.increment)}kg',
+      );
     }
-    
-    // Fracaso
+
+    // Sesión fallida: Mantener y contar hacia stall
     return ProgressionDecision(
       action: ProgressionAction.maintain,
       suggestedWeight: data.confirmedWeight,
       suggestedReps: data.targetReps,
-      reason: 'Día difícil, mantener',
-      userMessage: 'Repite el objetivo. Un día malo no cambia nada.',
+      reason: 'Fallo ${failuresAtWeight + 1}/3, reintentar',
+      userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg. Fallo ${failuresAtWeight + 1}/3.',
       confidence: ProgressionConfidence.medium,
+      nextStepPreview: failuresAtWeight >= 1
+          ? 'Si fallas de nuevo: deload 10%'
+          : 'Si fallas 2 más: deload',
     );
   }
   
@@ -491,20 +485,26 @@ class LinearProgressionModel implements ProgressionModel {
   String _fmt(double w) => w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
 }
 
-/// Modelo: Doble Progresión (Reps primero, luego peso)
-/// 
-/// Reglas:
-/// - Primero subir reps hasta max del rango
-/// - Cuando alcanza max reps 2 veces → subir peso, volver a min reps
+/// Modelo: Doble Progresión (Lyle McDonald)
+///
+/// Reglas según Lyle McDonald:
+/// - Rango de reps (ej: 8-12)
+/// - Sube reps hasta que TODAS las series alcanzan max (no promedio)
+/// - Cuando TODAS las series en max → subir peso
+/// - Al subir peso, volver al mínimo del rango
+///
+/// "Once you can complete ALL sets at the top of the rep range,
+/// add weight and drop back to the bottom."
+/// — Lyle McDonald
 class DoubleProgressionModel implements ProgressionModel {
   const DoubleProgressionModel();
-  
+
   @override
-  String get name => 'Doble Progresión';
-  
+  String get name => 'Doble Progresión (Lyle)';
+
   @override
-  String get description => 
-      'Primero sube reps (8→12), luego sube peso y vuelve a 8. Más gradual.';
+  String get description =>
+      'Sube reps hasta max en TODAS las series, luego sube peso. Ideal hipertrofia.';
   
   @override
   ProgressionDecision calculate({
@@ -520,78 +520,97 @@ class DoubleProgressionModel implements ProgressionModel {
         sessionNumber: 1,
       );
     }
-    
+
     final result = lastSession.evaluate();
     final avgReps = lastSession.averageReps;
     final (minReps, maxReps) = data.repsRange;
-    
-    // Plateau/Deload
-    if (currentState == ControllerState.plateau || 
+
+    // Verificar si TODAS las series alcanzaron max reps (criterio Lyle)
+    final allSetsAtMax = lastSession.sets.every((s) => s.reps >= maxReps);
+
+    // ════════════════════════════════════════════════════════════════════════
+    // STALL/DELOAD: 2 fallos al mismo peso → deload 10%
+    // ════════════════════════════════════════════════════════════════════════
+    int failuresAtWeight = 0;
+    for (final session in data.sessionHistory) {
+      if ((session.weight - data.confirmedWeight).abs() > 0.1) break;
+      if (!session.isSuccess) failuresAtWeight++;
+    }
+
+    if (failuresAtWeight >= 2 ||
+        currentState == ControllerState.plateau ||
         currentState == ControllerState.deloading) {
-      final newWeight = data.confirmedWeight - data.increment;
+      final deloadAmount = data.confirmedWeight * 0.10; // 10% deload
+      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity);
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
-        suggestedWeight: newWeight.clamp(0, double.infinity),
-        suggestedReps: maxReps, // Volver a max reps con peso reducido
-        reason: 'Deload: reconstruyendo',
-        userMessage: 'Baja a ${_fmt(newWeight)}kg × $maxReps para consolidar.',
+        suggestedWeight: newWeight,
+        suggestedReps: maxReps,
+        reason: 'Deload 10% (Lyle McDonald)',
+        userMessage: 'Deload a ${_fmt(newWeight)}kg × $maxReps. Reconstruir desde ahí.',
         confidence: ProgressionConfidence.high,
-        nextStepPreview: 'Objetivo: ${_fmt(newWeight)}kg × $maxReps → volver a subir',
+        nextStepPreview: 'Objetivo: volver a ${_fmt(data.confirmedWeight)}kg en ~3 semanas',
       );
     }
-    
-    // Sesión exitosa
+
+    // ════════════════════════════════════════════════════════════════════════
+    // TODAS las series en MAX REPS: SUBIR PESO (Lyle McDonald)
+    // ════════════════════════════════════════════════════════════════════════
+    // "Once you can complete ALL sets at the top of the rep range, add weight"
+    if (allSetsAtMax) {
+      final newWeight = data.confirmedWeight + data.increment;
+      return ProgressionDecision(
+        action: ProgressionAction.increaseWeight,
+        suggestedWeight: newWeight,
+        suggestedReps: minReps,
+        reason: 'Todas las series a $maxReps reps (Lyle)',
+        userMessage: '¡Sube a ${_fmt(newWeight)}kg! Empieza con $minReps reps.',
+        confidence: ProgressionConfidence.high,
+        isImprovement: true,
+        nextStepPreview: 'Próximo: ${_fmt(newWeight)}kg × ${minReps + 1}',
+      );
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Sesión exitosa pero NO todas en max → subir reps
+    // ════════════════════════════════════════════════════════════════════════
     if (result == SessionResult.complete || result == SessionResult.acceptable) {
-      // ¿Alcanzó max reps?
-      if (avgReps >= maxReps) {
-        // ¿Es la 2da sesión en max reps?
-        final prevAtMax = data.sessionHistory.length > 1 && 
-                          data.sessionHistory[1].averageReps >= maxReps;
-        
-        if (data.consecutiveSuccesses >= 1 && prevAtMax) {
-          // ¡Subir peso!
-          final newWeight = data.confirmedWeight + data.increment;
-          return ProgressionDecision(
-            action: ProgressionAction.increaseWeight,
-            suggestedWeight: newWeight,
-            suggestedReps: minReps,
-            reason: '2 sesiones a $maxReps reps',
-            userMessage: '¡Sube a ${_fmt(newWeight)}kg! Empieza con $minReps reps.',
-            confidence: ProgressionConfidence.high,
-            isImprovement: true,
-            nextStepPreview: 'Próximo: ${_fmt(newWeight)}kg × ${minReps + 1}',
-          );
-        } else {
-          // Esperando confirmación
-          return ProgressionDecision(
-            action: ProgressionAction.maintain,
-            suggestedWeight: data.confirmedWeight,
-            suggestedReps: maxReps,
-            reason: 'Confirmando (1/2 a max reps)',
-            userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg × $maxReps. Si lo logras, subirás peso.',
-            confidence: ProgressionConfidence.medium,
-            nextStepPreview: 'Si éxito: ${_fmt(data.confirmedWeight + data.increment)}kg × $minReps',
-          );
-        }
-      } else {
-        // Subir reps
-        final nextReps = (avgReps + 1).clamp(minReps, maxReps).toInt();
+      // Usar el mínimo de reps de la sesión + 1 para progresión gradual
+      final minRepsInSession = lastSession.sets
+          .map((s) => s.reps)
+          .reduce((a, b) => a < b ? a : b);
+      final nextReps = (minRepsInSession + 1).clamp(minReps, maxReps);
+
+      // Si promedio alto pero alguna serie falló, mantener objetivo
+      if (avgReps >= maxReps - 0.5 && !allSetsAtMax) {
         return ProgressionDecision(
-          action: ProgressionAction.increaseReps,
+          action: ProgressionAction.maintain,
           suggestedWeight: data.confirmedWeight,
-          suggestedReps: nextReps,
-          reason: 'Progresando en reps',
-          userMessage: 'Intenta $nextReps reps hoy.',
+          suggestedReps: maxReps,
+          reason: 'Casi todas en max, consolidar',
+          userMessage: 'Intenta $maxReps reps en TODAS las series.',
           confidence: ProgressionConfidence.high,
-          isImprovement: true,
-          nextStepPreview: nextReps >= maxReps 
-              ? 'Próximo hito: confirmar para subir peso'
-              : 'Siguiente: ${nextReps + 1} reps',
+          nextStepPreview: 'Si todas a $maxReps: subir a ${_fmt(data.confirmedWeight + data.increment)}kg',
         );
       }
+
+      return ProgressionDecision(
+        action: ProgressionAction.increaseReps,
+        suggestedWeight: data.confirmedWeight,
+        suggestedReps: nextReps,
+        reason: 'Progresando en reps',
+        userMessage: 'Intenta $nextReps reps hoy.',
+        confidence: ProgressionConfidence.high,
+        isImprovement: true,
+        nextStepPreview: nextReps >= maxReps
+            ? 'Si todas a $maxReps: subir peso'
+            : 'Siguiente: ${nextReps + 1} reps',
+      );
     }
-    
-    // Fracaso
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Sesión fallida: Mantener y contar hacia deload
+    // ════════════════════════════════════════════════════════════════════════
     return ProgressionDecision(
       action: ProgressionAction.maintain,
       suggestedWeight: data.confirmedWeight,
@@ -601,32 +620,38 @@ class DoubleProgressionModel implements ProgressionModel {
       confidence: ProgressionConfidence.medium,
     );
   }
-  
+
   @override
   ControllerState? shouldTransition({
     required ExecutionData data,
     required ControllerState currentState,
     required ProgressionThresholds thresholds,
   }) => null;
-  
+
   String _fmt(double w) => w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
 }
 
-/// Modelo: RPE/RIR (Autorregulación)
-/// 
+/// Modelo: RPE/RIR (Autorregulación - Mike Tuchscherer/RTS)
+///
+/// Escala RPE:
+/// - RPE 10 = fallo muscular, 0 reps en reserva (RIR)
+/// - RPE 9 = 1 RIR (podrías hacer 1 más)
+/// - RPE 8 = 2 RIR (podrías hacer 2 más)
+/// - RPE 7 = 3 RIR (podrías hacer 3 más)
+///
 /// Reglas:
-/// - RPE < 7 → subir peso
-/// - RPE 7-9 → mantener (zona óptima)
-/// - RPE > 9 consistente → bajar peso o deload
+/// - RPE < 7 → peso muy ligero, subir
+/// - RPE 7-9 → zona óptima, mantener
+/// - RPE > 9 consistente → fatiga, considerar deload
 class RpeProgressionModel implements ProgressionModel {
   const RpeProgressionModel();
-  
+
   @override
-  String get name => 'RPE/RIR';
-  
+  String get name => 'RPE/RIR (Autoregulación)';
+
   @override
-  String get description => 
-      'Ajusta basándose en tu esfuerzo percibido. Ideal para autorregulación.';
+  String get description =>
+      'Ajusta según esfuerzo percibido. RPE 8 = 2 reps en reserva. Ideal avanzados.';
   
   @override
   ProgressionDecision calculate({
