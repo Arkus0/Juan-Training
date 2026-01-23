@@ -7,187 +7,105 @@ import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
 import 'training_session_screen.dart';
 
-class TrainSelectionScreen extends ConsumerWidget {
+/// ============================================================================
+/// PRINCIPIO DE LOS 3 SEGUNDOS
+/// ============================================================================
+/// En 3 segundos debe quedar claro:
+/// 1. Qué puede hacer ahora
+/// 2. Qué pasará si toca el botón principal
+/// 3. Cómo deshacerlo/cambiarlo
+/// ============================================================================
+
+class TrainSelectionScreen extends ConsumerStatefulWidget {
   const TrainSelectionScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TrainSelectionScreen> createState() => _TrainSelectionScreenState();
+}
+
+class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
+  bool _showAlternatives = false;
+
+  @override
+  Widget build(BuildContext context) {
     final activeSessionAsync = ref.watch(activeSessionStreamProvider);
     final rutinasAsync = ref.watch(rutinasStreamProvider);
     final suggestionAsync = ref.watch(smartSuggestionProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SELECCIONAR ENTRENO'),
-      ),
-      body: activeSessionAsync.when(
-        loading: () => const AppLoadingIndicator(message: 'Cargando...'),
-        error: (err, stack) => ErrorStateWidget(message: err.toString()),
-        data: (activeSessionData) {
-          if (activeSessionData != null && activeSessionData.activeRutina != null) {
-            final Rutina activeRutina = activeSessionData.activeRutina!;
-            final startTime = activeSessionData.startTime;
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: activeSessionAsync.when(
+          loading: () => const _LoadingState(),
+          error: (err, stack) => ErrorStateWidget(message: err.toString()),
+          data: (activeSessionData) {
+            // ═══════════════════════════════════════════════════════════════
+            // ESTADO 1: SESIÓN ACTIVA - "CONTINUAR" es la acción obvia
+            // ═══════════════════════════════════════════════════════════════
+            if (activeSessionData != null && activeSessionData.activeRutina != null) {
+              return _ActiveSessionState(
+                rutina: activeSessionData.activeRutina!,
+                startTime: activeSessionData.startTime,
+                completedSets: activeSessionData.completedSets ?? 0,
+                totalSets: activeSessionData.totalSets ?? 0,
+                onContinue: () => _continueSession(context, ref),
+                onDiscard: () => _showDiscardDialog(context, ref),
+              );
+            }
 
-            // Mostrar una barra discreta en la parte superior con acciones rápidas.
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Card(
-                    color: Colors.red[900],
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.fitness_center, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('SESIÓN ACTIVA', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white70)),
-                                const SizedBox(height: 2),
-                                Text(activeRutina.nombre.toUpperCase(), style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white)),
-                                if (startTime != null) Text('Iniciada hace ${DateTime.now().difference(startTime).inMinutes} min', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              try { HapticFeedback.mediumImpact(); } catch (_) {}
-                              ref.read(trainingSessionProvider.notifier).restoreFromStorage();
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red[900]),
-                            child: const Text('CONTINUAR'),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.white70),
-                            tooltip: 'Descartar sesión',
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('¿Descartar sesión?'),
-                                  content: const Text('Se perderá el progreso actual.'),
-                                  actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCELAR')),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        ref.read(trainingSessionProvider.notifier).clearStorage();
-                                      },
-                                      child: const Text('DESCARTAR', style: TextStyle(color: Colors.red)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+            return rutinasAsync.when(
+              loading: () => const _LoadingState(),
+              error: (err, stack) => ErrorStateWidget(message: err.toString()),
+              data: (rutinas) {
+                // ═════════════════════════════════════════════════════════════
+                // ESTADO 2: SIN RUTINAS - Guiar a crear
+                // ═════════════════════════════════════════════════════════════
+                if (rutinas.isEmpty) {
+                  return const _EmptyState();
+                }
+
+                // ═════════════════════════════════════════════════════════════
+                // ESTADO 3: NORMAL - Sugerencia prominente + alternativas
+                // ═════════════════════════════════════════════════════════════
+                return suggestionAsync.when(
+                  loading: () => const _LoadingState(),
+                  error: (_, __) => _FallbackState(
+                    rutinas: rutinas,
+                    onDaySelected: (rutina, dayIndex) => _startSession(context, ref, rutina, dayIndex),
                   ),
-                ),
-
-                // After the banner, continue to show the normal routines list
-                rutinasAsync.when(
-                  loading: () => const AppLoadingIndicator(),
-                  error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
-                  data: (rutinas) {
-                    if (rutinas.isEmpty) {
-                      return const EmptyStateWidget(
-                        icon: Icons.warning_amber_rounded,
-                        title: 'SIN RUTINAS',
-                        subtitle: 'Ve a Rutinas y crea tu plan de batalla.',
+                  data: (suggestion) {
+                    if (suggestion == null) {
+                      return _FallbackState(
+                        rutinas: rutinas,
+                        onDaySelected: (rutina, dayIndex) => _startSession(context, ref, rutina, dayIndex),
                       );
                     }
 
-                    return Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          const SizedBox(height: 16),
-                          Text(
-                            'TODAS LAS RUTINAS',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Lista de rutinas
-                          ...rutinas.map((rutina) => _RutinaCard(
-                            key: ValueKey(rutina.id),
-                            rutina: rutina,
-                            onDaySelected: (dayIndex) => _startSession(context, ref, rutina, dayIndex),
-                          )),
-                        ],
-                      ),
+                    return _ZeroThoughtHome(
+                      suggestion: suggestion,
+                      rutinas: rutinas,
+                      showAlternatives: _showAlternatives,
+                      onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
+                      onToggleAlternatives: () => setState(() => _showAlternatives = !_showAlternatives),
+                      onAlternativeSelected: (rutina, dayIndex) {
+                        setState(() => _showAlternatives = false);
+                        _startSession(context, ref, rutina, dayIndex);
+                      },
                     );
                   },
-                ),
-              ],
-            );
-          }
-
-          return rutinasAsync.when(
-            loading: () => const AppLoadingIndicator(),
-            error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
-            data: (rutinas) {
-              if (rutinas.isEmpty) {
-                return const EmptyStateWidget(
-                  icon: Icons.warning_amber_rounded,
-                  title: 'SIN RUTINAS',
-                  subtitle: 'Ve a Rutinas y crea tu plan de batalla.',
                 );
-              }
-
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Sugerencia inteligente
-                  suggestionAsync.when(
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                    data: (suggestion) {
-                      if (suggestion == null) return const SizedBox.shrink();
-                      return _SmartSuggestionCard(
-                        suggestion: suggestion,
-                        onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-                  Text(
-                    'TODAS LAS RUTINAS',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Lista de rutinas
-                  ...rutinas.map((rutina) => _RutinaCard(
-                    key: ValueKey(rutina.id),
-                    rutina: rutina,
-                    onDaySelected: (dayIndex) => _startSession(context, ref, rutina, dayIndex),
-                  )),
-                ],
-              );
-            },
-          );
-        },
+              },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  void _continueSession(BuildContext context, WidgetRef ref) {
+    try { HapticFeedback.mediumImpact(); } catch (_) {}
+    ref.read(trainingSessionProvider.notifier).restoreFromStorage();
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
   }
 
   void _startSession(BuildContext context, WidgetRef ref, Rutina rutina, int dayIndex) {
@@ -208,254 +126,637 @@ class TrainSelectionScreen extends ConsumerWidget {
       MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
     );
   }
+
+  void _showDiscardDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          'TERMINAR SESION',
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          'Se perdera el progreso actual.',
+          style: GoogleFonts.montserrat(color: Colors.grey[400]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'CANCELAR',
+              style: GoogleFonts.montserrat(color: Colors.grey[500]),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(trainingSessionProvider.notifier).clearStorage();
+            },
+            child: Text(
+              'TERMINAR',
+              style: GoogleFonts.montserrat(
+                color: Colors.red[400],
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// Card de sugerencia inteligente destacada.
-class _SmartSuggestionCard extends StatelessWidget {
-  final SmartWorkoutSuggestion suggestion;
-  final VoidCallback onStart;
+/// ============================================================================
+/// ESTADO PRINCIPAL: ZERO-THOUGHT HOME
+/// ============================================================================
+/// Diseño centrado con:
+/// - Icono grande (reconocimiento visual instantáneo)
+/// - Nombre del día (qué puede hacer)
+/// - Contexto mínimo (validación rápida)
+/// - CTA único gigante (cero decisiones)
+/// - Escape claro (no está atrapado)
+/// ============================================================================
 
-  const _SmartSuggestionCard({
+class _ZeroThoughtHome extends StatelessWidget {
+  final SmartWorkoutSuggestion suggestion;
+  final List<Rutina> rutinas;
+  final bool showAlternatives;
+  final VoidCallback onStart;
+  final VoidCallback onToggleAlternatives;
+  final void Function(Rutina, int) onAlternativeSelected;
+
+  const _ZeroThoughtHome({
     required this.suggestion,
+    required this.rutinas,
+    required this.showAlternatives,
     required this.onStart,
+    required this.onToggleAlternatives,
+    required this.onAlternativeSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.red[900],
-      elevation: 8,
-      child: InkWell(
-        onTap: onStart,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: Colors.yellow[600], size: 24),
-                  const SizedBox(width: 8),
-                  Text(
-                    'SUGERENCIA',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.yellow[600],
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
+    return Column(
+      children: [
+        // ═══════════════════════════════════════════════════════════════════
+        // ZONA PRINCIPAL: Centrada, respira, sin ruido
+        // ═══════════════════════════════════════════════════════════════════
+        Expanded(
+          flex: showAlternatives ? 1 : 2,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Icono: Reconocimiento visual instantáneo
+                    Icon(
+                      Icons.fitness_center_rounded,
+                      size: showAlternatives ? 48 : 72,
+                      color: Colors.red[400],
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'START',
+
+                    SizedBox(height: showAlternatives ? 16 : 32),
+
+                    // Nombre del día: QUÉ PUEDE HACER
+                    Text(
+                      suggestion.dayName.toUpperCase(),
                       style: GoogleFonts.montserrat(
-                        color: Colors.red[900],
+                        color: Colors.white,
+                        fontSize: showAlternatives ? 28 : 36,
                         fontWeight: FontWeight.w900,
-                        fontSize: 12,
+                        letterSpacing: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Contexto mínimo: Validación rápida
+                    Text(
+                      suggestion.reason,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    SizedBox(height: showAlternatives ? 24 : 48),
+
+                    // ═══════════════════════════════════════════════════════
+                    // CTA ÚNICO GIGANTE: Cero decisiones
+                    // ═══════════════════════════════════════════════════════
+                    SizedBox(
+                      width: double.infinity,
+                      height: 64,
+                      child: ElevatedButton(
+                        onPressed: onStart,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 8,
+                        ),
+                        child: Text(
+                          'ENTRENAR',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                suggestion.dayName.toUpperCase(),
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
+
+                    const SizedBox(height: 16),
+
+                    // Escape claro: No está atrapado
+                    GestureDetector(
+                      onTap: onToggleAlternatives,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              showAlternatives ? 'Ocultar opciones' : 'Cambiar',
+                              style: GoogleFonts.montserrat(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              showAlternatives
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                              color: Colors.grey[600],
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                suggestion.rutina.nombre,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                suggestion.reason,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
+            ),
           ),
+        ),
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ZONA ALTERNATIVAS: Solo visible si el usuario lo pide
+        // ═══════════════════════════════════════════════════════════════════
+        if (showAlternatives)
+          Expanded(
+            flex: 2,
+            child: _AlternativesPanel(
+              rutinas: rutinas,
+              currentSuggestion: suggestion,
+              onDaySelected: onAlternativeSelected,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// ============================================================================
+/// ESTADO: SESIÓN ACTIVA
+/// ============================================================================
+
+class _ActiveSessionState extends StatelessWidget {
+  final Rutina rutina;
+  final DateTime? startTime;
+  final int completedSets;
+  final int totalSets;
+  final VoidCallback onContinue;
+  final VoidCallback onDiscard;
+
+  const _ActiveSessionState({
+    required this.rutina,
+    required this.startTime,
+    required this.completedSets,
+    required this.totalSets,
+    required this.onContinue,
+    required this.onDiscard,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = totalSets > 0 ? completedSets / totalSets : 0.0;
+    final elapsedMinutes = startTime != null
+        ? DateTime.now().difference(startTime!).inMinutes
+        : 0;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icono de sesión activa (pulso visual)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.9, end: 1.0),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeInOut,
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: Icon(
+                    Icons.bolt_rounded,
+                    size: 72,
+                    color: Colors.amber[400],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 32),
+
+            // Nombre de la sesión
+            Text(
+              rutina.nombre.toUpperCase(),
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Progreso visual
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '$completedSets',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.amber[400],
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  ' / $totalSets series',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.grey[500],
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            // Barra de progreso
+            Container(
+              height: 6,
+              width: 200,
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.amber[400],
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Tiempo transcurrido
+            Text(
+              '$elapsedMinutes min',
+              style: GoogleFonts.montserrat(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+
+            const SizedBox(height: 48),
+
+            // CTA: CONTINUAR
+            SizedBox(
+              width: double.infinity,
+              height: 64,
+              child: ElevatedButton(
+                onPressed: onContinue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber[600],
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 8,
+                ),
+                child: Text(
+                  'CONTINUAR',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Separador visual
+            Row(
+              children: [
+                Expanded(child: Divider(color: Colors.grey[800])),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'o',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[700],
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider(color: Colors.grey[800])),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Opción de descartar
+            TextButton(
+              onPressed: onDiscard,
+              child: Text(
+                'TERMINAR SESION',
+                style: GoogleFonts.montserrat(
+                  color: Colors.red[400],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Card de rutina con selector de día.
-class _RutinaCard extends StatelessWidget {
-  final Rutina rutina;
-  final void Function(int dayIndex) onDaySelected;
+/// ============================================================================
+/// ESTADO: SIN RUTINAS
+/// ============================================================================
 
-  const _RutinaCard({
-    super.key,
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add_circle_outline_rounded,
+              size: 72,
+              color: Colors.grey[700],
+            ),
+
+            const SizedBox(height: 32),
+
+            Text(
+              'CREA TU RUTINA',
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              'Ve a la pestana Rutinas\npara empezar',
+              style: GoogleFonts.montserrat(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ============================================================================
+/// ESTADO: LOADING
+/// ============================================================================
+
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Colors.red[400],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ============================================================================
+/// ESTADO: FALLBACK (sin sugerencia)
+/// ============================================================================
+
+class _FallbackState extends StatelessWidget {
+  final List<Rutina> rutinas;
+  final void Function(Rutina, int) onDaySelected;
+
+  const _FallbackState({
+    required this.rutinas,
+    required this.onDaySelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _AlternativesPanel(
+      rutinas: rutinas,
+      currentSuggestion: null,
+      onDaySelected: onDaySelected,
+      fullScreen: true,
+    );
+  }
+}
+
+/// ============================================================================
+/// PANEL DE ALTERNATIVAS
+/// ============================================================================
+
+class _AlternativesPanel extends StatelessWidget {
+  final List<Rutina> rutinas;
+  final SmartWorkoutSuggestion? currentSuggestion;
+  final void Function(Rutina, int) onDaySelected;
+  final bool fullScreen;
+
+  const _AlternativesPanel({
+    required this.rutinas,
+    required this.currentSuggestion,
+    required this.onDaySelected,
+    this.fullScreen = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[900]?.withValues(alpha: 0.5),
+        borderRadius: fullScreen
+            ? null
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, fullScreen ? 48 : 20, 24, 12),
+            child: Text(
+              fullScreen ? 'ELIGE TU ENTRENO' : 'OTRAS OPCIONES',
+              style: GoogleFonts.montserrat(
+                color: Colors.grey[500],
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+
+          // Lista de rutinas
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: rutinas.length,
+              itemBuilder: (context, index) {
+                final rutina = rutinas[index];
+                return _CompactRutinaCard(
+                  rutina: rutina,
+                  onDaySelected: (dayIndex) => onDaySelected(rutina, dayIndex),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ============================================================================
+/// CARD DE RUTINA COMPACTA
+/// ============================================================================
+
+class _CompactRutinaCard extends StatelessWidget {
+  final Rutina rutina;
+  final void Function(int) onDaySelected;
+
+  const _CompactRutinaCard({
     required this.rutina,
     required this.onDaySelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final showInlineChips = rutina.dias.length > 1 && rutina.dias.length <= 3;
-    
     return Card(
-      child: InkWell(
-        onTap: () {
-          if (rutina.dias.isEmpty) return;
-          try { HapticFeedback.selectionClick(); } catch (_) {}
-
-          if (rutina.dias.length == 1) {
-            onDaySelected(0);
-          } else if (rutina.dias.length > 3) {
-            // Solo mostrar dialog para 4+ días
-            _showDaySelector(context);
-          }
-          // Para 2-3 días, los chips inline manejan la selección
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      rutina.nombre.toUpperCase(),
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  if (!showInlineChips)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.red[900],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'START',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 12),
-                      ),
-                    ),
-                ],
+      color: Colors.grey[850],
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nombre de la rutina
+            Text(
+              rutina.nombre.toUpperCase(),
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(height: 12),
-              Text(
-                '${rutina.dias.length} DÍAS',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.redAccent[700],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 🎯 UX ALTO: Chips inline para 2-3 días (elimina modal)
-              if (showInlineChips)
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: rutina.dias.asMap().entries.map((entry) {
-                    return ActionChip(
-                      label: Text(
-                        entry.value.nombre.toUpperCase(),
-                        style: GoogleFonts.montserrat(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      backgroundColor: Colors.red[900],
-                      side: BorderSide.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      onPressed: () {
-                        try { HapticFeedback.selectionClick(); } catch (_) {}
-                        onDaySelected(entry.key);
-                      },
-                    );
-                  }).toList(),
-                )
-              else if (rutina.dias.isNotEmpty)
-                Text(
-                  rutina.dias.take(3).map((d) => d.nombre).join(' • ').toUpperCase(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[500],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDaySelector(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(
-          'ELIGE DÍA',
-          style: GoogleFonts.montserrat(
-            color: Colors.red[900],
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        backgroundColor: Colors.grey[900],
-        children: rutina.dias.asMap().entries.map((entry) {
-          final index = entry.key;
-          final day = entry.value;
-          return SimpleDialogOption(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.red[900],
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    day.nombre,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${day.ejercicios.length} ej.',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-              ],
             ),
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              onDaySelected(index);
-            },
-          );
-        }).toList(),
+
+            const SizedBox(height: 12),
+
+            // Chips de días
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: rutina.dias.asMap().entries.map((entry) {
+                return InkWell(
+                  onTap: () {
+                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                    onDaySelected(entry.key);
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[900]?.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.red[800]!.withValues(alpha: 0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      entry.value.nombre.toUpperCase(),
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
