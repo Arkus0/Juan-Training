@@ -341,14 +341,23 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Espacio para timer compacto
                   itemCount: exercisesLength,
+                  // ⚡ OPTIMIZACIÓN: Pre-renderizar items cercanos para scroll más suave
+                  cacheExtent: 300,
+                  // ⚡ OPTIMIZACIÓN: Física optimizada para listas cortas (4-8 ejercicios típicos)
+                  physics: const BouncingScrollPhysics(
+                    decelerationRate: ScrollDecelerationRate.fast,
+                  ),
                   itemBuilder: (context, index) {
                     // ⚡ Bolt Optimization: Extracted to smart widget
                     final exercises = ref.read(trainingSessionProvider).exercises;
                     final id = exercises.length > index ? exercises[index].id : index.toString();
                     final key = _exerciseKeys.putIfAbsent(id, () => GlobalKey());
-                    return Container(
-                      key: key,
-                      child: ExerciseCardContainer(exerciseIndex: index),
+                    // ⚡ OPTIMIZACIÓN: RepaintBoundary para aislar repintura de cada card
+                    return RepaintBoundary(
+                      child: Container(
+                        key: key,
+                        child: ExerciseCardContainer(exerciseIndex: index),
+                      ),
                     );
                   },
                 ),

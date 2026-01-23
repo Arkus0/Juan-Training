@@ -8,6 +8,74 @@ import 'package:intl/intl.dart';
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
 
+// ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
+class _TrendStyles {
+  static final sectionTitle = GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+    letterSpacing: 1.2,
+  );
+
+  static final dropdownHint = GoogleFonts.montserrat(
+    color: AppColors.textTertiary,
+    fontSize: 14,
+  );
+
+  static final dropdownItem = GoogleFonts.montserrat(
+    color: Colors.white,
+    fontSize: 14,
+  );
+
+  static final axisLabel = GoogleFonts.montserrat(
+    color: AppColors.textTertiary,
+    fontSize: 10,
+  );
+
+  static final axisLabelSmall = GoogleFonts.montserrat(
+    color: AppColors.textTertiary,
+    fontSize: 9,
+  );
+
+  static final tooltipDate = GoogleFonts.montserrat(
+    color: AppColors.textSecondary,
+    fontSize: 11,
+  );
+
+  static final tooltipValue = GoogleFonts.montserrat(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+  );
+
+  static final tooltipSubtext = GoogleFonts.montserrat(
+    color: AppColors.textTertiary,
+    fontSize: 10,
+  );
+
+  static final summaryTitle = GoogleFonts.montserrat(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: Colors.white,
+  );
+
+  static final summarySubtitle = GoogleFonts.montserrat(
+    fontSize: 11,
+    color: AppColors.textSecondary,
+  );
+
+  static final emptyTitle = GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textTertiary,
+  );
+
+  static final emptySubtitle = GoogleFonts.montserrat(
+    fontSize: 12,
+    color: AppColors.border,
+  );
+}
+
 /// Line chart showing estimated 1RM trend over time
 class StrengthTrend extends ConsumerWidget {
   const StrengthTrend({super.key});
@@ -46,12 +114,7 @@ class StrengthTrend extends ConsumerWidget {
               const SizedBox(width: 10),
               Text(
                 'TENDENCIA DE FUERZA',
-                style: GoogleFonts.montserrat(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 1.2,
-                ),
+                style: _TrendStyles.sectionTitle,
               ),
             ],
           ),
@@ -109,10 +172,7 @@ class StrengthTrend extends ConsumerWidget {
                   : null,
           hint: Text(
             'Selecciona ejercicio',
-            style: GoogleFonts.montserrat(
-              color: AppColors.textTertiary,
-              fontSize: 14,
-            ),
+            style: _TrendStyles.dropdownHint,
           ),
           icon: Icon(Icons.keyboard_arrow_down, color: AppColors.textTertiary),
           dropdownColor: const Color(0xFF252525),
@@ -122,10 +182,7 @@ class StrengthTrend extends ConsumerWidget {
               value: name,
               child: Text(
                 name,
-                style: GoogleFonts.montserrat(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+                style: _TrendStyles.dropdownItem,
               ),
             );
           }).toList(),
@@ -196,10 +253,7 @@ class StrengthTrend extends ConsumerWidget {
                     getTitlesWidget: (value, meta) {
                       return Text(
                         '${value.toInt()}',
-                        style: GoogleFonts.montserrat(
-                          color: AppColors.textTertiary,
-                          fontSize: 10,
-                        ),
+                        style: _TrendStyles.axisLabel,
                       );
                     },
                   ),
@@ -219,10 +273,7 @@ class StrengthTrend extends ConsumerWidget {
                       final date = dataPoints[index].date;
                       return Text(
                         '${date.day}/${date.month}',
-                        style: GoogleFonts.montserrat(
-                          color: AppColors.textTertiary,
-                          fontSize: 9,
-                        ),
+                        style: _TrendStyles.axisLabelSmall,
                       );
                     },
                   ),
@@ -279,25 +330,15 @@ class StrengthTrend extends ConsumerWidget {
                       final dateStr = DateFormat('d MMM', 'es_ES').format(point.date);
                       return LineTooltipItem(
                         '$dateStr\n',
-                        GoogleFonts.montserrat(
-                          color: AppColors.textSecondary,
-                          fontSize: 11,
-                        ),
+                        _TrendStyles.tooltipDate,
                         children: [
                           TextSpan(
                             text: '1RM: ${point.estimated1RM.toStringAsFixed(1)}kg',
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
+                            style: _TrendStyles.tooltipValue,
                           ),
                           TextSpan(
                             text: '\n${point.actualMax.toStringAsFixed(1)}kg x${point.repsAtMax}',
-                            style: GoogleFonts.montserrat(
-                              color: AppColors.textTertiary,
-                              fontSize: 10,
-                            ),
+                            style: _TrendStyles.tooltipSubtext,
                           ),
                         ],
                       );
@@ -353,18 +394,11 @@ class StrengthTrend extends ConsumerWidget {
                   isPositive
                       ? '¡Progreso detectado!'
                       : 'Revisá tu entrenamiento',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                  style: _TrendStyles.summaryTitle,
                 ),
                 Text(
                   '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}kg (${percentChange.toStringAsFixed(1)}%) en ${dataPoints.length} sesiones',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: _TrendStyles.summarySubtitle,
                 ),
               ],
             ),
@@ -389,19 +423,12 @@ class StrengthTrend extends ConsumerWidget {
           const SizedBox(height: 12),
           Text(
             'Sin datos de progreso',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
-            ),
+            style: _TrendStyles.emptyTitle,
           ),
           const SizedBox(height: 4),
           Text(
             'Selecciona un ejercicio con historial',
-            style: GoogleFonts.montserrat(
-              fontSize: 12,
-              color: AppColors.border,
-            ),
+            style: _TrendStyles.emptySubtitle,
           ),
         ],
       ),

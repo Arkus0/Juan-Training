@@ -20,6 +20,11 @@ final createRoutineProvider =
   },
 );
 
+// ⚡ OPTIMIZACIÓN: Provider separado para el estado de UI (expandedDayIndex)
+// Esto evita que cambiar qué día está expandido cause rebuild de toda la rutina
+// Solo los widgets que observen este provider se reconstruirán
+final routineExpandedDayProvider = StateProvider.family<int, String?>((ref, rutinaId) => 0);
+
 class CreateRoutineNotifier extends StateNotifier<Rutina> {
   final ITrainingRepository _repository;
 
@@ -30,26 +35,27 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     }
   }
 
+  // ⚠️ DEPRECADO: Usa routineExpandedDayProvider en su lugar
   // UI state: control which day (index) is expanded in the UI.
   // Default: first day open (0). Use -1 to represent all collapsed.
+  // Mantenido para backward compatibility con código existente
   int _expandedDayIndex = 0;
   int get expandedDayIndex => _expandedDayIndex;
 
+  /// ⚠️ DEPRECADO: Usa routineExpandedDayProvider.notifier.state = -1
   /// Cierra todos los días (usa -1 como indicador)
+  /// ⚡ OPTIMIZACIÓN: Ya no muta el state de la rutina para cambios de UI
   void collapseAllDays() {
-    if (_expandedDayIndex != -1) {
-      _expandedDayIndex = -1;
-      // Trigger listeners by assigning a new Rutina instance (copy)
-      state = state.copyWith();
-    }
+    _expandedDayIndex = -1;
+    // No trigger state mutation - UI should use routineExpandedDayProvider
   }
 
+  /// ⚠️ DEPRECADO: Usa routineExpandedDayProvider.notifier.state = index
   /// Abre un día específico
+  /// ⚡ OPTIMIZACIÓN: Ya no muta el state de la rutina para cambios de UI
   void setExpandedDay(int index) {
-    if (_expandedDayIndex != index) {
-      _expandedDayIndex = index;
-      state = state.copyWith();
-    }
+    _expandedDayIndex = index;
+    // No trigger state mutation - UI should use routineExpandedDayProvider
   }
 
   static Rutina _createEmptyRoutine() {
