@@ -5,11 +5,13 @@ import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/voice_input_provider.dart';
+import '../providers/session_tolerance_provider.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
+import '../widgets/session/tolerance_feedback_widgets.dart';
 import '../widgets/voice/voice_training_button.dart';
 import '../utils/design_system.dart';
 
@@ -45,6 +47,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       ref.read(sessionProgressProvider.notifier).recalculate();
       // Initialize tracking
       _lastKnownIncompleteSet = ref.read(trainingSessionProvider).nextIncompleteSet;
+      // 🎯 ERROR TOLERANCE: Evaluar gap desde última sesión
+      ref.read(sessionToleranceProvider.notifier).evaluateSessionGap();
     });
   }
 
@@ -226,8 +230,23 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     
     // 🎯 FEEDBACK: Ejercicio recién completado
     final completionInfo = ref.watch(exerciseCompletionProvider);
+    
+    // 🎯 ERROR TOLERANCE: Estado de tolerancia para mostrar bienvenida
+    final toleranceState = ref.watch(sessionToleranceProvider);
+    
+    // 🎯 ERROR TOLERANCE: Datos sospechosos pendientes de confirmación
+    final suspiciousData = ref.watch(suspiciousDataProvider);
 
     final notifier = ref.read(trainingSessionProvider.notifier);
+    
+    // 🎯 ERROR TOLERANCE: Mostrar diálogo de datos sospechosos
+    if (suspiciousData.hasSuspiciousData) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showSuspiciousDataDialog(suspiciousData);
+        }
+      });
+    }
 
     // 🎯 UX CRÍTICO: Auto-scroll al siguiente ejercicio cuando se completa una serie
     final currentIncompleteSet = ref.watch(trainingSessionProvider.select((s) => s.nextIncompleteSet));
@@ -362,6 +381,18 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 ),
               ),
             ),
+          
+          // 🎯 ERROR TOLERANCE: Banner de bienvenida tras días sin entrenar
+          if (toleranceState.shouldShowWelcome && toleranceState.sessionGapResult != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: WelcomeBackBanner(
+                result: toleranceState.sessionGapResult!,
+                onDismiss: () => ref.read(sessionToleranceProvider.notifier).markWelcomeShown(),
+              ),
+            ),
         ],
       ),
     );
@@ -410,6 +441,31 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         }
         break;
     }
+  }
+  
+  /// Muestra diálogo para datos sospechosos (ERROR TOLERANCE)
+  void _showSuspiciousDataDialog(SuspiciousDataState data) {
+    // Limpiar inmediatamente para evitar múltiples diálogos
+    ref.read(suspiciousDataProvider.notifier).clear();
+    
+    showSuspiciousDataDialog(
+      context,
+      exerciseName: data.exerciseName!,
+      enteredWeight: data.enteredWeight!,
+      suggestedWeight: data.suggestedWeight!,
+      onConfirmOriginal: () {
+        // El usuario confirma que el peso es correcto - no hacer nada
+        // El peso ya fue guardado
+      },
+      onUseSuggested: () {
+        // El usuario acepta la sugerencia - actualizar el peso
+        ref.read(trainingSessionProvider.notifier).updateLog(
+          data.exerciseIndex!,
+          data.setIndex!,
+          peso: data.suggestedWeight,
+        );
+      },
+    );
   }
 
   void _addNoteToCurrentSet(String note, dynamic notifier) {

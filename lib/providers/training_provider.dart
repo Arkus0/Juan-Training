@@ -16,6 +16,7 @@ import '../repositories/i_training_repository.dart';
 import '../utils/performance_utils.dart';
 import '../services/timer_platform_service.dart';
 import '../services/error_tolerance_system.dart';
+import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
   throw UnimplementedError('trainingRepositoryProvider not overridden');
@@ -346,10 +347,27 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         category: category,
       );
       
-      // Si hay corrección automática, usarla (pero el usuario puede sobreescribir)
-      if (toleranceResult.needsCorrection && toleranceResult.correctedValue != null) {
-        // Por ahora solo logueamos, no corregimos automáticamente
-        // El feedback se mostrará en UI a través del provider
+      // 🎯 ERROR TOLERANCE: Si es sospechoso, notificar al provider para mostrar diálogo
+      if (toleranceResult.severity == ToleranceSeverity.medium && 
+          toleranceResult.userMessage != null &&
+          lastKnownWeight > 0) {
+        // Calcular peso sugerido (detectar error de dedo: 500 → 50)
+        double suggestedWeight = lastKnownWeight;
+        if (peso > lastKnownWeight * 5) {
+          suggestedWeight = peso / 10; // Probablemente un 0 de más
+        } else if (peso < lastKnownWeight * 0.2) {
+          suggestedWeight = peso * 10; // Probablemente falta un 0
+        }
+        
+        ref.read(suspiciousDataProvider.notifier).setSuspiciousData(
+          exerciseName: exercise.nombre,
+          enteredWeight: peso,
+          suggestedWeight: suggestedWeight,
+          exerciseIndex: exerciseIndex,
+          setIndex: setIndex,
+        );
+        Logger().w('Peso sospechoso en ${exercise.nombre}: $peso kg (sugerido: $suggestedWeight kg)');
+      } else if (toleranceResult.needsCorrection && toleranceResult.correctedValue != null) {
         Logger().w('Peso sospechoso en ${exercise.nombre}: $peso kg (esperado ~$lastKnownWeight kg)');
       }
     }

@@ -660,7 +660,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
   Future<String?> saveRoutine() async {
     if (state.nombre.trim().isEmpty) {
-      return 'Ponle nombre a tu legado.';
+      return 'Dale un nombre a tu rutina.';
     }
     if (state.dias.isEmpty) {
       return 'Añade al menos un día.';
