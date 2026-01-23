@@ -43,7 +43,7 @@ class Rutina {
   /// Creates a Rutina from a JSON map (for import).
   /// Generates new UUIDs for all entities to avoid conflicts.
   factory Rutina.fromJson(Map<String, dynamic> json) {
-    final uuid = const Uuid();
+    const uuid = Uuid();
 
     // Parse days with new IDs
     final rawDias = json['dias'] as List<dynamic>? ?? [];

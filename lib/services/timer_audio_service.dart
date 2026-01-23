@@ -62,7 +62,7 @@ class TimerAudioService {
 
     try {
       // Generar onda sinusoidal
-      final sampleRate = 44100;
+      const sampleRate = 44100;
       final numSamples = (sampleRate * duration / 1000).round();
       final samples = Float64List(numSamples);
 

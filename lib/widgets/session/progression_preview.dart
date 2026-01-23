@@ -100,19 +100,19 @@ class ConsequenceMessage extends StatelessWidget {
         // Verde sutil (no rojo) - UX_UI guidelines
         return (
           Colors.green.withValues(alpha: 0.1),
-          AppColors.neonCyan!,
+          AppColors.neonCyan,
         );
       case ProgressionAction.maintain:
         return (
-          AppColors.bgElevated!.withValues(alpha: 0.5),
-          AppColors.textSecondary!,
+          AppColors.bgElevated.withValues(alpha: 0.5),
+          AppColors.textSecondary,
         );
       case ProgressionAction.decreaseWeight:
       case ProgressionAction.decreaseReps:
         // Naranja para deload (no rojo = no error)
         return (
           Colors.orange.withValues(alpha: 0.1),
-          AppColors.warning!,
+          AppColors.warning,
         );
     }
   }
@@ -207,7 +207,7 @@ class ProgressionPreviewCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.neonCyanSubtle?.withValues(alpha: 0.5),
+                  color: AppColors.neonCyanSubtle.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -258,7 +258,7 @@ class ProgressionPreviewCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.next_plan_outlined, size: 12, color: AppColors.textTertiary),
+                const Icon(Icons.next_plan_outlined, size: 12, color: AppColors.textTertiary),
                 const SizedBox(width: 4),
                 Text(
                   decision.nextStepPreview!,
@@ -279,28 +279,28 @@ class ProgressionPreviewCard extends StatelessWidget {
     switch (decision.action) {
       case ProgressionAction.increaseWeight:
         return (
-          AppColors.neonCyanSubtle!.withValues(alpha: 0.2),
-          AppColors.success!,
-          AppColors.neonCyan!,
+          AppColors.neonCyanSubtle.withValues(alpha: 0.2),
+          AppColors.success,
+          AppColors.neonCyan,
         );
       case ProgressionAction.increaseReps:
         return (
-          AppColors.info!.withValues(alpha: 0.2),
-          AppColors.info!,
-          AppColors.info!,
+          AppColors.info.withValues(alpha: 0.2),
+          AppColors.info,
+          AppColors.info,
         );
       case ProgressionAction.maintain:
         return (
-          AppColors.bgElevated!,
-          AppColors.border!,
-          AppColors.warning!,
+          AppColors.bgElevated,
+          AppColors.border,
+          AppColors.warning,
         );
       case ProgressionAction.decreaseWeight:
       case ProgressionAction.decreaseReps:
         return (
-          AppColors.goldAccent!.withValues(alpha: 0.2),
-          AppColors.goldAccent!,
-          AppColors.warning!,
+          AppColors.goldAccent.withValues(alpha: 0.2),
+          AppColors.goldAccent,
+          AppColors.warning,
         );
     }
   }
@@ -390,14 +390,14 @@ class ProgressionBadge extends StatelessWidget {
   Color _getColor(ProgressionAction action) {
     switch (action) {
       case ProgressionAction.increaseWeight:
-        return AppColors.neonCyan!;
+        return AppColors.neonCyan;
       case ProgressionAction.increaseReps:
-        return AppColors.info!;
+        return AppColors.info;
       case ProgressionAction.maintain:
-        return AppColors.warning!;
+        return AppColors.warning;
       case ProgressionAction.decreaseWeight:
       case ProgressionAction.decreaseReps:
-        return AppColors.warning!;
+        return AppColors.warning;
     }
   }
 
@@ -450,7 +450,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border!),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,7 +472,7 @@ class ProgressionInfoTooltip extends StatelessWidget {
           // Razón técnica
           Row(
             children: [
-              Icon(Icons.analytics_outlined, size: 16, color: AppColors.textSecondary),
+              const Icon(Icons.analytics_outlined, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -560,11 +560,11 @@ class ProgressionInfoTooltip extends StatelessWidget {
   Color _getConfidenceColor(ProgressionConfidence conf) {
     switch (conf) {
       case ProgressionConfidence.high:
-        return AppColors.neonCyan!;
+        return AppColors.neonCyan;
       case ProgressionConfidence.medium:
-        return AppColors.warning!;
+        return AppColors.warning;
       case ProgressionConfidence.low:
-        return AppColors.textSecondary!;
+        return AppColors.textSecondary;
     }
   }
 
@@ -610,7 +610,7 @@ class SessionProgressIndicator extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isSuccess ? AppColors.success! : AppColors.border!,
+          color: isSuccess ? AppColors.success : AppColors.border,
         ),
       ),
       child: Row(
@@ -655,7 +655,7 @@ class SessionProgressIndicator extends StatelessWidget {
           
           if (isSuccess) ...[
             const SizedBox(width: 4),
-            Icon(Icons.check, size: 12, color: AppColors.neonCyan),
+            const Icon(Icons.check, size: 12, color: AppColors.neonCyan),
           ],
         ],
       ),
@@ -672,14 +672,14 @@ class ProtectionBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.info?.withValues(alpha: 0.3),
+        color: AppColors.info.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.info!.withValues(alpha: 0.5)),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.shield_rounded, size: 10, color: AppColors.info),
+          const Icon(Icons.shield_rounded, size: 10, color: AppColors.info),
           const SizedBox(width: 3),
           Text(
             'PROTEGIDO',
@@ -717,7 +717,7 @@ class IncrementInfoBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.add_circle_outline, size: 10, color: AppColors.textTertiary),
+          const Icon(Icons.add_circle_outline, size: 10, color: AppColors.textTertiary),
           const SizedBox(width: 3),
           Text(
             '+${_formatWeight(increment)}kg',
@@ -792,7 +792,7 @@ class EmpatheticFeedback extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.border!,
+          color: AppColors.border,
         ),
       ),
       child: Column(
@@ -820,7 +820,7 @@ class EmpatheticFeedback extends StatelessWidget {
               ),
               if (onDismiss != null)
                 IconButton(
-                  icon: Icon(Icons.close, size: 16, color: AppColors.textTertiary),
+                  icon: const Icon(Icons.close, size: 16, color: AppColors.textTertiary),
                   onPressed: onDismiss,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -906,13 +906,13 @@ class EmpatheticBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.bgElevated!.withValues(alpha: 0.8),
+          color: AppColors.bgElevated.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.lightbulb_outline_rounded,
               size: 14,
               color: AppColors.textSecondary,
@@ -964,7 +964,7 @@ class ExerciseSummaryFeedback extends StatelessWidget {
         border: Border.all(
           color: metTarget
               ? Colors.green.withValues(alpha: 0.3)
-              : AppColors.border!,
+              : AppColors.border,
         ),
       ),
       child: Column(
@@ -1022,7 +1022,7 @@ class ExerciseSummaryFeedback extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.textTertiary),
+                  const Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.textTertiary),
                   const SizedBox(width: 4),
                   Text(
                     nextSessionHint!,

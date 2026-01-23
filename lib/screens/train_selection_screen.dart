@@ -366,7 +366,7 @@ class _ActiveSessionState extends StatelessWidget {
               builder: (context, value, child) {
                 return Transform.scale(
                   scale: value,
-                  child: Icon(
+                  child: const Icon(
                     Icons.recommend_rounded,
                     size: 72,
                     // 🎯 NEON IRON: Oro Venice para sesión activa
@@ -464,7 +464,7 @@ class _ActiveSessionState extends StatelessWidget {
             // Separador visual
             Row(
               children: [
-                Expanded(child: Divider(color: AppColors.divider)),
+                const Expanded(child: Divider(color: AppColors.divider)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
@@ -472,7 +472,7 @@ class _ActiveSessionState extends StatelessWidget {
                     style: AppTypography.meta,
                   ),
                 ),
-                Expanded(child: Divider(color: AppColors.divider)),
+                const Expanded(child: Divider(color: AppColors.divider)),
               ],
             ),
 
@@ -510,7 +510,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.add_circle_outline_rounded,
               size: 72,
               color: AppColors.textTertiary,
@@ -547,7 +547,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

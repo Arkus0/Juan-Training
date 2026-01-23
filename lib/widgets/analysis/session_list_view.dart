@@ -132,7 +132,7 @@ class WeekSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '$totalSessions sesiones • ${(totalVolume / 1000).toStringAsFixed(1)}t vol',
-                style: TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
               ),
             ],
           ),
@@ -210,7 +210,7 @@ class _SessionTileState extends State<SessionTile> {
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.bgDeep!),
+                      border: Border.all(color: AppColors.bgDeep),
                     ),
                     child: Column(
                       children: [
@@ -258,7 +258,7 @@ class _SessionTileState extends State<SessionTile> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.live?.withOpacity(0.3),
+                                  color: AppColors.live.withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -275,7 +275,7 @@ class _SessionTileState extends State<SessionTile> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.access_time, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.access_time, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               timeStr,
@@ -285,7 +285,7 @@ class _SessionTileState extends State<SessionTile> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Icon(Icons.timer_outlined, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.timer_outlined, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               durationText,
@@ -295,7 +295,7 @@ class _SessionTileState extends State<SessionTile> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Icon(Icons.fitness_center, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.fitness_center, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 3),
                             Text(
                               '${(widget.session.totalVolume / 1000).toStringAsFixed(1)}t',
@@ -337,7 +337,7 @@ class _SessionTileState extends State<SessionTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(color: AppColors.bgDeep, height: 1),
+          const Divider(color: AppColors.bgDeep, height: 1),
           const SizedBox(height: 10),
           // Exercise list
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
@@ -409,7 +409,7 @@ class _SessionTileState extends State<SessionTile> {
                   label: const Text('DETALLE'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
-                    side: BorderSide(color: AppColors.border!),
+                    side: const BorderSide(color: AppColors.border),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     textStyle: GoogleFonts.montserrat(
                       fontSize: 11,
@@ -425,7 +425,7 @@ class _SessionTileState extends State<SessionTile> {
                 label: const Text('EXPORT'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent[200],
-                  side: BorderSide(color: AppColors.live!),
+                  side: const BorderSide(color: AppColors.live),
                   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   textStyle: GoogleFonts.montserrat(
                     fontSize: 11,

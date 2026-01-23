@@ -228,7 +228,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
                   shape: BoxShape.circle,
                   color: isPaused ? AppColors.goldAccent : (isCritical ? AppColors.live : AppColors.bgElevated),
                   border: Border.all(
-                    color: isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : AppColors.border!),
+                    color: isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : AppColors.border),
                     width: 2,
                   ),
                 ),
@@ -242,7 +242,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
                   value: progress.clamp(0.0, 1.0),
                   strokeWidth: 3,
                   backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation(isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : Colors.white)),
+                  valueColor: AlwaysStoppedAnimation(isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : Colors.white)),
                 ),
               ),
 
@@ -255,7 +255,7 @@ class _EmbeddedTimerBubbleState extends State<_EmbeddedTimerBubble> with SingleT
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12),
                   ),
                   if (isPaused)
-                    Icon(
+                    const Icon(
                       Icons.pause,
                       size: 10,
                       color: AppColors.warning,

@@ -19,7 +19,7 @@ class SymmetryRadar extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +125,7 @@ class SymmetryRadar extends ConsumerWidget {
     }
 
     // Prepare data for radar chart
-    final muscleGroups = kMuscleGroups;
+    const muscleGroups = kMuscleGroups;
     final values = muscleGroups.map((m) {
       return data.getNormalized(m);
     }).toList();
@@ -156,12 +156,12 @@ class SymmetryRadar extends ConsumerWidget {
             color: Colors.transparent,
             fontSize: 10,
           ),
-          tickBorderData: BorderSide(
-            color: AppColors.bgDeep!,
+          tickBorderData: const BorderSide(
+            color: AppColors.bgDeep,
             width: 1,
           ),
-          gridBorderData: BorderSide(
-            color: AppColors.bgDeep!,
+          gridBorderData: const BorderSide(
+            color: AppColors.bgDeep,
             width: 1,
           ),
           titleTextStyle: GoogleFonts.montserrat(
@@ -208,7 +208,7 @@ class SymmetryRadar extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.radar,
             color: AppColors.border,
             size: 48,
@@ -277,12 +277,12 @@ class SymmetryRadarCompact extends ConsumerWidget {
                     radarBorderData: const BorderSide(color: Colors.transparent),
                     tickCount: 2,
                     ticksTextStyle: const TextStyle(color: Colors.transparent),
-                    tickBorderData: BorderSide(
-                      color: AppColors.bgDeep!,
+                    tickBorderData: const BorderSide(
+                      color: AppColors.bgDeep,
                       width: 0.5,
                     ),
-                    gridBorderData: BorderSide(
-                      color: AppColors.bgDeep!,
+                    gridBorderData: const BorderSide(
+                      color: AppColors.bgDeep,
                       width: 0.5,
                     ),
                     getTitle: (_, __) => const RadarChartTitle(text: ''),

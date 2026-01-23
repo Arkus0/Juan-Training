@@ -129,7 +129,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        border: Border(top: BorderSide(color: AppColors.neonPrimary!, width: 2)),
+        border: const Border(top: BorderSide(color: AppColors.neonPrimary, width: 2)),
       ),
       child: SafeArea(
         child: Row(
@@ -155,7 +155,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     IconButton(
-                      icon: Icon(Icons.add_circle, color: AppColors.neonPrimary),
+                      icon: const Icon(Icons.add_circle, color: AppColors.neonPrimary),
                       onPressed: () {
                         widget.onDurationChange(widget.defaultRestSeconds + 10);
                       },

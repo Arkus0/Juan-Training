@@ -63,9 +63,9 @@ class _RoutineImportPreviewDialogState
             // Header
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.live,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -121,18 +121,18 @@ class _RoutineImportPreviewDialogState
                         fillColor: AppColors.bgElevated,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: AppColors.border!),
+                          borderSide: const BorderSide(color: AppColors.border),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: AppColors.border!),
+                          borderSide: const BorderSide(color: AppColors.border),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: AppColors.live!),
+                          borderSide: const BorderSide(color: AppColors.live),
                         ),
                         hintText: 'Nombre de la rutina',
-                        hintStyle: TextStyle(color: AppColors.textTertiary),
+                        hintStyle: const TextStyle(color: AppColors.textTertiary),
                       ),
                       onChanged: _updateName,
                     ),
@@ -166,9 +166,9 @@ class _RoutineImportPreviewDialogState
             // Actions
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.bgElevated,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
                 ),
@@ -180,7 +180,7 @@ class _RoutineImportPreviewDialogState
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
-                        side: BorderSide(color: AppColors.border!),
+                        side: const BorderSide(color: AppColors.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(
@@ -230,7 +230,7 @@ class _RoutineImportPreviewDialogState
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border!),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         children: [
@@ -279,7 +279,7 @@ class _RoutineImportPreviewDialogState
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.live?.withOpacity(0.3),
+                    color: AppColors.live.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -318,7 +318,7 @@ class _RoutineImportPreviewDialogState
           ),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               color: AppColors.textTertiary,
             ),
@@ -334,9 +334,9 @@ class _RoutineImportPreviewDialogState
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.bgElevated?.withOpacity(0.5),
+        color: AppColors.bgElevated.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,7 +346,7 @@ class _RoutineImportPreviewDialogState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.live?.withOpacity(0.5),
+                  color: AppColors.live.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -372,7 +372,7 @@ class _RoutineImportPreviewDialogState
               ),
               Text(
                 '${dia.ejercicios.length} ej.',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.textTertiary,
                   fontSize: 12,
                 ),
@@ -398,7 +398,7 @@ class _RoutineImportPreviewDialogState
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                    Icon(
+                    const Icon(
                       Icons.fitness_center,
                       size: 12,
                       color: AppColors.textTertiary,
@@ -407,7 +407,7 @@ class _RoutineImportPreviewDialogState
                     Expanded(
                       child: Text(
                         ejercicio.nombre,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
                         ),
@@ -416,7 +416,7 @@ class _RoutineImportPreviewDialogState
                     ),
                     Text(
                       '${ejercicio.series}x${ejercicio.repsRange}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.textTertiary,
                         fontSize: 11,
                       ),
@@ -430,7 +430,7 @@ class _RoutineImportPreviewDialogState
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '+${dia.ejercicios.length - 3} más',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.textTertiary,
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
@@ -516,9 +516,9 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
             // Header
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.live,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -554,7 +554,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                   children: [
                     Row(
                       children: [
-                        Text(
+                        const Text(
                           'Pega el JSON de la rutina:',
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
@@ -585,18 +585,18 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                           fillColor: AppColors.bgElevated,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border!),
+                            borderSide: const BorderSide(color: AppColors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border!),
+                            borderSide: const BorderSide(color: AppColors.border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.live!),
+                            borderSide: const BorderSide(color: AppColors.live),
                           ),
                           hintText: '{\n  "nombre": "...",\n  "dias": [...]\n}',
-                          hintStyle: TextStyle(color: AppColors.border),
+                          hintStyle: const TextStyle(color: AppColors.border),
                         ),
                       ),
                     ),
@@ -605,7 +605,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.live?.withOpacity(0.3),
+                          color: AppColors.live.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -634,9 +634,9 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
             // Actions
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.bgElevated,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
                 ),
@@ -648,7 +648,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
-                        side: BorderSide(color: AppColors.border!),
+                        side: const BorderSide(color: AppColors.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text(

@@ -180,7 +180,7 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
 
   /// Limpiar todos los filtros
   void clearFilters() {
-    state = PaginatedExercisesState();
+    state = const PaginatedExercisesState();
     _filteredExercises = _allExercises;
     _loadInitial();
   }

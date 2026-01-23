@@ -185,9 +185,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgElevated,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
@@ -245,9 +245,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.neonCyanSubtle?.withValues(alpha: 0.3),
+                  color: AppColors.neonCyanSubtle.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.success!.withValues(alpha: 0.5)),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -279,13 +279,13 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.live?.withValues(alpha: 0.3),
+                  color: AppColors.live.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.error!),
+                  border: Border.all(color: AppColors.error),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
+                    const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -444,7 +444,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border!),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,7 +472,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(Icons.format_quote, size: 16, color: AppColors.neonPrimary),
+          const Icon(Icons.format_quote, size: 16, color: AppColors.neonPrimary),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -521,10 +521,10 @@ class _ParsedExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgElevated : AppColors.live?.withValues(alpha: 0.2),
+        color: isValid ? AppColors.bgElevated : AppColors.live.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isValid ? AppColors.border! : AppColors.error!,
+          color: isValid ? AppColors.border : AppColors.error,
         ),
       ),
       child: Column(
@@ -591,7 +591,7 @@ class _ParsedExerciseCard extends StatelessWidget {
               // Botón cambiar ejercicio
               IconButton(
                 onPressed: onChangeExercise,
-                icon: Icon(
+                icon: const Icon(
                   Icons.swap_horiz,
                   color: AppColors.textSecondary,
                   size: 20,
@@ -603,7 +603,7 @@ class _ParsedExerciseCard extends StatelessWidget {
               // Botón eliminar
               IconButton(
                 onPressed: onRemove,
-                icon: Icon(
+                icon: const Icon(
                   Icons.close,
                   color: AppColors.neonPrimary,
                   size: 20,
@@ -666,14 +666,14 @@ class _ParsedExerciseCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.goldAccent?.withValues(alpha: 0.3),
+                color: AppColors.goldAccent.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.goldAccent!.withValues(alpha: 0.5)),
+                border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.5)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.link, size: 14, color: AppColors.warning),
+                  const Icon(Icons.link, size: 14, color: AppColors.warning),
                   const SizedBox(width: 4),
                   Text(
                     'Superserie',
@@ -706,9 +706,9 @@ class _ParsedExerciseCard extends StatelessWidget {
   }
 
   Color _getConfidenceColor(double confidence) {
-    if (confidence >= 0.8) return AppColors.neonCyan!;
+    if (confidence >= 0.8) return AppColors.neonCyan;
     if (confidence >= 0.6) return Colors.yellow[600]!;
-    return AppColors.warning!;
+    return AppColors.warning;
   }
 }
 
@@ -933,7 +933,7 @@ class _ModeToggleChip extends StatelessWidget {
           border: Border.all(
             color: isActive 
                 ? activeColor.withValues(alpha: 0.6) 
-                : AppColors.border!,
+                : AppColors.border,
           ),
         ),
         child: Row(

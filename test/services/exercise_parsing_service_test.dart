@@ -181,7 +181,7 @@ void main() {
     final service = ExerciseValidationService.instance;
 
     test('Debe validar ejercicio con valores normales', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         matchedId: 1,
         matchedName: 'Test',
@@ -197,7 +197,7 @@ void main() {
     });
 
     test('Debe rechazar series fuera de rango', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         matchedId: 1,
         series: 50, // Demasiadas series
@@ -211,7 +211,7 @@ void main() {
     });
 
     test('Debe rechazar reps fuera de rango', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         matchedId: 1,
         series: 4,
@@ -224,7 +224,7 @@ void main() {
     });
 
     test('Debe rechazar peso excesivo', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         matchedId: 1,
         series: 4,
@@ -238,7 +238,7 @@ void main() {
     });
 
     test('Debe advertir cuando no hay match de ejercicio', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         matchedId: null, // Sin match
         series: 4,
@@ -251,7 +251,7 @@ void main() {
     });
 
     test('autoCorrect debe corregir valores extremos', () {
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         series: 100, // Extremo
         repsRange: '10',
@@ -264,7 +264,7 @@ void main() {
 
     test('Debe detectar errores de parseo comunes', () {
       // Caso: reps parece ser peso (60 es múltiplo de 5, > 50)
-      final exercise = ParsedExercise(
+      const exercise = ParsedExercise(
         rawText: 'test',
         series: 4,
         repsRange: '60',

@@ -28,7 +28,7 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Sección Timer
-          _SectionHeader(title: 'TIMER DE DESCANSO'),
+          const _SectionHeader(title: 'TIMER DE DESCANSO'),
           const SizedBox(height: 8),
 
           _SettingsTile(
@@ -38,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.timerVibrationEnabled,
               onChanged: notifier.setTimerVibrationEnabled,
-              activeColor: Colors.redAccent[700],
+              activeThumbColor: Colors.redAccent[700],
             ),
           ),
 
@@ -49,7 +49,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.timerSoundEnabled,
               onChanged: notifier.setTimerSoundEnabled,
-              activeColor: Colors.redAccent[700],
+              activeThumbColor: Colors.redAccent[700],
             ),
           ),
 
@@ -94,7 +94,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sección Control de Música
-          _SectionHeader(title: 'CONTROL DE MÚSICA'),
+          const _SectionHeader(title: 'CONTROL DE MÚSICA'),
           const SizedBox(height: 8),
 
           const _MusicControlTile(),
@@ -114,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sección Entrada de Datos
-          _SectionHeader(title: 'ENTRADA DE DATOS'),
+          const _SectionHeader(title: 'ENTRADA DE DATOS'),
           const SizedBox(height: 8),
 
           _SettingsTile(
@@ -124,7 +124,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.useFocusedInputMode,
               onChanged: notifier.setUseFocusedInputMode,
-              activeColor: Colors.green[600],
+              activeThumbColor: Colors.green[600],
             ),
           ),
 
@@ -142,7 +142,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sección Superseries
-          _SectionHeader(title: 'SUPERSERIES'),
+          const _SectionHeader(title: 'SUPERSERIES'),
           const SizedBox(height: 8),
 
           _SettingsTile(
@@ -152,7 +152,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.showSupersetIndicator,
               onChanged: notifier.setShowSupersetIndicator,
-              activeColor: Colors.redAccent[700],
+              activeThumbColor: Colors.redAccent[700],
             ),
           ),
 
@@ -170,7 +170,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sección Rendimiento
-          _SectionHeader(title: 'RENDIMIENTO'),
+          const _SectionHeader(title: 'RENDIMIENTO'),
           const SizedBox(height: 8),
 
           _SettingsTile(
@@ -180,7 +180,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.performanceModeEnabled,
               onChanged: notifier.setPerformanceModeEnabled,
-              activeColor: Colors.green[600],
+              activeThumbColor: Colors.green[600],
             ),
           ),
 
@@ -192,7 +192,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Switch(
                 value: settings.reduceAnimations,
                 onChanged: notifier.setReduceAnimations,
-                activeColor: Colors.redAccent[700],
+                activeThumbColor: Colors.redAccent[700],
               ),
             ),
 
@@ -203,7 +203,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Switch(
                 value: settings.reduceVibrations,
                 onChanged: notifier.setReduceVibrations,
-                activeColor: Colors.redAccent[700],
+                activeThumbColor: Colors.redAccent[700],
               ),
             ),
           ],
@@ -224,7 +224,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Sección Almacenamiento
-          _SectionHeader(title: 'ALMACENAMIENTO'),
+          const _SectionHeader(title: 'ALMACENAMIENTO'),
           const SizedBox(height: 8),
 
           _StorageTile(),
@@ -232,10 +232,10 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Info de la app
-          _SectionHeader(title: 'INFORMACIÓN'),
+          const _SectionHeader(title: 'INFORMACIÓN'),
           const SizedBox(height: 8),
 
-          _SettingsTile(
+          const _SettingsTile(
             icon: Icons.info_outline,
             title: 'Juan Training',
             subtitle: 'Versión 1.0.0',
@@ -663,7 +663,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                 : Switch(
                     value: widget.isEnabled,
                     onChanged: _handleToggle,
-                    activeColor: Colors.redAccent[700],
+                    activeThumbColor: Colors.redAccent[700],
                   ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           ),
@@ -811,10 +811,10 @@ class _MusicControlTileState extends State<_MusicControlTile> {
               ),
             ),
             const SizedBox(height: 16),
-            _InstructionStep(number: '1', text: 'Abre Ajustes del teléfono'),
-            _InstructionStep(number: '2', text: 'Ve a Apps > Acceso especial'),
-            _InstructionStep(number: '3', text: 'Toca "Acceso a notificaciones"'),
-            _InstructionStep(number: '4', text: 'Activa "Juan Training"'),
+            const _InstructionStep(number: '1', text: 'Abre Ajustes del teléfono'),
+            const _InstructionStep(number: '2', text: 'Ve a Apps > Acceso especial'),
+            const _InstructionStep(number: '3', text: 'Toca "Acceso a notificaciones"'),
+            const _InstructionStep(number: '4', text: 'Activa "Juan Training"'),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),

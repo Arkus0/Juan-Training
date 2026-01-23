@@ -238,13 +238,13 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           color: _ModalColors.bgInput,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppColors.border!,
+                            color: AppColors.border,
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.history,
                               size: 16,
                               color: _ModalColors.textSecondary,
@@ -357,7 +357,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: BorderSide(color: AppColors.border!),
+                              side: const BorderSide(color: AppColors.border),
                             ),
                           ),
                           child: Text(
@@ -444,7 +444,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
           borderRadius: BorderRadius.circular(16),
           child: Center(
             child: isBackspace
-                ? Icon(
+                ? const Icon(
                     Icons.backspace_outlined,
                     color: _ModalColors.textPrimary,
                     size: 28,

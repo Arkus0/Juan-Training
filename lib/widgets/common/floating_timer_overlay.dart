@@ -27,7 +27,7 @@ class FloatingTimerOverlay extends ConsumerStatefulWidget {
 
 class _FloatingTimerOverlayState extends ConsumerState<FloatingTimerOverlay> {
   // Posición del widget flotante (offset desde esquina inferior derecha)
-  Offset _position = const Offset(16, 100);
+  final Offset _position = const Offset(16, 100);
 
   @override
   Widget build(BuildContext context) {
@@ -162,12 +162,12 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
             shape: BoxShape.circle,
             color: isPaused ? AppColors.goldAccent : (isCritical ? AppColors.live : AppColors.bgElevated),
             border: Border.all(
-              color: isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : AppColors.border!),
+              color: isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : AppColors.border),
               width: 3,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isCritical ? AppColors.live : Colors.black)!.withValues(alpha: 0.6),
+                color: (isCritical ? AppColors.live : Colors.black).withValues(alpha: 0.6),
                 blurRadius: 12,
                 spreadRadius: 2,
               ),
@@ -185,7 +185,7 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
                   strokeWidth: 3,
                   backgroundColor: AppColors.bgDeep,
                   valueColor: AlwaysStoppedAnimation(
-                    isPaused ? AppColors.warning! : (isCritical ? AppColors.neonPrimary! : Colors.white),
+                    isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : Colors.white),
                   ),
                 ),
               ),
@@ -202,7 +202,7 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
                     ),
                   ),
                   if (isPaused)
-                    Icon(
+                    const Icon(
                       Icons.pause,
                       size: 10,
                       color: AppColors.warning,

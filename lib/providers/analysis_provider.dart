@@ -80,7 +80,7 @@ final symmetryDataProvider = FutureProvider<SymmetryData>((ref) async {
   final volumes = await ref.watch(muscleVolumeProvider.future);
 
   if (volumes.isEmpty) {
-    return SymmetryData(
+    return const SymmetryData(
       volumes: {},
       maxVolume: 0,
       hasImbalance: false,

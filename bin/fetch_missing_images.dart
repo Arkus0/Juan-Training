@@ -23,7 +23,7 @@ Future<void> main(List<String> args) async {
     // try to fetch from API
     try {
       final infoUrl = 'https://wger.de/api/v2/exerciseinfo/$id/';
-      final resp = await http.get(Uri.parse(infoUrl)).timeout(Duration(seconds: 10));
+      final resp = await http.get(Uri.parse(infoUrl)).timeout(const Duration(seconds: 10));
       if (resp.statusCode != 200) {
         missing.add(id);
         continue;
@@ -39,7 +39,7 @@ Future<void> main(List<String> args) async {
         missing.add(id);
         continue;
       }
-      final imgResp = await http.get(Uri.parse(imgUrl)).timeout(Duration(seconds: 15));
+      final imgResp = await http.get(Uri.parse(imgUrl)).timeout(const Duration(seconds: 15));
       if (imgResp.statusCode != 200) {
         missing.add(id);
         continue;
@@ -58,7 +58,7 @@ Future<void> main(List<String> args) async {
       updated++;
       print('Fetched image for $id');
       // small delay to be polite
-      await Future.delayed(Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
       stderr.writeln('error for $id: $e');
       missing.add(id);
@@ -66,7 +66,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (updated > 0) {
-    await jsonFile.writeAsString(JsonEncoder.withIndent('  ').convert(list));
+    await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
     print('Wrote JSON; updated $updated entries');
   }
 

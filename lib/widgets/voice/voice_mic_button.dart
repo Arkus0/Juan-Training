@@ -195,7 +195,7 @@ class _PulsingDotState extends State<_PulsingDot>
             child: Container(
               width: widget.size * 0.6,
               height: widget.size * 0.6,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.neonPrimary,
               ),
@@ -234,12 +234,12 @@ class VoiceTranscriptPreview extends ConsumerWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.bgElevated?.withValues(alpha: 0.8),
+        color: AppColors.bgElevated.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: voiceState.isListening 
-              ? AppColors.error!.withValues(alpha: 0.5)
-              : AppColors.border!,
+              ? AppColors.error.withValues(alpha: 0.5)
+              : AppColors.border,
         ),
       ),
       child: Column(

@@ -40,7 +40,7 @@ Future<void> main() async {
     for (final lang in langs) {
       try {
         final url = 'https://wger.de/api/v2/exerciseinfo/$id/?language=$lang';
-        final resp = await http.get(Uri.parse(url)).timeout(Duration(seconds: 10));
+        final resp = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 200 && resp.body.isNotEmpty) {
           final data = jsonDecode(resp.body) as Map<String, dynamic>;
           final n = (data['name'] as String?)?.trim();
@@ -53,7 +53,7 @@ Future<void> main() async {
         stderr.writeln('Error fetching $id lang=$lang: $e');
       }
       // polite pause
-      await Future.delayed(Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 200));
     }
 
     if (foundName != null) {
@@ -64,7 +64,7 @@ Future<void> main() async {
   }
 
   if (updated > 0) {
-    await jsonFile.writeAsString(JsonEncoder.withIndent('  ').convert(list));
+    await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
     print('Wrote updated JSON, updated $updated names');
   } else {
     print('No names updated');

@@ -11,10 +11,10 @@
 /// - 75%: Vibración fuerte + toast de ánimo
 /// - 100%: Vibración + animación de celebración
 /// ============================================================================
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../utils/design_system.dart';
 
 /// Controlador de celebraciones de hitos
@@ -276,7 +276,7 @@ class _CompletionCelebrationDialogState
                     color: AppColors.success.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.emoji_events_rounded,
                     size: 64,
                     color: AppColors.success,
@@ -340,7 +340,7 @@ class PRCelebration extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.star_rounded,
             color: AppColors.celebration,
             size: 20,

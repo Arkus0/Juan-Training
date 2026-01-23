@@ -6,7 +6,6 @@ import 'package:logger/logger.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/sesion.dart';
 import 'package:juan_training/models/library_exercise.dart';
-import 'package:juan_training/models/analysis_models.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/providers/training_provider.dart';
 import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
@@ -79,7 +78,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       final overlay = Overlay.of(context);
       final entry = OverlayEntry(builder: (context) {
         return Container(
-          color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.4),
+          color: AppColors.neonPrimaryPressed.withValues(alpha: 0.4),
         );
       });
       overlay.insert(entry);
@@ -460,7 +459,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           children: [
             Row(
               children: [
-                Icon(Icons.mic, color: AppColors.neonPrimaryHover),
+                const Icon(Icons.mic, color: AppColors.neonPrimaryHover),
                 const SizedBox(width: 8),
                 Text(
                   '¿A qué día añadir?',
@@ -937,9 +936,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                   fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Nombre que motive miedo',
-                  hintStyle: GoogleFonts.montserrat(color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.5)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimaryPressed!)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimary!, width: 2)),
+                  hintStyle: GoogleFonts.montserrat(color: AppColors.neonPrimaryPressed.withValues(alpha: 0.5)),
+                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimaryPressed)),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimary, width: 2)),
                 ),
                 onChanged: (val) => notifier.updateName(val),
               ),
@@ -1063,7 +1062,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.black,
-          boxShadow: [BoxShadow(color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: AppColors.neonPrimaryPressed.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: ElevatedButton(
           onPressed: _saveRoutine,

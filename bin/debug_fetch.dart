@@ -7,7 +7,7 @@ Future<void> main(List<String> args) async {
     for (final lang in [4,2,1]) {
       final url = 'https://wger.de/api/v2/exerciseinfo/$id/?language=$lang';
       try {
-        final r = await http.get(Uri.parse(url)).timeout(Duration(seconds: 8));
+        final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
         print('ID $id lang=$lang status=${r.statusCode}');
         if (r.statusCode == 200) {
           try {
@@ -23,7 +23,7 @@ Future<void> main(List<String> args) async {
       } catch (e) {
         print('ID $id lang=$lang error: $e');
       }
-      await Future.delayed(Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 200));
     }
   }
 }

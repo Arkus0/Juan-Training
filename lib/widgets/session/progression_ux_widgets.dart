@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/progression_engine_models.dart';
+import '../../utils/design_system.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRESSION UX WIDGETS

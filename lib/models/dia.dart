@@ -41,7 +41,7 @@ class Dia {
   /// Creates a Dia from a JSON map (for import).
   /// Note: IDs will be regenerated with new UUIDs for imported routines.
   factory Dia.fromJson(Map<String, dynamic> json, {String? newId, Map<String, String>? supersetIdMap}) {
-    final uuid = const Uuid();
+    const uuid = Uuid();
     supersetIdMap ??= {};
 
     // Parse exercises with new instance IDs and mapped superset IDs

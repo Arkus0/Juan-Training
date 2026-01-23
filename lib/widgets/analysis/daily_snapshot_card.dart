@@ -35,10 +35,10 @@ class DailySnapshotCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            const Color(0xFF1E1E1E),
-            const Color(0xFF1A1A1A),
+            Color(0xFF1E1E1E),
+            Color(0xFF1A1A1A),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -247,11 +247,11 @@ class DailySnapshotCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.event_busy,
             color: AppColors.textTertiary,
             size: 32,

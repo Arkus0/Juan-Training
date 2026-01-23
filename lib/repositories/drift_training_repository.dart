@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
 import 'package:logger/logger.dart';
@@ -373,7 +372,7 @@ class DriftTrainingRepository implements ITrainingRepository {
     final visitedSetIds = <String>{};
 
     // Helper to avoid repeatedly appending the "_target" suffix when IDs already contain it
-    String _stripTargetSuffix(String id) {
+    String stripTargetSuffix(String id) {
       const suffix = '_target';
       if (id.endsWith(suffix)) return id.substring(0, id.length - suffix.length);
       return id;
@@ -383,7 +382,7 @@ class DriftTrainingRepository implements ITrainingRepository {
       for (var i = 0; i < list.length; i++) {
         final ex = list[i];
         // Normalize base ID to strip any existing suffix before applying target marker
-        final baseExId = _stripTargetSuffix(ex.id);
+        final baseExId = stripTargetSuffix(ex.id);
         final rowId = isTarget ? '${baseExId}_target' : baseExId;
         visitedExerciseIds.add(rowId);
 
@@ -404,7 +403,7 @@ class DriftTrainingRepository implements ITrainingRepository {
         for (var j = 0; j < ex.logs.length; j++) {
           final log = ex.logs[j];
           // Normalize set IDs as well to prevent repeated suffix growth
-          final baseSetId = _stripTargetSuffix(log.id);
+          final baseSetId = stripTargetSuffix(log.id);
           final setId = isTarget ? '${baseSetId}_target' : baseSetId;
           visitedSetIds.add(setId);
 

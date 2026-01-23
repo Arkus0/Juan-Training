@@ -1,6 +1,5 @@
 import '../models/progression_type.dart';
 import '../models/progression_engine_models.dart';
-import '../models/serie_log.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRESSION CONTROLLER v3
@@ -944,49 +943,49 @@ class ProgressionController {
   
   /// Obtiene todas las reglas de transición (para documentación/UI)
   static List<TransitionRule> get allTransitionRules => [
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.calibrating,
       to: ControllerState.progressing,
       condition: 'sessionHistory.length >= 2',
       userExplanation: 'Después de 2 sesiones, el sistema tiene datos suficientes.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.progressing,
       to: ControllerState.confirming,
       condition: 'consecutiveSuccesses == 1 && confirmationSessions > 1',
       userExplanation: '1 sesión exitosa. Repite para confirmar subida.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.confirming,
       to: ControllerState.progressing,
       condition: 'consecutiveSuccesses >= confirmationSessions',
       userExplanation: 'Confirmado. Subes peso y vuelves a progresión normal.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.confirming,
       to: ControllerState.progressing,
       condition: 'consecutiveFailures > 0',
       userExplanation: 'Confirmación fallida. Vuelves a intentar.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.progressing,
       to: ControllerState.plateau,
       condition: 'consecutiveFailures >= plateauThreshold',
       userExplanation: 'Varias sesiones difíciles. Considera un deload.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.plateau,
       to: ControllerState.deloading,
       condition: 'automático',
       userExplanation: 'Iniciando fase de deload para recuperar.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.deloading,
       to: ControllerState.progressing,
       condition: 'consecutiveSuccesses >= 1',
       userExplanation: 'Deload completado. Vuelves a progresar.',
     ),
-    TransitionRule(
+    const TransitionRule(
       from: ControllerState.progressing,
       to: ControllerState.fatigued,
       condition: 'averageRpe >= fatigueRpeThreshold',

@@ -88,7 +88,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         backgroundColor: AppColors.bgElevated,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: BorderSide(color: AppColors.border),
+          side: const BorderSide(color: AppColors.border),
         ),
         title: Text(
           '¿TERMINAR SESIÓN?',
@@ -302,7 +302,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                   borderRadius: BorderRadius.circular(AppRadius.full),
                   side: progress.isComplete
                       ? BorderSide.none
-                      : BorderSide(color: AppColors.border),
+                      : const BorderSide(color: AppColors.border),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
@@ -479,10 +479,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       },
       onUseSuggested: () {
         // El usuario acepta la sugerencia - actualizar el peso
+        // 🎯 FIX: Skip tolerance check to prevent infinite validation loop
         ref.read(trainingSessionProvider.notifier).updateLog(
           data.exerciseIndex!,
           data.setIndex!,
           peso: data.suggestedWeight,
+          skipToleranceCheck: true,
         );
       },
     );
@@ -504,7 +506,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.note_add, color: AppColors.textPrimary, size: 20),
+              const Icon(Icons.note_add, color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -536,7 +538,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.textPrimary, size: 20),
+              const Icon(Icons.check_circle, color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Text(
                 '¡Serie completada!',

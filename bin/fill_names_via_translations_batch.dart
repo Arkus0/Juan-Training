@@ -16,7 +16,7 @@ Future<String?> _fetchNameViaTranslations(int id) async {
   const fallbackLang = 2; // English
   try {
     final infoUrl = 'https://wger.de/api/v2/exerciseinfo/$id/';
-    final infoResp = await http.get(Uri.parse(infoUrl)).timeout(Duration(seconds: 8));
+    final infoResp = await http.get(Uri.parse(infoUrl)).timeout(const Duration(seconds: 8));
     if (infoResp.statusCode != 200) return null;
     final infoJson = jsonDecode(infoResp.body) as Map<String, dynamic>;
     final direct = (infoJson['name'] as String?)?.trim();
@@ -44,7 +44,7 @@ Future<String?> _fetchNameViaTranslations(int id) async {
 
     if (transId != null) {
       final exUrl = 'https://wger.de/api/v2/exercise/$transId/';
-      final exResp = await http.get(Uri.parse(exUrl)).timeout(Duration(seconds: 8));
+      final exResp = await http.get(Uri.parse(exUrl)).timeout(const Duration(seconds: 8));
       if (exResp.statusCode == 200 && exResp.body.isNotEmpty) {
         final exJson = jsonDecode(exResp.body) as Map<String, dynamic>;
         final exName = (exJson['name'] as String?)?.trim();
@@ -53,7 +53,7 @@ Future<String?> _fetchNameViaTranslations(int id) async {
     }
 
     // try /exercise/{id}/ as last resort
-    final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(Duration(seconds: 8));
+    final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(const Duration(seconds: 8));
     if (exResp2.statusCode == 200 && exResp2.body.isNotEmpty) {
       final exJson2 = jsonDecode(exResp2.body) as Map<String, dynamic>;
       final exName2 = (exJson2['name'] as String?)?.trim();
@@ -66,7 +66,7 @@ Future<String?> _fetchNameViaTranslations(int id) async {
 }
 
 Future<void> main(List<String> args) async {
-  final batchSize = args.length > 0 ? int.tryParse(args[0]) ?? 50 : 50;
+  final batchSize = args.isNotEmpty ? int.tryParse(args[0]) ?? 50 : 50;
   final jsonFile = File('assets/data/exercises.json');
   if (!await jsonFile.exists()) {
     stderr.writeln('assets/data/exercises.json not found');
@@ -103,11 +103,11 @@ Future<void> main(List<String> args) async {
       } else {
         print('No name for $id');
       }
-      await Future.delayed(Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 150));
     }
 
     if (updatedThisBatch > 0) {
-      await jsonFile.writeAsString(JsonEncoder.withIndent('  ').convert(list));
+      await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
       print('Wrote JSON; updated $updatedThisBatch names in this batch');
     } else {
       print('No updates in this batch');

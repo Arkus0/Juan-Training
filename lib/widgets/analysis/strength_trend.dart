@@ -91,7 +91,7 @@ class StrengthTrend extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +161,7 @@ class StrengthTrend extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF252525),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -174,7 +174,7 @@ class StrengthTrend extends ConsumerWidget {
             'Selecciona ejercicio',
             style: _TrendStyles.dropdownHint,
           ),
-          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.textTertiary),
+          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textTertiary),
           dropdownColor: const Color(0xFF252525),
           isExpanded: true,
           items: exerciseNames.map((name) {
@@ -238,8 +238,8 @@ class StrengthTrend extends ConsumerWidget {
                 drawVerticalLine: false,
                 horizontalInterval: (maxY - minY) / 4,
                 getDrawingHorizontalLine: (value) {
-                  return FlLine(
-                    color: AppColors.bgElevated!,
+                  return const FlLine(
+                    color: AppColors.bgElevated,
                     strokeWidth: 1,
                   );
                 },
@@ -415,7 +415,7 @@ class StrengthTrend extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.show_chart,
             color: AppColors.border,
             size: 40,

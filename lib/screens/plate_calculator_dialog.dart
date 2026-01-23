@@ -254,8 +254,11 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
     else { height = 36; color = Colors.grey; }
 
     String label;
-    if ((weight % 1) == 0) label = '${weight.toInt()}kg';
-    else label = '${weight}kg';
+    if ((weight % 1) == 0) {
+      label = '${weight.toInt()}kg';
+    } else {
+      label = '${weight}kg';
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,

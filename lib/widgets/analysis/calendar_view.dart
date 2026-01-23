@@ -53,7 +53,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: TableCalendar(
         firstDay: DateTime(2020),
@@ -132,7 +132,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           formatButtonVisible: true,
           formatButtonShowsNext: false,
           formatButtonDecoration: BoxDecoration(
-            border: Border.all(color: AppColors.border!),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(8),
           ),
           formatButtonTextStyle: GoogleFonts.montserrat(
@@ -144,8 +144,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
-          leftChevronIcon: Icon(Icons.chevron_left, color: AppColors.textSecondary),
-          rightChevronIcon: Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          leftChevronIcon: const Icon(Icons.chevron_left, color: AppColors.textSecondary),
+          rightChevronIcon: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: GoogleFonts.montserrat(
@@ -173,7 +173,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             fontSize: 14,
           ),
           // Today
-          todayDecoration: BoxDecoration(
+          todayDecoration: const BoxDecoration(
             color: AppColors.bgDeep,
             shape: BoxShape.circle,
           ),

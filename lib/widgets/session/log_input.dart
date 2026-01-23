@@ -388,12 +388,12 @@ class _LogInputState extends State<LogInput> {
                   hintText: hasGhost ? widget.ghostValue : null,
                   hintStyle: widget.isSuggestion
                       ? _InputStyles.ghostTextSuggestion.copyWith(
-                          color: AppColors.neonCyan?.withValues(alpha: 0.6),
+                          color: AppColors.neonCyan.withValues(alpha: 0.6),
                         )
                       : _InputStyles.ghostText,
                   // Suffix si existe
                   suffixText: widget.suffix,
-                  suffixStyle: TextStyle(
+                  suffixStyle: const TextStyle(
                     color: AppColors.textTertiary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -401,16 +401,16 @@ class _LogInputState extends State<LogInput> {
                   // Borders
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppColors.bgDeep!),
+                    borderSide: const BorderSide(color: AppColors.bgDeep),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppColors.bgDeep!),
+                    borderSide: const BorderSide(color: AppColors.bgDeep),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide:
-                        BorderSide(color: AppColors.neonPrimary!, width: 2),
+                        const BorderSide(color: AppColors.neonPrimary, width: 2),
                   ),
                 ),
                 inputFormatters: [
@@ -436,7 +436,7 @@ class _LogInputState extends State<LogInput> {
 
               // Indicador de swipe (pequeñas flechas) - solo cuando tiene focus
               if (_hasFocus)
-                Positioned(
+                const Positioned(
                   right: 2,
                   top: 2,
                   bottom: 2,
@@ -461,8 +461,8 @@ class _LogInputState extends State<LogInput> {
                         const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                     decoration: BoxDecoration(
                       color: widget.isSuggestion
-                          ? AppColors.neonCyanSubtle?.withValues(alpha: 0.5)
-                          : AppColors.bgDeep?.withValues(alpha: 0.7),
+                          ? AppColors.neonCyanSubtle.withValues(alpha: 0.5)
+                          : AppColors.bgDeep.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(

@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:share_plus/share_plus.dart';
 import '../utils/design_system.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
@@ -146,10 +144,10 @@ class _BitacoraTab extends ConsumerWidget {
       physics: const BouncingScrollPhysics(),
       slivers: [
         // Streak Counter
-        SliverToBoxAdapter(
+        const SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: const StreakCounter(),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: StreakCounter(),
           ),
         ),
 
@@ -213,27 +211,27 @@ class _LaboratorioTab extends ConsumerWidget {
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
-      children: [
+      children: const [
         // Recovery Monitor
-        const RecoveryMonitor(),
+        RecoveryMonitor(),
 
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         // Symmetry Radar
-        const SymmetryRadar(),
+        SymmetryRadar(),
 
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         // Hall of Fame (PRs)
-        const HallOfFame(),
+        HallOfFame(),
 
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
         // Strength Trend
-        const StrengthTrend(),
+        StrengthTrend(),
 
         // Bottom padding for nav bar
-        const SizedBox(height: 100),
+        SizedBox(height: 100),
       ],
     );
   }

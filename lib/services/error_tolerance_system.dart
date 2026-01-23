@@ -148,7 +148,7 @@ class ErrorToleranceRules {
     
     // Si es la última serie y las anteriores fueron buenas, es fatiga normal
     if (setNumber == totalSets && _averageReps(previousSetsReps) >= targetReps) {
-      return ToleranceResult(
+      return const ToleranceResult(
         isValid: true,
         userMessage: null, // Silencio - es normal
         severity: ToleranceSeverity.none,
@@ -158,7 +158,7 @@ class ErrorToleranceRules {
     
     // Si falló por mucho (< 50% de objetivo), probablemente hay un problema
     if (actualReps < targetReps * 0.5) {
-      return ToleranceResult(
+      return const ToleranceResult(
         isValid: true,
         userMessage: '¿Pasó algo? No te preocupes, continúa.',
         severity: ToleranceSeverity.low,
@@ -167,7 +167,7 @@ class ErrorToleranceRules {
     }
     
     // Fallo normal - no decir nada negativo
-    return ToleranceResult(
+    return const ToleranceResult(
       isValid: true,
       userMessage: null, // Silencio = normalizado
       severity: ToleranceSeverity.none,
@@ -195,7 +195,7 @@ class ErrorToleranceRules {
   }) {
     // Límites por categoría (valores razonables máximos)
     final maxReasonable = _getMaxReasonableWeight(category);
-    final minReasonable = 0.0;
+    const minReasonable = 0.0;
     
     // Cambio máximo permitido entre sesiones (%)
     const maxChangePercent = 0.30; // 30%
@@ -281,7 +281,7 @@ class ErrorToleranceRules {
       return SessionGapResult(
         adjustedWeight: suggestedWeight,
         adjustedState: ControllerState.progressing,
-        message: 'Han pasado ${daysSinceLastSession} días. Sugerimos ${_fmt(suggestedWeight)}kg para retomar.',
+        message: 'Han pasado $daysSinceLastSession días. Sugerimos ${_fmt(suggestedWeight)}kg para retomar.',
         requiresRecalibration: false,
         isReductionSuggested: true,
         originalWeight: lastWeight,
@@ -325,7 +325,7 @@ class ErrorToleranceRules {
     
     // Si completó >= 80%, no es un día malo
     if (completionRate >= 0.80) {
-      return BadDayResult(
+      return const BadDayResult(
         isBadDay: false,
         affectsProgression: true,
       );
@@ -350,7 +350,7 @@ class ErrorToleranceRules {
       }
       
       // Día malo aislado - NO afecta
-      return BadDayResult(
+      return const BadDayResult(
         isBadDay: true,
         affectsProgression: false,
         message: 'Día difícil. No afecta tu progreso.',
@@ -358,7 +358,7 @@ class ErrorToleranceRules {
     }
     
     // < 50% - algo pasó, pero no castigar
-    return BadDayResult(
+    return const BadDayResult(
       isBadDay: true,
       affectsProgression: false,
       message: 'Todos tenemos días así. La próxima irá mejor.',
@@ -416,7 +416,7 @@ class ErrorToleranceRules {
     
     if (allSame && recentSessions.length >= 5) {
       // No decir nada, pero ajustar internamente
-      return SuspiciousPerformanceResult(
+      return const SuspiciousPerformanceResult(
         isSuspicious: true,
         suspicionType: SuspicionType.tooConsistent,
         message: null, // Silencio - no acusar
@@ -453,7 +453,7 @@ class ErrorToleranceRules {
     
     // Usuario aceptó sugerencia
     if (difference.abs() < 0.1) {
-      return ManualOverrideResult(
+      return const ManualOverrideResult(
         accepted: true,
         shouldRemember: false,
       );
@@ -647,7 +647,7 @@ class RecoverySystem {
     
     if (consecutiveBadSessions == 1) {
       // 1 sesión mala: Solo mensaje de ánimo
-      return RecoveryPlan(
+      return const RecoveryPlan(
         action: RecoveryAction.encourage,
         message: 'La próxima irá mejor.',
         weightAdjustment: 0,
@@ -656,7 +656,7 @@ class RecoverySystem {
     
     if (consecutiveBadSessions == 2) {
       // 2 sesiones malas: Sugerir mantener (no forzar)
-      return RecoveryPlan(
+      return const RecoveryPlan(
         action: RecoveryAction.suggestMaintain,
         message: 'Considera repetir este peso una vez más.',
         weightAdjustment: 0,
@@ -679,7 +679,7 @@ class RecoverySystem {
     required double lastWeight,
   }) {
     if (daysAbsent < 14) {
-      return RecoveryPlan(
+      return const RecoveryPlan(
         action: RecoveryAction.welcomeBack,
         message: '¡De vuelta! Continuamos donde lo dejaste.',
         weightAdjustment: 0,

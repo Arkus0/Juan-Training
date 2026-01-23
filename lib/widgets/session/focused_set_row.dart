@@ -389,7 +389,7 @@ class _SetNumberBadge extends StatelessWidget {
     String label = '${index + 1}';
 
     if (isWarmup) {
-      bgColor = AppColors.info!;
+      bgColor = AppColors.info;
       label = 'W';
     } else if (isDropset) {
       bgColor = Colors.purple[700]!;

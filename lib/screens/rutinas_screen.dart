@@ -15,7 +15,7 @@ import '../widgets/routine_import_preview_dialog.dart';
 import '../utils/design_system.dart';
 
 class RutinasScreen extends ConsumerWidget {
-  const RutinasScreen({Key? key}) : super(key: key);
+  const RutinasScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -245,11 +245,10 @@ class _RutinaTile extends StatelessWidget {
   final VoidCallback onDuplicate; // 🆕
 
   const _RutinaTile({
-    Key? key,
     required this.rutina,
     required this.onTap,
     required this.onDuplicate,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +336,7 @@ class _RutinaTile extends StatelessWidget {
                     ),
                   ),
                   // 🎯 REDISEÑO: Icono más sutil
-                  Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                  const Icon(Icons.chevron_right, color: AppColors.textTertiary),
                 ],
               ),
               const SizedBox(height: 12),
@@ -376,7 +375,7 @@ class _RutinaTile extends StatelessWidget {
     
     try {
       // Capturar el widget de la rutina
-      final Uint8List? imageBytes = await screenshotController.captureFromWidget(
+      final Uint8List imageBytes = await screenshotController.captureFromWidget(
         MediaQuery(
           data: const MediaQueryData(),
           child: Material(
@@ -480,19 +479,17 @@ class _RutinaTile extends StatelessWidget {
       
       if (context.mounted) Navigator.pop(context); // Cerrar loading
       
-      if (imageBytes != null) {
-        // Guardar imagen temporalmente
-        final tempDir = await getTemporaryDirectory();
-        final file = File('${tempDir.path}/rutina_${rutina.id}.png');
-        await file.writeAsBytes(imageBytes);
-        
-        // Compartir
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: '💪 Mi rutina: ${rutina.nombre}',
-        );
-      }
-    } catch (e) {
+      // Guardar imagen temporalmente
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/rutina_${rutina.id}.png');
+      await file.writeAsBytes(imageBytes);
+      
+      // Compartir
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: '💪 Mi rutina: ${rutina.nombre}',
+      );
+        } catch (e) {
       if (context.mounted) {
         Navigator.pop(context); // Cerrar loading
         ScaffoldMessenger.of(context).showSnackBar(

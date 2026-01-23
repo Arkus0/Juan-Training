@@ -12,7 +12,7 @@ Future<void> main(List<String> args) async {
     print('\n--- ID $id ---');
     try {
       final infoUrl = 'https://wger.de/api/v2/exerciseinfo/$id/';
-      final infoResp = await http.get(Uri.parse(infoUrl)).timeout(Duration(seconds: 8));
+      final infoResp = await http.get(Uri.parse(infoUrl)).timeout(const Duration(seconds: 8));
       if (infoResp.statusCode != 200) {
         print('exerciseinfo $id -> status ${infoResp.statusCode}');
         continue;
@@ -58,7 +58,7 @@ Future<void> main(List<String> args) async {
       if (chosenTransId != null) {
         final exUrl = 'https://wger.de/api/v2/exercise/$chosenTransId/';
         try {
-          final exResp = await http.get(Uri.parse(exUrl)).timeout(Duration(seconds: 8));
+          final exResp = await http.get(Uri.parse(exUrl)).timeout(const Duration(seconds: 8));
           if (exResp.statusCode == 200 && exResp.body.isNotEmpty) {
             final exJson = jsonDecode(exResp.body) as Map<String, dynamic>;
             final exName = (exJson['name'] as String?)?.trim();
@@ -76,7 +76,7 @@ Future<void> main(List<String> args) async {
 
       // As a last attempt, try /exercise/$id/ directly
       try {
-        final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(Duration(seconds: 8));
+        final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(const Duration(seconds: 8));
         if (exResp2.statusCode == 200 && exResp2.body.isNotEmpty) {
           final exJson2 = jsonDecode(exResp2.body) as Map<String, dynamic>;
           final exName2 = (exJson2['name'] as String?)?.trim();
@@ -95,6 +95,6 @@ Future<void> main(List<String> args) async {
     } catch (e) {
       print('Error processing $id: $e');
     }
-    await Future.delayed(Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 }

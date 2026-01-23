@@ -90,8 +90,8 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shimmer = ShimmerController.of(context);
-    final base = baseColor ?? AppColors.bgElevated!;
-    final highlight = highlightColor ?? AppColors.bgDeep!;
+    final base = baseColor ?? AppColors.bgElevated;
+    final highlight = highlightColor ?? AppColors.bgDeep;
 
     // Sin animación en modo performance
     if (PerformanceMode.instance.reduceAnimations || shimmer == null) {
@@ -148,8 +148,8 @@ class SkeletonCircle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shimmer = ShimmerController.of(context);
-    final base = baseColor ?? AppColors.bgElevated!;
-    final highlight = highlightColor ?? AppColors.bgDeep!;
+    final base = baseColor ?? AppColors.bgElevated;
+    final highlight = highlightColor ?? AppColors.bgDeep;
 
     // Sin animación en modo performance
     if (PerformanceMode.instance.reduceAnimations || shimmer == null) {
@@ -208,9 +208,9 @@ class ExerciseListItemSkeleton extends StatelessWidget {
     return Container(
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: AppColors.bgElevated!),
+          bottom: BorderSide(color: AppColors.bgElevated),
         ),
       ),
       child: Row(
@@ -223,7 +223,7 @@ class ExerciseListItemSkeleton extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           // Texto skeleton
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -233,9 +233,9 @@ class ExerciseListItemSkeleton extends StatelessWidget {
                   height: 14,
                   borderRadius: 4,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
-                  children: const [
+                  children: [
                     SkeletonBox(width: 60, height: 18, borderRadius: 4),
                     SizedBox(width: 6),
                     SkeletonBox(width: 50, height: 18, borderRadius: 4),
@@ -293,20 +293,20 @@ class ExerciseCardSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
+          const Row(
             children: [
-              const SkeletonCircle(size: 40),
-              const SizedBox(width: 12),
+              SkeletonCircle(size: 40),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     SkeletonBox(width: 120, height: 16, borderRadius: 4),
                     SizedBox(height: 4),
                     SkeletonBox(width: 80, height: 12, borderRadius: 4),
@@ -319,10 +319,10 @@ class ExerciseCardSkeleton extends StatelessWidget {
           // Sets skeleton
           ...List.generate(
             3,
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+            (index) => const Padding(
+              padding: EdgeInsets.only(bottom: 8),
               child: Row(
-                children: const [
+                children: [
                   SkeletonCircle(size: 28),
                   SizedBox(width: 8),
                   SkeletonBox(width: 52, height: 40, borderRadius: 6),
@@ -384,25 +384,25 @@ class RutinaCardSkeleton extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgElevated!),
+        border: Border.all(color: AppColors.bgElevated),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: SkeletonBox(width: 150, height: 20, borderRadius: 4),
               ),
-              const SizedBox(width: 16),
-              const SkeletonBox(width: 60, height: 24, borderRadius: 12),
+              SizedBox(width: 16),
+              SkeletonBox(width: 60, height: 24, borderRadius: 12),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: const [
+            children: [
               SkeletonBox(width: 80, height: 28, borderRadius: 14),
               SkeletonBox(width: 100, height: 28, borderRadius: 14),
               SkeletonBox(width: 70, height: 28, borderRadius: 14),
@@ -453,22 +453,22 @@ class HistoryItemSkeleton extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: const Row(
         children: [
           // Fecha
           Column(
-            children: const [
+            children: [
               SkeletonBox(width: 40, height: 32, borderRadius: 4),
               SizedBox(height: 4),
               SkeletonBox(width: 30, height: 14, borderRadius: 4),
             ],
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 SkeletonBox(width: 120, height: 16, borderRadius: 4),
                 SizedBox(height: 8),
                 SkeletonBox(width: 200, height: 12, borderRadius: 4),
@@ -478,7 +478,7 @@ class HistoryItemSkeleton extends StatelessWidget {
           // Stats
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
+            children: [
               SkeletonBox(width: 50, height: 16, borderRadius: 4),
               SizedBox(height: 4),
               SkeletonBox(width: 40, height: 12, borderRadius: 4),

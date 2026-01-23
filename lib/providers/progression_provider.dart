@@ -399,7 +399,7 @@ final exerciseEmpatheticFeedbackProvider = Provider.family<EmpatheticFeedbackRes
     if (decision != null) {
       if (decision.action == ProgressionAction.decreaseWeight ||
           decision.action == ProgressionAction.decreaseReps) {
-        return EmpatheticFeedbackResult(
+        return const EmpatheticFeedbackResult(
           type: DifficultDayType.deloadRecommended,
           shouldShow: true,
         );
@@ -412,7 +412,7 @@ final exerciseEmpatheticFeedbackProvider = Provider.family<EmpatheticFeedbackRes
     ).length;
     
     if (failedSets >= 2) {
-      return EmpatheticFeedbackResult(
+      return const EmpatheticFeedbackResult(
         type: DifficultDayType.underperformed,
         customMessage: 'Hoy está siendo difícil',
         shouldShow: true,
@@ -434,7 +434,7 @@ final exerciseEmpatheticFeedbackProvider = Provider.family<EmpatheticFeedbackRes
     if (decision?.action == ProgressionAction.maintain &&
         (decision?.reason.contains('plateau') == true ||
          decision?.reason.contains('estancado') == true)) {
-      return EmpatheticFeedbackResult(
+      return const EmpatheticFeedbackResult(
         type: DifficultDayType.plateau,
         shouldShow: true,
       );

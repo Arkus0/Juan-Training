@@ -122,6 +122,6 @@ Future<void> main() async {
   if (!await outFile.parent.exists()) {
     await outFile.parent.create(recursive: true);
   }
-  await outFile.writeAsString(JsonEncoder.withIndent('  ').convert(outJson));
+  await outFile.writeAsString(const JsonEncoder.withIndent('  ').convert(outJson));
   print('Wrote ${outJson.length} exercises to ${outFile.path}');
 }

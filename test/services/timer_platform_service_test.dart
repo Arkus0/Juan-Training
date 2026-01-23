@@ -25,7 +25,7 @@ void main() {
     });
 
     test('remainingSeconds debe retornar totalSeconds cuando está pausado', () {
-      final state = TimerPlatformState(
+      const state = TimerPlatformState(
         isActive: true,
         isPaused: true,
         totalSeconds: 45,
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('copyWith debe preservar valores no modificados', () {
-      final original = TimerPlatformState(
+      const original = TimerPlatformState(
         isActive: true,
         isPaused: false,
         totalSeconds: 90,

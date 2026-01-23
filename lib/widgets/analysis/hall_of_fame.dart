@@ -20,7 +20,7 @@ class HallOfFame extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bgDeep!),
+        border: Border.all(color: AppColors.bgDeep),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +115,7 @@ class HallOfFame extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.emoji_events_outlined,
             color: AppColors.border,
             size: 40,

@@ -300,7 +300,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
                                 button: true,
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.calculate_outlined,
                                     size: 20,
                                     color: AppColors.textSecondary,
@@ -652,12 +652,12 @@ class _TagsRow extends StatelessWidget {
               icon: Icons.warning_amber_rounded,
             ),
           if (log.isDropset)
-            _Tag(
+            const _Tag(
               text: 'DROP',
               color: AppColors.neonPrimary,
             ),
           if (log.isWarmup)
-            _Tag(
+            const _Tag(
               text: 'WARM',
               color: AppColors.info,
             ),

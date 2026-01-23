@@ -88,16 +88,16 @@ Future<void> main(List<String> args) async {
     }
 
     print('Retrying $id...');
-    final found = await _fetchWithRetries(id, retries: 4, timeout: Duration(seconds: 20));
+    final found = await _fetchWithRetries(id, retries: 4, timeout: const Duration(seconds: 20));
     if (found != null && found.isNotEmpty) {
       entry['name'] = found;
       updated++;
       print('Updated $id -> $found');
-      await jsonFile.writeAsString(JsonEncoder.withIndent('  ').convert(list));
+      await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
     } else {
       print('Still no name for $id');
     }
-    await Future.delayed(Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 
   print('\nRetry run finished. Updated: $updated');

@@ -182,9 +182,9 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgElevated,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -205,7 +205,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.document_scanner, color: AppColors.neonPrimary, size: 28),
+                const Icon(Icons.document_scanner, color: AppColors.neonPrimary, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -246,7 +246,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
+            const CircularProgressIndicator(
               color: AppColors.neonPrimary,
               strokeWidth: 3,
             ),
@@ -277,7 +277,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 48),
+            const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 48),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -339,7 +339,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.neonCyan, size: 18),
+              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 18),
               const SizedBox(width: 8),
               Text(
                 '${_candidates.length} ejercicio${_candidates.length == 1 ? '' : 's'} detectado${_candidates.length == 1 ? '' : 's'}',
@@ -373,7 +373,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.neonPrimary!),
+                    side: const BorderSide(color: AppColors.neonPrimary),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
@@ -606,9 +606,9 @@ class _SourceSelectorSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgElevated,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

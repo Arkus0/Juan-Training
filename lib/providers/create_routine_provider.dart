@@ -101,7 +101,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
   void duplicateDay(int dayIndex) {
     final originalDay = state.dias[dayIndex];
-    final uuid = const Uuid();
+    const uuid = Uuid();
 
     // Map to track oldSupersetId -> newSupersetId for this duplication
     final supersetMap = <String, String>{};

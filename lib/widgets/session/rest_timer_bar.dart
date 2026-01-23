@@ -446,10 +446,10 @@ class _InactiveTimerBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgElevated,
         border: Border(
-          top: BorderSide(color: AppColors.bgDeep!, width: 1),
+          top: BorderSide(color: AppColors.bgDeep, width: 1),
         ),
       ),
       child: SafeArea(
@@ -504,7 +504,7 @@ class _InactiveTimerBar extends StatelessWidget {
                               },
                             ),
                           )
-                        : Tooltip(
+                        : const Tooltip(
                             message: 'Descartar sesión',
                             child: _CircleButton(
                               icon: Icons.delete_outline,
@@ -574,17 +574,17 @@ class _ActiveTimerBar extends StatelessWidget {
         child: Container(
           height: 64,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.bgElevated!,
+                AppColors.bgElevated,
                 AppColors.bgDeep,
               ],
             ),
             border: Border(
               top: BorderSide(
-                color: isCritical ? AppColors.goldAccent! : AppColors.border!,
+                color: isCritical ? AppColors.goldAccent : AppColors.border,
                 width: isCritical ? 2 : 1,
               ),
             ),
@@ -648,7 +648,7 @@ class _ActiveTimerBar extends StatelessWidget {
                               },
                             ),
                           )
-                        : Tooltip(
+                        : const Tooltip(
                             message: 'Descartar sesión',
                             child: _CircleButton(
                               icon: Icons.delete_outline,
@@ -813,8 +813,8 @@ class _CircularTimerProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isPaused
-        ? AppColors.warning!
-        : (isCritical ? AppColors.goldAccent! : AppColors.textPrimary);
+        ? AppColors.warning
+        : (isCritical ? AppColors.goldAccent : AppColors.textPrimary);
 
     return SizedBox(
       width: 44,
@@ -823,7 +823,7 @@ class _CircularTimerProgress extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           // Fondo del círculo
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             value: 1.0,
             strokeWidth: 3,
             backgroundColor: AppColors.bgDeep,

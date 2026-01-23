@@ -5,6 +5,7 @@
 ///
 /// Author: Senior Flutter Architect
 /// Date: 2026-01-22
+library;
 
 import 'dart:async';
 import 'dart:developer' as developer;

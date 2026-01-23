@@ -285,9 +285,9 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgElevated,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
@@ -403,10 +403,10 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.live?.withValues(alpha: 0.2),
+            color: AppColors.live.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.auto_awesome,
             size: 48,
             color: AppColors.neonPrimary,
@@ -445,13 +445,13 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.live?.withValues(alpha: 0.3),
+              color: AppColors.live.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.error!),
+              border: Border.all(color: AppColors.error),
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
+                const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -549,7 +549,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 40),
-          Icon(Icons.search_off, size: 48, color: AppColors.textTertiary),
+          const Icon(Icons.search_off, size: 48, color: AppColors.textTertiary),
           const SizedBox(height: 16),
           Text(
             'No se detectaron ejercicios',
@@ -589,13 +589,13 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.neonCyanSubtle?.withValues(alpha: 0.2),
+            color: AppColors.neonCyanSubtle.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
               const SizedBox(width: 8),
               Text(
                 '${_importedExercises.where((e) => e.isValid).length} ejercicios detectados',
@@ -687,14 +687,14 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       decoration: BoxDecoration(
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border!),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.lightbulb_outline, size: 18, color: AppColors.warning),
+              const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.warning),
               const SizedBox(width: 8),
               Text(
                 'Ejemplos de comandos:',
@@ -721,7 +721,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(Icons.format_quote, size: 14, color: AppColors.textTertiary),
+          const Icon(Icons.format_quote, size: 14, color: AppColors.textTertiary),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -849,10 +849,10 @@ class _SmartExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgElevated : AppColors.live?.withValues(alpha: 0.2),
+        color: isValid ? AppColors.bgElevated : AppColors.live.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isValid ? AppColors.border! : AppColors.error!,
+          color: isValid ? AppColors.border : AppColors.error,
         ),
       ),
       child: Column(
@@ -925,7 +925,7 @@ class _SmartExerciseCard extends StatelessWidget {
               const SizedBox(width: 4),
               IconButton(
                 onPressed: onRemove,
-                icon: Icon(Icons.close, color: AppColors.neonPrimary, size: 18),
+                icon: const Icon(Icons.close, color: AppColors.neonPrimary, size: 18),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
               ),

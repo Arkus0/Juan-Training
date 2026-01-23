@@ -212,7 +212,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
             tooltip: isListening ? 'Escuchando...' : 'Dictar series (ej: 80kg, 10 reps)',
             style: IconButton.styleFrom(
               backgroundColor: isListening 
-                  ? AppColors.live?.withValues(alpha: 0.3)
+                  ? AppColors.live.withValues(alpha: 0.3)
                   : Colors.transparent,
             ),
           ),
@@ -254,10 +254,10 @@ class _ListeningOverlay extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.bgElevated,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.error!.withValues(alpha: 0.5)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.live!.withValues(alpha: 0.3),
+                    color: AppColors.live.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -358,7 +358,7 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
         return Icon(
           Icons.mic,
           size: 28,
-          color: AppColors.neonPrimary!.withValues(alpha: 0.6 + _controller.value * 0.4),
+          color: AppColors.neonPrimary.withValues(alpha: 0.6 + _controller.value * 0.4),
         );
       },
     );

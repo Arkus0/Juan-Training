@@ -229,12 +229,12 @@ class _VoiceTrainingFabState extends ConsumerState<VoiceTrainingFab>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.bgElevated?.withValues(alpha: 0.95),
+          color: AppColors.bgElevated.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: voiceState.isListening 
-                ? AppColors.error!.withValues(alpha: 0.5)
-                : AppColors.border!,
+                ? AppColors.error.withValues(alpha: 0.5)
+                : AppColors.border,
           ),
           boxShadow: [
             BoxShadow(

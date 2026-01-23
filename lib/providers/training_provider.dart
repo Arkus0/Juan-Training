@@ -323,7 +323,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     int? restSeconds,
     bool? isFailure,
     bool? isDropset,
-    bool? isWarmup
+    bool? isWarmup,
+    bool skipToleranceCheck = false, // 🎯 Skip validation when user accepted a correction
   }) {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
@@ -336,7 +337,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     double? validatedPeso = peso;
     ToleranceResult? toleranceResult;
     
-    if (peso != null && peso > 0) {
+    // 🎯 FIX: Skip validation if user already accepted a correction (prevents infinite loop)
+    if (peso != null && peso > 0 && !skipToleranceCheck) {
       final category = ExerciseCategory.inferFromName(exercise.nombre);
       final lastKnownWeight = log.peso > 0 ? log.peso : _getLastKnownWeight(exercise.nombre);
       

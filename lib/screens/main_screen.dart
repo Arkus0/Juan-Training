@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/main_provider.dart';
 import '../providers/training_provider.dart';
 import '../widgets/session/active_session_bar.dart';
@@ -73,7 +72,7 @@ class MainScreen extends ConsumerWidget {
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(
             top: BorderSide(
               // 🎯 REDISEÑO: Borde sutil

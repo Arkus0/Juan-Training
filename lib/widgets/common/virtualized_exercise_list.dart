@@ -178,7 +178,7 @@ class _ListHeader extends StatelessWidget {
         children: [
           Text(
             '$loaded de $total ejercicios',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.textTertiary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -186,7 +186,7 @@ class _ListHeader extends StatelessWidget {
           ),
           if (hasMore) ...[
             const SizedBox(width: 8),
-            SizedBox(
+            const SizedBox(
               width: 12,
               height: 12,
               child: CircularProgressIndicator(
@@ -224,16 +224,16 @@ class _ExerciseListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: isSelected
-          ? AppColors.neonPrimary!.withValues(alpha: 0.2)
+          ? AppColors.neonPrimary.withValues(alpha: 0.2)
           : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: height,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: AppColors.bgElevated!),
+              bottom: BorderSide(color: AppColors.bgElevated),
             ),
           ),
           child: Row(
@@ -268,12 +268,12 @@ class _ExerciseListItem extends StatelessWidget {
                       children: [
                         _InfoChip(
                           text: exercise.muscleGroup,
-                          color: AppColors.neonPrimary!,
+                          color: AppColors.neonPrimary,
                         ),
                         const SizedBox(width: 6),
                         _InfoChip(
                           text: exercise.equipment,
-                          color: AppColors.border!,
+                          color: AppColors.border,
                         ),
                       ],
                     ),
@@ -283,7 +283,7 @@ class _ExerciseListItem extends StatelessWidget {
 
               // Indicador de selección o favorito
               if (isSelected)
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   color: AppColors.neonPrimary,
                   size: 24,
@@ -372,7 +372,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -381,7 +381,7 @@ class _EmptyState extends StatelessWidget {
             size: 64,
             color: AppColors.border,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'No se encontraron ejercicios',
             style: TextStyle(
@@ -389,7 +389,7 @@ class _EmptyState extends StatelessWidget {
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Intenta con otros filtros',
             style: TextStyle(
@@ -444,11 +444,11 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Buscar ejercicio...',
-          hintStyle: TextStyle(color: AppColors.textTertiary),
-          prefixIcon: Icon(Icons.search, color: AppColors.textTertiary),
+          hintStyle: const TextStyle(color: AppColors.textTertiary),
+          prefixIcon: const Icon(Icons.search, color: AppColors.textTertiary),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: AppColors.textTertiary),
+                  icon: const Icon(Icons.clear, color: AppColors.textTertiary),
                   onPressed: () {
                     _controller.clear();
                     ref.read(paginatedExercisesProvider.notifier).search('');

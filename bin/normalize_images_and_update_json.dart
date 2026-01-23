@@ -89,6 +89,6 @@ Future<void> main() async {
   }
 
   outList.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
-  await jsonFile.writeAsString(JsonEncoder.withIndent('  ').convert(outList));
+  await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(outList));
   print('Updated JSON with ${outList.length} entries');
 }

@@ -33,14 +33,14 @@ class AlternativasDialog extends StatelessWidget {
       backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.live!.withValues(alpha: 0.5)),
+        side: BorderSide(color: AppColors.live.withValues(alpha: 0.5)),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.swap_horiz, color: AppColors.neonPrimary, size: 24),
+              const Icon(Icons.swap_horiz, color: AppColors.neonPrimary, size: 24),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -95,7 +95,7 @@ class AlternativasDialog extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off, size: 48, color: AppColors.border),
+          const Icon(Icons.search_off, size: 48, color: AppColors.border),
           const SizedBox(height: 12),
           Text(
             'Sin alternativas registradas',
@@ -113,7 +113,7 @@ class AlternativasDialog extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: alternativas.length,
-      separatorBuilder: (_, __) => Divider(
+      separatorBuilder: (_, __) => const Divider(
         height: 1,
         color: AppColors.bgDeep,
       ),
@@ -191,10 +191,10 @@ class _AlternativaItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.live?.withValues(alpha: 0.3),
+                color: AppColors.live.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.live!.withValues(alpha: 0.5),
+                  color: AppColors.live.withValues(alpha: 0.5),
                 ),
               ),
               child: Text(

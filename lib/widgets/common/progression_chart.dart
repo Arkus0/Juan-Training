@@ -49,12 +49,12 @@ class ProgressionChart extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         // Leyenda
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _LegendItem(color: AppColors.neonPrimary!, label: 'Peso'),
-            const SizedBox(width: 16),
-            _LegendItem(color: AppColors.info!, label: 'Volumen'),
+            _LegendItem(color: AppColors.neonPrimary, label: 'Peso'),
+            SizedBox(width: 16),
+            _LegendItem(color: AppColors.info, label: 'Volumen'),
           ],
         ),
         const SizedBox(height: 8),
@@ -69,7 +69,7 @@ class ProgressionChart extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.show_chart, size: 40, color: AppColors.border),
+          const Icon(Icons.show_chart, size: 40, color: AppColors.border),
           const SizedBox(height: 8),
           Text(
             'Sin datos de progresión',
@@ -103,7 +103,7 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
+          style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
         ),
       ],
     );
@@ -124,12 +124,12 @@ class _HistoryRow extends StatelessWidget {
         children: [
           Text(
             dateStr,
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
           ),
           const SizedBox(width: 8),
           Text(
             '${entry.maxWeight}kg',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppColors.neonPrimary,
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -138,12 +138,12 @@ class _HistoryRow extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '×${entry.bestReps}',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: 10),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 10),
           ),
           const Spacer(),
           Text(
             '${entry.volume.toStringAsFixed(0)}kg vol',
-            style: TextStyle(color: AppColors.info, fontSize: 10),
+            style: const TextStyle(color: AppColors.info, fontSize: 10),
           ),
         ],
       ),
@@ -162,17 +162,17 @@ class _ChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final weightPaint = Paint()
-      ..color = AppColors.neonPrimary!
+      ..color = AppColors.neonPrimary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final volumePaint = Paint()
-      ..color = AppColors.info!
+      ..color = AppColors.info
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
     final dotPaint = Paint()
-      ..color = AppColors.neonPrimary!
+      ..color = AppColors.neonPrimary
       ..style = PaintingStyle.fill;
 
     // Encontrar min/max para normalizar
@@ -194,7 +194,7 @@ class _ChartPainter extends CustomPainter {
 
     final weightPath = Path();
     final volumePath = Path();
-    final padding = 10.0;
+    const padding = 10.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
 

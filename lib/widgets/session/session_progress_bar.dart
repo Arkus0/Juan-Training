@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../providers/session_progress_provider.dart';
 import '../../utils/design_system.dart';
 
@@ -139,7 +138,7 @@ class _SetsInfo extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
+        const Icon(
           Icons.fitness_center,
           size: 12,
           color: AppColors.textTertiary,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:juan_training/models/analysis_models.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/sesion.dart';
 import 'package:juan_training/repositories/i_training_repository.dart';
@@ -97,6 +98,38 @@ class MockTrainingRepository implements ITrainingRepository {
   Future<void> saveNote(String exerciseName, String note) async {
     _notes[exerciseName] = note;
   }
+
+  // Analysis methods (mock implementations)
+  @override
+  Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async => {};
+
+  @override
+  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod({int days = 30}) async => {};
+
+  @override
+  Future<List<PersonalRecord>> getPersonalRecords({List<String>? exerciseNames}) async => [];
+
+  @override
+  Future<Map<String, DateTime>> getLastTrainedDateByMuscle() async => {};
+
+  @override
+  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName, {int months = 6}) async => [];
+
+  @override
+  Future<StreakData> getStreakData() async => StreakData(
+    currentStreak: 0,
+    longestStreak: 0,
+    lastTrainingDate: _sesiones.isNotEmpty ? _sesiones.last.fecha : null,
+  );
+
+  @override
+  Future<DailySnapshot?> getDailySnapshot(DateTime date) async => null;
+
+  @override
+  Future<List<Sesion>> getSessionsForDate(DateTime date) async => [];
+
+  @override
+  Future<List<String>> getExerciseNames() async => [];
 }
 
 extension StreamExtensions<T> on Stream<T> {

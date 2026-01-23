@@ -188,7 +188,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Nombre del ejercicio *',
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
                     filled: true,
                     fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
@@ -213,12 +213,12 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
                 // Grupo muscular
                 DropdownButtonFormField<String>(
-                  value: _selectedMuscleGroup,
+                  initialValue: _selectedMuscleGroup,
                   dropdownColor: AppColors.bgElevated,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Grupo muscular',
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
                     filled: true,
                     fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
@@ -247,12 +247,12 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
                 // Equipamiento
                 DropdownButtonFormField<String>(
-                  value: _selectedEquipment,
+                  initialValue: _selectedEquipment,
                   dropdownColor: AppColors.bgElevated,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     labelText: 'Equipamiento',
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
                     filled: true,
                     fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
@@ -278,7 +278,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
                 // Músculos específicos (opcional)
                 if (_musclesByGroup[_selectedMuscleGroup]?.isNotEmpty == true) ...[
-                  Text(
+                  const Text(
                     'Músculos trabajados (opcional)',
                     style: TextStyle(
                       color: AppColors.textSecondary,
@@ -325,7 +325,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: 'Descripción (opcional)',
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    labelStyle: const TextStyle(color: AppColors.textSecondary),
                     filled: true,
                     fillColor: AppColors.bgElevated,
                     border: OutlineInputBorder(
@@ -344,7 +344,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text(
+          child: const Text(
             'CANCELAR',
             style: TextStyle(color: AppColors.textSecondary),
           ),

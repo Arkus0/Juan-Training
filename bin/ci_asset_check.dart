@@ -60,7 +60,7 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  await reportFile.writeAsString(JsonEncoder.withIndent('  ').convert(report));
+  await reportFile.writeAsString(const JsonEncoder.withIndent('  ').convert(report));
   print('Asset check finished. Report written to ${reportFile.path}');
   print('Placeholders: ${report['placeholder_names'].length}');
   print('Missing images: ${report['missing_images'].length}');

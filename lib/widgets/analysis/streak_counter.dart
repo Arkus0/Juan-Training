@@ -42,7 +42,7 @@ class StreakCounter extends ConsumerWidget {
         border: Border.all(
           color: hasStreak
               ? Colors.redAccent.withOpacity(0.3)
-              : AppColors.bgDeep!,
+              : AppColors.bgDeep,
           width: 1,
         ),
       ),
@@ -123,7 +123,7 @@ class StreakCounter extends ConsumerWidget {
                 color: const Color(0xFF1E1E1E),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: AppColors.bgDeep!,
+                  color: AppColors.bgDeep,
                 ),
               ),
               child: Column(

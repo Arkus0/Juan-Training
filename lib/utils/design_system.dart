@@ -23,6 +23,7 @@
 ///
 /// Creado: Enero 2026
 /// ============================================================================
+library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -569,7 +570,7 @@ ThemeData buildAppTheme() {
     scaffoldBackgroundColor: AppColors.bgDeep,
     primaryColor: AppColors.neonPrimary,
 
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: AppColors.neonPrimary,
       onPrimary: AppColors.textOnAccent,
       secondary: AppColors.neonCyan,
@@ -1112,7 +1113,7 @@ abstract class AppDecorations {
         color: AppColors.bgActiveCard,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.neonCyanGlow,
             blurRadius: 12,
@@ -1145,7 +1146,7 @@ abstract class AppDecorations {
   /// Glow para botón primario
   static BoxDecoration get primaryButtonGlow => BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.neonPrimaryGlow,
             blurRadius: 16,
@@ -1157,7 +1158,7 @@ abstract class AppDecorations {
   /// Glow para elemento completado
   static BoxDecoration get successGlow => BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.round),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.neonCyanGlow,
             blurRadius: 8,
@@ -1169,7 +1170,7 @@ abstract class AppDecorations {
   /// Glow dorado para celebraciones
   static BoxDecoration get celebrationGlow => BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.goldGlow,
             blurRadius: 20,
@@ -1209,7 +1210,7 @@ class CompletedIndicator extends StatelessWidget {
         ),
         boxShadow: isCompleted
             ? [
-                BoxShadow(
+                const BoxShadow(
                   color: AppColors.neonCyanGlow,
                   blurRadius: 8,
                   spreadRadius: 0,
@@ -1290,7 +1291,7 @@ class NeonButton extends StatelessWidget {
           minimumSize: const Size(double.infinity, AppTouchTargets.recommended),
         ),
         child: isLoading
-            ? SizedBox(
+            ? const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(

@@ -130,7 +130,7 @@ class WelcomeBackBanner extends StatelessWidget {
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
-                      side: BorderSide(color: AppColors.border),
+                      side: const BorderSide(color: AppColors.border),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
@@ -202,7 +202,7 @@ class SuspiciousDataDialog extends StatelessWidget {
       ),
       title: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.help_outline_rounded,
             color: AppColors.warning,
             size: 28,

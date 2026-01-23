@@ -43,8 +43,8 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     final weekOfYear = ((now.difference(startOfYear).inDays) / 7).floor();
 
     // Calculate scroll position (each week column is ~14 pixels + 2 gap)
-    final cellSize = 14.0;
-    final gap = 2.0;
+    const cellSize = 14.0;
+    const gap = 2.0;
     final targetScroll = (weekOfYear - 10) * (cellSize + gap);
 
     _scrollController.animateTo(
@@ -98,7 +98,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.chevron_left, color: AppColors.textTertiary, size: 20),
+              icon: const Icon(Icons.chevron_left, color: AppColors.textTertiary, size: 20),
               onPressed: () {
                 HapticFeedback.selectionClick();
                 ref.read(selectedYearProvider.notifier).state = year - 1;
@@ -115,7 +115,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
               ),
             ),
             IconButton(
-              icon: Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
+              icon: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
               onPressed: year < DateTime.now().year
                   ? () {
                       HapticFeedback.selectionClick();

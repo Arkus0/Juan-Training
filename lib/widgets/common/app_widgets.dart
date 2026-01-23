@@ -74,7 +74,7 @@ class AppLoadingIndicator extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 48,
             height: 48,
             child: CircularProgressIndicator(
@@ -140,10 +140,10 @@ class _ShimmerLoadingCardState extends State<ShimmerLoadingCard>
               gradient: LinearGradient(
                 begin: Alignment(_animation.value - 1, 0),
                 end: Alignment(_animation.value, 0),
-                colors: [
-                  AppColors.bgElevated!,
-                  AppColors.bgDeep!,
-                  AppColors.bgElevated!,
+                colors: const [
+                  AppColors.bgElevated,
+                  AppColors.bgDeep,
+                  AppColors.bgElevated,
                 ],
               ),
             ),
@@ -195,7 +195,7 @@ class ErrorStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'ERROR',
@@ -222,7 +222,7 @@ class ErrorStateWidget extends StatelessWidget {
                 label: const Text('REINTENTAR'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.error,
-                  side: BorderSide(color: AppColors.error!),
+                  side: const BorderSide(color: AppColors.error),
                 ),
               ),
             ],

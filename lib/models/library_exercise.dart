@@ -78,7 +78,7 @@ class LibraryExercise {
 
   factory LibraryExercise.fromJson(Map<String, dynamic> json) {
     // Helper to normalize lists that may contain strings or maps
-    List<String> _normalizeStringList(dynamic val, {String? defaultKey}) {
+    List<String> normalizeStringList(dynamic val, {String? defaultKey}) {
       if (val == null) return [];
       if (val is List) {
         return val.map((e) {
@@ -114,8 +114,8 @@ class LibraryExercise {
           ? (json['imageUrls'] as List).map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList()
           : [],
       localImagePath: json['localImagePath'] as String?,
-      muscles: _normalizeStringList(json['muscles'], defaultKey: 'name'),
-      secondaryMuscles: _normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
+      muscles: normalizeStringList(json['muscles'], defaultKey: 'name'),
+      secondaryMuscles: normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
       isFavorite: json['isFavorite'] as bool? ?? false,
     );
   }
