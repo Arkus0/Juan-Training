@@ -17,6 +17,7 @@ import 'package:juan_training/services/voice_input_service.dart';
 import 'package:juan_training/widgets/routine_import_dialog.dart';
 import 'package:juan_training/widgets/voice/voice_input_sheet.dart';
 import 'package:juan_training/widgets/smart_import_sheet.dart';
+import 'package:juan_training/utils/design_system.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit
@@ -64,7 +65,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error, style: const TextStyle(color: Colors.white)),
-            backgroundColor: Colors.redAccent[700],
+            backgroundColor: AppColors.neonPrimary,
           ),
         );
         try { HapticFeedback.vibrate(); } catch (_) {}
@@ -78,7 +79,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       final overlay = Overlay.of(context);
       final entry = OverlayEntry(builder: (context) {
         return Container(
-          color: Colors.red[900]!.withValues(alpha: 0.4),
+          color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.4),
         );
       });
       overlay.insert(entry);
@@ -97,7 +98,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         SnackBar(
           content: Text('RUTINA FORJADA',
             style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
-          backgroundColor: Colors.red[900],
+          backgroundColor: AppColors.neonPrimaryPressed,
         ),
       );
 
@@ -113,7 +114,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error inesperado al guardar: ${e.toString()}', style: const TextStyle(color: Colors.white)),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
         ),
       );
       try { HapticFeedback.vibrate(); } catch (_) {}
@@ -232,7 +233,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Ponle nombre a tu rutina antes de compartir',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -247,7 +248,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Añade ejercicios antes de compartir',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -270,7 +271,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Primero añade un día a tu rutina',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -328,7 +329,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               final dia = entry.value;
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.red[700],
+                  backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
                     style: GoogleFonts.montserrat(
@@ -419,7 +420,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Primero añade un día a tu rutina',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -459,7 +460,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           children: [
             Row(
               children: [
-                Icon(Icons.mic, color: Colors.red[400]),
+                Icon(Icons.mic, color: AppColors.neonPrimaryHover),
                 const SizedBox(width: 8),
                 Text(
                   '¿A qué día añadir?',
@@ -477,7 +478,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               final dia = entry.value;
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: Colors.red[700],
+                  backgroundColor: AppColors.neonPrimary,
                   child: Text(
                     '${index + 1}',
                     style: GoogleFonts.montserrat(
@@ -583,7 +584,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Primero añade un día a tu rutina',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -628,7 +629,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               // Opción 1: Biblioteca (principal y más usada)
               _ImportOptionTile(
                 icon: Icons.search,
-                iconColor: Colors.redAccent[400]!,
+                iconColor: AppColors.neonPrimaryHover,
                 title: 'Buscar en Biblioteca',
                 subtitle: 'Busca ejercicios por nombre o músculo',
                 onTap: () {
@@ -710,7 +711,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             final dia = routineState.dias[index];
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.red[700],
+                backgroundColor: AppColors.neonPrimary,
                 child: Text(
                   '${index + 1}',
                   style: const TextStyle(color: Colors.white),
@@ -744,7 +745,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             'Primero añade un día a tu rutina',
             style: GoogleFonts.montserrat(color: Colors.white),
           ),
-          backgroundColor: Colors.redAccent[700],
+          backgroundColor: AppColors.neonPrimary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -793,7 +794,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             final dia = routineState.dias[index];
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.red[700],
+                backgroundColor: AppColors.neonPrimary,
                 child: Text(
                   '${index + 1}',
                   style: const TextStyle(color: Colors.white),
@@ -891,7 +892,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           widget.rutina == null ? 'CREA TU RUTINA' : 'EDITAR: ${routineState.nombre.toUpperCase()}',
           style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 22),
         ),
-        backgroundColor: Colors.red[900],
+        backgroundColor: AppColors.neonPrimaryPressed,
         actions: [
           // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
           IconButton(
@@ -936,9 +937,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                   fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Nombre que motive miedo',
-                  hintStyle: GoogleFonts.montserrat(color: Colors.red[900]!.withValues(alpha: 0.5)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red[900]!)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.redAccent[700]!, width: 2)),
+                  hintStyle: GoogleFonts.montserrat(color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.5)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimaryPressed!)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimary!, width: 2)),
                 ),
                 onChanged: (val) => notifier.updateName(val),
               ),
@@ -981,7 +982,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                       return Material(
                         elevation: animation.value * 8,
                         color: Colors.transparent,
-                        shadowColor: Colors.red[900],
+                        shadowColor: AppColors.neonPrimaryPressed,
                         child: child,
                       );
                     },
@@ -1051,7 +1052,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 },
                 icon: const Icon(Icons.add, size: 32),
                 label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),
-                backgroundColor: Colors.red[900],
+                backgroundColor: AppColors.neonPrimaryPressed,
                 elevation: 8,
               ),
             ),
@@ -1062,14 +1063,14 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.black,
-          boxShadow: [BoxShadow(color: Colors.red[900]!.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
+          boxShadow: [BoxShadow(color: AppColors.neonPrimaryPressed!.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: ElevatedButton(
           onPressed: _saveRoutine,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent[700],
+            backgroundColor: AppColors.neonPrimary,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shadowColor: Colors.redAccent,
+            shadowColor: AppColors.neonPrimary,
             elevation: 10,
           ),
           child: Text(

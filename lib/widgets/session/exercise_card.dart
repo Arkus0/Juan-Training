@@ -105,7 +105,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                 ListTile(
                   leading: Icon(
                     Icons.swap_horiz,
-                    color: hasAlternativas ? Colors.redAccent[700] : Colors.grey[600],
+                    color: hasAlternativas ? AppColors.neonPrimary : Colors.grey[600],
                   ),
                   title: Text(
                     'Ver Alternativas',
@@ -665,7 +665,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
                     HapticFeedback.selectionClick();
                     setState(() => _selectedSeconds += 10);
                   },
-                  color: Colors.redAccent[700],
+                  color: AppColors.neonPrimary,
                 ),
               ],
             ),
@@ -687,7 +687,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.redAccent[700] : Colors.grey[800],
+                      color: isSelected ? AppColors.neonPrimary : Colors.grey[800],
                       borderRadius: BorderRadius.circular(8),
                       border: isSelected
                           ? null
@@ -717,7 +717,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
                   widget.onSelected(_selectedSeconds);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent[700],
+                  backgroundColor: AppColors.neonPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: Text(

@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/media_control_service.dart';
+import '../../utils/design_system.dart';
 
-/// Barra de control multimedia para sesiones de entrenamiento.
+/// 🎯 NEON IRON: Control de música ultra-compacto para AppBar
 ///
-/// Muestra controles de reproducción cuando hay música activa.
-/// Usa [MediaControlService] para comunicación con la plataforma.
+/// Principios aplicados:
+/// - Mínimo footprint: Solo un icono en AppBar
+/// - Interacción bajo demanda: Popup con controles al tocar
+/// - No compite: Desaparece cuando no hay música
 class MusicLauncherBar extends StatefulWidget {
   const MusicLauncherBar({super.key});
 
@@ -19,8 +22,6 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
 
   bool _isVisible = false;
   bool _isPlaying = false;
-  String? _currentTitle;
-  String? _currentArtist;
 
   StreamSubscription<MediaSessionInfo>? _sessionSubscription;
 
@@ -32,24 +33,17 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
 
   Future<void> _initializeMediaService() async {
     await _mediaService.initialize();
-
-    // Verificar estado inicial
     _updateFromSession(_mediaService.currentSession);
-
-    // Escuchar cambios de sesión
     _sessionSubscription = _mediaService.sessionStream.listen(_updateFromSession);
   }
 
   void _updateFromSession(MediaSessionInfo session) {
     if (!mounted) return;
-
     setState(() {
       _isVisible = session.hasMedia ||
           session.playbackState == MediaPlaybackState.playing ||
           session.playbackState == MediaPlaybackState.paused;
       _isPlaying = session.playbackState == MediaPlaybackState.playing;
-      _currentTitle = session.title;
-      _currentArtist = session.artist;
     });
   }
 
@@ -60,173 +54,310 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
   }
 
   Future<void> _onPlayPause() async {
-    try {
-      HapticFeedback.heavyImpact();
-    } catch (_) {}
-
+    HapticFeedback.mediumImpact();
     final result = await _mediaService.playPause();
-
     if (!mounted) return;
-
     if (result.success) {
-      // Actualizar estado localmente para feedback inmediato
+      setState(() => _isPlaying = !_isPlaying);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 🎯 NEON IRON: No mostrar nada si no hay música activa
+    if (!_isVisible) return const SizedBox.shrink();
+
+    return const SizedBox.shrink(); // Removido del body - ahora es AppBar action
+  }
+}
+
+/// 🎯 NEON IRON: Botón de música compacto para AppBar
+/// Uso: Añadir a actions[] del AppBar
+class MusicAppBarAction extends StatefulWidget {
+  const MusicAppBarAction({super.key});
+
+  @override
+  State<MusicAppBarAction> createState() => _MusicAppBarActionState();
+}
+
+class _MusicAppBarActionState extends State<MusicAppBarAction>
+    with SingleTickerProviderStateMixin {
+  final _mediaService = MediaControlService.instance;
+
+  bool _isVisible = false;
+  bool _isPlaying = false;
+  String? _currentTitle;
+
+  StreamSubscription<MediaSessionInfo>? _sessionSubscription;
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _initializeMediaService();
+  }
+
+  Future<void> _initializeMediaService() async {
+    await _mediaService.initialize();
+    _updateFromSession(_mediaService.currentSession);
+    _sessionSubscription = _mediaService.sessionStream.listen(_updateFromSession);
+  }
+
+  void _updateFromSession(MediaSessionInfo session) {
+    if (!mounted) return;
+    setState(() {
+      _isVisible = session.hasMedia ||
+          session.playbackState == MediaPlaybackState.playing ||
+          session.playbackState == MediaPlaybackState.paused;
+      _isPlaying = session.playbackState == MediaPlaybackState.playing;
+      _currentTitle = session.title;
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionSubscription?.cancel();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onPlayPause() async {
+    HapticFeedback.mediumImpact();
+    final result = await _mediaService.playPause();
+    if (!mounted) return;
+    if (result.success) {
       setState(() => _isPlaying = !_isPlaying);
     } else if (result.fallbackUsed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Abriendo Spotify'),
-          duration: Duration(milliseconds: 700),
-        ),
-      );
-    }
-  }
-
-  Future<void> _onPrevious() async {
-    try {
-      HapticFeedback.selectionClick();
-    } catch (_) {}
-
-    final result = await _mediaService.previous();
-
-    if (!mounted) return;
-
-    if (!result.success && result.fallbackUsed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Abriendo Spotify — canción anterior'),
-          duration: Duration(milliseconds: 800),
-        ),
-      );
-    }
-  }
-
-  Future<void> _onNext() async {
-    try {
-      HapticFeedback.selectionClick();
-    } catch (_) {}
-
-    final result = await _mediaService.next();
-
-    if (!mounted) return;
-
-    if (!result.success && result.fallbackUsed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Abriendo Spotify — canción siguiente'),
-          duration: Duration(milliseconds: 800),
-        ),
-      );
+      // Abre Spotify como fallback
     }
   }
 
   Future<void> _openSpotify() async {
+    HapticFeedback.selectionClick();
     await _mediaService.openSpotify();
+  }
+
+  void _showMusicPopup() {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _MusicControlSheet(
+        isPlaying: _isPlaying,
+        title: _currentTitle,
+        onPlayPause: () async {
+          await _onPlayPause();
+          if (mounted) Navigator.pop(context);
+        },
+        onOpenSpotify: () async {
+          await _openSpotify();
+          if (mounted) Navigator.pop(context);
+        },
+        onPrevious: () async {
+          HapticFeedback.selectionClick();
+          await _mediaService.previous();
+        },
+        onNext: () async {
+          HapticFeedback.selectionClick();
+          await _mediaService.next();
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green[900]!.withOpacity(0.3), Colors.black],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _openSpotify,
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                // Icono de la App
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        final pulseValue = _isPlaying ? 0.3 + (_pulseController.value * 0.2) : 0.5;
+        return IconButton(
+          onPressed: _showMusicPopup,
+          tooltip: 'Controles de música',
+          icon: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Glow cuando reproduce
+              if (_isPlaying)
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1DB954), // Verde Spotify
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.music_note, color: Colors.black, size: 24),
-                ),
-                const SizedBox(width: 12),
-
-                // Información de la canción
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _currentTitle ?? "Reproduciendo",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        _currentArtist ?? "Toca para abrir Spotify",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.neonCyan.withValues(alpha: pulseValue),
+                        blurRadius: 12,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
                 ),
+              Icon(
+                _isPlaying ? Icons.music_note : Icons.music_off,
+                color: _isPlaying ? AppColors.neonCyan : AppColors.textTertiary,
+                size: 22,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 
-                // Controles de reproducción
-                _ControlIcon(
-                  icon: Icons.skip_previous_rounded,
-                  onTap: _onPrevious,
-                ),
-                _ControlIcon(
-                  icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  isPlay: true,
-                  onTap: _onPlayPause,
-                ),
-                _ControlIcon(
-                  icon: Icons.skip_next_rounded,
-                  onTap: _onNext,
-                ),
-              ],
+/// 🎯 NEON IRON: Sheet de controles de música (bajo demanda)
+class _MusicControlSheet extends StatelessWidget {
+  final bool isPlaying;
+  final String? title;
+  final VoidCallback onPlayPause;
+  final VoidCallback onOpenSpotify;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+
+  const _MusicControlSheet({
+    required this.isPlaying,
+    required this.title,
+    required this.onPlayPause,
+    required this.onOpenSpotify,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.bgElevated,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neonCyan.withValues(alpha: 0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textTertiary,
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Título
+          Text(
+            title ?? 'Reproduciendo',
+            style: AppTypography.sectionTitle,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 24),
+
+          // Controles
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ControlButton(
+                icon: Icons.skip_previous_rounded,
+                onTap: onPrevious,
+              ),
+              const SizedBox(width: 16),
+              _PlayPauseButton(
+                isPlaying: isPlaying,
+                onTap: onPlayPause,
+              ),
+              const SizedBox(width: 16),
+              _ControlButton(
+                icon: Icons.skip_next_rounded,
+                onTap: onNext,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Abrir Spotify
+          TextButton.icon(
+            onPressed: onOpenSpotify,
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('Abrir Spotify'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ControlButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.bgDeep,
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          width: 48,
+          height: 48,
+          alignment: Alignment.center,
+          child: Icon(icon, color: AppColors.textSecondary, size: 28),
         ),
       ),
     );
   }
 }
 
-class _ControlIcon extends StatelessWidget {
-  final IconData icon;
+class _PlayPauseButton extends StatelessWidget {
+  final bool isPlaying;
   final VoidCallback onTap;
-  final bool isPlay;
 
-  const _ControlIcon({required this.icon, required this.onTap, this.isPlay = false});
+  const _PlayPauseButton({required this.isPlaying, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onTap,
-      icon: Icon(icon),
-      color: isPlay ? Colors.white : Colors.white.withOpacity(0.5),
-      iconSize: isPlay ? 32 : 24,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+    return Material(
+      color: AppColors.neonCyan,
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          width: 64,
+          height: 64,
+          alignment: Alignment.center,
+          child: Icon(
+            isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            color: AppColors.bgDeep,
+            size: 36,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -40,13 +40,13 @@ class _TimerStyles {
   static final buttonLabel = GoogleFonts.montserrat(
     fontSize: 12,
     fontWeight: FontWeight.w800,
-    color: Colors.white,
+    color: AppColors.textPrimary,
   );
 
   static final durationDisplay = GoogleFonts.montserrat(
     fontSize: 18,
     fontWeight: FontWeight.w900,
-    color: Colors.white,
+    color: AppColors.textPrimary,
   );
 
   static final stateLabel = GoogleFonts.montserrat(
@@ -447,9 +447,9 @@ class _InactiveTimerBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         border: Border(
-          top: BorderSide(color: Colors.grey[800]!, width: 1),
+          top: BorderSide(color: AppColors.bgDeep!, width: 1),
         ),
       ),
       child: SafeArea(
@@ -470,13 +470,13 @@ class _InactiveTimerBar extends StatelessWidget {
                         child: _CircleButton(
                           icon: Icons.delete_outline,
                           size: 36,
-                          color: Colors.grey[800],
+                          color: AppColors.bgDeep,
                           onTap: () async {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                backgroundColor: Colors.grey[900],
-                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
+                                backgroundColor: AppColors.bgElevated,
+                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: AppColors.textPrimary)),
                                 content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
@@ -497,7 +497,7 @@ class _InactiveTimerBar extends StatelessWidget {
                             child: _CircleButton(
                               icon: Icons.refresh,
                               size: 36,
-                              color: Colors.grey[800],
+                              color: AppColors.bgDeep,
                               onTap: () {
                                 HapticFeedback.selectionClick();
                                 onRestartRest!();
@@ -509,7 +509,7 @@ class _InactiveTimerBar extends StatelessWidget {
                             child: _CircleButton(
                               icon: Icons.delete_outline,
                               size: 36,
-                              color: Colors.grey[800],
+                              color: AppColors.bgDeep,
                               onTap: null,
                             ),
                           ),
@@ -578,13 +578,13 @@ class _ActiveTimerBar extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.grey[900]!,
-                Colors.black,
+                AppColors.bgElevated!,
+                AppColors.bgDeep,
               ],
             ),
             border: Border(
               top: BorderSide(
-                color: isCritical ? Colors.orange[700]! : Colors.grey[700]!,
+                color: isCritical ? AppColors.goldAccent! : AppColors.border!,
                 width: isCritical ? 2 : 1,
               ),
             ),
@@ -592,7 +592,7 @@ class _ActiveTimerBar extends StatelessWidget {
             boxShadow: PerformanceMode.instance.showShadows
                 ? [
                     BoxShadow(
-                      color: (isCritical ? Colors.red[900] : Colors.black)!
+                      color: (isCritical ? AppColors.live : AppColors.bgDeep)
                           .withValues(alpha: 0.5),
                       blurRadius: 8,
                       offset: const Offset(0, -2),
@@ -614,13 +614,13 @@ class _ActiveTimerBar extends StatelessWidget {
                         child: _CircleButton(
                           icon: Icons.delete_outline,
                           size: 36,
-                          color: Colors.grey[800],
+                          color: AppColors.bgDeep,
                           onTap: () async {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                backgroundColor: Colors.grey[900],
-                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
+                                backgroundColor: AppColors.bgElevated,
+                                title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: AppColors.textPrimary)),
                                 content: const Text('¿Estás seguro de que quieres descartar la sesión actual sin guardarla?'),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
@@ -641,7 +641,7 @@ class _ActiveTimerBar extends StatelessWidget {
                             child: _CircleButton(
                               icon: Icons.refresh,
                               size: 36,
-                              color: Colors.grey[800],
+                              color: AppColors.bgDeep,
                               onTap: () {
                                 HapticFeedback.selectionClick();
                                 onRestartRest!();
@@ -653,7 +653,7 @@ class _ActiveTimerBar extends StatelessWidget {
                             child: _CircleButton(
                               icon: Icons.delete_outline,
                               size: 36,
-                              color: Colors.grey[800],
+                              color: AppColors.bgDeep,
                               onTap: null,
                             ),
                           ),
@@ -708,13 +708,13 @@ class _TimerStateLabel extends StatelessWidget {
         Text(
           isPaused ? 'PAUSADO' : 'DESCANSANDO',
           style: _TimerStyles.stateLabel.copyWith(
-            color: isPaused ? Colors.orange[400] : Colors.grey[500],
+            color: isPaused ? AppColors.warning : AppColors.textTertiary,
           ),
         ),
         Text(
           isPaused ? 'Toca para reanudar' : 'Toca para pausar',
           style: _TimerStyles.hintLabel.copyWith(
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
           ),
         ),
       ],
@@ -739,7 +739,7 @@ class _TimeDurationSelector extends StatelessWidget {
       children: [
         Text(
           'DESCANSO',
-          style: _TimerStyles.labelSmall.copyWith(color: Colors.grey[600]),
+          style: _TimerStyles.labelSmall.copyWith(color: AppColors.textTertiary),
         ),
         const SizedBox(width: 8),
         _CircleButton(
@@ -754,7 +754,7 @@ class _TimeDurationSelector extends StatelessWidget {
         _CircleButton(
           icon: Icons.add,
           size: 28,
-          color: Colors.orange[700],
+          color: AppColors.goldAccent,
           onTap: () => onChanged(seconds + 10),
         ),
       ],
@@ -771,7 +771,7 @@ class _StartRestButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.orange[700],
+      color: AppColors.goldAccent,
       borderRadius: BorderRadius.circular(24),
       child: InkWell(
         onTap: () {
@@ -784,7 +784,7 @@ class _StartRestButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.timer_outlined, size: 18, color: Colors.white),
+              const Icon(Icons.timer_outlined, size: 18, color: AppColors.textPrimary),
               const SizedBox(width: 6),
               Text('DESCANSAR', style: _TimerStyles.buttonLabel),
             ],
@@ -813,8 +813,8 @@ class _CircularTimerProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isPaused
-        ? Colors.orange[400]!
-        : (isCritical ? Colors.orange[700]! : Colors.white);
+        ? AppColors.warning!
+        : (isCritical ? AppColors.goldAccent! : AppColors.textPrimary);
 
     return SizedBox(
       width: 44,
@@ -826,8 +826,8 @@ class _CircularTimerProgress extends StatelessWidget {
           CircularProgressIndicator(
             value: 1.0,
             strokeWidth: 3,
-            backgroundColor: Colors.grey[800],
-            valueColor: AlwaysStoppedAnimation(Colors.grey[800]),
+            backgroundColor: AppColors.bgDeep,
+            valueColor: AlwaysStoppedAnimation(AppColors.bgDeep),
           ),
           // Progreso - sin TweenAnimationBuilder para mejor rendimiento
           CircularProgressIndicator(
@@ -884,7 +884,7 @@ class _TimerControlButtons extends StatelessWidget {
           child: _CircleButton(
             icon: Icons.skip_next_rounded,
             size: 36,
-            color: Colors.orange[700],
+            color: AppColors.goldAccent,
             onTap: () {
               HapticFeedback.mediumImpact();
               onSkip();
@@ -914,7 +914,7 @@ class _CircleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = onTap != null;
-    final buttonColor = color ?? Colors.grey[700];
+    final buttonColor = color ?? AppColors.border;
 
     return Material(
       color: isEnabled ? buttonColor : Colors.grey[850],
@@ -928,7 +928,7 @@ class _CircleButton extends StatelessWidget {
           child: Icon(
             icon,
             size: size * 0.5,
-            color: isEnabled ? Colors.white : Colors.grey[700],
+            color: isEnabled ? AppColors.textPrimary : AppColors.border,
           ),
         ),
       ),

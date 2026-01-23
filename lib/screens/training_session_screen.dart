@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
@@ -86,13 +85,14 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final shouldFinish = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: AppColors.bgElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: BorderSide(color: AppColors.border),
+        ),
         title: Text(
           '¿TERMINAR SESIÓN?',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
-          ),
+          style: AppTypography.sectionTitle,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -100,7 +100,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           children: [
             Text(
               confirmMessage,
-              style: const TextStyle(color: Colors.white70),
+              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -109,16 +109,15 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'CANCELAR',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              style: AppTypography.button.copyWith(color: AppColors.textTertiary),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'TERMINAR',
-              style: TextStyle(
-                color: AppColors.success,
-                fontWeight: FontWeight.bold,
+              style: AppTypography.button.copyWith(
+                color: AppColors.neonCyan,
               ),
             ),
           ),
@@ -269,9 +268,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
         ),
         actions: [
+          // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
+          const MusicAppBarAction(),
           // Botón de voz en AppBar (al lado de terminar)
           voiceAvailable.when(
-            data: (available) => available 
+            data: (available) => available
                 ? VoiceTrainingButton(
                     enabled: true,
                     onCommand: (command) => _handleVoiceCommand(command, notifier),
@@ -290,10 +291,19 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             child: TextButton(
               onPressed: _onFinishSession,
               style: TextButton.styleFrom(
-                // 🎯 REDISEÑO: Verde cuando completo, blanco normal
-                backgroundColor: progress.isComplete ? AppColors.success : Colors.white,
-                foregroundColor: progress.isComplete ? Colors.white : AppColors.actionPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                // 🎯 NEON IRON: Gold celebración al completar, sutil cuando en progreso
+                backgroundColor: progress.isComplete
+                    ? AppColors.goldAccent
+                    : AppColors.bgElevated,
+                foregroundColor: progress.isComplete
+                    ? AppColors.bgDeep
+                    : AppColors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  side: progress.isComplete
+                      ? BorderSide.none
+                      : BorderSide(color: AppColors.border),
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
               child: Row(
@@ -306,7 +316,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                     ),
                   Text(
                     'TERMINAR',
-                    style: AppTypography.button,
+                    style: AppTypography.button.copyWith(
+                      color: progress.isComplete
+                          ? AppColors.bgDeep
+                          : AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -318,13 +332,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         children: [
           Column(
             children: [
-              // Barra de progreso de sesión (no invasiva, top)
+              // 🎯 NEON IRON: Barra de progreso ultra-mínima (4px)
               const SessionProgressBar(),
 
-              // Music launcher (Spotify quick open) 🎧
-              const MusicLauncherBar(),
-
-              // Lista de ejercicios
+              // Lista de ejercicios (MusicLauncherBar movido a AppBar)
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
@@ -484,22 +495,19 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.note_add, color: Colors.white, size: 20),
+              Icon(Icons.note_add, color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Nota: $note',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: AppTypography.labelEmphasis,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          backgroundColor: Colors.blue[700],
+          backgroundColor: AppColors.info,
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -519,18 +527,15 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              Icon(Icons.check_circle, color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Text(
                 '¡Serie completada!',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: AppTypography.labelEmphasis,
               ),
             ],
           ),
-          backgroundColor: Colors.green[700],
+          backgroundColor: AppColors.success,
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
@@ -564,12 +569,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Text(
             'Peso: ${weight.toStringAsFixed(1)} kg',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: AppTypography.labelEmphasis,
           ),
-          backgroundColor: Colors.grey[800],
+          backgroundColor: AppColors.bgElevated,
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
@@ -588,12 +590,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Text(
             'Reps: $reps',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: AppTypography.labelEmphasis,
           ),
-          backgroundColor: Colors.grey[800],
+          backgroundColor: AppColors.bgElevated,
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
@@ -612,12 +611,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Text(
             'RPE: ${rpe.toStringAsFixed(1)}',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: AppTypography.labelEmphasis,
           ),
-          backgroundColor: Colors.grey[800],
+          backgroundColor: AppColors.bgElevated,
           duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),

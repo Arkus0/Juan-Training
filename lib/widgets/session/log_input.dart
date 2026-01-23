@@ -34,7 +34,7 @@ class _InputStyles {
   static final toolbarButtonLabel = GoogleFonts.montserrat(
     fontSize: 12,
     fontWeight: FontWeight.w700,
-    color: Colors.white,
+    color: AppColors.textPrimary,
   );
 }
 
@@ -383,34 +383,34 @@ class _LogInputState extends State<LogInput> {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                   filled: true,
-                  fillColor: _hasFocus ? Colors.grey[900] : Colors.black,
+                  fillColor: _hasFocus ? AppColors.bgElevated : AppColors.bgDeep,
                   // Ghost value como hint
                   hintText: hasGhost ? widget.ghostValue : null,
                   hintStyle: widget.isSuggestion
                       ? _InputStyles.ghostTextSuggestion.copyWith(
-                          color: Colors.green[600]?.withValues(alpha: 0.6),
+                          color: AppColors.neonCyan?.withValues(alpha: 0.6),
                         )
                       : _InputStyles.ghostText,
                   // Suffix si existe
                   suffixText: widget.suffix,
                   suffixStyle: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppColors.textTertiary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                   // Borders
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[800]!),
+                    borderSide: BorderSide(color: AppColors.bgDeep!),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[800]!),
+                    borderSide: BorderSide(color: AppColors.bgDeep!),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide:
-                        BorderSide(color: Colors.redAccent[700]!, width: 2),
+                        BorderSide(color: AppColors.neonPrimary!, width: 2),
                   ),
                 ),
                 inputFormatters: [
@@ -444,9 +444,9 @@ class _LogInputState extends State<LogInput> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Icon(Icons.keyboard_arrow_up,
-                          size: 10, color: Colors.grey[700]),
+                          size: 10, color: AppColors.border),
                       Icon(Icons.keyboard_arrow_down,
-                          size: 10, color: Colors.grey[700]),
+                          size: 10, color: AppColors.border),
                     ],
                   ),
                 ),
@@ -461,8 +461,8 @@ class _LogInputState extends State<LogInput> {
                         const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                     decoration: BoxDecoration(
                       color: widget.isSuggestion
-                          ? Colors.green[900]?.withValues(alpha: 0.5)
-                          : Colors.grey[800]?.withValues(alpha: 0.7),
+                          ? AppColors.neonCyanSubtle?.withValues(alpha: 0.5)
+                          : AppColors.bgDeep?.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
@@ -470,8 +470,8 @@ class _LogInputState extends State<LogInput> {
                       style: TextStyle(
                         fontSize: 7,
                         color: widget.isSuggestion
-                            ? Colors.green[400]
-                            : Colors.grey[500],
+                            ? AppColors.neonCyan
+                            : AppColors.textTertiary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -559,7 +559,7 @@ class _IncrementButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isAccent ? Colors.redAccent[700] : Colors.grey[800],
+      color: isAccent ? AppColors.neonPrimary : AppColors.bgDeep,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -567,7 +567,7 @@ class _IncrementButton extends StatelessWidget {
         child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(icon, size: 18, color: Colors.white),
+          child: Icon(icon, size: 18, color: AppColors.textPrimary),
         ),
       ),
     );
@@ -595,7 +595,7 @@ class LogInputToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 44,
-      color: Colors.grey[900],
+      color: AppColors.bgElevated,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
@@ -646,7 +646,7 @@ class _ToolbarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isAccent ? Colors.redAccent[700] : Colors.grey[800],
+      color: isAccent ? AppColors.neonPrimary : AppColors.bgDeep,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: () {
@@ -660,7 +660,7 @@ class _ToolbarButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 14, color: Colors.white),
+                Icon(icon, size: 14, color: AppColors.textPrimary),
                 const SizedBox(width: 4),
               ],
               Text(label, style: _InputStyles.toolbarButtonLabel),
