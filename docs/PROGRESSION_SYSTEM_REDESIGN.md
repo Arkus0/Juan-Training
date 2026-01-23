@@ -4,6 +4,33 @@
 
 ---
 
+## 📚 REFERENCIAS CIENTÍFICAS (Clásicos del Entrenamiento)
+
+### Fuentes Primarias
+
+| Autor | Obra | Año | Concepto Principal |
+|-------|------|-----|-------------------|
+| **Mark Rippetoe** | Starting Strength, 3rd Ed. | 2011 | Progresión lineal novatos, stall detection |
+| **Mehdi** | StrongLifts 5x5 | 2007 | +2.5kg/sesión, deload 10% tras 3 fallos |
+| **Lyle McDonald** | Generic Bulking Routine | 2008 | Doble progresión para hipertrofia |
+| **Mike Tuchscherer** | Reactive Training Systems | 2010 | RPE/RIR autoregulación |
+
+### Citas Clave Implementadas
+
+**Progresión Lineal (Starting Strength p.299):**
+> "Add weight to the bar every workout for as long as possible."
+
+**Stall Detection (Starting Strength p.303):**
+> "A stall is defined as failing to complete the work sets for three consecutive workouts at the same weight."
+
+**Doble Progresión (Lyle McDonald):**
+> "Once you can complete ALL sets at the top of the rep range, add weight and drop back to the bottom of the rep range."
+
+**Deload (StrongLifts/Rippetoe):**
+> "If you fail a weight three times, deload 10% and work back up."
+
+---
+
 ## ✅ ESTADO DE IMPLEMENTACIÓN
 
 ### Archivos Implementados
