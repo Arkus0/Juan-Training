@@ -21,7 +21,7 @@ class HistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('LEGADO DE BATALLA'),
+        title: const Text('HISTORIAL'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -56,8 +56,8 @@ class HistoryScreen extends ConsumerWidget {
           if (sessions.isEmpty) {
             return const EmptyStateWidget(
               icon: Icons.history_toggle_off,
-              title: 'SIN HISTORIAL',
-              subtitle: 'Tu leyenda comienza con el primer entreno.',
+              title: 'SIN ENTRENAMIENTOS',
+              subtitle: 'Completa tu primer entrenamiento para ver el historial.',
             );
           }
 

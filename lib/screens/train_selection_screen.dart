@@ -375,7 +375,7 @@ class _ActiveSessionState extends StatelessWidget {
                 return Transform.scale(
                   scale: value,
                   child: Icon(
-                    Icons.bolt_rounded,
+                    Icons.recommend_rounded,
                     size: 72,
                     color: Colors.amber[400],
                   ),
