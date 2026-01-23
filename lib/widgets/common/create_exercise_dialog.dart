@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/library_exercise.dart';
 import '../../services/exercise_library_service.dart';
+import '../../utils/design_system.dart';
 
 /// Diálogo para crear un ejercicio personalizado
 class CreateExerciseDialog extends StatefulWidget {
@@ -142,7 +143,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.actionPrimary,
           ),
         );
       }
@@ -159,7 +160,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
         children: [
           Icon(
             _isEditing ? Icons.edit : Icons.add_circle,
-            color: Colors.redAccent[700],
+            color: AppColors.textSecondary,
           ),
           const SizedBox(width: 8),
           Text(
@@ -308,8 +309,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                             }
                           });
                         },
-                        selectedColor: Colors.redAccent[700],
-                        backgroundColor: Colors.grey[800],
+                        selectedColor: AppColors.actionPrimary,
+                        backgroundColor: AppColors.bgInteractive,
                         checkmarkColor: Colors.white,
                       );
                     }).toList(),
@@ -351,7 +352,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _save,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent[700],
+            backgroundColor: AppColors.actionPrimary,
             foregroundColor: Colors.white,
           ),
           child: _isLoading

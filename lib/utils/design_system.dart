@@ -366,7 +366,7 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     // CARDS: Sutiles con borde
     // ═════════════════════════════════════════════════════════════════════════
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: AppColors.bgElevated,
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -510,7 +510,7 @@ ThemeData buildAppTheme() {
     // ═════════════════════════════════════════════════════════════════════════
     // DIALOG
     // ═════════════════════════════════════════════════════════════════════════
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl),

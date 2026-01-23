@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../services/progression_controller.dart';
+import '../../models/progression_engine_models.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRESSION UX WIDGETS
@@ -769,7 +769,7 @@ class SeriesProgressIndicator extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: completedReps.asMap().entries.map((entry) {
-        final index = entry.key;
+        final _ = entry.key; // index not needed currently
         final reps = entry.value;
         final isCompleted = reps != null;
         final metTarget = reps != null && reps >= targetReps;

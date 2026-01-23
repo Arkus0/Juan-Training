@@ -112,7 +112,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             child: Text(
               'TERMINAR',
               style: TextStyle(
-                color: Colors.redAccent[700],
+                color: AppColors.success,
                 fontWeight: FontWeight.bold,
               ),
             ),

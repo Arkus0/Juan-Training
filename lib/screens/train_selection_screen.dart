@@ -161,7 +161,7 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
             child: Text(
               'TERMINAR',
               style: GoogleFonts.montserrat(
-                color: Colors.red[400],
+                color: AppColors.success,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -701,17 +701,17 @@ class _CompactRutinaCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red[900]?.withValues(alpha: 0.5),
+                      color: AppColors.bgInteractive,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.red[800]!.withValues(alpha: 0.5),
+                        color: AppColors.border,
                         width: 1,
                       ),
                     ),
                     child: Text(
                       entry.value.nombre.toUpperCase(),
                       style: GoogleFonts.montserrat(
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
