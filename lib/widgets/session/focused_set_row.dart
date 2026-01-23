@@ -3,117 +3,120 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/serie_log.dart';
+import '../../screens/plate_calculator_dialog.dart';
 import 'numpad_input_modal.dart';
 
 /// ============================================================================
-/// FOCUSED SET ROW — Fila de Serie con Estados Visuales Claros
+/// FOCUSED SET ROW — Intensidad Roja (Underground Gym)
 /// ============================================================================
 ///
-/// Widget de fila de serie diseñado para ejecución ultra-rápida.
+/// Widget de fila de serie con jerarquía visual clara:
 /// 
 /// Estados visuales:
-/// - ACTIVA: Verde, grande, destacada (1.5x tamaño)
-/// - PASADA: Desaturada, compacta (60% opacidad)
-/// - FUTURA: Muy sutil, colapsada (40% opacidad)
+/// - ACTIVA: Rojo profundo, prominente, touch targets grandes
+/// - COMPLETADA: Verde brillante, check claro
+/// - PASADA (sin completar): Muy sutil, gris
+/// - FUTURA: Casi invisible
 ///
-/// Principios:
-/// - Touch targets ≥72dp para inputs
-/// - Una sola decisión por momento
-/// - Auto-completado cuando KG y REPS tienen valor
+/// Vibe: Gym underground con luces rojas
 /// ============================================================================
 
-/// Colores específicos para la sesión de entrenamiento
+/// Colores de sesión — Rojo sangre + Verde check
 class TrainingColors {
-  // FOCO: Verde para la serie activa y completadas
-  static const activeSet = Color(0xFF4CAF50);
-  static const activeBg = Color(0xFF1B3D1B);
-  static const completed = Color(0xFF2E7D32);
-  static const completedBg = Color(0xFF1A2E1A);
+  // FOCO: Rojo profundo para serie activa (intensidad)
+  static const activeSet = AppColors.bloodRed;
+  static const activeBg = Color(0xFF1A1212); // Sutil tinte rojo
 
-  // TIMER: Naranja para descanso (urgencia sin alarma)
-  static const timerActive = Color(0xFFFF9800);
-  static const timerBg = Color(0xFF3D2E1A);
+  // COMPLETADO: Verde brillante (éxito)
+  static const completed = AppColors.completedGreen;
+  static const completedBg = Color(0xFF121A12); // Sutil tinte verde
 
   // NEUTROS: Grises para todo lo demás
-  static const textPrimary = Color(0xFFFAFAFA);
-  static const textSecondary = Color(0xFF757575);
-  static const textDisabled = Color(0xFF424242);
-  static const bgCard = Color(0xFF1C1C1F);
-  static const bgInput = Color(0xFF252528);
+  static const textPrimary = AppColors.textPrimary;
+  static const textSecondary = AppColors.textSecondary;
+  static const textDisabled = AppColors.textDisabled;
+  static const bgCard = AppColors.bgElevated;
+  static const bgInput = AppColors.bgInteractive;
 
-  // ACCIÓN: Verde para OK
-  static const confirmButton = Color(0xFF4CAF50);
+  // ACCIÓN: Rojo profundo para confirmar
+  static const confirmButton = AppColors.bloodRed;
 }
 
 // ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
 class _SetRowStyles {
   static final badgeLabel = GoogleFonts.montserrat(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w800,
-    color: Colors.white,
+    color: AppColors.textOnAccent,
   );
 
   static final badgeLabelDisabled = GoogleFonts.montserrat(
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w800,
     color: TrainingColors.textDisabled,
   );
 
+  // Serie activa: números grandes pero no exagerados
   static final valueActiveText = GoogleFonts.montserrat(
     fontSize: 24,
     fontWeight: FontWeight.w800,
   );
 
   static final valueNormalText = GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w800,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
   );
 
+  // Labels muy sutiles para no competir con datos
   static final labelActiveText = GoogleFonts.montserrat(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: TrainingColors.textSecondary,
+    fontSize: 9,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textTertiary,
   );
 
   static final labelNormalText = GoogleFonts.montserrat(
-    fontSize: 10,
-    fontWeight: FontWeight.w600,
-    color: TrainingColors.textSecondary,
+    fontSize: 8,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textTertiary,
   );
 }
 
-// ⚡ OPTIMIZACIÓN: RowStyle constantes pre-definidos para evitar crear objetos en cada build
+// ⚡ OPTIMIZACIÓN: RowStyle constantes - JERARQUÍA VISUAL CLARA
 class _RowStyles {
+  // COMPLETADA: Verde apagado, sutil pero satisfactoria
   static const completed = RowStyle(
     bgColor: TrainingColors.completedBg,
-    borderColor: Color(0x4D2E7D32), // TrainingColors.completed @ 0.3 alpha
+    borderColor: Color(0x402E8B57), // Verde @ 0.25 alpha
     textColor: TrainingColors.textSecondary,
-    opacity: 0.7,
-    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+    opacity: 0.6, // Desaturada
+    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
   );
 
+  // ACTIVA: Rojo prominente, LA ÚNICA que destaca
   static const active = RowStyle(
     bgColor: TrainingColors.activeBg,
     borderColor: TrainingColors.activeSet,
     textColor: TrainingColors.textPrimary,
     opacity: 1.0,
-    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
   );
 
+  // FUTURA: Casi invisible
   static const future = RowStyle(
     bgColor: Colors.transparent,
     borderColor: Colors.transparent,
     textColor: TrainingColors.textDisabled,
-    opacity: 0.4,
-    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+    opacity: 0.3, // Muy sutil
+    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 10),
   );
 
+  // PASADA (sin completar): Sutil
   static const past = RowStyle(
     bgColor: Colors.transparent,
     borderColor: Colors.transparent,
     textColor: TrainingColors.textSecondary,
-    opacity: 0.6,
-    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+    opacity: 0.5,
+    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 10),
   );
 }
 
@@ -309,6 +312,9 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       previousValue: widget.prevLog?.peso.toDouble(),
       currentValue: widget.log.peso > 0 ? widget.log.peso.toDouble() : null,
       isInteger: false,
+      onOpenPlateCalc: (currentWeight, onWeightSelected) {
+        _showPlateCalculator(context, currentWeight, onWeightSelected);
+      },
     );
 
     if (result != null) {
@@ -316,6 +322,19 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       // 🆕 Auto-completar si ambos campos tienen valor
       _checkAutoComplete(result, widget.log.reps.toDouble());
     }
+  }
+
+  void _showPlateCalculator(BuildContext context, double currentWeight, Function(double) onWeightSelected) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => PlateCalculatorDialog(
+        currentWeight: currentWeight,
+        onWeightSelected: (weight) {
+          Navigator.of(dialogContext).pop(); // Cerrar el dialog primero
+          onWeightSelected(weight); // Luego actualizar el valor
+        },
+      ),
+    );
   }
 
   void _openRepsInput(BuildContext context) async {
@@ -366,7 +385,7 @@ class RowStyle {
   });
 }
 
-/// Badge del número de serie
+/// Badge del número de serie - Jerarquía visual clara
 class _SetNumberBadge extends StatelessWidget {
   final int index;
   final bool isCompleted;
@@ -385,7 +404,7 @@ class _SetNumberBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color bgColor;
-    Color textColor = Colors.white;
+    Color textColor = AppColors.textOnAccent;
     String label = '${index + 1}';
 
     if (isWarmup) {
@@ -395,24 +414,24 @@ class _SetNumberBadge extends StatelessWidget {
       bgColor = Colors.purple[700]!;
       label = 'D';
     } else if (isCompleted) {
-      bgColor = TrainingColors.completed;
+      bgColor = TrainingColors.completed; // Verde apagado
     } else if (isActive) {
-      bgColor = TrainingColors.activeSet;
+      bgColor = TrainingColors.activeSet; // Cyan
     } else {
       bgColor = TrainingColors.bgInput;
       textColor = TrainingColors.textDisabled;
     }
 
     return Container(
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
       ),
       child: Center(
         child: isCompleted && !isWarmup && !isDropset
-            ? const Icon(Icons.check, color: Colors.white, size: 20)
+            ? const Icon(Icons.check, color: Colors.white, size: 18)
             : Text(
                 label,
                 // ⚡ OPTIMIZACIÓN: Usar estilo pre-computado
@@ -425,7 +444,7 @@ class _SetNumberBadge extends StatelessWidget {
   }
 }
 
-/// Input táctil grande para KG/REPS
+/// Input táctil grande para KG/REPS - TOUCH TARGETS GRANDES
 class _TappableValueInput extends StatelessWidget {
   final double? value;
   final String label;
@@ -457,8 +476,8 @@ class _TappableValueInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Touch target mínimo 56dp (activo 64dp)
-    final height = isActive ? 64.0 : 48.0;
+    // Touch target mínimo 64dp (activo 72dp) para dedos sudados
+    final height = isActive ? 72.0 : 56.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -467,9 +486,10 @@ class _TappableValueInput extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive ? TrainingColors.bgInput : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          // Borde sutil cyan, NO rojo ni agresivo
           border: isActive
               ? Border.all(
-                  color: TrainingColors.activeSet.withOpacity(0.5),
+                  color: TrainingColors.activeSet.withOpacity(0.4),
                   width: 1.5,
                 )
               : null,
@@ -482,7 +502,7 @@ class _TappableValueInput extends StatelessWidget {
             children: [
               Text(
                 _displayValue,
-                // ⚡ OPTIMIZACIÓN: Usar estilos pre-computados con color override
+                // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
                 style: (isActive ? _SetRowStyles.valueActiveText : _SetRowStyles.valueNormalText)
                     .copyWith(
                       color: value == null || value == 0
@@ -493,7 +513,7 @@ class _TappableValueInput extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                // ⚡ OPTIMIZACIÓN: Usar estilos pre-computados
+                // Labels muy sutiles para no competir con datos
                 style: isActive ? _SetRowStyles.labelActiveText : _SetRowStyles.labelNormalText,
               ),
             ],
@@ -504,7 +524,7 @@ class _TappableValueInput extends StatelessWidget {
   }
 }
 
-/// Checkbox de completado con zona táctil grande (56dp)
+/// Checkbox de completado con zona táctil grande (64dp)
 class _CompletionCheckbox extends StatelessWidget {
   final bool isCompleted;
   final bool isActive;
@@ -519,8 +539,8 @@ class _CompletionCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 56,
-      height: 56,
+      width: 64,
+      height: 64,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -532,27 +552,27 @@ class _CompletionCheckbox extends StatelessWidget {
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? TrainingColors.completed
+                    ? TrainingColors.completed // Verde apagado
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isCompleted
                       ? TrainingColors.completed
                       : isActive
-                          ? TrainingColors.activeSet
+                          ? TrainingColors.activeSet // Cyan
                           : TrainingColors.textDisabled,
                   width: 2.5,
                 ),
               ),
               child: isCompleted
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_rounded,
-                      color: Colors.white,
-                      size: 24,
+                      color: AppColors.textOnAccent,
+                      size: 28,
                     )
                   : null,
             ),

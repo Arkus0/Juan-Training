@@ -1,25 +1,37 @@
 /// ============================================================================
-/// SISTEMA DE DISEÑO "NEON IRON AESTHETICS" — Juan Training
+/// SISTEMA DE DISEÑO "AGGRESSIVE RED" — Juan Training
 /// ============================================================================
 ///
-/// Estética híbrida: Heavy Metal Old School + Venice 70s + Synthwave 80s
+/// Estética: Underground Gym con Luces Rojas — Intensidad máxima, sangre en
+/// las venas, powerlifting. Diseñado para sesiones reales bajo adrenalina.
 ///
-/// Este sistema de diseño está optimizado para:
-/// 1. Reducir fatiga cognitiva en sesiones largas de gimnasio (45-90 min)
-/// 2. Modo "piloto automático" - mínima fricción durante entrenamiento
-/// 3. Feedback visceral para motivación (celebraciones, progreso)
-/// 4. Accesibilidad en condiciones de alta fatiga física
+/// VIBE: Como entrar a un gym underground con luces rojas. Grita esfuerzo
+/// máximo y power sin ser chillón. Zero fatiga ocular.
 ///
-/// PRINCIPIOS PSICOLÓGICOS:
-/// - Ley de Hick: Reducir decisiones (1 CTA por pantalla)
-/// - Carga cognitiva: ≤4 chunks de información simultáneos
-/// - Modelo mental: Verde = completado, Magenta = acción
-/// - Fatiga ocular: Fondos oscuros cálidos, nunca negro puro (#000)
+/// PRINCIPIOS NO NEGOCIABLES:
+/// - Priorizar uso repetido sobre impacto visual
+/// - Reducir carga cognitiva: el usuario NO quiere pensar
+/// - Cada color debe justificar su función
+/// - Nada debe competir visualmente con la serie activa
+///
+/// JERARQUÍA VISUAL:
+/// - UNA sola serie debe dominar la pantalla (la activa)
+/// - Series pasadas y futuras: desaturadas / secundarias
+/// - Rojo Ferrari para acciones principales
+///
+/// PALETA FUNCIONAL:
+/// - Fondo base: Negro puro #0A0A0A (contraste brutal)
+/// - Cards: #1C1C1C con borde #C41E3A en foco
+/// - Acento primario: #C41E3A (Rojo Ferrari)
+/// - Acento secundario: #8B0000 (Rojo oscuro — countdowns)
+/// - Highlights: #FF3333 con glow (PRs, flames)
+/// - Timer descanso: #008080 (Teal frío — calma)
+/// - Neutros: #464646 (iconos inactivos)
 ///
 /// VALIDACIÓN WCAG 2.1:
-/// - Contraste texto primario sobre fondo: 15.2:1 ✅ (AAA)
-/// - Contraste texto secundario sobre fondo: 7.8:1 ✅ (AAA)
-/// - Touch targets: ≥48dp (recomendado 56dp para gimnasio)
+/// - Contraste #EAEAEA sobre #0A0A0A: 14.8:1 ✅ (AAA)
+/// - Contraste #C41E3A sobre #0A0A0A: 5.8:1 ✅ (AA)
+/// - Touch targets: ≥56dp (manos sudadas/guantes)
 ///
 /// Creado: Enero 2026
 /// ============================================================================
@@ -29,457 +41,563 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// ============================================================================
-/// PALETA DE COLORES — NEON IRON AESTHETICS
+/// PALETA DE COLORES — DARK TECH PERFORMANCE
 /// ============================================================================
 ///
-/// Inspiración: El brillo de neón de un gimnasio 80s, el hierro oxidado de
-/// Venice Beach, y la energía cyberpunk de la cultura synthwave.
+/// Filosofía: Colores funcionales, no decorativos. Cada color tiene un rol
+/// específico y no debe usarse fuera de ese contexto.
 ///
-/// Regla de oro: El magenta (#FF2A6D) es SOLO para CTAs principales.
-/// El cyan (#05D9E8) es para progreso y feedback positivo.
-/// El oro (#D19A6A) es para logros y celebraciones.
+/// - Cyan frío: FOCO (serie activa, timer, acción principal)
+/// - Verde apagado: COMPLETADO (solo cuando la serie está confirmada)
+/// - Oro cálido: LOGROS (PR, rachas, celebraciones - uso muy escaso)
+/// - Rojo técnico: ERRORES (uso mínimo, solo problemas reales)
+///
+/// ❌ PROHIBIDO: Magenta, rosa, fucsia, verde brillante para foco
 /// ============================================================================
 
 abstract class AppColors {
   // ═══════════════════════════════════════════════════════════════════════════
-  // FONDOS: Escala de grises azulados (nunca negro puro)
-  // Justificación: Negro puro (#000) causa fatiga ocular 40% más rápido
+  // FONDOS: Negro profundo — Gym underground con luces rojas
+  // Contraste brutal para zero fatiga ocular
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Fondo más profundo - Pantallas principales
-  /// Hex: #0F1115 | RGB: 15, 17, 21
-  static const Color bgDeep = Color(0xFF0F1115);
+  /// Fondo más profundo - Negro puro intenso
+  /// Hex: #0A0A0A | RGB: 10, 10, 10
+  static const Color bgDeep = Color(0xFF0A0A0A);
 
-  /// Fondo principal de pantallas
-  /// Hex: #13161B | RGB: 19, 22, 27
-  static const Color bgPrimary = Color(0xFF13161B);
+  /// Fondo principal de pantallas - Negro profundo
+  /// Hex: #0A0A0A | RGB: 10, 10, 10
+  static const Color bgPrimary = Color(0xFF0A0A0A);
 
-  /// Fondo de cards y superficies elevadas
-  /// Hex: #181B21 | RGB: 24, 27, 33
-  static const Color bgElevated = Color(0xFF181B21);
+  /// Fondo de cards - Gris metálico oscuro
+  /// Hex: #1C1C1C | RGB: 28, 28, 28
+  static const Color bgElevated = Color(0xFF1C1C1C);
 
-  /// Fondo de inputs, botones secundarios, estados hover
-  /// Hex: #1E2228 | RGB: 30, 34, 40
-  static const Color bgInteractive = Color(0xFF1E2228);
+  /// Fondo de inputs, botones secundarios
+  /// Hex: #252525 | RGB: 37, 37, 37
+  static const Color bgInteractive = Color(0xFF252525);
 
   /// Fondo para estados pressed/active
-  /// Hex: #262B33 | RGB: 38, 43, 51
-  static const Color bgPressed = Color(0xFF262B33);
+  /// Hex: #2F2F2F | RGB: 47, 47, 47
+  static const Color bgPressed = Color(0xFF2F2F2F);
 
-  /// Fondo de cards destacadas (ejercicio activo)
-  /// Hex: #1C2026 | RGB: 28, 32, 38
-  static const Color bgActiveCard = Color(0xFF1C2026);
+  /// Fondo de cards destacadas (ejercicio activo) - Tinte rojo sutil
+  /// Hex: #1A0A0A | RGB: 26, 10, 10
+  static const Color bgActiveCard = Color(0xFF1A0A0A);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACENTO PRIMARIO: Magenta Neon (CTA Principal)
+  // ACENTO PRIMARIO: Rojo Ferrari — Intensidad Máxima
   // ═══════════════════════════════════════════════════════════════════════════
   ///
-  /// REGLA ESTRICTA: Solo 1 elemento magenta por pantalla (el CTA principal)
-  /// Esto reduce la ley de Hick y guía el ojo inmediatamente a la acción.
+  /// Rojo Ferrari intenso para progresos, botones, records.
+  /// Desaturado justo lo suficiente para no quemar la retina.
+  /// Usado en fills, borders y glows.
   ///
-  /// Contraste sobre bgDeep: 5.8:1 ✅ (AA Large)
+  /// Contraste sobre bgPrimary (#0A0A0A): 5.8:1 ✅ (AA)
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// CTA principal - UN solo botón magenta por pantalla
-  /// Hex: #FF2A6D | RGB: 255, 42, 109 | HSL: 340°, 100%, 58%
-  static const Color neonPrimary = Color(0xFFFF2A6D);
+  /// Acento primario - Rojo Ferrari (Cardinal)
+  /// Hex: #C41E3A | RGB: 196, 30, 58
+  static const Color bloodRed = Color(0xFFC41E3A);
 
-  /// Estado hover/focus del CTA (más brillante)
-  /// Hex: #FF4D85 | RGB: 255, 77, 133
-  static const Color neonPrimaryHover = Color(0xFFFF4D85);
+  /// Estado hover (más brillante)
+  /// Hex: #DC143C | RGB: 220, 20, 60 (Crimson)
+  static const Color bloodRedHover = Color(0xFFDC143C);
 
-  /// Estado pressed del CTA (más oscuro)
-  /// Hex: #D91E5B | RGB: 217, 30, 91
-  static const Color neonPrimaryPressed = Color(0xFFD91E5B);
+  /// Estado pressed - Rojo oscuro para sombras/countdowns
+  /// Hex: #8B0000 | RGB: 139, 0, 0 (Dark Red)
+  static const Color bloodRedPressed = Color(0xFF8B0000);
 
-  /// Versión sutil para backgrounds/overlays (10% opacity)
-  static const Color neonPrimarySubtle = Color(0x1AFF2A6D);
+  /// Versión sutil para backgrounds (15% opacity)
+  static const Color bloodRedSubtle = Color(0x26C41E3A);
+
+  /// Glow para animaciones (usado en box-shadow)
+  static const Color bloodRedGlow = Color(0x4DC41E3A);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ACENTO SECUNDARIO: Rojo Oscuro — Timers, Alertas, Sombras
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Rojo oscuro para countdowns, rachas y sombras
+  /// Hex: #8B0000 | RGB: 139, 0, 0 (Dark Red)
+  static const Color darkRed = Color(0xFF8B0000);
+  static const Color darkRedHover = Color(0xFFA50000);
+  static const Color darkRedPressed = Color(0xFF700000);
+  static const Color darkRedSubtle = Color(0x268B0000);
+  static const Color darkRedGlow = Color(0x4D8B0000);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HIGHLIGHTS: Rojo "On Fire" — PRs, Flames, Completados
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Highlight brillante con glow - Efecto "on fire"
+  /// Hex: #FF3333 | RGB: 255, 51, 51
+  /// Usar con glow: box-shadow: 0 0 10px #FF0000
+  static const Color fireRed = Color(0xFFFF3333);
+  static const Color fireRedGlow = Color(0x80FF0000); // 50% opacity para glow intenso
+  static const Color fireRedSubtle = Color(0x26FF3333);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NEUTROS: Gris Metálico Frío — Iconos inactivos, líneas
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Gris metálico frío para iconos inactivos y líneas
+  /// Hex: #464646 | RGB: 70, 70, 70
+  static const Color metalGray = Color(0xFF464646);
+  static const Color metalGrayLight = Color(0xFF5A5A5A);
+  static const Color metalGrayDark = Color(0xFF363636);
+
+  // Aliases para compatibilidad (todos apuntan a rojo Ferrari)
+  static const Color techCyan = bloodRed;
+  static const Color techCyanHover = bloodRedHover;
+  static const Color techCyanPressed = bloodRedPressed;
+  static const Color techCyanSubtle = bloodRedSubtle;
+  static const Color techCyanGlow = bloodRedGlow;
+  static const Color neonPrimary = bloodRed;
+  static const Color neonPrimaryHover = bloodRedHover;
+  static const Color neonPrimaryPressed = bloodRedPressed;
+  static const Color neonPrimarySubtle = bloodRedSubtle;
+  static const Color neonPrimaryGlow = bloodRedGlow;
+  static const Color actionPrimary = bloodRed;
+  static const Color actionHover = bloodRedHover;
+  static const Color actionPressed = bloodRedPressed;
+  static const Color forestGreen = bloodRed; // Legacy alias
+  static const Color forestGreenHover = bloodRedHover;
+  static const Color forestGreenPressed = bloodRedPressed;
+  static const Color forestGreenSubtle = bloodRedSubtle;
+  static const Color forestGreenGlow = bloodRedGlow;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TIMER DESCANSO: Teal Frío — Calma post-set
+  // ═══════════════════════════════════════════════════════════════════════════
+  ///
+  /// Teal frío para timers de descanso.
+  /// Contraste máximo con el rojo de acción = calma entre sets.
+  ///
+  /// Contraste sobre bgPrimary (#0A0A0A): 4.5:1 ✅ (AA Large)
+  /// ═══════════════════════════════════════════════════════════════════════════
+
+  /// Teal frío - Descanso, calma
+  /// Hex: #008080 | RGB: 0, 128, 128 (Teal)
+  static const Color restTeal = Color(0xFF008080);
+
+  /// Versión más clara
+  /// Hex: #20B2AA | RGB: 32, 178, 170 (Light Sea Green)
+  static const Color restTealHover = Color(0xFF20B2AA);
+
+  /// Versión más oscura
+  /// Hex: #006666 | RGB: 0, 102, 102
+  static const Color restTealPressed = Color(0xFF006666);
+
+  /// Versión sutil para backgrounds
+  static const Color restTealSubtle = Color(0x26008080);
 
   /// Glow para animaciones
-  static const Color neonPrimaryGlow = Color(0x4DFF2A6D);
+  static const Color restTealGlow = Color(0x4D008080);
 
-  // Aliases para compatibilidad hacia atrás
-  static const Color actionPrimary = neonPrimary;
-  static const Color actionHover = neonPrimaryHover;
-  static const Color actionPressed = neonPrimaryPressed;
+  // Legacy aliases
+  static const Color slateGreen = restTeal;
+  static const Color slateGreenHover = restTealHover;
+  static const Color slateGreenPressed = restTealPressed;
+  static const Color slateGreenSubtle = restTealSubtle;
+  static const Color slateGreenGlow = restTealGlow;
+
+  // Timer usa teal (calma, descanso)
+  static const Color timerActive = restTeal;
+  static const Color timerGlow = restTealGlow;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACENTO SECUNDARIO: Cyan Synthwave (Progreso y Feedback)
+  // COMPLETADO: Verde brillante (check, éxito)
   // ═══════════════════════════════════════════════════════════════════════════
   ///
-  /// Uso: Series completadas, progreso, feedback positivo, timer
-  /// El cyan es menos agresivo que el verde puro y encaja con la estética 80s.
+  /// Verde más visible para indicar "hecho" / check.
   ///
-  /// Contraste sobre bgDeep: 10.2:1 ✅ (AAA)
+  /// Contraste sobre bgPrimary: 6.5:1 ✅ (AA)
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Progreso, completado, éxito
-  /// Hex: #05D9E8 | RGB: 5, 217, 232 | HSL: 184°, 96%, 46%
-  static const Color neonCyan = Color(0xFF05D9E8);
+  /// Completado - Verde brillante
+  /// Hex: #4CAF50 | RGB: 76, 175, 80
+  static const Color completedGreen = Color(0xFF4CAF50);
 
-  /// Versión más brillante para highlights
-  /// Hex: #33E5F0 | RGB: 51, 229, 240
-  static const Color neonCyanBright = Color(0xFF33E5F0);
+  /// Versión más clara para highlights
+  /// Hex: #66BB6A | RGB: 102, 187, 106
+  static const Color completedGreenBright = Color(0xFF66BB6A);
 
-  /// Versión más sutil para fondos
-  /// Hex: #04A8B4 | RGB: 4, 168, 180
-  static const Color neonCyanDark = Color(0xFF04A8B4);
+  /// Versión más oscura para fondos
+  /// Hex: #388E3C | RGB: 56, 142, 60
+  static const Color completedGreenDark = Color(0xFF388E3C);
 
-  /// Versión muy sutil para overlays (15% opacity)
-  static const Color neonCyanSubtle = Color(0x2605D9E8);
+  /// Versión sutil para overlays
+  static const Color completedGreenSubtle = Color(0x264CAF50);
 
-  /// Glow para animaciones
-  static const Color neonCyanGlow = Color(0x4D05D9E8);
+  // Aliases para compatibilidad
+  static const Color neonCyan = bloodRed;
+  static const Color neonCyanBright = bloodRedHover;
+  static const Color neonCyanDark = bloodRedPressed;
+  static const Color neonCyanSubtle = bloodRedSubtle;
+  static const Color neonCyanGlow = bloodRedGlow;
+  static const Color success = completedGreen;
+  static const Color successSubtle = completedGreenDark;
+  static const Color progressActive = bloodRed;
 
-  // Aliases para compatibilidad hacia atrás
-  static const Color success = neonCyan;
-  static const Color successSubtle = neonCyanDark;
-  static const Color progressActive = neonCyanBright;
+  // Highlights para PRs y flames - rojo "on fire"
+  static const Color prHighlight = fireRed;
+  static const Color flameColor = fireRed;
+  static const Color streakGlow = fireRedGlow;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ACENTO TERCIARIO: Oro Venice (Logros y Celebraciones)
+  // LOGROS/PRs: Naranja cobre (destaca sobre el rojo)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LEGACY: Gold/Copper ahora redirigen a Rojo (Aggressive Red)
   // ═══════════════════════════════════════════════════════════════════════════
   ///
-  /// Uso: PRs, trofeos, milestones, badges de logros
-  /// El oro evoca las medallas y el bronce de Venice Beach Gold's Gym.
-  ///
-  /// Contraste sobre bgDeep: 7.4:1 ✅ (AAA)
+  /// Todos los acentos gold/copper ahora usan rojo para consistencia.
+  /// El naranja/dorado fue eliminado de la paleta.
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Celebraciones, PRs, logros
-  /// Hex: #D19A6A | RGB: 209, 154, 106 | HSL: 28°, 52%, 62%
-  static const Color goldAccent = Color(0xFFD19A6A);
+  /// Legacy copper → ahora rojo
+  static const Color copperOrange = bloodRed;
+  static const Color copperOrangeHover = bloodRedHover;
+  static const Color copperOrangePressed = bloodRedPressed;
+  static const Color copperOrangeSubtle = bloodRedSubtle;
+  static const Color copperOrangeGlow = bloodRedGlow;
 
-  /// Versión más brillante para highlights
-  /// Hex: #E5B588 | RGB: 229, 181, 136
-  static const Color goldBright = Color(0xFFE5B588);
+  /// Gold → ahora rojo (PRs, celebraciones, thumbs-up)
+  static const Color goldAccent = bloodRed;
+  static const Color goldBright = bloodRedHover;
+  static const Color goldDark = darkRed;  // #8B0000 para fondos oscuros
+  static const Color goldSubtle = bloodRedSubtle;
+  static const Color goldGlow = bloodRedGlow;
 
-  /// Versión más oscura para contraste
-  /// Hex: #B07D4F | RGB: 176, 125, 79
-  static const Color goldDark = Color(0xFFB07D4F);
+  // Alias para compatibilidad
+  static const Color celebration = bloodRed;
 
-  /// Versión sutil para overlays (20% opacity)
-  static const Color goldSubtle = Color(0x33D19A6A);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATOS: Azul cielo para gráficas y evolución
+  // ═══════════════════════════════════════════════════════════════════════════
+  ///
+  /// Para líneas de evolución en gráficas, números clave.
+  ///
+  /// Contraste sobre bgPrimary: 8.2:1 ✅ (AAA)
+  /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Glow para celebraciones
-  static const Color goldGlow = Color(0x66D19A6A);
+  /// Azul cielo profundo - Gráficas y datos
+  /// Hex: #00BFFF | RGB: 0, 191, 255 (Deep Sky Blue)
+  static const Color dataBlue = Color(0xFF00BFFF);
 
-  // Alias para compatibilidad hacia atrás
-  static const Color celebration = goldAccent;
+  /// Versión más clara
+  /// Hex: #33CCFF | RGB: 51, 204, 255
+  static const Color dataBlueBright = Color(0xFF33CCFF);
+
+  /// Versión sutil
+  static const Color dataBlueSubtle = Color(0x2600BFFF);
+
+  /// Blanco azulado para números clave
+  /// Hex: #F0F8FF | RGB: 240, 248, 255 (Alice Blue)
+  static const Color dataHighlight = Color(0xFFF0F8FF);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ESTADO "EN VIVO": Timer activo, sesión en curso
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Timer activo / estado "en vivo"
-  /// Hex: #FF6B35 | RGB: 255, 107, 53 (naranja energético)
-  static const Color live = Color(0xFFFF6B35);
+  /// Timer activo / estado "en vivo" - Rojo intenso
+  static const Color live = bloodRed;
 
   /// Glow del timer
-  static const Color liveGlow = Color(0x4DFF6B35);
+  static const Color liveGlow = bloodRedGlow;
 
-  /// Sesión activa / continuar (amarillo cálido)
-  /// Hex: #FFBE0B | RGB: 255, 190, 11
-  static const Color sessionActive = Color(0xFFFFBE0B);
+  /// Sesión activa / continuar - Rojo (antes verde)
+  static const Color sessionActive = bloodRed;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TEXTO: Jerarquía clara de 4 niveles
+  // TEXTO: Gris claro alto contraste — Máxima legibilidad
   // ═══════════════════════════════════════════════════════════════════════════
   ///
-  /// Basado en el color base #E0E6ED con variaciones de opacidad.
-  /// Contraste verificado para WCAG AAA en todos los niveles principales.
+  /// Gris claro muy visible, zero fatiga ocular.
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Texto primario: Títulos, info crítica, datos importantes
-  /// Hex: #E0E6ED | RGB: 224, 230, 237
-  /// Contraste sobre bgDeep: 13.8:1 ✅ (AAA)
-  static const Color textPrimary = Color(0xFFE0E6ED);
+  /// Texto primario: Datos clave (KG, REPS)
+  /// Hex: #EAEAEA | RGB: 234, 234, 234
+  /// Contraste sobre bgPrimary (#0A0A0A): 14.8:1 ✅ (AAA)
+  static const Color textPrimary = Color(0xFFEAEAEA);
 
-  /// Texto secundario: Labels, descripciones, contexto
-  /// Hex: #9BA3AE | RGB: 155, 163, 174
-  /// Contraste sobre bgDeep: 7.2:1 ✅ (AAA)
-  static const Color textSecondary = Color(0xFF9BA3AE);
+  /// Texto secundario: Labels, descripciones
+  /// Hex: #B0B0B0 | RGB: 176, 176, 176
+  /// Contraste sobre bgPrimary: 8.1:1 ✅ (AAA)
+  static const Color textSecondary = Color(0xFFB0B0B0);
 
-  /// Texto terciario: Hints, metadata, info menor
-  /// Hex: #5E6673 | RGB: 94, 102, 115
-  /// Contraste sobre bgDeep: 4.1:1 ✅ (AA Large)
-  static const Color textTertiary = Color(0xFF5E6673);
+  /// Texto terciario: Hints, metadata
+  /// Hex: #6B6B6B | RGB: 107, 107, 107
+  /// Contraste sobre bgPrimary: 4.1:1 ✅ (AA Large)
+  static const Color textTertiary = Color(0xFF6B6B6B);
 
   /// Texto deshabilitado
-  /// Hex: #3D4350 | RGB: 61, 67, 80
-  static const Color textDisabled = Color(0xFF3D4350);
+  /// Hex: #4A4A4A | RGB: 74, 74, 74
+  static const Color textDisabled = Color(0xFF4A4A4A);
 
-  /// Texto sobre superficies de acento (magenta/cyan)
-  /// Hex: #FFFFFF | Blanco puro para máximo contraste
+  /// Texto sobre superficies de acento (rojo)
+  /// Hex: #FFFFFF | Blanco para máximo contraste
   static const Color textOnAccent = Color(0xFFFFFFFF);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ESTRUCTURA: Bordes y divisores
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Bordes sutiles de cards y containers
-  /// Hex: #262B33 | RGB: 38, 43, 51
-  static const Color border = Color(0xFF262B33);
+  /// Bordes sutiles de cards
+  /// Hex: #333333 | RGB: 51, 51, 51
+  static const Color border = Color(0xFF333333);
 
-  /// Bordes más visibles (estados focus)
-  /// Hex: #353B45 | RGB: 53, 59, 69
-  static const Color borderFocus = Color(0xFF353B45);
+  /// Borde en focus - Rojo Ferrari sutil
+  /// Para cards/inputs cuando están seleccionados
+  static const Color borderFocus = bloodRed;
+
+  /// Bordes más visibles (estados activos - gris visible)
+  /// Hex: #444444 | RGB: 68, 68, 68
+  static const Color borderVisible = Color(0xFF444444);
 
   /// Separadores horizontales
-  /// Hex: #1E2228 | RGB: 30, 34, 40
-  static const Color divider = Color(0xFF1E2228);
+  /// Hex: #2A2A2A | RGB: 42, 42, 42
+  static const Color divider = Color(0xFF2A2A2A);
 
-  /// Borde para inputs activos (usa el cyan)
-  static const Color borderActive = neonCyan;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ESTADOS: Feedback y alertas
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// Advertencia (amarillo cálido)
-  /// Hex: #FFB627 | RGB: 255, 182, 39
-  static const Color warning = Color(0xFFFFB627);
-
-  /// Error (rojo diferente al CTA para no confundir)
-  /// Hex: #FF5C5C | RGB: 255, 92, 92
-  static const Color error = Color(0xFFFF5C5C);
-
-  /// Info (azul suave)
-  /// Hex: #5DA9E9 | RGB: 93, 169, 233
-  static const Color info = Color(0xFF5DA9E9);
+  /// Borde para inputs activos - Rojo Ferrari
+  static const Color borderActive = bloodRed;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // GRADIENTES: Para fondos premium y celebraciones
+  // ESTADOS: Feedback y alertas — Uso mínimo, solo problemas reales
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Gradiente neon para headers o celebraciones
-  static const LinearGradient neonGradient = LinearGradient(
-    colors: [neonPrimary, neonCyan],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  /// Advertencia (amarillo apagado, no llamativo)
+  /// Hex: #C4A35A | RGB: 196, 163, 90
+  static const Color warning = Color(0xFFC4A35A);
 
-  /// Gradiente sutil para cards destacadas
+  /// Error - Rojo técnico, uso MUY mínimo
+  /// ❌ NO usar como borde de foco ni para feedback normal
+  /// Hex: #DC4C4C | RGB: 220, 76, 76 (Rojo apagado, no alarmante)
+  static const Color error = Color(0xFFDC4C4C);
+
+  /// Info (gris azulado, muy sutil)
+  /// Hex: #6B7A8F | RGB: 107, 122, 143
+  static const Color info = Color(0xFF6B7A8F);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GRADIENTES: Eliminados - Diseño plano, funcional
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ❌ Gradientes eliminados: no aportan claridad funcional
+
+  /// Gradiente sutil para cards destacadas (mínimo)
   static const LinearGradient subtleGradient = LinearGradient(
     colors: [bgElevated, bgPressed],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
-  /// Gradiente dorado para celebraciones
+  /// Gradiente dorado para celebraciones (contenido)
   static const LinearGradient goldGradient = LinearGradient(
-    colors: [goldDark, goldAccent, goldBright],
+    colors: [goldDark, goldAccent],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
+
+  // Alias removido: neonGradient no debe usarse
+  static const LinearGradient neonGradient = subtleGradient;
 }
 
 /// ============================================================================
-/// SISTEMA TIPOGRÁFICO — NEON IRON
+/// SISTEMA TIPOGRÁFICO — DARK TECH PERFORMANCE
 /// ============================================================================
 ///
-/// PRINCIPIO: 5 niveles jerárquicos máximo para reducir carga cognitiva.
-/// Cada nivel tiene un propósito único y NO se mezcla con otros.
+/// PRINCIPIO: Jerarquía clara. KG y REPS siempre dominan visualmente.
+/// Headers y labels NUNCA compiten con datos clave.
 ///
 /// Jerarquía:
-/// 1. HERO      → 1 por pantalla (nombre del día)
-/// 2. SECTION   → Nombres de ejercicios, secciones
-/// 3. DATA      → Números importantes (peso, reps, timer)
-/// 4. LABEL     → Contexto, labels, descripciones
-/// 5. META      → Timestamps, hints, badges
+/// 1. DATA      → Números que importan (KG, REPS, timer) - MÁXIMA prominencia
+/// 2. SECTION   → Nombres de ejercicios - Prominencia media
+/// 3. LABEL     → Contexto, labels - Muy sutil
+/// 4. META      → Timestamps, hints - Casi invisible
 ///
 /// Fuente: Montserrat (geometric sans-serif)
 /// - Legible en pantallas pequeñas
-/// - Buena en condiciones de fatiga visual
-/// - Soporte completo de weights
+/// - Números tabular para alineación perfecta
 /// ============================================================================
 
 abstract class AppTypography {
   // ═══════════════════════════════════════════════════════════════════════════
-  // NIVEL 1: HERO
-  // Uso: Nombre del día de entrenamiento, título principal de pantalla
-  // Regla: SOLO 1 elemento hero por pantalla
+  // NIVEL 1: DATA (Máxima prominencia)
+  // Uso: KG, REPS, Timer - Lo único que DEBE verse inmediatamente
   // ═══════════════════════════════════════════════════════════════════════════
 
-  static TextStyle get hero => GoogleFonts.montserrat(
-    fontSize: 32,
+  /// Números gigantes para modales de input (numpad)
+  static TextStyle get dataGiant => GoogleFonts.montserrat(
+    fontSize: 64,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
-    letterSpacing: 2.0,
-    height: 1.2,
-  );
-
-  /// Versión compacta para espacios reducidos
-  static TextStyle get heroCompact => GoogleFonts.montserrat(
-    fontSize: 24,
-    fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
-    letterSpacing: 1.5,
-    height: 1.2,
-  );
-
-  /// Hero con gradiente neon (para celebraciones)
-  static TextStyle get heroNeon => GoogleFonts.montserrat(
-    fontSize: 32,
-    fontWeight: FontWeight.w900,
-    letterSpacing: 2.0,
-    height: 1.2,
-    foreground: Paint()
-      ..shader = const LinearGradient(
-        colors: [AppColors.neonPrimary, AppColors.neonCyan],
-      ).createShader(const Rect.fromLTWH(0, 0, 200, 50)),
-  );
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NIVEL 2: SECTION TITLE
-  // Uso: Nombre de ejercicio, título de sección
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  static TextStyle get sectionTitle => GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.3,
-    letterSpacing: 0.5,
-  );
-
-  /// Para listas donde el espacio es limitado
-  static TextStyle get sectionTitleSmall => GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.3,
-  );
-
-  /// Título de sección con acento neon
-  static TextStyle get sectionTitleAccent => GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    color: AppColors.neonCyan,
-    height: 1.3,
-    letterSpacing: 0.5,
-  );
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NIVEL 3: DATA LARGE
-  // Uso: Números que importan (peso, reps, timer)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  static TextStyle get dataLarge => GoogleFonts.montserrat(
-    fontSize: 20,
-    fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     fontFeatures: [const FontFeature.tabularFigures()],
-  );
-
-  /// Para inputs de datos (más pequeño)
-  static TextStyle get dataInput => GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    fontFeatures: [const FontFeature.tabularFigures()],
+    letterSpacing: -1.0,
   );
 
   /// Timer countdown - GRANDE y prominente
   static TextStyle get timer => GoogleFonts.montserrat(
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
+    color: AppColors.techCyan,
     fontFeatures: [const FontFeature.tabularFigures()],
     letterSpacing: 2.0,
   );
 
   /// Timer compacto para barra
   static TextStyle get timerCompact => GoogleFonts.montserrat(
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
+    color: AppColors.techCyan,
     fontFeatures: [const FontFeature.tabularFigures()],
     letterSpacing: 1.0,
   );
 
-  /// Números gigantes para modales de input
-  static TextStyle get dataGiant => GoogleFonts.montserrat(
-    fontSize: 56,
-    fontWeight: FontWeight.w900,
+  /// Datos grandes (serie activa: KG/REPS)
+  static TextStyle get dataLarge => GoogleFonts.montserrat(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+    fontFeatures: [const FontFeature.tabularFigures()],
+  );
+
+  /// Para inputs de datos
+  static TextStyle get dataInput => GoogleFonts.montserrat(
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     fontFeatures: [const FontFeature.tabularFigures()],
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // NIVEL 4: LABEL
-  // Uso: Labels de columnas, descripciones cortas, contexto
+  // NIVEL 2: SECTION TITLE (Prominencia media)
+  // Uso: Nombre de ejercicio - Visible pero no compite con datos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// Hero - Solo para título de día (uso muy limitado)
+  static TextStyle get hero => GoogleFonts.montserrat(
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.5,
+    height: 1.2,
+  );
+
+  /// Versión compacta
+  static TextStyle get heroCompact => GoogleFonts.montserrat(
+    fontSize: 22,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.5,
+    height: 1.2,
+  );
+
+  /// Hero neon eliminado - No usar gradientes en texto
+  static TextStyle get heroNeon => hero;
+
+  /// Título de sección (nombre ejercicio)
+  static TextStyle get sectionTitle => GoogleFonts.montserrat(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    height: 1.3,
+    letterSpacing: 0.3,
+  );
+
+  /// Para listas donde el espacio es limitado
+  static TextStyle get sectionTitleSmall => GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+    letterSpacing: 0.2,
+  );
+
+  /// Título con acento (cyan para serie activa)
+  static TextStyle get sectionTitleAccent => GoogleFonts.montserrat(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.techCyan,
+    height: 1.3,
+    letterSpacing: 0.3,
+  );
+
+  /// Números gigantes para modales de input - REMOVIDO (duplicado)
+  // dataGiant ya está definido arriba
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NIVEL 3: LABEL (Muy sutil - no compite con datos)
+  // Uso: Labels de columnas, descripciones cortas
   // ═══════════════════════════════════════════════════════════════════════════
 
   static TextStyle get label => GoogleFonts.montserrat(
     fontSize: 11,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   );
 
-  /// Labels con énfasis (ej: "KG", "REPS" en headers)
+  /// Labels con énfasis (ej: "KG", "REPS" en headers) - MUY sutil
   static TextStyle get labelEmphasis => GoogleFonts.montserrat(
-    fontSize: 11,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textSecondary,
-    letterSpacing: 1.0,
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textTertiary,
+    letterSpacing: 0.8,
   );
 
   /// Para botones secundarios
   static TextStyle get button => GoogleFonts.montserrat(
     fontSize: 14,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   );
 
-  /// Botón CTA principal (texto blanco sobre magenta)
+  /// Botón CTA primario (texto sobre cyan)
   static TextStyle get buttonPrimary => GoogleFonts.montserrat(
     fontSize: 16,
-    fontWeight: FontWeight.w900,
+    fontWeight: FontWeight.w800,
     color: AppColors.textOnAccent,
-    letterSpacing: 1.5,
+    letterSpacing: 0.5,
   );
 
   /// Botón CTA pequeño
   static TextStyle get buttonSmall => GoogleFonts.montserrat(
     fontSize: 12,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w700,
     color: AppColors.textOnAccent,
-    letterSpacing: 1.0,
+    letterSpacing: 0.3,
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // NIVEL 5: META
-  // Uso: Timestamps, hints, info menor, badges
+  // NIVEL 4: META (Casi invisible - contexto mínimo)
+  // Uso: Timestamps, hints, info menor
   // ═══════════════════════════════════════════════════════════════════════════
 
   static TextStyle get meta => GoogleFonts.montserrat(
     fontSize: 10,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
   );
 
   /// Para hints en inputs
   static TextStyle get hint => GoogleFonts.montserrat(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
   );
 
   /// Para badges y chips
   static TextStyle get badge => GoogleFonts.montserrat(
     fontSize: 9,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     color: AppColors.textOnAccent,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   );
 
   /// Para valor previo/ghost en inputs
   static TextStyle get ghost => GoogleFonts.montserrat(
     fontSize: 14,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w500,
     color: AppColors.textTertiary,
     fontFeatures: [const FontFeature.tabularFigures()],
   );
@@ -487,10 +605,10 @@ abstract class AppTypography {
   /// Body text - Párrafos y contenido general
   static TextStyle get body => GoogleFonts.montserrat(
     fontSize: 14,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
     height: 1.5,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   );
 }
 

@@ -56,7 +56,7 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
         children: [
           Center(child: Container(width: 40, height: 4, color: AppColors.border)),
           const SizedBox(height: 16),
-          Text('OPCIONES PRO', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.redAccent)),
+          Text('OPCIONES PRO', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.goldAccent)),
           const SizedBox(height: 16),
 
           // RPE Slider
@@ -79,7 +79,7 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
                 label: const Text('FALLO MUSCULAR'),
                 selected: log.isFailure,
                 onSelected: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, isFailure: val),
-                selectedColor: AppColors.live,
+                selectedColor: AppColors.techCyan,
               ),
               const SizedBox(width: 8),
               FilterChip(

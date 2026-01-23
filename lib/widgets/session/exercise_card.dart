@@ -44,30 +44,30 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('NOTAS: ${exerciseName.toUpperCase()}', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        backgroundColor: AppColors.bgElevated,
+        title: Text('NOTAS: ${exerciseName.toUpperCase()}', style: AppTypography.sectionTitle),
         content: TextField(
           controller: controller,
           maxLines: 5,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
+          style: TextStyle(color: AppColors.textPrimary),
+          decoration: InputDecoration(
             hintText: 'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
-            hintStyle: TextStyle(color: Colors.white38),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+            hintStyle: TextStyle(color: AppColors.textTertiary),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.techCyan)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('CANCELAR'),
+            child: Text('CANCELAR', style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
               await repo.saveNote(exerciseName, controller.text);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('GUARDAR', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            child: Text('GUARDAR', style: TextStyle(color: AppColors.techCyan, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -82,7 +82,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) {
         final historyLogs = ref.read(trainingSessionProvider).history[exercise.nombre];
@@ -92,11 +92,11 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(exercise.nombre.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(exercise.nombre.toUpperCase(), style: AppTypography.sectionTitle),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.history, color: Colors.white),
-                  title: const Text('Ver Historial'),
+                  leading: Icon(Icons.history, color: AppColors.textSecondary),
+                  title: Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
@@ -105,17 +105,17 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                 ListTile(
                   leading: Icon(
                     Icons.swap_horiz,
-                    color: hasAlternativas ? AppColors.neonPrimary : Colors.grey[600],
+                    color: hasAlternativas ? AppColors.techCyan : AppColors.textDisabled,
                   ),
                   title: Text(
                     'Ver Alternativas',
                     style: TextStyle(
-                      color: hasAlternativas ? Colors.white : Colors.white38,
+                      color: hasAlternativas ? AppColors.textPrimary : AppColors.textDisabled,
                     ),
                   ),
                   subtitle: Text(
                     hasAlternativas ? 'Ejercicios similares disponibles' : 'Sin alternativas registradas',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
                   ),
                   onTap: () {
                     if (!hasAlternativas) return;
@@ -157,8 +157,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.note_alt_outlined, color: Colors.white),
-                  title: const Text('Notas del Ejercicio'),
+                  leading: Icon(Icons.note_alt_outlined, color: AppColors.textSecondary),
+                  title: Text('Notas del Ejercicio', style: TextStyle(color: AppColors.textPrimary)),
                   onTap: () {
                      Navigator.pop(sheetContext);
                      _showNotesDialog(context, exercise.nombre);
@@ -176,21 +176,21 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text('HISTORIAL: $name', style: const TextStyle(color: Colors.white, fontSize: 16)),
+        backgroundColor: AppColors.bgElevated,
+        title: Text('HISTORIAL: $name', style: AppTypography.sectionTitle),
         content: logs == null || logs.isEmpty
-            ? const Text('No hay datos previos.', style: TextStyle(color: Colors.white70))
+            ? Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary))
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                  Text('ÚLTIMA SESIÓN:', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: const TextStyle(color: Colors.white))),
+                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: TextStyle(color: AppColors.textPrimary))),
                 ],
               ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('CERRAR', style: TextStyle(color: AppColors.techCyan))),
         ],
       ),
     );
@@ -199,7 +199,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   void _showAdvancedOptions(BuildContext context, int setIndex) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
@@ -212,10 +212,6 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 
   void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
-    // Basic completion feedback
-    // Haptic feedback example (use HapticFeedback.* instead of flutter_vibrate)
-    // try { HapticFeedback.vibrate(); } catch (_) {}
-
     // Check for "PR" or better performance
     if (previous != null) {
       bool improved = false;
@@ -226,8 +222,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         if (mounted) {
            ScaffoldMessenger.of(context).showSnackBar(
              SnackBar(
-               content: const Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', style: TextStyle(fontWeight: FontWeight.bold)),
-               backgroundColor: Colors.red[900],
+               content: Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', 
+                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textOnAccent)),
+               backgroundColor: AppColors.goldAccent, // Oro para PR
                behavior: SnackBarBehavior.floating,
              ),
            );
@@ -400,18 +397,28 @@ class ExerciseCard extends StatelessWidget {
                        const SizedBox(height: 4),
                        Row(
                          children: [
-                           if (historyLogs != null && historyLogs!.isNotEmpty)
-                             Text(
-                               'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
-                               style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
+                           // Contenedor flexible para LAST y Badge
+                           Expanded(
+                             child: Row(
+                               children: [
+                                 if (historyLogs != null && historyLogs!.isNotEmpty)
+                                   Flexible(
+                                     child: Text(
+                                       'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
+                                       style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w500),
+                                       overflow: TextOverflow.ellipsis,
+                                     ),
+                                   ),
+                                 // Badge de progresión v2 (compacto)
+                                 if (progressionDecision != null) ...[
+                                   const SizedBox(width: 8),
+                                   ProgressionBadge(decision: progressionDecision!),
+                                 ],
+                               ],
                              ),
-                           // Badge de progresión v2 (compacto)
-                           if (progressionDecision != null) ...[
-                             const SizedBox(width: 8),
-                             ProgressionBadge(decision: progressionDecision!),
-                           ],
-                           const Spacer(),
-                           // Selector de tiempo de descanso inline
+                           ),
+                           const SizedBox(width: 8),
+                           // Selector de tiempo de descanso inline (siempre visible)
                            _RestTimeChip(
                              seconds: restSeconds,
                              onChanged: onRestTimeChange,
@@ -421,15 +428,15 @@ class ExerciseCard extends StatelessWidget {
                      ],
                    ),
                  ),
-                 // 🎯 P1: Icono opciones más visible
+                 // Icono opciones
                  Container(
                    decoration: BoxDecoration(
-                     color: Colors.grey[850],
+                     color: AppColors.bgInteractive,
                      borderRadius: BorderRadius.circular(8),
-                     border: Border.all(color: Colors.grey[700]!),
+                     border: Border.all(color: AppColors.border),
                    ),
                    child: IconButton(
-                     icon: Icon(Icons.more_horiz, color: Colors.grey[400]),
+                     icon: Icon(Icons.more_horiz, color: AppColors.textSecondary),
                      onPressed: onShowOptions,
                      tooltip: 'Opciones del ejercicio',
                      padding: const EdgeInsets.all(8),
@@ -458,13 +465,13 @@ class ExerciseCard extends StatelessWidget {
 
             // Header Row - solo mostrar si NO es modo focalizado
             if (!useFocusedInputMode)
-              const Row(
+              Row(
                 children: [
-                  SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
-                  SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
-                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)))),
-                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)))),
-                  SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
+                  SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: AppColors.textTertiary)))),
+                  SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)))),
+                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
+                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
+                  SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: AppColors.textTertiary))),
                 ],
               ),
             if (!useFocusedInputMode)

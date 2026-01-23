@@ -517,6 +517,7 @@ class _InactiveTimerBar extends StatelessWidget {
             ),
 
             _StartRestButton(onTap: onStartRest),
+            const SizedBox(width: 4), // Pequeño margen derecho
           ],
         ),
       ),
@@ -722,7 +723,7 @@ class _TimerStateLabel extends StatelessWidget {
   }
 }
 
-/// Selector de duración de descanso (modo inactivo)
+/// Selector de duración de descanso (modo inactivo) - Rojo para +
 class _TimeDurationSelector extends StatelessWidget {
   final int seconds;
   final ValueChanged<int> onChanged;
@@ -741,20 +742,20 @@ class _TimeDurationSelector extends StatelessWidget {
           'DESCANSO',
           style: _TimerStyles.labelSmall.copyWith(color: AppColors.textTertiary),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         _CircleButton(
           icon: Icons.remove,
-          size: 28,
+          size: 24,
           onTap: seconds > 10 ? () => onChanged(seconds - 10) : null,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text('${seconds}s', style: _TimerStyles.durationDisplay),
         ),
         _CircleButton(
           icon: Icons.add,
-          size: 28,
-          color: AppColors.goldAccent,
+          size: 24,
+          color: AppColors.bloodRed, // Rojo Ferrari para acción
           onTap: () => onChanged(seconds + 10),
         ),
       ],
@@ -762,7 +763,7 @@ class _TimeDurationSelector extends StatelessWidget {
   }
 }
 
-/// Botón para iniciar descanso
+/// Botón para iniciar descanso - Rojo Ferrari, circular 48px
 class _StartRestButton extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -770,24 +771,22 @@ class _StartRestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.goldAccent,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.timer_outlined, size: 18, color: AppColors.textPrimary),
-              const SizedBox(width: 6),
-              Text('DESCANSAR', style: _TimerStyles.buttonLabel),
-            ],
+    return Tooltip(
+      message: 'Iniciar descanso',
+      child: Material(
+        color: AppColors.bloodRed, // Rojo Ferrari para acción principal
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          },
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            child: Icon(Icons.play_arrow_rounded, size: 28, color: AppColors.textOnAccent),
           ),
         ),
       ),
@@ -812,13 +811,17 @@ class _CircularTimerProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // AGGRESSIVE RED: Timer countdown en rojo oscuro para urgencia
+    // Warning (oro) cuando está pausado, rojo brillante cuando crítico
     final color = isPaused
         ? AppColors.warning
-        : (isCritical ? AppColors.goldAccent : AppColors.textPrimary);
+        : isCritical
+            ? AppColors.fireRed  // #FF3333 cuando quedan pocos segundos
+            : AppColors.darkRed; // #8B0000 countdown normal
 
     return SizedBox(
-      width: 44,
-      height: 44,
+      width: 48, // Ligeramente más grande
+      height: 48,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -836,13 +839,10 @@ class _CircularTimerProgress extends StatelessWidget {
             backgroundColor: Colors.transparent,
             valueColor: AlwaysStoppedAnimation(color),
           ),
-          // Texto del countdown
+          // Texto del countdown - Rojo intenso
           Text(
             '$seconds',
-            style: (isCritical
-                    ? _TimerStyles.countdownLarge
-                    : _TimerStyles.countdownNormal)
-                .copyWith(color: color),
+            style: _TimerStyles.countdownLarge.copyWith(color: color),
           ),
         ],
       ),
@@ -884,7 +884,7 @@ class _TimerControlButtons extends StatelessWidget {
           child: _CircleButton(
             icon: Icons.skip_next_rounded,
             size: 36,
-            color: AppColors.goldAccent,
+            color: AppColors.techCyan, // Cyan consistente para acción
             onTap: () {
               HapticFeedback.mediumImpact();
               onSkip();

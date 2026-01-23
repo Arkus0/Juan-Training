@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/session_progress_provider.dart';
 import '../../utils/design_system.dart';
 
-/// 🎯 NEON IRON: Barra de progreso ultra-mínima
+/// 🎯 AGGRESSIVE RED: Barra de progreso ultra-mínima
 ///
 /// Principios aplicados:
 /// - ≤4 chunks: Solo 1 elemento visual (la barra)
 /// - Sin texto: El progreso se comunica visualmente
 /// - No compite: Solo 4px de altura, integrada sutilmente
-/// - Color semántico: Cyan progreso → Gold completado
+/// - Color semántico: Rojo progreso → Rojo intenso completado
 class SessionProgressBar extends ConsumerWidget {
   const SessionProgressBar({super.key});
 
@@ -41,8 +41,8 @@ class _MinimalProgressLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Color: Cyan durante progreso, Gold al completar
-    final color = isComplete ? AppColors.goldAccent : AppColors.neonCyan;
+    // Color: Rojo durante progreso, rojo intenso al completar
+    final color = isComplete ? AppColors.fireRed : AppColors.bloodRed;
 
     return SizedBox(
       height: 4,
@@ -106,8 +106,8 @@ class _PercentageText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isComplete ? AppColors.goldAccent :
-                  percentage >= 0.75 ? AppColors.neonCyan : AppColors.textPrimary;
+    final color = isComplete ? AppColors.fireRed :
+                  percentage >= 0.75 ? AppColors.bloodRed : AppColors.textPrimary;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: percentage * 100),
@@ -165,7 +165,7 @@ class _AnimatedProgressFill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isComplete ? AppColors.goldAccent : AppColors.neonCyan;
+    final color = isComplete ? AppColors.fireRed : AppColors.bloodRed;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -270,7 +270,7 @@ class SessionProgressBarExpanded extends ConsumerWidget {
             Text(
               'SUPERSERIES',
               style: AppTypography.labelEmphasis.copyWith(
-                color: AppColors.goldAccent,
+                color: AppColors.bloodRed,
                 letterSpacing: 1.0,
               ),
             ),

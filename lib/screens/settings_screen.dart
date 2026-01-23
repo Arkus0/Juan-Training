@@ -8,6 +8,7 @@ import '../providers/settings_provider.dart';
 import '../services/timer_notification_service.dart';
 import '../services/media_control_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/design_system.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -38,7 +39,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.timerVibrationEnabled,
               onChanged: notifier.setTimerVibrationEnabled,
-              activeThumbColor: Colors.redAccent[700],
+              activeThumbColor: AppColors.bloodRed,
             ),
           ),
 
@@ -49,7 +50,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.timerSoundEnabled,
               onChanged: notifier.setTimerSoundEnabled,
-              activeThumbColor: Colors.redAccent[700],
+              activeThumbColor: AppColors.bloodRed,
             ),
           ),
 
@@ -72,20 +73,20 @@ class SettingsScreen extends ConsumerWidget {
                   onPressed: settings.defaultRestSeconds > 10
                       ? () => notifier.setDefaultRestSeconds(settings.defaultRestSeconds - 10)
                       : null,
-                  color: Colors.grey,
+                  color: AppColors.metalGray,
                 ),
                 Text(
                   '${settings.defaultRestSeconds}s',
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
                   onPressed: () => notifier.setDefaultRestSeconds(settings.defaultRestSeconds + 10),
-                  color: Colors.redAccent[700],
+                  color: AppColors.bloodRed,
                 ),
               ],
             ),
@@ -105,7 +106,7 @@ class SettingsScreen extends ConsumerWidget {
               'Controla la música de Spotify u otras apps sin salir del entrenamiento. '
               'Requiere permiso de acceso a notificaciones.',
               style: GoogleFonts.montserrat(
-                color: Colors.grey[600],
+                color: AppColors.textTertiary,
                 fontSize: 11,
               ),
             ),
@@ -124,7 +125,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.useFocusedInputMode,
               onChanged: notifier.setUseFocusedInputMode,
-              activeThumbColor: Colors.green[600],
+              activeThumbColor: AppColors.completedGreen,
             ),
           ),
 
@@ -133,7 +134,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado.',
               style: GoogleFonts.montserrat(
-                color: Colors.grey[600],
+                color: AppColors.textTertiary,
                 fontSize: 11,
               ),
             ),
@@ -152,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.showSupersetIndicator,
               onChanged: notifier.setShowSupersetIndicator,
-              activeThumbColor: Colors.redAccent[700],
+              activeThumbColor: AppColors.bloodRed,
             ),
           ),
 
@@ -161,7 +162,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(
               'En superseries, el timer solo inicia después del último ejercicio del grupo.',
               style: GoogleFonts.montserrat(
-                color: Colors.grey[600],
+                color: AppColors.textTertiary,
                 fontSize: 12,
               ),
             ),
@@ -180,7 +181,7 @@ class SettingsScreen extends ConsumerWidget {
             trailing: Switch(
               value: settings.performanceModeEnabled,
               onChanged: notifier.setPerformanceModeEnabled,
-              activeThumbColor: Colors.green[600],
+              activeThumbColor: AppColors.completedGreen,
             ),
           ),
 
@@ -192,7 +193,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Switch(
                 value: settings.reduceAnimations,
                 onChanged: notifier.setReduceAnimations,
-                activeThumbColor: Colors.redAccent[700],
+                activeThumbColor: AppColors.bloodRed,
               ),
             ),
 
@@ -203,7 +204,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Switch(
                 value: settings.reduceVibrations,
                 onChanged: notifier.setReduceVibrations,
-                activeThumbColor: Colors.redAccent[700],
+                activeThumbColor: AppColors.bloodRed,
               ),
             ),
           ],
@@ -214,7 +215,7 @@ class SettingsScreen extends ConsumerWidget {
               'El modo debug de VS Code es ~10x más lento que release. '
               'Para probar rendimiento real: flutter run --release',
               style: GoogleFonts.montserrat(
-                color: Colors.orange[400],
+                color: AppColors.copperOrange,
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
               ),

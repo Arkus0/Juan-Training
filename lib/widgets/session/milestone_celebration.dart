@@ -1,15 +1,20 @@
 /// ============================================================================
-/// SISTEMA DE MICRO-CELEBRACIONES — Fase 3 del Rediseño UX
+/// SISTEMA DE MICRO-CELEBRACIONES — Dark Tech Performance
 /// ============================================================================
 ///
-/// Implementa feedback visceral para hitos de progreso.
-/// Psicología: El progreso SENTIDO activa dopamina vs progreso explicado.
+/// Implementa feedback visceral pero CONTENIDO para hitos de progreso.
+/// 
+/// PRINCIPIOS:
+/// - Celebraciones BREVES, no exageradas
+/// - Oro cálido para logros (sutil, no brillante)
+/// - Haptic feedback progresivo
+/// - Auto-cierre rápido (no interrumpir flujo)
 ///
 /// Hitos:
 /// - 25%: Vibración ligera + toast sutil
 /// - 50%: Vibración media + toast motivador
 /// - 75%: Vibración fuerte + toast de ánimo
-/// - 100%: Vibración + animación de celebración
+/// - 100%: Vibración + celebración contenida (2s máx)
 /// ============================================================================
 library;
 
@@ -178,7 +183,8 @@ class _MicroToastState extends State<_MicroToast>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.95),
+                // Verde apagado para completado, sutil
+                color: AppColors.completedGreen.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(AppRadius.round),
                 boxShadow: AppShadows.elevated,
               ),
@@ -187,14 +193,14 @@ class _MicroToastState extends State<_MicroToast>
                 children: [
                   Icon(
                     widget.icon,
-                    color: Colors.white,
+                    color: AppColors.textOnAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     widget.message,
                     style: AppTypography.button.copyWith(
-                      color: Colors.white,
+                      color: AppColors.textOnAccent,
                     ),
                   ),
                 ],
@@ -260,26 +266,27 @@ class _CompletionCelebrationDialogState
             decoration: BoxDecoration(
               color: AppColors.bgElevated,
               borderRadius: BorderRadius.circular(AppRadius.xl),
+              // Oro cálido sutil para celebración final
               border: Border.all(
-                color: AppColors.success.withOpacity(0.5),
+                color: AppColors.goldAccent.withOpacity(0.4),
                 width: 2,
               ),
-              boxShadow: AppShadows.glow(AppColors.success),
+              boxShadow: AppShadows.glow(AppColors.goldAccent),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Icono animado
+                // Icono animado - Oro para logro
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.2),
+                    color: AppColors.goldSubtle,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.emoji_events_rounded,
                     size: 64,
-                    color: AppColors.success,
+                    color: AppColors.goldAccent,
                   ),
                 ),
                 
@@ -288,8 +295,8 @@ class _CompletionCelebrationDialogState
                 Text(
                   '¡SESIÓN COMPLETADA!',
                   style: AppTypography.hero.copyWith(
-                    fontSize: 24,
-                    color: AppColors.success,
+                    fontSize: 22,
+                    color: AppColors.goldAccent,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -298,7 +305,9 @@ class _CompletionCelebrationDialogState
                 
                 Text(
                   'Gran trabajo 💪',
-                  style: AppTypography.label,
+                  style: AppTypography.label.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -310,7 +319,7 @@ class _CompletionCelebrationDialogState
   }
 }
 
-/// Widget para mostrar PR (Personal Record)
+/// Widget para mostrar PR (Personal Record) - ORO SUTIL
 class PRCelebration extends StatelessWidget {
   final String exerciseName;
   final String improvement;
@@ -326,15 +335,11 @@ class PRCelebration extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.celebration.withOpacity(0.2),
-            AppColors.celebration.withOpacity(0.1),
-          ],
-        ),
+        // Oro sutil, no brillante
+        color: AppColors.goldSubtle,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.celebration.withOpacity(0.5),
+          color: AppColors.goldAccent.withOpacity(0.3),
         ),
       ),
       child: Row(
@@ -342,7 +347,7 @@ class PRCelebration extends StatelessWidget {
         children: [
           const Icon(
             Icons.star_rounded,
-            color: AppColors.celebration,
+            color: AppColors.goldAccent,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -353,13 +358,13 @@ class PRCelebration extends StatelessWidget {
               Text(
                 '¡NUEVO PR!',
                 style: AppTypography.badge.copyWith(
-                  color: AppColors.celebration,
+                  color: AppColors.goldAccent,
                 ),
               ),
               Text(
                 improvement,
                 style: AppTypography.meta.copyWith(
-                  color: AppColors.celebration,
+                  color: AppColors.goldDark,
                 ),
               ),
             ],

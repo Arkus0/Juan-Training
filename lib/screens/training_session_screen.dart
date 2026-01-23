@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/serie_log.dart';
 import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../providers/session_tolerance_provider.dart';
 import '../widgets/session/exercise_card.dart';
+import '../widgets/session/exercise_nav_rail.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/session/tolerance_feedback_widgets.dart';
+import '../widgets/session/quick_actions_menu.dart';
 import '../widgets/voice/voice_training_button.dart';
 import '../utils/design_system.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
-final timerFinishedFocusProvider = StateProvider<({int exerciseIndex, int setIndex})?>(
+final timerFinishedFocusProvider =
+    StateProvider<({int exerciseIndex, int setIndex})?>(
   (ref) => null,
 );
 
@@ -24,7 +28,8 @@ class TrainingSessionScreen extends ConsumerStatefulWidget {
   const TrainingSessionScreen({super.key});
 
   @override
-  ConsumerState<TrainingSessionScreen> createState() => _TrainingSessionScreenState();
+  ConsumerState<TrainingSessionScreen> createState() =>
+      _TrainingSessionScreenState();
 }
 
 class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
@@ -32,7 +37,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
   // Per-card keys used for precise scrolling via Scrollable.ensureVisible (stable per exercise id)
   final Map<String, GlobalKey> _exerciseKeys = {};
-  
+
   // Track last known incomplete set for auto-scroll detection
   ({int exerciseIndex, int setIndex})? _lastKnownIncompleteSet;
 
@@ -45,7 +50,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       // Inicializar el progreso de sesión
       ref.read(sessionProgressProvider.notifier).recalculate();
       // Initialize tracking
-      _lastKnownIncompleteSet = ref.read(trainingSessionProvider).nextIncompleteSet;
+      _lastKnownIncompleteSet =
+          ref.read(trainingSessionProvider).nextIncompleteSet;
       // 🎯 ERROR TOLERANCE: Evaluar gap desde última sesión
       ref.read(sessionToleranceProvider.notifier).evaluateSessionGap();
     });
@@ -75,11 +81,14 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
 
     // Mensaje de confirmación según el progreso
-    String confirmMessage = '¿Estás seguro de que quieres terminar el entrenamiento?';
+    String confirmMessage =
+        '¿Estás seguro de que quieres terminar el entrenamiento?';
     if (progress.percentage < 0.5) {
-      confirmMessage += '\n\nSolo has completado ${progress.formattedPercentage} de la sesión.';
+      confirmMessage +=
+          '\n\nSolo has completado ${progress.formattedPercentage} de la sesión.';
     } else if (progress.percentage < 1.0) {
-      confirmMessage += '\n\nHas completado ${progress.formattedPercentage}. ¡Casi lo tienes!';
+      confirmMessage +=
+          '\n\nHas completado ${progress.formattedPercentage}. ¡Casi lo tienes!';
     }
 
     final shouldFinish = await showDialog<bool>(
@@ -100,7 +109,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           children: [
             Text(
               confirmMessage,
-              style: AppTypography.body.copyWith(color: AppColors.textSecondary),
+              style:
+                  AppTypography.body.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -109,7 +119,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'CANCELAR',
-              style: AppTypography.button.copyWith(color: AppColors.textTertiary),
+              style:
+                  AppTypography.button.copyWith(color: AppColors.textTertiary),
             ),
           ),
           TextButton(
@@ -158,11 +169,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     if (nextSet != null) {
       // Usar el nuevo FocusManager para solicitar focus
       ref.read(focusManagerProvider.notifier).requestFocus(
-        exerciseIndex: nextSet.exerciseIndex,
-        setIndex: nextSet.setIndex,
-        field: FocusField.weight,
-        vibrate: true,
-      );
+            exerciseIndex: nextSet.exerciseIndex,
+            setIndex: nextSet.setIndex,
+            field: FocusField.weight,
+            vibrate: true,
+          );
 
       // También actualizar el provider legacy para compatibilidad
       ref.read(timerFinishedFocusProvider.notifier).state = nextSet;
@@ -186,7 +197,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _scrollToExercise(int exerciseIndex) async {
     // Try precise scroll using the exercise's GlobalKey and ensureVisible.
     final exercises = ref.read(trainingSessionProvider).exercises;
-    final id = exercises.length > exerciseIndex ? exercises[exerciseIndex].id : null;
+    final id =
+        exercises.length > exerciseIndex ? exercises[exerciseIndex].id : null;
     if (id != null) {
       final key = _exerciseKeys[id];
       if (key != null && key.currentContext != null) {
@@ -214,30 +226,34 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   @override
   Widget build(BuildContext context) {
     // ⚡ Bolt Optimization: Use select to only rebuild on specific changes
-    final activeRutinaName = ref.watch(trainingSessionProvider.select((s) => s.activeRutina?.nombre));
-    final exercisesLength = ref.watch(trainingSessionProvider.select((s) => s.exercises.length));
+    final activeRutinaName = ref
+        .watch(trainingSessionProvider.select((s) => s.activeRutina?.nombre));
+    final exercisesLength =
+        ref.watch(trainingSessionProvider.select((s) => s.exercises.length));
 
     // Timer state (nuevo estado avanzado)
-    final restTimerState = ref.watch(trainingSessionProvider.select((s) => s.restTimer));
-    final showTimerBar = ref.watch(trainingSessionProvider.select((s) => s.showTimerBar));
+    final restTimerState =
+        ref.watch(trainingSessionProvider.select((s) => s.restTimer));
+    final showTimerBar =
+        ref.watch(trainingSessionProvider.select((s) => s.showTimerBar));
 
     // Progress state
     final progress = ref.watch(sessionProgressProvider);
 
     // Voice available
     final voiceAvailable = ref.watch(voiceAvailableProvider);
-    
+
     // 🎯 FEEDBACK: Ejercicio recién completado
     final completionInfo = ref.watch(exerciseCompletionProvider);
-    
+
     // 🎯 ERROR TOLERANCE: Estado de tolerancia para mostrar bienvenida
     final toleranceState = ref.watch(sessionToleranceProvider);
-    
+
     // 🎯 ERROR TOLERANCE: Datos sospechosos pendientes de confirmación
     final suspiciousData = ref.watch(suspiciousDataProvider);
 
     final notifier = ref.read(trainingSessionProvider.notifier);
-    
+
     // 🎯 ERROR TOLERANCE: Mostrar diálogo de datos sospechosos
     if (suspiciousData.hasSuspiciousData) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -248,10 +264,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
 
     // 🎯 UX CRÍTICO: Auto-scroll al siguiente ejercicio cuando se completa una serie
-    final currentIncompleteSet = ref.watch(trainingSessionProvider.select((s) => s.nextIncompleteSet));
-    if (_lastKnownIncompleteSet != null && 
+    final currentIncompleteSet =
+        ref.watch(trainingSessionProvider.select((s) => s.nextIncompleteSet));
+    if (_lastKnownIncompleteSet != null &&
         currentIncompleteSet != null &&
-        currentIncompleteSet.exerciseIndex != _lastKnownIncompleteSet!.exerciseIndex) {
+        currentIncompleteSet.exerciseIndex !=
+            _lastKnownIncompleteSet!.exerciseIndex) {
       // El ejercicio cambió - scroll suave al nuevo
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -265,7 +283,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       appBar: AppBar(
         title: Text(
           (activeRutinaName ?? 'Entrenando').toUpperCase(),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
+          style:
+              Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
         ),
         actions: [
           // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
@@ -275,7 +294,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             data: (available) => available
                 ? VoiceTrainingButton(
                     enabled: true,
-                    onCommand: (command) => _handleVoiceCommand(command, notifier),
+                    onCommand: (command) =>
+                        _handleVoiceCommand(command, notifier),
                   )
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
@@ -339,7 +359,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 80), // Espacio para timer compacto
+                  padding: const EdgeInsets.fromLTRB(
+                      8, 8, 8, 80), // Espacio para timer compacto
                   itemCount: exercisesLength,
                   // ⚡ OPTIMIZACIÓN: Pre-renderizar items cercanos para scroll más suave
                   cacheExtent: 300,
@@ -349,9 +370,13 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                   ),
                   itemBuilder: (context, index) {
                     // ⚡ Bolt Optimization: Extracted to smart widget
-                    final exercises = ref.read(trainingSessionProvider).exercises;
-                    final id = exercises.length > index ? exercises[index].id : index.toString();
-                    final key = _exerciseKeys.putIfAbsent(id, () => GlobalKey());
+                    final exercises =
+                        ref.read(trainingSessionProvider).exercises;
+                    final id = exercises.length > index
+                        ? exercises[index].id
+                        : index.toString();
+                    final key =
+                        _exerciseKeys.putIfAbsent(id, () => GlobalKey());
                     // ⚡ OPTIMIZACIÓN: RepaintBoundary para aislar repintura de cada card
                     return RepaintBoundary(
                       child: Container(
@@ -378,7 +403,16 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               ),
             ],
           ),
-          
+
+          // 🎯 NAV RAIL: Guía lateral para navegación rápida entre ejercicios
+          if (exercisesLength > 3)
+            ExerciseNavRailCompact(
+              exercises:
+                  ref.watch(trainingSessionProvider.select((s) => s.exercises)),
+              currentExerciseIndex: currentIncompleteSet?.exerciseIndex ?? 0,
+              onExerciseTap: _scrollToExercise,
+            ),
+
           // 🎯 FEEDBACK: Overlay de ejercicio completado
           if (completionInfo != null)
             Positioned(
@@ -386,7 +420,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               right: 16,
               bottom: 100, // Encima del timer bar
               child: GestureDetector(
-                onTap: () => ref.read(exerciseCompletionProvider.notifier).dismiss(),
+                onTap: () =>
+                    ref.read(exerciseCompletionProvider.notifier).dismiss(),
                 child: AnimatedSlide(
                   offset: Offset.zero,
                   duration: const Duration(milliseconds: 300),
@@ -401,18 +436,41 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                 ),
               ),
             ),
-          
+
           // 🎯 ERROR TOLERANCE: Banner de bienvenida tras días sin entrenar
-          if (toleranceState.shouldShowWelcome && toleranceState.sessionGapResult != null)
+          if (toleranceState.shouldShowWelcome &&
+              toleranceState.sessionGapResult != null)
             Positioned(
               left: 0,
               right: 0,
               top: 0,
               child: WelcomeBackBanner(
                 result: toleranceState.sessionGapResult!,
-                onDismiss: () => ref.read(sessionToleranceProvider.notifier).markWelcomeShown(),
+                onDismiss: () => ref
+                    .read(sessionToleranceProvider.notifier)
+                    .markWelcomeShown(),
               ),
             ),
+
+          // 🎯 QUICK ACTIONS: Menú expandible de acciones rápidas
+          Positioned(
+            right: 16,
+            bottom: showTimerBar || restTimerState.isActive ? 100 : 24,
+            child: QuickActionsMenu(
+              currentRestSeconds: ref.watch(trainingSessionProvider.select(
+                (s) => s.exercises.isNotEmpty && currentIncompleteSet != null
+                    ? s.exercises[currentIncompleteSet.exerciseIndex]
+                            .descansoSugeridoSeconds ??
+                        90
+                    : 90,
+              )),
+              onRepeat: () => _repeatCurrentSet(notifier),
+              onMaintainGoal: () => _maintainCurrentGoal(),
+              onRestTimeSelected: (seconds) =>
+                  _updateCurrentExerciseRestTime(seconds),
+              onMoreOptions: () => _showQuickOptionsSheet(context),
+            ),
+          ),
         ],
       ),
     );
@@ -462,12 +520,12 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         break;
     }
   }
-  
+
   /// Muestra diálogo para datos sospechosos (ERROR TOLERANCE)
   void _showSuspiciousDataDialog(SuspiciousDataState data) {
     // Limpiar inmediatamente para evitar múltiples diálogos
     ref.read(suspiciousDataProvider.notifier).clear();
-    
+
     showSuspiciousDataDialog(
       context,
       exerciseName: data.exerciseName!,
@@ -481,11 +539,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         // El usuario acepta la sugerencia - actualizar el peso
         // 🎯 FIX: Skip tolerance check to prevent infinite validation loop
         ref.read(trainingSessionProvider.notifier).updateLog(
-          data.exerciseIndex!,
-          data.setIndex!,
-          peso: data.suggestedWeight,
-          skipToleranceCheck: true,
-        );
+              data.exerciseIndex!,
+              data.setIndex!,
+              peso: data.suggestedWeight,
+              skipToleranceCheck: true,
+            );
       },
     );
   }
@@ -493,20 +551,21 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _addNoteToCurrentSet(String note, dynamic notifier) {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       // Añadir nota a la serie actual
       notifier.updateLog(
-        nextSet.exerciseIndex, 
-        nextSet.setIndex, 
+        nextSet.exerciseIndex,
+        nextSet.setIndex,
         notas: note,
       );
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.note_add, color: AppColors.textPrimary, size: 20),
+              const Icon(Icons.note_add,
+                  color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -529,16 +588,17 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _markCurrentSetDone(dynamic notifier) {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       // Marcar la serie como completada (toggle done)
       notifier.toggleSetDone(nextSet.exerciseIndex, nextSet.setIndex);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.textPrimary, size: 20),
+              const Icon(Icons.check_circle,
+                  color: AppColors.textPrimary, size: 20),
               const SizedBox(width: 8),
               Text(
                 '¡Serie completada!',
@@ -557,25 +617,25 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _navigateToNextSet() {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       _scrollToExercise(nextSet.exerciseIndex);
       ref.read(focusManagerProvider.notifier).requestFocus(
-        exerciseIndex: nextSet.exerciseIndex,
-        setIndex: nextSet.setIndex,
-        field: FocusField.weight,
-        vibrate: true,
-      );
+            exerciseIndex: nextSet.exerciseIndex,
+            setIndex: nextSet.setIndex,
+            field: FocusField.weight,
+            vibrate: true,
+          );
     }
   }
 
   void _setCurrentWeight(double weight, dynamic notifier) {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       notifier.updateWeight(nextSet.exerciseIndex, nextSet.setIndex, weight);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -593,10 +653,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _setCurrentReps(int reps, dynamic notifier) {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       notifier.updateReps(nextSet.exerciseIndex, nextSet.setIndex, reps);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -614,10 +674,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _setCurrentRpe(double rpe, dynamic notifier) {
     final state = ref.read(trainingSessionProvider);
     final nextSet = state.nextIncompleteSet;
-    
+
     if (nextSet != null) {
       notifier.updateRpe(nextSet.exerciseIndex, nextSet.setIndex, rpe);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -630,5 +690,222 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         ),
       );
     }
+  }
+
+  /// 🎯 QUICK ACTIONS: Repetir la serie actual (copiar peso/reps de la anterior)
+  void _repeatCurrentSet(dynamic notifier) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+
+    if (nextSet == null) return;
+
+    final exercise = state.exercises[nextSet.exerciseIndex];
+
+    // Buscar la serie anterior completada para copiar datos
+    SerieLog? prevLog;
+    if (nextSet.setIndex > 0) {
+      prevLog = exercise.logs[nextSet.setIndex - 1];
+    } else {
+      // Usar historial si es la primera serie
+      final history = state.history[exercise.nombre];
+      if (history != null && history.isNotEmpty) {
+        prevLog = history.first;
+      }
+    }
+
+    if (prevLog != null) {
+      notifier.updateLog(
+        nextSet.exerciseIndex,
+        nextSet.setIndex,
+        peso: prevLog.peso,
+        reps: prevLog.reps,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.repeat_rounded,
+                  color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
+                style: AppTypography.labelEmphasis
+                    .copyWith(color: AppColors.textOnAccent),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.bloodRed,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// 🎯 QUICK ACTIONS: Mantener objetivo actual (mismo peso/reps del historial)
+  void _maintainCurrentGoal() {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+
+    if (nextSet == null) return;
+
+    final exercise = state.exercises[nextSet.exerciseIndex];
+    final history = state.history[exercise.nombre];
+
+    if (history != null && nextSet.setIndex < history.length) {
+      final targetLog = history[nextSet.setIndex];
+
+      ref.read(trainingSessionProvider.notifier).updateLog(
+            nextSet.exerciseIndex,
+            nextSet.setIndex,
+            peso: targetLog.peso,
+            reps: targetLog.reps,
+          );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.sync_rounded,
+                  color: AppColors.bloodRed, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'OBJETIVO: ${targetLog.peso}kg × ${targetLog.reps}',
+                style: AppTypography.labelEmphasis,
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.bgElevated,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// 🎯 QUICK ACTIONS: Actualizar tiempo de descanso del ejercicio actual
+  void _updateCurrentExerciseRestTime(int seconds) {
+    final state = ref.read(trainingSessionProvider);
+    final nextSet = state.nextIncompleteSet;
+
+    if (nextSet == null) return;
+
+    ref.read(trainingSessionProvider.notifier).updateExerciseRestTime(
+          nextSet.exerciseIndex,
+          seconds,
+        );
+
+    // También actualizar la duración del timer para la próxima vez
+    ref.read(trainingSessionProvider.notifier).setRestDuration(seconds);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.timer_outlined,
+                color: AppColors.restTeal, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Descanso: ${seconds >= 60 ? "${seconds ~/ 60}m ${seconds % 60 > 0 ? "${seconds % 60}s" : ""}" : "${seconds}s"}',
+              style: AppTypography.labelEmphasis,
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.bgElevated,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// 🎯 QUICK ACTIONS: Mostrar opciones rápidas adicionales
+  void _showQuickOptionsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final notifier = ref.read(trainingSessionProvider.notifier);
+        final state = ref.read(trainingSessionProvider);
+        final nextSet = state.nextIncompleteSet;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Text(
+                  'ACCIONES RÁPIDAS',
+                  style: AppTypography.sectionTitle.copyWith(
+                    color: AppColors.bloodRed,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Saltar ejercicio
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.skip_next_rounded,
+                        color: AppColors.textSecondary),
+                  ),
+                  title: Text('Saltar al siguiente',
+                      style: TextStyle(color: AppColors.textPrimary)),
+                  subtitle: Text('Ir al próximo ejercicio',
+                      style: TextStyle(
+                          color: AppColors.textTertiary, fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _navigateToNextSet();
+                  },
+                ),
+
+                // Ver historial
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.restTeal.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.history, color: AppColors.restTeal),
+                  ),
+                  title: Text('Ver historial',
+                      style: TextStyle(color: AppColors.textPrimary)),
+                  subtitle: Text('Revisar sesiones anteriores',
+                      style: TextStyle(
+                          color: AppColors.textTertiary, fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    // TODO: Mostrar historial del ejercicio actual
+                  },
+                ),
+
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

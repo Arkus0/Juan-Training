@@ -437,16 +437,16 @@ class _ActiveSessionState extends StatelessWidget {
 
             const SizedBox(height: 48),
 
-            // CTA: CONTINUAR
+            // CTA: CONTINUAR — Rojo Ferrari bold
             SizedBox(
               width: double.infinity,
               height: 64,
               child: ElevatedButton(
                 onPressed: onContinue,
                 style: ElevatedButton.styleFrom(
-                  // 🎯 NEON IRON: Oro Venice para continuar sesión activa
-                  backgroundColor: AppColors.goldAccent,
-                  foregroundColor: AppColors.bgDeep,
+                  // 🎯 AGGRESSIVE RED: Rojo Ferrari para acción principal
+                  backgroundColor: AppColors.bloodRed,
+                  foregroundColor: AppColors.textOnAccent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.xl),
                   ),
@@ -454,7 +454,7 @@ class _ActiveSessionState extends StatelessWidget {
                 ),
                 child: Text(
                   'CONTINUAR',
-                  style: AppTypography.buttonPrimary.copyWith(color: AppColors.bgDeep),
+                  style: AppTypography.buttonPrimary.copyWith(color: AppColors.textOnAccent),
                 ),
               ),
             ),
@@ -478,13 +478,13 @@ class _ActiveSessionState extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Opción de descartar
+            // Opción de descartar — Rojo oscuro para urgencia
             TextButton(
               onPressed: onDiscard,
               child: Text(
                 'TERMINAR SESION',
                 style: AppTypography.button.copyWith(
-                  color: AppColors.error,
+                  color: AppColors.darkRed,  // #8B0000 urgencia
                 ),
               ),
             ),

@@ -4,29 +4,32 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// ============================================================================
-/// NUMPAD INPUT MODAL — Entrada Ultra-Rápida para Gimnasio
+/// NUMPAD INPUT MODAL — Intensidad Roja (Underground Gym)
 /// ============================================================================
 ///
 /// Modal fullscreen para entrada de valores KG/REPS.
-/// Diseñado para uso en gimnasio: botones grandes, contexto claro.
+/// Diseñado para uso en gimnasio: botones GIGANTES, contexto claro.
 ///
-/// Principios:
-/// - Touch targets ≥56dp
+/// PRINCIPIOS:
+/// - Touch targets ≥72dp (dedos sudados, guantes)
 /// - Contexto siempre visible (ejercicio, serie)
 /// - Valor anterior como referencia
 /// - Auto-cierre tras confirmación
+/// - Botón CONFIRMAR rojo Ferrari, gigante, único CTA
+/// - Borde rojo en inputs activos
 /// ============================================================================
 
-/// Colores específicos para el modal de entrenamiento
-/// 🎯 NEON IRON: Usar paleta del sistema
+/// Colores específicos para el modal — Aggressive Red
 class _ModalColors {
-  static const activeSet = AppColors.neonCyan;
-  static const textPrimary = AppColors.textPrimary;
+  static const activeAccent = AppColors.bloodRed;  // #C41E3A
+  static const activeSet = AppColors.bloodRed;     // Alias for compatibility
+  static const textPrimary = AppColors.textPrimary; // #EAEAEA
   static const textSecondary = AppColors.textSecondary;
   static const textDisabled = AppColors.textDisabled;
-  static const bgCard = AppColors.bgElevated;
-  static const bgInput = AppColors.bgInteractive;
-  static const confirmButton = AppColors.neonCyan;
+  static const bgCard = AppColors.bgElevated;       // #1C1C1C
+  static const bgInput = AppColors.bgInteractive;   // #252525
+  static const confirmButton = AppColors.bloodRed;  // #C41E3A
+  static const borderFocus = AppColors.bloodRed;    // Para inputs en foco
 }
 
 class NumpadInputModal extends StatefulWidget {
@@ -38,6 +41,7 @@ class NumpadInputModal extends StatefulWidget {
   final double? currentValue;
   final bool isInteger;
   final ValueChanged<double> onConfirm;
+  final Function(double, Function(double))? onOpenPlateCalc; // Callback para plate calculator
 
   const NumpadInputModal({
     super.key,
@@ -49,6 +53,7 @@ class NumpadInputModal extends StatefulWidget {
     this.currentValue,
     required this.isInteger,
     required this.onConfirm,
+    this.onOpenPlateCalc,
   });
 
   /// Método estático para mostrar el modal fácilmente
@@ -61,6 +66,7 @@ class NumpadInputModal extends StatefulWidget {
     double? previousValue,
     double? currentValue,
     bool isInteger = false,
+    Function(double, Function(double))? onOpenPlateCalc,
   }) {
     return showModalBottomSheet<double>(
       context: context,
@@ -77,6 +83,7 @@ class NumpadInputModal extends StatefulWidget {
         currentValue: currentValue,
         isInteger: isInteger,
         onConfirm: (val) => Navigator.of(ctx).pop(val),
+        onOpenPlateCalc: onOpenPlateCalc,
       ),
     );
   }
@@ -164,6 +171,17 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     }
   }
 
+  void _openPlateCalculator() {
+    if (widget.onOpenPlateCalc == null) return;
+    HapticFeedback.selectionClick();
+    final currentWeight = double.tryParse(_displayValue) ?? 0.0;
+    widget.onOpenPlateCalc!(currentWeight, (newWeight) {
+      setState(() {
+        _displayValue = _formatNumber(newWeight);
+      });
+    });
+  }
+
   bool get _canConfirm {
     final value = double.tryParse(_displayValue);
     return value != null && value > 0;
@@ -175,7 +193,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      height: screenHeight * 0.85,
+      height: screenHeight * 0.58, // Reducido para evitar overflow
       decoration: const BoxDecoration(
         color: _ModalColors.bgCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -184,9 +202,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
         top: false,
         child: Column(
           children: [
-            // Handle bar para drag (visual, no funcional)
+            // Handle bar para drag (visual)
             Container(
-              margin: const EdgeInsets.only(top: 12),
+              margin: const EdgeInsets.only(top: 8),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
@@ -195,48 +213,48 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               ),
             ),
 
-            // Header con contexto
+            // Header con contexto - COMPACTO
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
               child: Column(
                 children: [
-                  // Nombre del ejercicio
+                  // Nombre del ejercicio - MUY sutil
                   Text(
                     widget.exerciseName.toUpperCase(),
                     style: GoogleFonts.montserrat(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                       color: _ModalColors.textSecondary,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.3,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  // Serie actual
+                  const SizedBox(height: 2),
+                  // Serie actual - Rojo para foco
                   Text(
                     'SERIE ${widget.setNumber} DE ${widget.totalSets}',
                     style: GoogleFonts.montserrat(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: _ModalColors.activeSet,
-                      letterSpacing: 1.0,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  // Valor anterior (si existe)
+                  // Valor anterior (si existe) - más compacto
                   if (widget.previousValue != null && widget.previousValue! > 0) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _onUsePrevious,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                          horizontal: 12,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: _ModalColors.bgInput,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: AppColors.border,
                           ),
@@ -246,22 +264,22 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           children: [
                             const Icon(
                               Icons.history,
-                              size: 16,
+                              size: 14,
                               color: _ModalColors.textSecondary,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Anterior: ${_formatNumber(widget.previousValue!)} ${widget.fieldLabel}',
                               style: GoogleFonts.montserrat(
-                                fontSize: 13,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: _ModalColors.textSecondary,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: 5,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
@@ -271,10 +289,49 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                               child: Text(
                                 'USAR',
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 10,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.w800,
                                   color: _ModalColors.activeSet,
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  // Botón plate calculator (solo para KG)
+                  if (widget.fieldLabel == 'KG' && widget.onOpenPlateCalc != null) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _openPlateCalculator(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _ModalColors.bgInput,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.fitness_center,
+                              size: 14,
+                              color: _ModalColors.activeSet,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Calcular discos',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: _ModalColors.activeSet,
                               ),
                             ),
                           ],
@@ -286,7 +343,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               ),
             ),
 
-            // Display del valor actual
+            // Display del valor actual - GRANDE pero compacto
             Expanded(
               flex: 2,
               child: Center(
@@ -298,19 +355,20 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                     Text(
                       _displayValue.isEmpty ? '0' : _displayValue,
                       style: GoogleFonts.montserrat(
-                        fontSize: 64,
+                        fontSize: 56, // Reducido
                         fontWeight: FontWeight.w900,
                         color: _displayValue.isEmpty
                             ? _ModalColors.textDisabled
                             : _ModalColors.textPrimary,
+                        letterSpacing: -1.0,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Text(
                       widget.fieldLabel,
                       style: GoogleFonts.montserrat(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
                         color: _ModalColors.textSecondary,
                       ),
                     ),
@@ -319,69 +377,69 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               ),
             ),
 
-            // Numpad
+            // Numpad - Botones más compactos
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildNumpadRow(['1', '2', '3']),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     _buildNumpadRow(['4', '5', '6']),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     _buildNumpadRow(['7', '8', '9']),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     _buildNumpadRow(['.', '0', '←']),
                   ],
                 ),
               ),
             ),
 
-            // Botones de acción
+            // Botones de acción - CONFIRMAR prominente pero compacto
             Padding(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 16 + bottomPadding),
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 12 + bottomPadding),
               child: Row(
                 children: [
-                  // Botón limpiar
+                  // Botón limpiar - Sutil
                   if (_displayValue.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.only(right: 10),
                       child: SizedBox(
-                        height: 64,
+                        height: 56,
                         child: TextButton(
                           onPressed: _onClear,
                           style: TextButton.styleFrom(
                             foregroundColor: _ModalColors.textSecondary,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                               side: const BorderSide(color: AppColors.border),
                             ),
                           ),
                           child: Text(
                             'LIMPIAR',
                             style: GoogleFonts.montserrat(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ),
                     ),
 
-                  // Botón confirmar
+                  // Botón confirmar - ÚNICO CTA
                   Expanded(
                     child: SizedBox(
-                      height: 80,
+                      height: 64,
                       child: ElevatedButton(
                         onPressed: _canConfirm ? _onConfirm : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _ModalColors.confirmButton,
-                          disabledBackgroundColor: AppColors.bgDeep,
-                          foregroundColor: Colors.white,
-                          disabledForegroundColor: AppColors.textTertiary,
+                          disabledBackgroundColor: AppColors.bgPressed,
+                          foregroundColor: AppColors.textOnAccent,
+                          disabledForegroundColor: AppColors.textDisabled,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -392,16 +450,16 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           children: [
                             Icon(
                               Icons.check_rounded,
-                              size: 28,
-                              color: _canConfirm ? Colors.white : AppColors.textTertiary,
+                              size: 24,
+                              color: _canConfirm ? AppColors.textOnAccent : AppColors.textDisabled,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Text(
                               'CONFIRMAR',
                               style: GoogleFonts.montserrat(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
                               ),
                             ),
                           ],
@@ -431,28 +489,28 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final isDisabled = isDecimal && widget.isInteger;
 
     return SizedBox(
-      width: 80,
-      height: 64,
+      width: 80, // Más compacto
+      height: 56, // Más compacto
       child: Material(
         color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: isDisabled
               ? null
               : (isBackspace ? _onBackspace : () => _onDigit(label)),
           onLongPress: isBackspace ? _onClear : null,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Center(
             child: isBackspace
                 ? const Icon(
                     Icons.backspace_outlined,
                     color: _ModalColors.textPrimary,
-                    size: 28,
+                    size: 30,
                   )
                 : Text(
                     label,
                     style: GoogleFonts.montserrat(
-                      fontSize: 28,
+                      fontSize: 32, // Más grande
                       fontWeight: FontWeight.w700,
                       color: isDisabled
                           ? _ModalColors.textDisabled

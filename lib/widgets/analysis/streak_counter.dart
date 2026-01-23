@@ -29,8 +29,8 @@ class StreakCounter extends ConsumerWidget {
         gradient: hasStreak
             ? LinearGradient(
                 colors: [
-                  Colors.red.withOpacity(0.2),
-                  Colors.orange.withOpacity(0.1),
+                  AppColors.fireRed.withOpacity(0.2),   // #FF3333
+                  AppColors.bloodRed.withOpacity(0.1),  // #C41E3A
                   Colors.transparent,
                 ],
                 begin: Alignment.centerLeft,
@@ -41,7 +41,7 @@ class StreakCounter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasStreak
-              ? Colors.redAccent.withOpacity(0.3)
+              ? AppColors.fireRed.withOpacity(0.4)  // Glow rojo
               : AppColors.bgDeep,
           width: 1,
         ),
@@ -56,7 +56,7 @@ class StreakCounter extends ConsumerWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.orange.withOpacity(0.4),
+                    color: AppColors.fireRedGlow,  // Glow rojo intenso
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -84,7 +84,7 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: hasStreak ? Colors.white : AppColors.textTertiary,
+                        color: hasStreak ? AppColors.textPrimary : AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -93,7 +93,7 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: hasStreak ? Colors.grey[300] : AppColors.textTertiary,
+                        color: hasStreak ? AppColors.textSecondary : AppColors.textTertiary,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -134,7 +134,7 @@ class StreakCounter extends ConsumerWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: streak.currentStreak >= streak.longestStreak
-                          ? Colors.amber
+                          ? AppColors.fireRed  // Highlight cuando iguala récord
                           : AppColors.textSecondary,
                     ),
                   ),

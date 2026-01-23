@@ -350,16 +350,17 @@ double estimateOneRepMax(double weight, int reps) {
 }
 
 // =============================================================================
-// HEATMAP COLOR CONSTANTS
+// HEATMAP COLOR CONSTANTS — Aggressive Red Palette
 // =============================================================================
 
 /// Heatmap colors from inactive to maximum intensity
+/// Gradiente rojo: de vacío (#1A1A1A) a lleno (#FF3333 fire)
 const List<Color> kHeatmapColors = [
-  Color(0xFF1A1A1A),  // Level 0 - No activity (dark grey)
-  Color(0xFF4A1010),  // Level 1 - Low (dark red)
-  Color(0xFF7B1A1A),  // Level 2 - Medium-low
-  Color(0xFFB71C1C),  // Level 3 - Medium-high (red[900])
-  Color(0xFFFF1744),  // Level 4 - High (redAccent[700])
+  Color(0xFF1A1A1A),  // Level 0 - No activity (dark background)
+  Color(0xFF3D0A0A),  // Level 1 - Low (very dark red)
+  Color(0xFF6E1515),  // Level 2 - Medium-low (dark red blend)
+  Color(0xFFC41E3A),  // Level 3 - Medium-high (bloodRed/Ferrari)
+  Color(0xFFFF3333),  // Level 4 - High (fireRed "on fire")
 ];
 
 /// Get color for intensity level

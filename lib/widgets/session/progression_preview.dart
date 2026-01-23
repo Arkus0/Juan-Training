@@ -279,28 +279,29 @@ class ProgressionPreviewCard extends StatelessWidget {
     switch (decision.action) {
       case ProgressionAction.increaseWeight:
         return (
-          AppColors.neonCyanSubtle.withValues(alpha: 0.2),
+          AppColors.bloodRedSubtle.withValues(alpha: 0.2),
           AppColors.success,
-          AppColors.neonCyan,
+          AppColors.bloodRed,
         );
       case ProgressionAction.increaseReps:
         return (
-          AppColors.info.withValues(alpha: 0.2),
-          AppColors.info,
-          AppColors.info,
+          AppColors.bloodRedSubtle.withValues(alpha: 0.2),
+          AppColors.bloodRed,
+          AppColors.bloodRed,
         );
       case ProgressionAction.maintain:
+        // REPITE ahora en rojo
         return (
-          AppColors.bgElevated,
-          AppColors.border,
-          AppColors.warning,
+          AppColors.darkRedSubtle,
+          AppColors.bloodRed,
+          AppColors.bloodRed,
         );
       case ProgressionAction.decreaseWeight:
       case ProgressionAction.decreaseReps:
         return (
-          AppColors.goldAccent.withValues(alpha: 0.2),
-          AppColors.goldAccent,
-          AppColors.warning,
+          AppColors.darkRedSubtle,
+          AppColors.darkRed,
+          AppColors.darkRed,
         );
     }
   }

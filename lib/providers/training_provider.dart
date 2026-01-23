@@ -973,14 +973,17 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) as
     }
   }
 
-  // Si no hay historial, sugerir el primer día de la primera rutina
+  // Si no hay historial, sugerir el primer día con ejercicios de la primera rutina
   if (lastUsedRutina == null) {
     final firstRutina = rutinas.first;
     if (firstRutina.dias.isEmpty) return null;
+    // Buscar primer día que tenga ejercicios
+    final firstValidDayIndex = firstRutina.dias.indexWhere((d) => d.ejercicios.isNotEmpty);
+    if (firstValidDayIndex == -1) return null; // No hay días con ejercicios
     return SmartWorkoutSuggestion(
       rutina: firstRutina,
-      dayIndex: 0,
-      dayName: firstRutina.dias.first.nombre,
+      dayIndex: firstValidDayIndex,
+      dayName: firstRutina.dias[firstValidDayIndex].nombre,
       reason: 'Comienza tu rutina',
     );
   }
@@ -990,8 +993,17 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) as
     final lastDayIndex = lastSession.dayIndex ?? -1;
     final totalDays = lastUsedRutina.dias.length;
 
-    // Siguiente día en ciclo
-    final nextDayIndex = (lastDayIndex + 1) % totalDays;
+    // Buscar siguiente día que tenga ejercicios (saltando días vacíos)
+    int nextDayIndex = (lastDayIndex + 1) % totalDays;
+    int attempts = 0;
+    while (lastUsedRutina.dias[nextDayIndex].ejercicios.isEmpty && attempts < totalDays) {
+      nextDayIndex = (nextDayIndex + 1) % totalDays;
+      attempts++;
+    }
+    
+    // Si todos los días están vacíos, no sugerir nada
+    if (attempts >= totalDays) return null;
+    
     final nextDay = lastUsedRutina.dias[nextDayIndex];
 
     // Determinar razón

@@ -17,105 +17,93 @@ class ActiveSessionBar extends ConsumerWidget {
     if (trainingState.startTime == null) return const SizedBox.shrink();
 
     final rutinaName = trainingState.activeRutina?.nombre ?? 'Entrenamiento Libre';
-    final ejerciciosCount = trainingState.exercises.length;
 
     final duration = DateTime.now().difference(trainingState.startTime!);
     final minutes = duration.inMinutes;
 
-
+    // 🎯 AGGRESSIVE RED: Barra fina y minimal, no clutter
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.live,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(77),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        // 🎯 NEON IRON: Usar colores del sistema
-        border: Border.all(color: AppColors.liveGlow),
+        color: AppColors.darkRed,  // #8B0000 - rojo oscuro sutil
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.bloodRed.withOpacity(0.3), width: 1),
       ),
       child: Row(
         children: [
-          const Icon(Icons.fitness_center, color: Colors.white),
-          const SizedBox(width: 12),
-          // Tappable area to re-open the session screen
+          // Icono minimal pulsante
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.bloodRed,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.bloodRedGlow,
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          
+          // Info compacta - tappable para ir a sesión
           Expanded(
-            child: InkWell(
+            child: GestureDetector(
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
               },
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'ENTRENAMIENTO EN CURSO',
-                    style: TextStyle(
-                      color: Colors.redAccent[100],
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$rutinaName • $ejerciciosCount Ejercicios • ${minutes}m',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              child: Text(
+                '$rutinaName • ${minutes}m',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
 
-          // Quick actions: rest timer (circular) and finish (trash icon)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (trainingState.restTimer.isActive) ...[
-                // Embedded timer bubble that replicates FloatingTimer actions (tap, long-press, pulse)
-                _EmbeddedTimerBubble(
-                  timerState: trainingState.restTimer,
-                  onPause: () => ref.read(trainingSessionProvider.notifier).pauseRest(),
-                  onResume: () => ref.read(trainingSessionProvider.notifier).resumeRest(),
-                  onStop: () => ref.read(trainingSessionProvider.notifier).stopRest(),
-                ),
-                const SizedBox(width: 8),
-              ],
+          // Timer embebido si está activo
+          if (trainingState.restTimer.isActive) ...[
+            _EmbeddedTimerBubble(
+              timerState: trainingState.restTimer,
+              onPause: () => ref.read(trainingSessionProvider.notifier).pauseRest(),
+              onResume: () => ref.read(trainingSessionProvider.notifier).resumeRest(),
+              onStop: () => ref.read(trainingSessionProvider.notifier).stopRest(),
+            ),
+            const SizedBox(width: 8),
+          ],
 
-              // Finish button (now trash)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.white),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: AppColors.bgElevated,
-                      title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: Colors.white)),
-                      content: const Text('¿Estás seguro de que quieres descartar la sesión actual?'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
-                        TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('DESCARTAR')),
-                      ],
+          // Botón descartar (sutil, pequeño)
+          GestureDetector(
+            onTap: () async {
+              HapticFeedback.mediumImpact();
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.bgElevated,
+                  title: const Text('DESCARTAR SESIÓN', style: TextStyle(color: AppColors.textPrimary)),
+                  content: const Text('¿Descartar sin guardar?', style: TextStyle(color: AppColors.textSecondary)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true), 
+                      child: Text('DESCARTAR', style: TextStyle(color: AppColors.bloodRed)),
                     ),
-                  );
-
-                  if (confirm == true) {
-                    await ref.read(trainingSessionProvider.notifier).finishSession();
-                  }
-                },
-              ),
-            ],
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await ref.read(trainingSessionProvider.notifier).finishSession();
+              }
+            },
+            child: Icon(Icons.close, color: AppColors.textTertiary, size: 16),
           ),
         ],
       ),
