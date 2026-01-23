@@ -96,4 +96,52 @@ void main() {
     expect(find.text('Mismo objetivo hoy'), findsOneWidget);
     expect(find.text('Si éxito: 82.5kg'), findsOneWidget);
   });
+
+  testWidgets('Menú del rayo muestra todas las opciones sin botón "MÁS" intermedio', (WidgetTester tester) async {
+    final ejercicio = Ejercicio(
+      id: 'e3',
+      libraryId: 'lib',
+      nombre: 'Aperturas en máquina',
+      series: 3,
+      reps: 8,
+      peso: 80.0,
+      logs: [
+        SerieLog(peso: 120.5, reps: 8, completed: true),
+        SerieLog(peso: 80.0, reps: 8, completed: false),
+        SerieLog(peso: 0.0, reps: 0, completed: false),
+      ],
+      descansoSugeridoSeconds: 90,
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Material(
+        child: ExerciseCard(
+          exerciseIndex: 2,
+          exercise: ejercicio,
+          historyLogs: null,
+          showAdvanced: false,
+          progressionDecision: null,
+          onShowOptions: () {},
+          onUpdateWeight: (int i, String s) {},
+          onUpdateReps: (int i, String s) {},
+          onUpdateCompleted: (int i, bool? b) {},
+          onPlateCalc: (int i, double d) {},
+          onSetLongPress: (int i) {},
+        ),
+      ),
+    ));
+
+    await tester.pumpAndSettle();
+
+    // Abrir menú del rayo
+    final flashFinder = find.byIcon(Icons.flash_on);
+    expect(flashFinder, findsOneWidget);
+    await tester.tap(flashFinder);
+    await tester.pumpAndSettle();
+
+    // Verificar que HISTORIAL y OPCIONES aparecen y que no hay etiqueta 'MÁS'
+    expect(find.text('HISTORIAL'), findsOneWidget);
+    expect(find.text('OPCIONES'), findsOneWidget);
+    expect(find.text('MÁS'), findsNothing);
+  });
 }
