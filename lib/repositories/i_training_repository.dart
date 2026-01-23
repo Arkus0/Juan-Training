@@ -50,6 +50,10 @@ abstract class ITrainingRepository {
   Stream<ActiveSessionData?> watchActiveSession();
   Future<void> clearActiveSession();
 
+  /// FIX: Atomiza save + clear para evitar estado inconsistente
+  /// Guarda la sesión completada y limpia la sesión activa en una sola transacción.
+  Future<void> finishAndClearSession(Sesion sesion);
+
   // Notes
   Future<String> getNote(String exerciseName);
   Future<void> saveNote(String exerciseName, String note);

@@ -873,8 +873,11 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       durationSeconds: durationSeconds,
     );
 
-    await _repository.saveSesion(sesion);
-    await clearStorage();
+    // FIX: Usar método atómico para evitar estado inconsistente
+    // Si hay crash entre save y clear, podrían quedar sesiones duplicadas
+    await _repository.finishAndClearSession(sesion);
+    // Limpiar también SharedPreferences del timer
+    await _clearRestTimerFromPrefs();
 
     // Cancelar cualquier debouncer pendiente
     _saveDebouncer.cancel();
