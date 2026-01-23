@@ -94,6 +94,16 @@ class NumpadInputModal extends StatefulWidget {
 
 class _NumpadInputModalState extends State<NumpadInputModal> {
   late String _displayValue;
+  bool _showLimitWarning = false;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LÍMITES DUROS — Prevención de valores absurdos
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Estos límites previenen errores de usuario (ej: 2000 kg por accidente)
+  // y protegen la integridad de los datos.
+  // ═══════════════════════════════════════════════════════════════════════════
+  static const double _maxWeight = 999.9; // kg - Eddie Hall deadlifted 500kg
+  static const int _maxReps = 999; // reps - más que suficiente para cualquier set
 
   @override
   void initState() {
@@ -116,8 +126,19 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     return value.toString();
   }
 
+  /// Verifica si el valor está dentro de los límites permitidos
+  bool _isWithinLimits(String valueStr) {
+    final value = double.tryParse(valueStr);
+    if (value == null) return true; // Strings inválidos se manejan en _canConfirm
+
+    if (widget.isInteger) {
+      return value <= _maxReps;
+    } else {
+      return value <= _maxWeight;
+    }
+  }
+
   void _onDigit(String digit) {
-    HapticFeedback.selectionClick();
     setState(() {
       // Limitar longitud
       if (_displayValue.length >= 6) return;
@@ -128,11 +149,26 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
         if (widget.isInteger) return;
         if (_displayValue.isEmpty) {
           _displayValue = '0.';
+          HapticFeedback.selectionClick();
           return;
         }
       }
 
-      _displayValue += digit;
+      // Construir nuevo valor y validar límites
+      final newValue = _displayValue + digit;
+      if (!_isWithinLimits(newValue)) {
+        // Valor excede límite - feedback de error
+        HapticFeedback.heavyImpact();
+        _showLimitWarning = true;
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _showLimitWarning = false);
+        });
+        return;
+      }
+
+      HapticFeedback.selectionClick();
+      _displayValue = newValue;
+      _showLimitWarning = false;
     });
   }
 
@@ -347,31 +383,51 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
             Expanded(
               flex: 2,
               child: Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _displayValue.isEmpty ? '0' : _displayValue,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 56, // Reducido
-                        fontWeight: FontWeight.w900,
-                        color: _displayValue.isEmpty
-                            ? _ModalColors.textDisabled
-                            : _ModalColors.textPrimary,
-                        letterSpacing: -1.0,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          _displayValue.isEmpty ? '0' : _displayValue,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 56, // Reducido
+                            fontWeight: FontWeight.w900,
+                            color: _displayValue.isEmpty
+                                ? _ModalColors.textDisabled
+                                : _ModalColors.textPrimary,
+                            letterSpacing: -1.0,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.fieldLabel,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: _ModalColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.fieldLabel,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: _ModalColors.textSecondary,
+                    // Advertencia de límite alcanzado
+                    if (_showLimitWarning)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          widget.isInteger
+                              ? 'Máximo: $_maxReps reps'
+                              : 'Máximo: ${_maxWeight.toStringAsFixed(1)} kg',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.warning,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

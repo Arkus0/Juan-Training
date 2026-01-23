@@ -898,11 +898,18 @@ class _TimerControlButtons extends StatelessWidget {
 }
 
 /// Botón circular reutilizable
+///
+/// MEJORA UX: El área táctil (hitbox) es siempre >= 48dp para cumplir
+/// con las guías de accesibilidad, independiente del tamaño visual del icono.
+/// Esto es crítico para uso en gimnasio (manos sudadas, guantes, prisa).
 class _CircleButton extends StatelessWidget {
   final IconData icon;
   final double size;
   final Color? color;
   final VoidCallback? onTap;
+
+  /// Tamaño mínimo del área táctil (WCAG 2.1: 44dp, gimnasio: 48dp)
+  static const double _minHitArea = 48.0;
 
   const _CircleButton({
     required this.icon,
@@ -915,20 +922,30 @@ class _CircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEnabled = onTap != null;
     final buttonColor = color ?? AppColors.border;
+    // El área táctil es el máximo entre el tamaño visual y el mínimo de 48dp
+    final hitAreaSize = size < _minHitArea ? _minHitArea : size;
 
-    return Material(
-      color: isEnabled ? buttonColor : Colors.grey[850],
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(
-            icon,
-            size: size * 0.5,
-            color: isEnabled ? AppColors.textPrimary : AppColors.border,
+    return SizedBox(
+      // Hitbox expandida para accesibilidad
+      width: hitAreaSize,
+      height: hitAreaSize,
+      child: Center(
+        child: Material(
+          color: isEnabled ? buttonColor : Colors.grey[850],
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            // El visual mantiene el tamaño original
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(
+                icon,
+                size: size * 0.5,
+                color: isEnabled ? AppColors.textPrimary : AppColors.border,
+              ),
+            ),
           ),
         ),
       ),
