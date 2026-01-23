@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../models/library_exercise.dart';
@@ -143,7 +144,7 @@ class _OptimizedExerciseImageState extends State<OptimizedExerciseImage>
   Widget build(BuildContext context) {
     final borderRadius =
         widget.borderRadius ?? BorderRadius.circular(8);
-    final placeholderColor = widget.placeholderColor ?? Colors.grey[850];
+    final placeholderColor = widget.placeholderColor ?? AppColors.bgElevated;
 
     return RepaintBoundary(
       child: ClipRRect(
@@ -225,11 +226,11 @@ class _ExercisePlaceholder extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      color: color ?? Colors.grey[850],
+      color: color ?? AppColors.bgElevated,
       child: showIcon
           ? Icon(
               Icons.fitness_center,
-              color: Colors.grey[700],
+              color: AppColors.border,
               size: size * 0.4,
             )
           : null,
@@ -273,10 +274,10 @@ class ExerciseListImage extends StatelessWidget {
               return Container(
                 width: size,
                 height: size,
-                color: Colors.grey[850],
+                color: AppColors.bgElevated,
                 child: Icon(
                   Icons.fitness_center,
-                  color: Colors.grey[700],
+                  color: AppColors.border,
                   size: size * 0.4,
                 ),
               );

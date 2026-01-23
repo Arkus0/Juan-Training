@@ -1,3 +1,4 @@
+import '../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -182,7 +183,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -194,7 +195,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -204,7 +205,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.document_scanner, color: Colors.red[400], size: 28),
+                Icon(Icons.document_scanner, color: AppColors.neonPrimary, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -246,7 +247,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(
-              color: Colors.red[400],
+              color: AppColors.neonPrimary,
               strokeWidth: 3,
             ),
             const SizedBox(height: 24),
@@ -276,7 +277,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: Colors.red[400], size: 48),
+            Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 48),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -319,7 +320,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                     style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[700],
+                    backgroundColor: AppColors.error,
                   ),
                 ),
               ],
@@ -338,7 +339,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green[400], size: 18),
+              Icon(Icons.check_circle, color: AppColors.neonCyan, size: 18),
               const SizedBox(width: 8),
               Text(
                 '${_candidates.length} ejercicio${_candidates.length == 1 ? '' : 's'} detectado${_candidates.length == 1 ? '' : 's'}',
@@ -372,13 +373,13 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.red[400]!),
+                    side: BorderSide(color: AppColors.neonPrimary!),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
                     'CANCELAR',
                     style: GoogleFonts.montserrat(
-                      color: Colors.red[400],
+                      color: AppColors.neonPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -398,7 +399,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[700],
+                    backgroundColor: AppColors.error,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -415,7 +416,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
     final confidence = (candidate.confidence * 100).toInt();
     
     return Card(
-      color: Colors.grey[850],
+      color: AppColors.bgElevated,
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -474,10 +475,10 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: confidence >= 70 
-                                    ? Colors.green[400]
+                                    ? AppColors.neonCyan
                                     : confidence >= 50 
-                                        ? Colors.orange[400]
-                                        : Colors.red[400],
+                                        ? AppColors.warning
+                                        : AppColors.neonPrimary,
                               ),
                             ),
                           ),
@@ -570,7 +571,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
             ),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.grey[800],
+              fillColor: AppColors.bgDeep,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -606,7 +607,7 @@ class _SourceSelectorSheet extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: AppColors.bgElevated,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -617,7 +618,7 @@ class _SourceSelectorSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -692,7 +693,7 @@ class _SourceOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.grey[850],
+      color: AppColors.bgElevated,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -701,7 +702,7 @@ class _SourceOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           child: Column(
             children: [
-              Icon(icon, color: Colors.red[400], size: 40),
+              Icon(icon, color: AppColors.neonPrimary, size: 40),
               const SizedBox(height: 12),
               Text(
                 label,

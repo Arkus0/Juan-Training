@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,7 +23,7 @@ class StrengthTrend extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +49,7 @@ class StrengthTrend extends ConsumerWidget {
                 style: GoogleFonts.montserrat(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey[400],
+                  color: AppColors.textSecondary,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -97,7 +98,7 @@ class StrengthTrend extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF252525),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -109,11 +110,11 @@ class StrengthTrend extends ConsumerWidget {
           hint: Text(
             'Selecciona ejercicio',
             style: GoogleFonts.montserrat(
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
               fontSize: 14,
             ),
           ),
-          icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[500]),
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.textTertiary),
           dropdownColor: const Color(0xFF252525),
           isExpanded: true,
           items: exerciseNames.map((name) {
@@ -181,7 +182,7 @@ class StrengthTrend extends ConsumerWidget {
                 horizontalInterval: (maxY - minY) / 4,
                 getDrawingHorizontalLine: (value) {
                   return FlLine(
-                    color: Colors.grey[850]!,
+                    color: AppColors.bgElevated!,
                     strokeWidth: 1,
                   );
                 },
@@ -196,7 +197,7 @@ class StrengthTrend extends ConsumerWidget {
                       return Text(
                         '${value.toInt()}',
                         style: GoogleFonts.montserrat(
-                          color: Colors.grey[600],
+                          color: AppColors.textTertiary,
                           fontSize: 10,
                         ),
                       );
@@ -219,7 +220,7 @@ class StrengthTrend extends ConsumerWidget {
                       return Text(
                         '${date.day}/${date.month}',
                         style: GoogleFonts.montserrat(
-                          color: Colors.grey[600],
+                          color: AppColors.textTertiary,
                           fontSize: 9,
                         ),
                       );
@@ -279,7 +280,7 @@ class StrengthTrend extends ConsumerWidget {
                       return LineTooltipItem(
                         '$dateStr\n',
                         GoogleFonts.montserrat(
-                          color: Colors.grey[400],
+                          color: AppColors.textSecondary,
                           fontSize: 11,
                         ),
                         children: [
@@ -294,7 +295,7 @@ class StrengthTrend extends ConsumerWidget {
                           TextSpan(
                             text: '\n${point.actualMax.toStringAsFixed(1)}kg x${point.repsAtMax}',
                             style: GoogleFonts.montserrat(
-                              color: Colors.grey[500],
+                              color: AppColors.textTertiary,
                               fontSize: 10,
                             ),
                           ),
@@ -362,7 +363,7 @@ class StrengthTrend extends ConsumerWidget {
                   '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}kg (${percentChange.toStringAsFixed(1)}%) en ${dataPoints.length} sesiones',
                   style: GoogleFonts.montserrat(
                     fontSize: 11,
-                    color: Colors.grey[400],
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -382,7 +383,7 @@ class StrengthTrend extends ConsumerWidget {
         children: [
           Icon(
             Icons.show_chart,
-            color: Colors.grey[700],
+            color: AppColors.border,
             size: 40,
           ),
           const SizedBox(height: 12),
@@ -391,7 +392,7 @@ class StrengthTrend extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 4),
@@ -399,7 +400,7 @@ class StrengthTrend extends ConsumerWidget {
             'Selecciona un ejercicio con historial',
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.border,
             ),
           ),
         ],

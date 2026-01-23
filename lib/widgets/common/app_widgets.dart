@@ -141,9 +141,9 @@ class _ShimmerLoadingCardState extends State<ShimmerLoadingCard>
                 begin: Alignment(_animation.value - 1, 0),
                 end: Alignment(_animation.value, 0),
                 colors: [
-                  Colors.grey[900]!,
-                  Colors.grey[800]!,
-                  Colors.grey[900]!,
+                  AppColors.bgElevated!,
+                  AppColors.bgDeep!,
+                  AppColors.bgElevated!,
                 ],
               ),
             ),
@@ -154,7 +154,7 @@ class _ShimmerLoadingCardState extends State<ShimmerLoadingCard>
                   height: 20,
                   width: 150,
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
+                    color: AppColors.bgElevated,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -163,7 +163,7 @@ class _ShimmerLoadingCardState extends State<ShimmerLoadingCard>
                   height: 14,
                   width: 100,
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
+                    color: AppColors.bgElevated,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -195,14 +195,14 @@ class ErrorStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[700]),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               'ERROR',
               style: GoogleFonts.montserrat(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
-                color: Colors.red[700],
+                color: AppColors.error,
               ),
             ),
             const SizedBox(height: 8),
@@ -211,7 +211,7 @@ class ErrorStateWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.montserrat(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: AppColors.textTertiary,
               ),
             ),
             if (onRetry != null) ...[
@@ -221,8 +221,8 @@ class ErrorStateWidget extends StatelessWidget {
                 icon: const Icon(Icons.refresh),
                 label: const Text('REINTENTAR'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red[700],
-                  side: BorderSide(color: Colors.red[700]!),
+                  foregroundColor: AppColors.error,
+                  side: BorderSide(color: AppColors.error!),
                 ),
               ),
             ],
@@ -245,7 +245,7 @@ Future<bool> showConfirmDialog(
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       title: Text(
         title,
         style: GoogleFonts.montserrat(

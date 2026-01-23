@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -41,7 +42,7 @@ class StreakCounter extends ConsumerWidget {
         border: Border.all(
           color: hasStreak
               ? Colors.redAccent.withOpacity(0.3)
-              : Colors.grey[800]!,
+              : AppColors.bgDeep!,
           width: 1,
         ),
       ),
@@ -83,7 +84,7 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: hasStreak ? Colors.white : Colors.grey[600],
+                        color: hasStreak ? Colors.white : AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -92,7 +93,7 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: hasStreak ? Colors.grey[300] : Colors.grey[600],
+                        color: hasStreak ? Colors.grey[300] : AppColors.textTertiary,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -107,7 +108,7 @@ class StreakCounter extends ConsumerWidget {
                           : 'Comienza tu racha hoy',
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -122,7 +123,7 @@ class StreakCounter extends ConsumerWidget {
                 color: const Color(0xFF1E1E1E),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.grey[800]!,
+                  color: AppColors.bgDeep!,
                 ),
               ),
               child: Column(
@@ -134,7 +135,7 @@ class StreakCounter extends ConsumerWidget {
                       fontWeight: FontWeight.w800,
                       color: streak.currentStreak >= streak.longestStreak
                           ? Colors.amber
-                          : Colors.grey[400],
+                          : AppColors.textSecondary,
                     ),
                   ),
                   Text(
@@ -142,7 +143,7 @@ class StreakCounter extends ConsumerWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 8,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[600],
+                      color: AppColors.textTertiary,
                       letterSpacing: 1,
                     ),
                   ),

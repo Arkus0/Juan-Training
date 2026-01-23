@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +41,7 @@ class RecoveryMonitor extends ConsumerWidget {
                 style: GoogleFonts.montserrat(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey[400],
+                  color: AppColors.textSecondary,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -92,14 +93,14 @@ class RecoveryMonitor extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.fitness_center,
-            color: Colors.grey[700],
+            color: AppColors.border,
             size: 32,
           ),
           const SizedBox(height: 8),
@@ -107,7 +108,7 @@ class RecoveryMonitor extends ConsumerWidget {
             'Entrena para ver tu recuperación',
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
         ],
@@ -229,7 +230,7 @@ class _RecoveryCard extends StatelessWidget {
               padding: EdgeInsets.zero,
               lineHeight: 4,
               percent: recoveryPercent,
-              backgroundColor: Colors.grey[800],
+              backgroundColor: AppColors.bgDeep,
               linearGradient: LinearGradient(
                 colors: [
                   status.color.withOpacity(0.7),
@@ -288,7 +289,7 @@ class _RecoveryCard extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[700],
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -418,7 +419,7 @@ class _RecoveryCard extends StatelessWidget {
           label,
           style: GoogleFonts.montserrat(
             fontSize: 13,
-            color: Colors.grey[500],
+            color: AppColors.textTertiary,
           ),
         ),
         Text(

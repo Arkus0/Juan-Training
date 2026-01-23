@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -206,12 +207,12 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
             onPressed: _onTap,
             icon: Icon(
               isListening ? Icons.mic : Icons.mic_none,
-              color: isListening ? Colors.red[400] : Colors.white70,
+              color: isListening ? AppColors.neonPrimary : Colors.white70,
             ),
             tooltip: isListening ? 'Escuchando...' : 'Dictar series (ej: 80kg, 10 reps)',
             style: IconButton.styleFrom(
               backgroundColor: isListening 
-                  ? Colors.red[900]?.withValues(alpha: 0.3)
+                  ? AppColors.live?.withValues(alpha: 0.3)
                   : Colors.transparent,
             ),
           ),
@@ -251,12 +252,12 @@ class _ListeningOverlay extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[900],
+                color: AppColors.bgElevated,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.red[700]!.withValues(alpha: 0.5)),
+                border: Border.all(color: AppColors.error!.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.red[900]!.withValues(alpha: 0.3),
+                    color: AppColors.live!.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
@@ -276,7 +277,7 @@ class _ListeningOverlay extends ConsumerWidget {
                         style: GoogleFonts.montserrat(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red[400],
+                          color: AppColors.neonPrimary,
                         ),
                       ),
                     ],
@@ -287,7 +288,7 @@ class _ListeningOverlay extends ConsumerWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.bgElevated,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -357,7 +358,7 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
         return Icon(
           Icons.mic,
           size: 28,
-          color: Colors.red[400]!.withValues(alpha: 0.6 + _controller.value * 0.4),
+          color: AppColors.neonPrimary!.withValues(alpha: 0.6 + _controller.value * 0.4),
         );
       },
     );

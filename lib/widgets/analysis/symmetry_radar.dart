@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +19,7 @@ class SymmetryRadar extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +46,7 @@ class SymmetryRadar extends ConsumerWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey[400],
+                    color: AppColors.textSecondary,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -101,7 +102,7 @@ class SymmetryRadar extends ConsumerWidget {
             'Volumen últimos 30 días',
             style: GoogleFonts.montserrat(
               fontSize: 11,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
 
@@ -156,15 +157,15 @@ class SymmetryRadar extends ConsumerWidget {
             fontSize: 10,
           ),
           tickBorderData: BorderSide(
-            color: Colors.grey[800]!,
+            color: AppColors.bgDeep!,
             width: 1,
           ),
           gridBorderData: BorderSide(
-            color: Colors.grey[800]!,
+            color: AppColors.bgDeep!,
             width: 1,
           ),
           titleTextStyle: GoogleFonts.montserrat(
-            color: Colors.grey[400],
+            color: AppColors.textSecondary,
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
@@ -209,7 +210,7 @@ class SymmetryRadar extends ConsumerWidget {
         children: [
           Icon(
             Icons.radar,
-            color: Colors.grey[700],
+            color: AppColors.border,
             size: 48,
           ),
           const SizedBox(height: 12),
@@ -218,7 +219,7 @@ class SymmetryRadar extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 4),
@@ -226,7 +227,7 @@ class SymmetryRadar extends ConsumerWidget {
             'Entrena para ver tu equilibrio muscular',
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.border,
             ),
           ),
         ],
@@ -277,11 +278,11 @@ class SymmetryRadarCompact extends ConsumerWidget {
                     tickCount: 2,
                     ticksTextStyle: const TextStyle(color: Colors.transparent),
                     tickBorderData: BorderSide(
-                      color: Colors.grey[800]!,
+                      color: AppColors.bgDeep!,
                       width: 0.5,
                     ),
                     gridBorderData: BorderSide(
-                      color: Colors.grey[800]!,
+                      color: AppColors.bgDeep!,
                       width: 0.5,
                     ),
                     getTitle: (_, __) => const RadarChartTitle(text: ''),

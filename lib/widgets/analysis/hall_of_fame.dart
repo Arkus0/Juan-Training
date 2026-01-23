@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,7 @@ class HallOfFame extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +47,7 @@ class HallOfFame extends ConsumerWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey[400],
+                    color: AppColors.textSecondary,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -68,7 +69,7 @@ class HallOfFame extends ConsumerWidget {
             'Récords personales en ejercicios clave',
             style: GoogleFonts.montserrat(
               fontSize: 11,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
 
@@ -116,7 +117,7 @@ class HallOfFame extends ConsumerWidget {
         children: [
           Icon(
             Icons.emoji_events_outlined,
-            color: Colors.grey[700],
+            color: AppColors.border,
             size: 40,
           ),
           const SizedBox(height: 12),
@@ -125,7 +126,7 @@ class HallOfFame extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
           const SizedBox(height: 4),
@@ -133,7 +134,7 @@ class HallOfFame extends ConsumerWidget {
             'Completa entrenamientos para registrar PRs',
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.border,
             ),
             textAlign: TextAlign.center,
           ),
@@ -250,7 +251,7 @@ class _PRCard extends StatelessWidget {
                     style: GoogleFonts.montserrat(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[400],
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -267,7 +268,7 @@ class _PRCard extends StatelessWidget {
                   style: GoogleFonts.montserrat(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[400],
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -351,7 +352,7 @@ class _PRCard extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[700],
+                  color: AppColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -442,7 +443,7 @@ class _PRCard extends StatelessWidget {
           label,
           style: GoogleFonts.montserrat(
             fontSize: 14,
-            color: Colors.grey[500],
+            color: AppColors.textTertiary,
           ),
         ),
         Text(

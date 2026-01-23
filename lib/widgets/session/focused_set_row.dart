@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -344,7 +345,7 @@ class _SetNumberBadge extends StatelessWidget {
     String label = '${index + 1}';
 
     if (isWarmup) {
-      bgColor = Colors.blue[700]!;
+      bgColor = AppColors.info!;
       label = 'W';
     } else if (isDropset) {
       bgColor = Colors.purple[700]!;

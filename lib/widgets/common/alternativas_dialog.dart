@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,17 +30,17 @@ class AlternativasDialog extends StatelessWidget {
     );
 
     return AlertDialog(
-      backgroundColor: Colors.grey[900],
+      backgroundColor: AppColors.bgElevated,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.red[900]!.withValues(alpha: 0.5)),
+        side: BorderSide(color: AppColors.live!.withValues(alpha: 0.5)),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.swap_horiz, color: Colors.redAccent[700], size: 24),
+              Icon(Icons.swap_horiz, color: AppColors.neonPrimary, size: 24),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -59,7 +60,7 @@ class AlternativasDialog extends StatelessWidget {
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Colors.redAccent[700],
+              color: AppColors.neonPrimary,
             ),
           ),
         ],
@@ -80,7 +81,7 @@ class AlternativasDialog extends StatelessWidget {
             'CERRAR',
             style: GoogleFonts.montserrat(
               fontWeight: FontWeight.w700,
-              color: Colors.grey[400],
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -94,7 +95,7 @@ class AlternativasDialog extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off, size: 48, color: Colors.grey[700]),
+          Icon(Icons.search_off, size: 48, color: AppColors.border),
           const SizedBox(height: 12),
           Text(
             'Sin alternativas registradas',
@@ -114,7 +115,7 @@ class AlternativasDialog extends StatelessWidget {
       itemCount: alternativas.length,
       separatorBuilder: (_, __) => Divider(
         height: 1,
-        color: Colors.grey[800],
+        color: AppColors.bgDeep,
       ),
       itemBuilder: (context, index) {
         final alternativa = alternativas[index];
@@ -168,7 +169,7 @@ class _AlternativaItem extends StatelessWidget {
                     Text(
                       exercise.equipment,
                       style: GoogleFonts.montserrat(
-                        color: Colors.grey[500],
+                        color: AppColors.textTertiary,
                         fontSize: 10,
                       ),
                     ),
@@ -178,7 +179,7 @@ class _AlternativaItem extends StatelessWidget {
                       child: Text(
                         'RECOMENDADA',
                         style: GoogleFonts.montserrat(
-                          color: Colors.redAccent[700],
+                          color: AppColors.neonPrimary,
                           fontWeight: FontWeight.w600,
                           fontSize: 10,
                         ),
@@ -190,10 +191,10 @@ class _AlternativaItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.red[900]?.withValues(alpha: 0.3),
+                color: AppColors.live?.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.red[900]!.withValues(alpha: 0.5),
+                  color: AppColors.live!.withValues(alpha: 0.5),
                 ),
               ),
               child: Text(

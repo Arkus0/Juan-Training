@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -188,7 +189,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[700],
+                color: AppColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -236,7 +237,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                           color: _ModalColors.bgInput,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Colors.grey[700]!,
+                            color: AppColors.border!,
                           ),
                         ),
                         child: Row(
@@ -355,7 +356,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: BorderSide(color: Colors.grey[700]!),
+                              side: BorderSide(color: AppColors.border!),
                             ),
                           ),
                           child: Text(
@@ -377,9 +378,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                         onPressed: _canConfirm ? _onConfirm : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _ModalColors.confirmButton,
-                          disabledBackgroundColor: Colors.grey[800],
+                          disabledBackgroundColor: AppColors.bgDeep,
                           foregroundColor: Colors.white,
-                          disabledForegroundColor: Colors.grey[600],
+                          disabledForegroundColor: AppColors.textTertiary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -391,7 +392,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             Icon(
                               Icons.check_rounded,
                               size: 28,
-                              color: _canConfirm ? Colors.white : Colors.grey[600],
+                              color: _canConfirm ? Colors.white : AppColors.textTertiary,
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -432,7 +433,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
       width: 80,
       height: 64,
       child: Material(
-        color: isDisabled ? Colors.grey[900] : _ModalColors.bgInput,
+        color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: isDisabled

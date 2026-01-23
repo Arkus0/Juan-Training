@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -178,14 +179,14 @@ class DailySnapshotCard extends ConsumerWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
+                    color: AppColors.bgElevated,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     name,
                     style: GoogleFonts.montserrat(
                       fontSize: 10,
-                      color: Colors.grey[400],
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 );
@@ -198,7 +199,7 @@ class DailySnapshotCard extends ConsumerWidget {
                   '+${snapshot.exerciseNames.length - 5} más',
                   style: GoogleFonts.montserrat(
                     fontSize: 10,
-                    color: Colors.grey[600],
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ),
@@ -216,7 +217,7 @@ class DailySnapshotCard extends ConsumerWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: Colors.grey[500], size: 18),
+          Icon(icon, color: AppColors.textTertiary, size: 18),
           const SizedBox(height: 4),
           Text(
             value,
@@ -231,7 +232,7 @@ class DailySnapshotCard extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
               letterSpacing: 0.5,
             ),
           ),
@@ -246,13 +247,13 @@ class DailySnapshotCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: Column(
         children: [
           Icon(
             Icons.event_busy,
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
             size: 32,
           ),
           const SizedBox(height: 8),
@@ -261,14 +262,14 @@ class DailySnapshotCard extends ConsumerWidget {
             style: GoogleFonts.montserrat(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[500],
+              color: AppColors.textTertiary,
             ),
           ),
           Text(
             DateFormat('d MMM yyyy', 'es_ES').format(date),
             style: GoogleFonts.montserrat(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: AppColors.textTertiary,
             ),
           ),
         ],

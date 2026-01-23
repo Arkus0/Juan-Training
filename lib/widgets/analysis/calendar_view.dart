@@ -1,3 +1,4 @@
+import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +53,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: AppColors.bgDeep!),
       ),
       child: TableCalendar(
         firstDay: DateTime(2020),
@@ -118,7 +119,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
               child: Text(
                 '${day.day}',
                 style: GoogleFonts.montserrat(
-                  color: Colors.grey[800],
+                  color: AppColors.bgDeep,
                   fontSize: 14,
                 ),
               ),
@@ -131,11 +132,11 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           formatButtonVisible: true,
           formatButtonShowsNext: false,
           formatButtonDecoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[700]!),
+            border: Border.all(color: AppColors.border!),
             borderRadius: BorderRadius.circular(8),
           ),
           formatButtonTextStyle: GoogleFonts.montserrat(
-            color: Colors.grey[400],
+            color: AppColors.textSecondary,
             fontSize: 12,
           ),
           titleTextStyle: GoogleFonts.montserrat(
@@ -143,17 +144,17 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
-          leftChevronIcon: Icon(Icons.chevron_left, color: Colors.grey[400]),
-          rightChevronIcon: Icon(Icons.chevron_right, color: Colors.grey[400]),
+          leftChevronIcon: Icon(Icons.chevron_left, color: AppColors.textSecondary),
+          rightChevronIcon: Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: GoogleFonts.montserrat(
-            color: Colors.grey[500],
+            color: AppColors.textTertiary,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
           weekendStyle: GoogleFonts.montserrat(
-            color: Colors.grey[600],
+            color: AppColors.textTertiary,
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -168,12 +169,12 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           ),
           // Weekend
           weekendTextStyle: GoogleFonts.montserrat(
-            color: Colors.grey[400],
+            color: AppColors.textSecondary,
             fontSize: 14,
           ),
           // Today
           todayDecoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: AppColors.bgDeep,
             shape: BoxShape.circle,
           ),
           todayTextStyle: GoogleFonts.montserrat(
@@ -203,7 +204,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
         color: isSelected
             ? Colors.redAccent
             : isToday
-                ? Colors.grey[800]
+                ? AppColors.bgDeep
                 : null,
         shape: BoxShape.circle,
       ),
