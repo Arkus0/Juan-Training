@@ -61,13 +61,13 @@ abstract class AppColors {
   // Contraste brutal para zero fatiga ocular
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Fondo más profundo - Negro puro intenso
-  /// Hex: #0A0A0A | RGB: 10, 10, 10
-  static const Color bgDeep = Color(0xFF0A0A0A);
+  /// Fondo más profundo - Material Dark surface
+  /// Hex: #121212 | RGB: 18, 18, 18
+  static const Color bgDeep = Color(0xFF121212);
 
-  /// Fondo principal de pantallas - Negro profundo
-  /// Hex: #0A0A0A | RGB: 10, 10, 10
-  static const Color bgPrimary = Color(0xFF0A0A0A);
+  /// Fondo principal de pantallas - Material Dark surface
+  /// Hex: #121212 | RGB: 18, 18, 18
+  static const Color bgPrimary = Color(0xFF121212);
 
   /// Fondo de cards - Gris metálico oscuro
   /// Hex: #1C1C1C | RGB: 28, 28, 28
@@ -82,8 +82,8 @@ abstract class AppColors {
   static const Color bgPressed = Color(0xFF2F2F2F);
 
   /// Fondo de cards destacadas (ejercicio activo) - Tinte rojo sutil
-  /// Hex: #1A0A0A | RGB: 26, 10, 10
-  static const Color bgActiveCard = Color(0xFF1A0A0A);
+  /// Hex: #1F1212 | RGB: 31, 18, 18
+  static const Color bgActiveCard = Color(0xFF1F1212);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ACENTO PRIMARIO: Rojo Ferrari — Intensidad Máxima
@@ -96,23 +96,23 @@ abstract class AppColors {
   /// Contraste sobre bgPrimary (#0A0A0A): 5.8:1 ✅ (AA)
   /// ═══════════════════════════════════════════════════════════════════════════
 
-  /// Acento primario - Rojo Ferrari (Cardinal)
-  /// Hex: #C41E3A | RGB: 196, 30, 58
-  static const Color bloodRed = Color(0xFFC41E3A);
+  /// Acento primario - Material Error Red (mejor contraste ~5.4:1)
+  /// Hex: #EF5350 | RGB: 239, 83, 80
+  static const Color bloodRed = Color(0xFFEF5350);
 
   /// Estado hover (más brillante)
-  /// Hex: #DC143C | RGB: 220, 20, 60 (Crimson)
-  static const Color bloodRedHover = Color(0xFFDC143C);
+  /// Hex: #F44336 | RGB: 244, 67, 54 (Material Red 500)
+  static const Color bloodRedHover = Color(0xFFF44336);
 
   /// Estado pressed - Rojo oscuro para sombras/countdowns
-  /// Hex: #8B0000 | RGB: 139, 0, 0 (Dark Red)
-  static const Color bloodRedPressed = Color(0xFF8B0000);
+  /// Hex: #C62828 | RGB: 198, 40, 40 (Material Red 800)
+  static const Color bloodRedPressed = Color(0xFFC62828);
 
   /// Versión sutil para backgrounds (15% opacity)
-  static const Color bloodRedSubtle = Color(0x26C41E3A);
+  static const Color bloodRedSubtle = Color(0x26EF5350);
 
   /// Glow para animaciones (usado en box-shadow)
-  static const Color bloodRedGlow = Color(0x4DC41E3A);
+  static const Color bloodRedGlow = Color(0x4DEF5350);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ACENTO SECUNDARIO: Rojo Oscuro — Timers, Alertas, Sombras
@@ -317,14 +317,14 @@ abstract class AppColors {
   /// ═══════════════════════════════════════════════════════════════════════════
 
   /// Texto primario: Datos clave (KG, REPS)
-  /// Hex: #EAEAEA | RGB: 234, 234, 234
-  /// Contraste sobre bgPrimary (#0A0A0A): 14.8:1 ✅ (AAA)
-  static const Color textPrimary = Color(0xFFEAEAEA);
+  /// Hex: #FFFFFF | RGB: 255, 255, 255 (Material onSurface)
+  /// Contraste sobre bgPrimary (#121212): 18.73:1 ✅ (AAA)
+  static const Color textPrimary = Color(0xFFFFFFFF);
 
   /// Texto secundario: Labels, descripciones
-  /// Hex: #B0B0B0 | RGB: 176, 176, 176
-  /// Contraste sobre bgPrimary: 8.1:1 ✅ (AAA)
-  static const Color textSecondary = Color(0xFFB0B0B0);
+  /// Hex: #FFFFFF 60% → ~#A0A0A0 blended (Material onSurface secondary)
+  /// Contraste sobre bgPrimary (#121212): 7.16:1 ✅ (AAA)
+  static const Color textSecondary = Color(0x99FFFFFF);
 
   /// Texto terciario: Hints, metadata
   /// Hex: #6B6B6B | RGB: 107, 107, 107
