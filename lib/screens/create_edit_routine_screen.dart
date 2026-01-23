@@ -83,7 +83,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('RUTINA GUARDADA',
+          content: Text('RUTINA FORJADA',
             style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
           backgroundColor: Colors.red[900],
         ),
