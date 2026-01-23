@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
+import '../utils/design_system.dart';
 import '../models/sesion.dart';
 import '../providers/training_provider.dart';
 import '../providers/analysis_provider.dart';
@@ -51,14 +52,13 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.bgDeep,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.bgDeep,
         elevation: 0,
         title: Text(
           'ANÁLISIS',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w900,
+          style: AppTypography.sectionTitle.copyWith(
             letterSpacing: 2,
           ),
         ),
@@ -92,20 +92,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.redAccent,
+          indicatorColor: AppColors.neonPrimary,
           indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey[600],
-          labelStyle: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w800,
-            fontSize: 13,
-            letterSpacing: 1,
-          ),
-          unselectedLabelStyle: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-            letterSpacing: 1,
-          ),
+          labelColor: AppColors.textPrimary,
+          unselectedLabelColor: AppColors.textTertiary,
+          labelStyle: AppTypography.labelEmphasis,
+          unselectedLabelStyle: AppTypography.label,
           onTap: (_) => HapticFeedback.selectionClick(),
           tabs: const [
             Tab(text: 'HISTORIAL'),
@@ -261,9 +253,9 @@ class _ViewModeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[850]!),
+        color: AppColors.bgElevated,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
@@ -295,13 +287,13 @@ class _ViewModeSelector extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: AppDurations.fast,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.redAccent.withOpacity(0.2) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? AppColors.neonPrimarySubtle : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             border: isSelected
-                ? Border.all(color: Colors.redAccent.withOpacity(0.5))
+                ? Border.all(color: AppColors.neonPrimary.withValues(alpha: 0.5))
                 : null,
           ),
           child: Row(
@@ -310,16 +302,17 @@ class _ViewModeSelector extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected ? Colors.redAccent : Colors.grey[600],
+                color: isSelected ? AppColors.neonPrimary : AppColors.textTertiary,
               ),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.white : Colors.grey[500],
-                ),
+                style: isSelected
+                    ? AppTypography.label.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      )
+                    : AppTypography.label,
               ),
             ],
           ),

@@ -592,7 +592,7 @@ class _ActiveTimerBar extends StatelessWidget {
             boxShadow: PerformanceMode.instance.showShadows
                 ? [
                     BoxShadow(
-                      color: (isCritical ? Colors.red[900] : Colors.black)!
+                      color: (isCritical ? AppColors.live : AppColors.bgDeep)
                           .withValues(alpha: 0.5),
                       blurRadius: 8,
                       offset: const Offset(0, -2),

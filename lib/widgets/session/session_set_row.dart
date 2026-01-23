@@ -643,23 +643,23 @@ class _TagsRow extends StatelessWidget {
           if (log.rpe != null)
             _Tag(
               text: 'RPE ${log.rpe}',
-              color: Colors.orange,
+              color: AppColors.warning,
             ),
           if (log.isFailure)
             const _Tag(
               text: 'FALLO',
-              color: Colors.red,
+              color: AppColors.error,
               icon: Icons.warning_amber_rounded,
             ),
           if (log.isDropset)
-            const _Tag(
+            _Tag(
               text: 'DROP',
-              color: Colors.purple,
+              color: AppColors.neonPrimary,
             ),
           if (log.isWarmup)
-            const _Tag(
+            _Tag(
               text: 'WARM',
-              color: Colors.blue,
+              color: AppColors.info,
             ),
           if (log.notas != null && log.notas!.isNotEmpty)
             Expanded(
