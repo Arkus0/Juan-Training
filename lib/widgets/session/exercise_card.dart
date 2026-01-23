@@ -19,6 +19,7 @@ import 'session_set_row.dart';
 import 'focused_set_row.dart';
 import 'advanced_options_modal.dart';
 import 'progression_preview.dart'; // ConsequenceMessage, EmpatheticBanner, etc.
+import 'session_modifiers.dart'; // AddSetButton
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -520,6 +521,9 @@ class ExerciseCard extends StatelessWidget {
                 shouldFocus: focusSetIndex == setIndex,
               );
             }),
+            
+            // 🆕 Botón para añadir series adicionales
+            AddSetButton(exerciseIndex: exerciseIndex),
           ],
         ),
       ),

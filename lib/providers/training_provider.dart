@@ -11,6 +11,7 @@ import '../models/ejercicio_en_rutina.dart';
 import '../models/sesion.dart';
 import '../models/serie_log.dart';
 import '../models/progression_engine_models.dart';
+import '../models/library_exercise.dart';
 import 'main_provider.dart';
 import '../repositories/i_training_repository.dart';
 import '../utils/performance_utils.dart';
@@ -422,6 +423,69 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       notas: prevLog.notas,
       // Don't copy completed status usually
     );
+  }
+
+  /// Añade una serie adicional a un ejercicio durante la sesión
+  void addSetToExercise(int exerciseIndex) {
+    if (exerciseIndex >= state.exercises.length) return;
+
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+    
+    // Crear una nueva serie vacía (o copiando peso/reps de la última si existe)
+    SerieLog newLog;
+    if (exercise.logs.isNotEmpty) {
+      final lastLog = exercise.logs.last;
+      newLog = SerieLog(
+        peso: lastLog.peso,
+        reps: lastLog.reps,
+        completed: false,
+      );
+    } else {
+      newLog = SerieLog(peso: 0.0, reps: 0, completed: false);
+    }
+
+    final newLogs = [...exercise.logs, newLog];
+    final newExercise = exercise.copyWith(
+      logs: newLogs,
+      series: newLogs.length,
+    );
+    exercises[exerciseIndex] = newExercise;
+
+    // También actualizar targets si aplica
+    final targets = [...state.targets];
+    if (exerciseIndex < targets.length) {
+      targets[exerciseIndex] = targets[exerciseIndex].copyWith(
+        series: newLogs.length,
+      );
+    }
+
+    state = state.copyWith(exercises: exercises, targets: targets);
+    _saveState();
+  }
+
+  /// Añade un ejercicio a la sesión activa desde la biblioteca
+  void addExerciseToSession(LibraryExercise libExercise, {int series = 3, int reps = 10}) {
+    final newExercise = Ejercicio(
+      id: const Uuid().v4(),
+      libraryId: libExercise.id.toString(),
+      nombre: libExercise.name,
+      musculosPrincipales: libExercise.muscles,
+      musculosSecundarios: libExercise.secondaryMuscles,
+      series: series,
+      reps: reps,
+      logs: List.generate(series, (_) => SerieLog(
+        peso: 0.0,
+        reps: 0,
+        completed: false,
+      )),
+    );
+
+    final exercises = [...state.exercises, newExercise];
+    final targets = [...state.targets, newExercise.copyWith()];
+
+    state = state.copyWith(exercises: exercises, targets: targets);
+    _saveState();
   }
 
   void toggleAdvancedOptions(bool show) {

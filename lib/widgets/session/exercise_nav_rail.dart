@@ -121,67 +121,63 @@ class ExerciseNavRailCompact extends StatelessWidget {
     final dotSize = showCompact ? 6.0 : 8.0;
     final spacing = showCompact ? 3.0 : 4.0;
 
-    return Positioned(
-      right: 2,
-      top: 60,
-      bottom: 120,
-      child: Container(
-        width: 20,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.bgDeep.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(exercises.length, (index) {
-                    final exercise = exercises[index];
-                    final isCompleted = exercise.logs.every((log) => log.completed);
-                    final isActive = index == currentExerciseIndex;
-                    final hasStarted = exercise.logs.any((log) => log.completed);
+    return Container(
+      width: 24,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.bgDeep.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(exercises.length, (index) {
+          final exercise = exercises[index];
+          final isCompleted = exercise.logs.every((log) => log.completed);
+          final isActive = index == currentExerciseIndex;
+          final hasStarted = exercise.logs.any((log) => log.completed);
 
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onExerciseTap(index);
-                      },
-                      child: Tooltip(
-                        message: '${index + 1}. ${exercise.nombre}',
-                        preferBelow: false,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: spacing),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            width: isActive ? dotSize + 4 : dotSize,
-                            height: isActive ? dotSize + 4 : dotSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isCompleted
-                                  ? AppColors.completedGreen
-                                  : isActive
-                                      ? AppColors.bloodRed
-                                      : hasStarted
-                                          ? AppColors.warning.withOpacity(0.6)
-                                          : AppColors.border,
-                              border: isActive
-                                  ? Border.all(color: Colors.white, width: 1.5)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onExerciseTap(index);
+            },
+            child: Tooltip(
+              message: '${index + 1}. ${exercise.nombre}',
+              preferBelow: false,
+              waitDuration: const Duration(milliseconds: 300),
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: spacing),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: isActive ? dotSize + 6 : dotSize,
+                  height: isActive ? dotSize + 6 : dotSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isCompleted
+                        ? AppColors.completedGreen
+                        : isActive
+                            ? AppColors.bloodRed
+                            : hasStarted
+                                ? AppColors.warning.withOpacity(0.6)
+                                : AppColors.border,
+                    border: isActive
+                        ? Border.all(color: Colors.white, width: 2)
+                        : null,
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: AppColors.bloodRed.withOpacity(0.5),
+                              blurRadius: 4,
+                            )
+                          ]
+                        : null,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ),
     );
   }

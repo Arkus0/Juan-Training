@@ -14,6 +14,7 @@ import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/session/tolerance_feedback_widgets.dart';
 import '../widgets/session/quick_actions_menu.dart';
+import '../widgets/session/session_modifiers.dart'; // AddExerciseButton
 import '../widgets/voice/voice_training_button.dart';
 import '../utils/design_system.dart';
 
@@ -361,7 +362,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(
                       8, 8, 8, 80), // Espacio para timer compacto
-                  itemCount: exercisesLength,
+                  itemCount: exercisesLength + 1, // +1 para el botón de añadir ejercicio
                   // ⚡ OPTIMIZACIÓN: Pre-renderizar items cercanos para scroll más suave
                   cacheExtent: 300,
                   // ⚡ OPTIMIZACIÓN: Física optimizada para listas cortas (4-8 ejercicios típicos)
@@ -369,6 +370,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                     decelerationRate: ScrollDecelerationRate.fast,
                   ),
                   itemBuilder: (context, index) {
+                    // 🆕 Último item: botón para añadir ejercicio
+                    if (index == exercisesLength) {
+                      return const AddExerciseButton();
+                    }
+                    
                     // ⚡ Bolt Optimization: Extracted to smart widget
                     final exercises =
                         ref.read(trainingSessionProvider).exercises;
@@ -406,11 +412,16 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
           // 🎯 NAV RAIL: Guía lateral para navegación rápida entre ejercicios
           if (exercisesLength > 3)
-            ExerciseNavRailCompact(
-              exercises:
-                  ref.watch(trainingSessionProvider.select((s) => s.exercises)),
-              currentExerciseIndex: currentIncompleteSet?.exerciseIndex ?? 0,
-              onExerciseTap: _scrollToExercise,
+            Positioned(
+              right: 4,
+              top: 60,
+              bottom: 100,
+              child: ExerciseNavRailCompact(
+                exercises:
+                    ref.watch(trainingSessionProvider.select((s) => s.exercises)),
+                currentExerciseIndex: currentIncompleteSet?.exerciseIndex ?? 0,
+                onExerciseTap: _scrollToExercise,
+              ),
             ),
 
           // 🎯 FEEDBACK: Overlay de ejercicio completado
