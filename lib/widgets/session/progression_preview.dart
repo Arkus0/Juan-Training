@@ -220,18 +220,24 @@ class ProgressionPreviewCard extends StatelessWidget {
 }
 
 /// Badge pequeño para mostrar junto al nombre del ejercicio
+/// 
+/// Muestra estado de confirmación cuando aplica (1/2, 2/2)
 class ProgressionBadge extends StatelessWidget {
   final ProgressionDecision decision;
+  final int? confirmationStep; // 1 = esperando confirmación, 2 = confirmado
   
   const ProgressionBadge({
     super.key,
     required this.decision,
+    this.confirmationStep,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = _getColor(decision.action);
     final icon = _getIcon(decision.action);
+    final isConfirming = decision.reason.contains('1/2') || 
+                         decision.reason.contains('Confirmando');
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -246,7 +252,7 @@ class ProgressionBadge extends StatelessWidget {
           Icon(icon, size: 10, color: color),
           const SizedBox(width: 3),
           Text(
-            _getShortLabel(decision.action),
+            _getShortLabel(decision.action, isConfirming),
             style: GoogleFonts.montserrat(
               fontSize: 8,
               fontWeight: FontWeight.w800,
@@ -279,23 +285,24 @@ class ProgressionBadge extends StatelessWidget {
       case ProgressionAction.increaseReps:
         return Icons.add;
       case ProgressionAction.maintain:
-        return Icons.remove;
+        return Icons.sync_rounded; // Mejor icono para "repitiendo"
       case ProgressionAction.decreaseWeight:
       case ProgressionAction.decreaseReps:
         return Icons.arrow_downward_rounded;
     }
   }
 
-  String _getShortLabel(ProgressionAction action) {
+  String _getShortLabel(ProgressionAction action, bool isConfirming) {
     switch (action) {
       case ProgressionAction.increaseWeight:
-        return '+KG';
+        return '+KG ✓';
       case ProgressionAction.increaseReps:
         return '+REP';
       case ProgressionAction.maintain:
-        return 'MANTÉN';
+        // Mostrar estado de confirmación si aplica
+        return isConfirming ? '1/2' : 'REPITE';
       case ProgressionAction.decreaseWeight:
-        return '-KG';
+        return 'DELOAD';
       case ProgressionAction.decreaseReps:
         return '-REP';
     }
@@ -447,5 +454,165 @@ class ProgressionInfoTooltip extends StatelessWidget {
       case ProgressionConfidence.low:
         return 'Baja (pocos datos)';
     }
+  }
+}
+
+/// Widget que muestra el progreso de la sesión actual en tiempo real
+/// 
+/// Muestra: ✅ ✅ ✅ ⬜ (75%) - Meta: 80%
+/// El usuario sabe si va bien ANTES de terminar
+class SessionProgressIndicator extends StatelessWidget {
+  final List<bool> setsCompleted; // true = serie completada con éxito
+  final int successThreshold; // % necesario para éxito (default 80)
+  
+  const SessionProgressIndicator({
+    super.key,
+    required this.setsCompleted,
+    this.successThreshold = 80,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (setsCompleted.isEmpty) return const SizedBox.shrink();
+    
+    final completed = setsCompleted.where((s) => s).length;
+    final total = setsCompleted.length;
+    final percent = (completed / total * 100).round();
+    final isSuccess = percent >= successThreshold;
+    final setsNeeded = ((successThreshold / 100) * total).ceil() - completed;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isSuccess ? Colors.green[700]! : Colors.grey[700]!,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Indicadores de series
+          ...setsCompleted.asMap().entries.map((entry) {
+            final isDone = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(right: 3),
+              child: Icon(
+                isDone ? Icons.check_circle_rounded : Icons.circle_outlined,
+                size: 14,
+                color: isDone ? Colors.green[400] : Colors.grey[600],
+              ),
+            );
+          }),
+          
+          const SizedBox(width: 6),
+          
+          // Porcentaje
+          Text(
+            '$percent%',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: isSuccess ? Colors.green[400] : Colors.grey[400],
+            ),
+          ),
+          
+          // Mensaje de ayuda
+          if (!isSuccess && setsNeeded > 0) ...[
+            const SizedBox(width: 6),
+            Text(
+              '(faltan $setsNeeded)',
+              style: GoogleFonts.montserrat(
+                fontSize: 9,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+          
+          if (isSuccess) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.check, size: 12, color: Colors.green[400]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget compacto que muestra "protección" cuando hay un día malo
+class ProtectionBadge extends StatelessWidget {
+  const ProtectionBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.blue[900]?.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.blue[700]!.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.shield_rounded, size: 10, color: Colors.blue[400]),
+          const SizedBox(width: 3),
+          Text(
+            'PROTEGIDO',
+            style: GoogleFonts.montserrat(
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              color: Colors.blue[400],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget que muestra el incremento específico del ejercicio
+class IncrementInfoBadge extends StatelessWidget {
+  final double increment;
+  final String categoryLabel;
+  
+  const IncrementInfoBadge({
+    super.key,
+    required this.increment,
+    required this.categoryLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.add_circle_outline, size: 10, color: Colors.grey[500]),
+          const SizedBox(width: 3),
+          Text(
+            '+${_formatWeight(increment)}kg',
+            style: GoogleFonts.montserrat(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[400],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatWeight(double weight) {
+    if (weight == weight.roundToDouble()) {
+      return weight.toInt().toString();
+    }
+    return weight.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
   }
 }
