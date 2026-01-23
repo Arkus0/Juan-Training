@@ -205,6 +205,8 @@ class FocusedSetRow extends StatelessWidget {
 
     if (result != null) {
       onWeightChanged(result);
+      // 🆕 Auto-completar si ambos campos tienen valor
+      _checkAutoComplete(result, log.reps.toDouble());
     }
   }
 
@@ -222,6 +224,19 @@ class FocusedSetRow extends StatelessWidget {
 
     if (result != null) {
       onRepsChanged(result.toInt());
+      // 🆕 Auto-completar si ambos campos tienen valor
+      _checkAutoComplete(log.peso.toDouble(), result);
+    }
+  }
+
+  /// 🆕 Verifica si se debe auto-completar la serie
+  void _checkAutoComplete(double weight, double reps) {
+    // Si ambos valores son > 0 y la serie no está completada
+    if (weight > 0 && reps > 0 && !log.completed) {
+      // Dar un pequeño delay para que el estado se actualice
+      Future.delayed(const Duration(milliseconds: 100), () {
+        onCompleted(true);
+      });
     }
   }
 }

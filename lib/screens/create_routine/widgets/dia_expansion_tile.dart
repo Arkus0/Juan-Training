@@ -18,6 +18,7 @@ class DiaExpansionTile extends StatefulWidget {
   final Function(int, String) onReplaceExercise;
   final Function() onRemoveDay;
   final Function() onDuplicateDay;
+  final Function(int) onDuplicateExercise; // 🆕 Duplicar ejercicio
   final Function(int, int) onCreateSuperset;
   final Function(String, int) onMoveSuperset;
   final Function(int) onRemoveFromSuperset;
@@ -39,6 +40,7 @@ class DiaExpansionTile extends StatefulWidget {
     required this.onReplaceExercise,
     required this.onRemoveDay,
     required this.onDuplicateDay,
+    required this.onDuplicateExercise, // 🆕
     required this.onCreateSuperset,
     required this.onMoveSuperset,
     required this.onRemoveFromSuperset,
@@ -241,6 +243,24 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     onChanged: widget.onUpdateName,
                   ),
                 ),
+                // 🆕 Contador de ejercicios
+                if (widget.dia.ejercicios.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[900]!.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${widget.dia.ejercicios.length}',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.redAccent[100],
+                      ),
+                    ),
+                  ),
                 if (widget.dia.progressionType != 'none')
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
@@ -312,6 +332,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                               exercises: widget.dia.ejercicios,
                               isSuperset: isSuperset,
                               onRemoveExercise: widget.onRemoveExercise,
+                              onDuplicateExercise: widget.onDuplicateExercise, // 🆕
                               onUpdateExercise: widget.onUpdateExercise,
                               onReplaceExercise: widget.onReplaceExercise,
                               onCreateSuperset: widget.onCreateSuperset,
@@ -362,6 +383,7 @@ class _ExerciseGroupWidget extends StatefulWidget {
   final List<EjercicioEnRutina> exercises;
   final bool isSuperset;
   final Function(int) onRemoveExercise;
+  final Function(int) onDuplicateExercise; // 🆕 Duplicar ejercicio
   final Function(int, EjercicioEnRutina) onUpdateExercise;
   final Function(int, String) onReplaceExercise;
   final Function(int, int) onCreateSuperset;
@@ -373,6 +395,7 @@ class _ExerciseGroupWidget extends StatefulWidget {
     required this.exercises,
     required this.isSuperset,
     required this.onRemoveExercise,
+    required this.onDuplicateExercise, // 🆕
     required this.onUpdateExercise,
     required this.onReplaceExercise,
     required this.onCreateSuperset,
@@ -464,6 +487,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
       onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
       onUnlink: inSuperset ? () => widget.onRemoveFromSuperset(idx) : null,
+      onDuplicate: () => widget.onDuplicateExercise(idx), // 🆕 Swipe para duplicar
     );
 
     // Wrap with LongPressDraggable for superset creation/breaking
@@ -550,21 +574,59 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       ),
     );
 
-    // Swipe to delete for all exercises (including superset members)
+    // Swipe bidireccional: → Duplicar, ← Eliminar
     return Dismissible(
       key: Key('dismissible_${ex.instanceId}'),
-      direction: DismissDirection.endToStart,
+      direction: DismissDirection.horizontal, // 🆕 Bidireccional
+      // Fondo verde para duplicar (swipe derecha)
       background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
+        color: Colors.green[700],
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.copy, color: Colors.white),
+            SizedBox(width: 8),
+            Text('DUPLICAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+      // Fondo rojo para eliminar (swipe izquierda)
+      secondaryBackground: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         color: Colors.red[900],
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('ELIMINAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(width: 8),
+            Icon(Icons.delete, color: Colors.white),
+          ],
+        ),
       ),
-      confirmDismiss: (_) async {
-        final removedItem = ex;
-        widget.onRemoveExercise(idx);
-        _showDeleteToast(context, idx, removedItem);
-        return true;
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // 🆕 Swipe derecha → Duplicar
+          widget.onDuplicateExercise(idx);
+          // Mostrar feedback
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${ex.nombre} duplicado'),
+              backgroundColor: Colors.green[700],
+              duration: const Duration(milliseconds: 1200),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return false; // No eliminar el widget original
+        } else {
+          // Swipe izquierda → Eliminar
+          final removedItem = ex;
+          widget.onRemoveExercise(idx);
+          _showDeleteToast(context, idx, removedItem);
+          return true;
+        }
       },
       child: draggableCard,
     );

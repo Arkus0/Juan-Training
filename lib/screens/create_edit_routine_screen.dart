@@ -938,6 +938,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                           notifier.replaceExercise(index, exIdx, alternativaNombre),
                       onRemoveDay: () => notifier.removeDay(index),
                       onDuplicateDay: () => notifier.duplicateDay(index),
+                      onDuplicateExercise: (exIdx) =>  // 🆕 Duplicar ejercicio
+                          notifier.duplicateExercise(index, exIdx),
                       onCreateSuperset: (idxA, idxB) =>
                           notifier.createSuperset(index, idxA, idxB),
                       onMoveSuperset: (supersetId, toFlat) => notifier.moveSuperset(index, supersetId, toFlat),

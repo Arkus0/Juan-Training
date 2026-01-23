@@ -43,6 +43,7 @@ dependencies:
   connectivity_plus: ^6.1.0
   fuzzy: ^0.5.0
   share_plus: ^7.2.1
+  screenshot: ^2.1.0
   url_launcher: ^6.2.0
 
   # OCR & Image Import
@@ -60,6 +61,9 @@ dependencies:
   # Notifications & Background Timer (lock screen timer)
   flutter_local_notifications: ^17.2.4
   permission_handler: ^11.3.1
+
+  # Swipe Actions (para duplicar/eliminar ejercicios en editor)
+  flutter_slidable: ^3.1.1
 
   # Icons
   cupertino_icons: ^1.0.2

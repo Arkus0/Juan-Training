@@ -584,7 +584,7 @@ class _ActiveTimerBar extends StatelessWidget {
             ),
             border: Border(
               top: BorderSide(
-                color: isCritical ? Colors.redAccent[700]! : Colors.grey[700]!,
+                color: isCritical ? Colors.orange[700]! : Colors.grey[700]!,
                 width: isCritical ? 2 : 1,
               ),
             ),
@@ -754,7 +754,7 @@ class _TimeDurationSelector extends StatelessWidget {
         _CircleButton(
           icon: Icons.add,
           size: 28,
-          color: Colors.redAccent[700],
+          color: Colors.orange[700],
           onTap: () => onChanged(seconds + 10),
         ),
       ],
@@ -771,7 +771,7 @@ class _StartRestButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.redAccent[700],
+      color: Colors.orange[700],
       borderRadius: BorderRadius.circular(24),
       child: InkWell(
         onTap: () {
@@ -814,7 +814,7 @@ class _CircularTimerProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isPaused
         ? Colors.orange[400]!
-        : (isCritical ? Colors.redAccent[700]! : Colors.white);
+        : (isCritical ? Colors.orange[700]! : Colors.white);
 
     return SizedBox(
       width: 44,
@@ -884,7 +884,7 @@ class _TimerControlButtons extends StatelessWidget {
           child: _CircleButton(
             icon: Icons.skip_next_rounded,
             size: 36,
-            color: Colors.redAccent[700],
+            color: Colors.orange[700],
             onTap: () {
               HapticFeedback.mediumImpact();
               onSkip();

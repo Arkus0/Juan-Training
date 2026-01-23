@@ -2104,5 +2104,937 @@ Antes de dar por terminado el rediseño, verificar cada serie:
 
 ---
 
+---
+
+# PARTE 9: ANÁLISIS POWER-USER — BIBLIOTECA Y EDITOR DE RUTINAS
+
+## 9.0 Contexto y Filosofía
+
+> **Mentalidad de diseño:** Esta app NO es para principiantes que necesitan que les digan qué hacer.  
+> Es para usuarios intermedios/avanzados que saben exactamente qué quieren y necesitan herramientas que no les estorben.
+
+### El Usuario Power-User de Fitness:
+
+```
+PERFIL:
+┌─────────────────────────────────────────────────────────────────────┐
+│  • Lleva 1-5+ años entrenando                                       │
+│  • Diseña sus propias rutinas (no sigue plantillas genéricas)       │
+│  • Conoce la diferencia entre press inclinado con mancuernas        │
+│    y press inclinado con barra (y tiene opiniones al respecto)      │
+│  • Valora: VELOCIDAD > Tutoriales, CONTROL > Simplificación         │
+│  • Odia: Apps que "piensan por él", onboardings interminables       │
+│  • Referentes mentales: Notion, Figma, Excel con macros             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Principio Rector:
+
+> **"Power ≠ Complejidad Visual, Power = Velocidad de Ejecución"**  
+> Un usuario avanzado no quiere ver MÁS botones. Quiere hacer MÁS cosas con MENOS toques.
+
+---
+
+## 9.1 Diagnóstico Honesto: ¿Qué Está Ya MUY Bien?
+
+### ✅ ACIERTOS que NO TOCAR:
+
+| Componente | Por qué funciona | Riesgo si se toca |
+|------------|------------------|-------------------|
+| **Fuzzy search en biblioteca** | Tolera errores de escritura ("press banca" → "Press de Banca"). Usuario no tiene que recordar nombre exacto. | Búsqueda exacta frustraría a usuarios |
+| **Bottom sheet para biblioteca** | Permite añadir múltiples ejercicios sin cerrar. Flujo de power-user respetado. | Modal que cierra al añadir = fricción |
+| **Grid de ejercicios con imagen** | Preview visual instantáneo. El ojo reconoce más rápido que lee. | Lista sin imágenes = más scroll + decisión lenta |
+| **FilterChips horizontales** | Combinables (Músculo + Equipamiento). Usuario filtra como él piensa. | Dropdowns anidados = más taps |
+| **Favoritos con estrella** | Acceso instantáneo a "mis ejercicios frecuentes". Premia recurrencia. | Eliminar favoritos = olvidar historial |
+| **Superset creation por drag** | Gesto natural para usuarios avanzados. Sin pasos intermedios. | Botón "Crear superset" = más fricción |
+| **Nombre por defecto de rutina** | `Rutina Ene 2026` evita pantalla vacía. Usuario puede cambiar después. | Campo vacío obligatorio = barrera de entrada |
+| **Import inteligente (voz/OCR)** | Permite pegar rutina de internet o dictar. Flujo pro sin precedentes. | Eliminarlo = volver a 2020 |
+
+### 📊 Evidencia en código de buenas decisiones:
+
+```dart
+// biblioteca_bottom_sheet.dart — NO cerrar al añadir
+onPressed: () {
+  widget.onAdd(ex);                    // Añade ejercicio
+  _showAddedSnackbar(context, ex.name); // Feedback
+  // ✅ NO cierra el sheet — el usuario puede seguir añadiendo
+},
+```
+
+```dart
+// Fuzzy search bien configurado
+final fuse = Fuzzy(
+  exercises,
+  options: FuzzyOptions(
+    keys: [
+      WeightedKey(name: 'name', getter: (x) => x.name, weight: 1.0),
+      WeightedKey(name: 'muscleGroup', getter: (x) => x.muscleGroup, weight: 0.5),
+    ],
+  ),
+);
+// ✅ Busca en nombre (peso 1.0) Y grupo muscular (peso 0.5)
+```
+
+---
+
+## 9.2 Análisis de Fricción: Negativa vs Necesaria
+
+### 🟢 FRICCIÓN NECESARIA (mantener):
+
+| Punto de fricción | Por qué es necesaria | Si se elimina... |
+|-------------------|----------------------|------------------|
+| **Confirmar eliminación de día** | Operación destructiva irreversible. Protege trabajo. | Usuarios borrarían accidentalmente días enteros |
+| **Selector de día cuando hay múltiples** | Decisión consciente de dónde añadir. Evita errores de contexto. | Ejercicios irían al día equivocado |
+| **Campo de series/reps manual** | Usuario avanzado quiere control exacto. No "3x10" genérico. | Pierde flexibilidad (4x6-8, 3x12-15, etc.) |
+| **Preview de OCR antes de confirmar** | Match de ejercicios puede fallar. Usuario valida. | Importaría basura sin revisión |
+| **Nombre de rutina editable** | Identidad personal. "Push A", "Hipertrofia Semana 3", etc. | Rutinas genéricas sin contexto |
+
+### 🔴 FRICCIÓN NEGATIVA (eliminar):
+
+| Punto de fricción | Impacto negativo | Solución propuesta |
+|-------------------|------------------|-------------------|
+| **Selector de día SIEMPRE aparece** | +1 tap incluso cuando solo hay 1 día | Auto-seleccionar si `dias.length == 1` |
+| **No hay "duplicar ejercicio"** | Repetir press plano 2 veces = buscarlo 2 veces | Swipe → Duplicar (o long-press menu) |
+| **Sin "añadir directo" desde card** | Hay que ir a biblioteca cada vez | Botón "+" en header de día para ejercicio rápido |
+| **Scroll al buscar ejercicio** | Grid con 200+ ejercicios = scroll eterno | Índice alfabético lateral (A-Z) |
+| **Sin atajos de teclado** | En tablet/desktop, mouse es ineficiente | Cmd+N = nuevo día, Cmd+E = buscar ejercicio |
+| **Sin historial de búsquedas** | Búsquedas repetidas cada sesión | Mostrar "Recientes" arriba de resultados |
+| **Sin sugerencias contextuales** | Después de "Press de Banca" no sugiere "Aperturas" | "Usuarios también añaden:" debajo del grid |
+
+---
+
+## 9.3 Biblioteca de Ejercicios: Rediseño como Sistema de Búsqueda Avanzada
+
+### Estado Actual vs Objetivo:
+
+```
+ACTUAL:                           OBJETIVO:
+┌───────────────────────┐         ┌───────────────────────┐
+│ [Buscar ejercicio...] │         │ [Buscar...]  [A-Z] 📋│  ← Índice + historial
+├───────────────────────┤         ├───────────────────────┤
+│ ☆ Favoritos           │         │ RECIENTES (3 últimos) │  ← Nuevo: acceso rápido
+│ Pecho Espalda Pierna..│         │ Press Banca | Curl... │
+│ Barra Mancuerna...    │         ├───────────────────────┤
+├───────────────────────┤         │ ⭐ FAVORITOS (toggle)  │
+│                       │         │ [Pecho][Espalda]...   │  ← Chips compactos
+│  Grid de ejercicios   │         │ [Barra][Mancuerna]... │
+│  (sin orden claro)    │         ├───────────────────────┤
+│                       │         │ Grid con secciones:   │
+│                       │         │ ─── PECHO ───         │  ← Agrupados
+│                       │         │ 🖼️ 🖼️ 🖼️ 🖼️          │
+└───────────────────────┘         └───────────────────────┘
+```
+
+### 9.3.1 Mejora: Historial de Búsquedas Recientes
+
+```dart
+/// PROPUESTA: biblioteca_bottom_sheet.dart
+
+class BibliotecaBottomSheet extends StatefulWidget {
+  // ... existing code ...
+}
+
+class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
+  // 🆕 Historial de ejercicios añadidos recientemente (máximo 5)
+  static List<LibraryExercise> _recentlyAdded = [];
+
+  void _addRecent(LibraryExercise ex) {
+    _recentlyAdded.removeWhere((e) => e.id == ex.id);
+    _recentlyAdded.insert(0, ex);
+    if (_recentlyAdded.length > 5) _recentlyAdded.removeLast();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // ... search field ...
+        
+        // 🆕 SECCIÓN: Añadidos recientemente (si no hay búsqueda activa)
+        if (_query.isEmpty && _recentlyAdded.isNotEmpty)
+          _RecentlyAddedSection(
+            exercises: _recentlyAdded,
+            onAdd: (ex) {
+              widget.onAdd(ex);
+              _showAddedSnackbar(context, ex.name);
+            },
+          ),
+          
+        // ... rest of grid ...
+      ],
+    );
+  }
+}
+```
+
+**Impacto:** -2 taps para ejercicios repetidos. Usuario recurrente premia comportamiento.
+
+### 9.3.2 Mejora: Índice Alfabético Lateral
+
+```dart
+/// Widget de índice A-Z para scroll rápido
+class AlphabetIndex extends StatelessWidget {
+  final Function(String) onLetterTap;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      right: 4,
+      top: 100,
+      bottom: 100,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) =>
+          GestureDetector(
+            onTap: () => onLetterTap(letter),
+            child: Container(
+              width: 24,
+              height: 20,
+              alignment: Alignment.center,
+              child: Text(
+                letter,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ).toList(),
+      ),
+    );
+  }
+}
+```
+
+**Impacto:** Acceso directo a cualquier sección. Scroll de 200→20 ejercicios visibles.
+
+### 9.3.3 Mejora: Preview Expandido en Long-Press
+
+```dart
+/// Al mantener presionado un ejercicio, mostrar preview completo
+void _showExercisePreview(BuildContext context, LibraryExercise ex) {
+  showDialog(
+    context: context,
+    builder: (ctx) => Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.bgElevated,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Imagen grande
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(ex.imageUrls.first, height: 200, fit: BoxFit.cover),
+            ),
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ex.name, style: AppTypography.h3),
+                  SizedBox(height: 8),
+                  // 🆕 Músculos con colores
+                  Wrap(
+                    spacing: 6,
+                    children: ex.muscles.map((m) => 
+                      Chip(label: Text(m), backgroundColor: AppColors.actionPrimary.withOpacity(0.2))
+                    ).toList(),
+                  ),
+                  SizedBox(height: 12),
+                  // 🆕 Historial personal (si existe)
+                  if (ex.personalBestWeight != null)
+                    Text('Tu mejor: ${ex.personalBestWeight}kg x ${ex.personalBestReps}',
+                      style: TextStyle(color: AppColors.celebration)),
+                ],
+              ),
+            ),
+            // Acciones rápidas
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('CERRAR'),
+                  ),
+                ),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      widget.onAdd(ex);
+                    },
+                    child: Text('AÑADIR'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+```
+
+**Impacto:** Usuario ve músculos trabajados + historial personal antes de añadir. Decisión informada.
+
+### 9.3.4 Mejora: Ordenación Múltiple
+
+```dart
+/// Opciones de ordenación para power-users
+enum SortOption {
+  nameAsc,      // A → Z
+  nameDesc,     // Z → A
+  muscleGroup,  // Agrupado por músculo
+  recentlyUsed, // Últimos usados primero
+  favorites,    // Favoritos primero, luego resto
+}
+
+// Dropdown en header de biblioteca
+DropdownButton<SortOption>(
+  value: _currentSort,
+  items: [
+    DropdownMenuItem(value: SortOption.nameAsc, child: Text('A → Z')),
+    DropdownMenuItem(value: SortOption.muscleGroup, child: Text('Por músculo')),
+    DropdownMenuItem(value: SortOption.recentlyUsed, child: Text('Recientes')),
+  ],
+  onChanged: (val) => setState(() => _currentSort = val!),
+)
+```
+
+---
+
+## 9.4 Editor de Rutinas: Rediseño como Editor Profesional
+
+### Jerarquía Visual Clara: Rutina → Día → Ejercicio → Series
+
+```
+JERARQUÍA ACTUAL (plana):          JERARQUÍA PROPUESTA (clara):
+┌─────────────────────────┐        ┌─────────────────────────────────────┐
+│ RUTINA ENERO            │        │ ████ RUTINA ENERO ████              │ ← Nivel 0
+├─────────────────────────┤        │                                     │
+│ ▼ DÍA 1: PUSH           │        │  ┌─ DÍA 1: PUSH ─────────────────┐  │ ← Nivel 1
+│   Press Banca 4x8       │        │  │  ┌───────────────────────────┐│  │
+│   Press Inclinado 3x10  │        │  │  │ ● Press Banca      4 × 8  ││  │ ← Nivel 2
+│   Aperturas 3x12        │        │  │  │   └ Rest: 90s             ││  │ ← Nivel 3
+│                         │        │  │  ├───────────────────────────┤│  │
+│ ▼ DÍA 2: PULL           │        │  │  │ ● Press Inclinado  3 × 10 ││  │
+│   Dominadas 4x8         │        │  │  └───────────────────────────┘│  │
+│   ...                   │        │  └────────────────────────────────┘  │
+└─────────────────────────┘        │                                     │
+                                   │  ┌─ DÍA 2: PULL ─────────────────┐  │
+                                   │  │  ...                          │  │
+                                   └─────────────────────────────────────┘
+```
+
+### 9.4.1 Indicadores Visuales de Nivel
+
+```dart
+/// Sistema de indentación visual por nivel
+class HierarchyStyles {
+  // Nivel 0: Rutina (nombre grande, borde rojo grueso)
+  static final rutina = BoxDecoration(
+    border: Border(left: BorderSide(color: AppColors.actionPrimary, width: 4)),
+  );
+  
+  // Nivel 1: Día (card con fondo elevado, borde sutil)
+  static final dia = BoxDecoration(
+    color: AppColors.bgElevated,
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: AppColors.border, width: 1),
+  );
+  
+  // Nivel 2: Ejercicio (fondo ligeramente más claro, sin borde)
+  static final ejercicio = BoxDecoration(
+    color: AppColors.bgInteractive,
+    borderRadius: BorderRadius.circular(6),
+  );
+  
+  // Nivel 3: Detalles (texto secundario, sin contenedor)
+  // Solo TextStyle, no BoxDecoration
+}
+```
+
+### 9.4.2 Densidad de Información Optimizada
+
+**Actual:** Cada ejercicio ocupa ~120px de altura (imagen 60 + padding + texto)
+
+**Propuesta:** Modo compacto para power-users
+
+```dart
+/// Toggle entre vista normal y compacta
+enum ViewDensity { normal, compact }
+
+// En ejercicio_card.dart
+Widget build(BuildContext context) {
+  final isCompact = widget.density == ViewDensity.compact;
+  
+  return Container(
+    height: isCompact ? 56 : 80,  // 30% menos altura
+    child: Row(
+      children: [
+        // Imagen más pequeña en compacto
+        if (!isCompact) _buildImage() else _buildMiniImage(),
+        
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Nombre + series en una línea en compacto
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      ejercicio.nombre,
+                      style: isCompact 
+                        ? AppTypography.bodyCompact  // 14px
+                        : AppTypography.body,        // 16px
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Series/reps inline en compacto
+                  if (isCompact)
+                    Text(
+                      '${ejercicio.series}×${ejercicio.repsRange}',
+                      style: TextStyle(color: AppColors.actionPrimary),
+                    ),
+                ],
+              ),
+              if (!isCompact) ...[
+                Text(ejercicio.musculosPrincipales.join(', ')),
+                _buildSeriesRepsInputs(),
+              ],
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+```
+
+**Impacto:** Usuario ve 40% más ejercicios sin scroll. Ideal para rutinas largas (PPL, PHUL).
+
+### 9.4.3 Acciones Rápidas Contextuales
+
+```dart
+/// Swipe actions en ejercicio card
+Slidable(
+  key: Key(ejercicio.id),
+  
+  // ← Swipe izquierda: Acciones destructivas
+  endActionPane: ActionPane(
+    motion: const DrawerMotion(),
+    children: [
+      SlidableAction(
+        onPressed: (_) => onRemove(),
+        backgroundColor: Colors.red[700]!,
+        icon: Icons.delete,
+        label: 'Eliminar',
+      ),
+    ],
+  ),
+  
+  // → Swipe derecha: Acciones constructivas
+  startActionPane: ActionPane(
+    motion: const DrawerMotion(),
+    children: [
+      SlidableAction(
+        onPressed: (_) => onDuplicate(),
+        backgroundColor: AppColors.success,
+        icon: Icons.copy,
+        label: 'Duplicar',
+      ),
+      SlidableAction(
+        onPressed: (_) => onAddVariant(),
+        backgroundColor: Colors.blue[700]!,
+        icon: Icons.swap_horiz,
+        label: 'Variante',
+      ),
+    ],
+  ),
+  
+  child: EjercicioCard(...),
+)
+```
+
+**Acciones disponibles:**
+
+| Gesto | Acción | Ahorro |
+|-------|--------|--------|
+| Swipe → | Duplicar | -3 taps (vs buscar mismo ejercicio) |
+| Swipe → | Añadir variante | -5 taps (vs abrir biblioteca, filtrar, buscar) |
+| Swipe ← | Eliminar | -1 tap (vs menú → eliminar) |
+| Long press | Menú completo | Acceso a opciones pro |
+
+### 9.4.4 Añadir Ejercicio Directo
+
+```dart
+/// Botón "+" flotante por día (no solo FAB global)
+class DiaExpansionTile extends StatefulWidget {
+  // ... existing code ...
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(
+        children: [
+          // Header del día
+          _buildDayHeader(),
+          
+          // Lista de ejercicios
+          if (_isExpanded) ...[
+            _buildExercisesList(),
+            
+            // 🆕 Botón inline para añadir ejercicio
+            _QuickAddExerciseButton(
+              onTap: widget.onAddExercise,
+              onQuickAdd: (exerciseName) {
+                // Añadir directamente por nombre (autocomplete)
+                widget.onQuickAddByName(exerciseName);
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón que se expande a un mini-buscador inline
+class _QuickAddExerciseButton extends StatefulWidget {
+  // ...
+}
+
+class _QuickAddExerciseButtonState extends State<_QuickAddExerciseButton> {
+  bool _isExpanded = false;
+  
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
+      child: _isExpanded
+        ? Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Nombre del ejercicio...',
+                    isDense: true,
+                  ),
+                  onSubmitted: (val) {
+                    widget.onQuickAdd(val);
+                    setState(() => _isExpanded = false);
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => setState(() => _isExpanded = false),
+              ),
+            ],
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Botón principal: abre biblioteca
+              TextButton.icon(
+                icon: Icon(Icons.add),
+                label: Text('AÑADIR EJERCICIO'),
+                onPressed: widget.onTap,
+              ),
+              // Botón secundario: expande buscador inline
+              IconButton(
+                icon: Icon(Icons.bolt, color: AppColors.celebration),
+                tooltip: 'Añadir rápido',
+                onPressed: () => setState(() => _isExpanded = true),
+              ),
+            ],
+          ),
+    );
+  }
+}
+```
+
+---
+
+## 9.5 UX Inteligente Sin Automatizar en Exceso
+
+### 9.5.1 Defaults Basados en Evidencia (no en suposiciones)
+
+```dart
+/// Al añadir un ejercicio, pre-llenar series/reps basado en:
+/// 1. Historial personal del usuario para ESE ejercicio
+/// 2. Si no hay historial, usar media de ejercicios similares
+/// 3. Si no hay data, usar defaults conservadores
+
+class SmartDefaults {
+  static EjercicioEnRutina getDefaults(
+    LibraryExercise exercise,
+    List<SerieLog> userHistory,
+    List<EjercicioEnRutina> similarExercises,
+  ) {
+    // Prioridad 1: Historial personal
+    if (userHistory.isNotEmpty) {
+      final lastUsed = userHistory.last;
+      return EjercicioEnRutina(
+        // ...
+        series: lastUsed.series,
+        repsRange: '${lastUsed.reps}',  // Exacto de última vez
+        notas: 'Última vez: ${lastUsed.peso}kg',  // Contexto útil
+      );
+    }
+    
+    // Prioridad 2: Ejercicios similares (mismo grupo muscular)
+    final similar = similarExercises.where((e) => 
+      e.musculosPrincipales.any((m) => exercise.muscles.contains(m))
+    );
+    if (similar.isNotEmpty) {
+      final avgSeries = similar.map((e) => e.series).average.round();
+      return EjercicioEnRutina(
+        series: avgSeries,
+        repsRange: '8-12',  // Rango moderado
+      );
+    }
+    
+    // Prioridad 3: Defaults conservadores por tipo
+    return EjercicioEnRutina(
+      series: exercise.isCompound ? 4 : 3,  // Compuestos: 4, Aislamiento: 3
+      repsRange: exercise.isCompound ? '6-8' : '10-12',
+    );
+  }
+}
+```
+
+**Clave:** Usuario siempre puede cambiar. Son SUGERENCIAS, no imposiciones.
+
+### 9.5.2 Sugerencias Contextuales Post-Añadir
+
+```dart
+/// Después de añadir un ejercicio, mostrar sugerencia discreta
+
+void _onExerciseAdded(LibraryExercise added) {
+  // Añadir ejercicio normalmente
+  notifier.addExerciseToDay(dayIndex, added);
+  
+  // 🆕 Buscar ejercicios complementarios
+  final complementary = _findComplementary(added);
+  
+  if (complementary.isNotEmpty) {
+    // Mostrar chip sutil, NO modal intrusivo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Text('${added.name} añadido'),
+            Spacer(),
+            TextButton(
+              child: Text('+ ${complementary.first.name}'),
+              onPressed: () {
+                notifier.addExerciseToDay(dayIndex, complementary.first);
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ],
+        ),
+        duration: Duration(seconds: 4),  // Tiempo suficiente para leer
+      ),
+    );
+  }
+}
+
+List<LibraryExercise> _findComplementary(LibraryExercise exercise) {
+  // Lógica: Si añadió "Press Banca", sugerir "Aperturas"
+  // Si añadió "Curl Bíceps", sugerir "Curl Martillo"
+  // Basado en patrones de usuarios reales
+  return ComplementaryService.instance.getSuggestions(exercise.id);
+}
+```
+
+### 9.5.3 Detección de Patrones (Power-User Feature)
+
+```dart
+/// Si el usuario siempre añade X después de Y, pre-sugerir
+
+class PatternDetector {
+  // Map: exerciseId → [ejercicios que suele añadir después]
+  final Map<int, List<int>> _patterns = {};
+  
+  void recordSequence(List<int> exerciseIds) {
+    for (int i = 0; i < exerciseIds.length - 1; i++) {
+      final current = exerciseIds[i];
+      final next = exerciseIds[i + 1];
+      _patterns.putIfAbsent(current, () => []).add(next);
+    }
+  }
+  
+  LibraryExercise? getSuggestion(int afterExerciseId) {
+    final nextIds = _patterns[afterExerciseId];
+    if (nextIds == null || nextIds.isEmpty) return null;
+    
+    // Encontrar el más frecuente
+    final frequency = <int, int>{};
+    for (final id in nextIds) {
+      frequency[id] = (frequency[id] ?? 0) + 1;
+    }
+    
+    final mostCommon = frequency.entries.reduce((a, b) => a.value > b.value ? a : b);
+    if (mostCommon.value >= 3) {  // Solo sugerir si patrón claro (3+ veces)
+      return ExerciseLibraryService.instance.getById(mostCommon.key);
+    }
+    return null;
+  }
+}
+```
+
+---
+
+## 9.6 Coherencia Visual con Pantalla de Entrenamiento
+
+### Qué Mantener Consistente:
+
+| Elemento | Entrenamiento | Editor de Rutinas | Por qué |
+|----------|---------------|-------------------|---------|
+| **Paleta de colores** | Grises + rojo CTA | Grises + rojo CTA | Identidad de marca |
+| **Tipografía** | Montserrat bold | Montserrat bold | Reconocimiento |
+| **Cards de ejercicio** | Fondo `bgElevated` | Fondo `bgElevated` | Familiaridad |
+| **Iconos de acción** | Rojo para principal | Rojo para principal | Mapping mental |
+
+### Qué Permitir Diferente:
+
+| Elemento | Entrenamiento | Editor de Rutinas | Por qué |
+|----------|---------------|-------------------|---------|
+| **Densidad** | Espaciado amplio | Puede ser más denso | Editor necesita ver más contexto |
+| **Inputs** | Modales grandes | Inline compactos | Editor = precisión, Training = velocidad |
+| **Navegación** | Scroll vertical único | Expansion tiles anidados | Estructura jerárquica |
+| **Información visible** | Solo lo necesario AHORA | Todo el contexto | Diferentes momentos de uso |
+
+### Principio de Coherencia:
+
+> **"El usuario debe sentir que ambas pantallas son de la misma app,  
+> pero entender que sirven para momentos diferentes."**
+
+```
+ENTRENAMIENTO = Modo ejecución (mínima info, máxima velocidad)
+EDITOR        = Modo planificación (máxima info, velocidad razonable)
+```
+
+---
+
+## 9.7 Qué NO Tocar (Aunque Otros Lo Pidan)
+
+### ❌ NO simplificar el campo de reps a un número fijo
+
+```dart
+// ❌ MAL: Forzar "10 reps"
+TextField(
+  keyboardType: TextInputType.number,
+  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+)
+
+// ✅ BIEN: Permitir rangos "8-12", "6, 6, 6, 4" (drop sets), etc.
+TextField(
+  decoration: InputDecoration(hintText: 'Ej: 8-12, 6+6, AMRAP'),
+)
+```
+
+**Por qué:** Power-users usan drop sets, clusters, AMRAP, rest-pause. Un número fijo es inútil.
+
+### ❌ NO eliminar supersets por "simplicidad"
+
+**Por qué:** Supersets son técnica avanzada que ahorra tiempo. Usuarios pro los usan constantemente.
+
+### ❌ NO auto-guardar sin feedback
+
+```dart
+// ❌ MAL: Guardar silenciosamente cada cambio
+onChanged: (val) async {
+  await saveToDatabase(val);  // Sin feedback
+}
+
+// ✅ BIEN: Feedback explícito de guardado
+onChanged: (val) {
+  _pendingChanges = true;
+  _debouncer.run(() async {
+    await saveToDatabase(val);
+    setState(() => _pendingChanges = false);
+    _showSavedIndicator();  // "✓ Guardado" discreto
+  });
+}
+```
+
+**Por qué:** Usuario debe saber que sus cambios persisten. Incertidumbre = ansiedad.
+
+### ❌ NO reemplazar biblioteca por "rutinas sugeridas"
+
+**Por qué:** El usuario QUIERE diseñar su rutina. Sugerencias están bien DESPUÉS de elegir, no ANTES.
+
+### ❌ NO limitar número de días/ejercicios
+
+```dart
+// ❌ MAL
+if (dias.length >= 5) {
+  showError('Máximo 5 días');
+  return;
+}
+
+// ✅ BIEN: Sin límite artificial
+// Si alguien quiere una rutina de 7 días con 15 ejercicios cada uno, déjalo.
+```
+
+**Por qué:** Power-users diseñan rutinas complejas (PPL 6 días, Upper/Lower 4x, etc.).
+
+---
+
+## 9.8 Mejoras de Alto Impacto y Bajo Riesgo
+
+### 🎯 Implementar Primero (Quick Wins):
+
+| Mejora | Impacto | Esfuerzo | Riesgo |
+|--------|---------|----------|--------|
+| **Historial reciente en biblioteca** | Alto | Bajo (2h) | Nulo |
+| **Swipe para duplicar ejercicio** | Alto | Bajo (3h) | Nulo |
+| **Auto-seleccionar día único** | Medio | Muy bajo (30min) | Nulo |
+| **Mostrar historial personal en preview** | Alto | Medio (4h) | Bajo |
+| **Contador de ejercicios por día en header** | Bajo | Muy bajo (15min) | Nulo |
+
+### 🚀 Implementar Después (High Value):
+
+| Mejora | Impacto | Esfuerzo | Riesgo |
+|--------|---------|----------|--------|
+| **Sugerencias post-añadir** | Alto | Alto (8h) | Medio |
+| **Índice alfabético A-Z** | Medio | Medio (4h) | Bajo |
+| **Vista compacta toggle** | Medio | Medio (5h) | Bajo |
+| **Atajos de teclado (tablet)** | Bajo* | Alto (10h) | Bajo |
+
+*Bajo impacto porque mayoría usa móvil, pero diferenciador para tablets.
+
+---
+
+## 9.9 Mejoras Opcionales "Pro"
+
+### Para usuarios ultra-avanzados (1% de la base):
+
+| Feature | Descripción | Justificación |
+|---------|-------------|---------------|
+| **Importar desde CSV/JSON** | Pegar estructura de rutina en texto plano | Migración desde otras apps |
+| **Templates personalizados** | Guardar estructura de día para reusar | "Mi día de pecho siempre empieza con Press" |
+| **Duplicar rutina completa** | Clonar rutina existente como base | Variaciones de mesociclo |
+| **Comparar rutinas** | Side-by-side de dos rutinas | Análisis de progresión |
+| **Modo offline editor** | Editar sin conexión, sync después | Gimnasios sin señal |
+| **Exportar a PDF/imagen** | Compartir visualmente | Redes sociales, coaches |
+
+---
+
+## 9.10 Métricas UX para Validación
+
+### Métricas Primarias:
+
+| Métrica | Cómo medir | Objetivo |
+|---------|------------|----------|
+| **Tiempo para crear rutina nueva** | Timestamp desde "Nueva Rutina" hasta "Guardar" | < 5 minutos para rutina de 4 días |
+| **Taps para añadir ejercicio** | Contador de eventos entre "decidir añadir" y "ejercicio añadido" | ≤ 4 taps |
+| **Tasa de abandono de creación** | Rutinas empezadas vs guardadas | < 15% abandono |
+| **Uso de favoritos** | % de ejercicios añadidos que eran favoritos | > 30% (indica utilidad de la feature) |
+| **Uso de búsqueda vs scroll** | Ratio búsqueda/scroll en biblioteca | > 60% búsqueda (indica que funciona bien) |
+
+### Métricas Secundarias:
+
+| Métrica | Cómo medir | Indica |
+|---------|------------|--------|
+| **Ejercicios por rutina** | Promedio de ejercicios en rutinas guardadas | Complejidad de uso real |
+| **Días por rutina** | Promedio de días por rutina | Tipo de usuarios (3-4 = intermedios, 5-6 = avanzados) |
+| **Uso de supersets** | % de rutinas con al menos un superset | Adopción de features pro |
+| **Re-edición de rutinas** | Veces que usuario edita rutina existente | Engagement con customización |
+| **Tiempo en biblioteca** | Duración promedio con biblioteca abierta | Si > 60s, puede indicar dificultad para encontrar |
+
+### Cómo Implementar Tracking:
+
+```dart
+/// analytics_service.dart
+
+class RoutineAnalytics {
+  void trackRoutineCreationStart() {
+    _startTime = DateTime.now();
+  }
+  
+  void trackRoutineCreationComplete(Rutina rutina) {
+    final duration = DateTime.now().difference(_startTime!);
+    
+    analytics.logEvent(
+      name: 'routine_created',
+      parameters: {
+        'duration_seconds': duration.inSeconds,
+        'day_count': rutina.dias.length,
+        'total_exercises': rutina.dias.fold(0, (sum, d) => sum + d.ejercicios.length),
+        'has_supersets': rutina.dias.any((d) => d.ejercicios.any((e) => e.supersetId != null)),
+      },
+    );
+  }
+  
+  void trackExerciseAdded({
+    required bool fromFavorites,
+    required bool fromRecents,
+    required bool fromSearch,
+    required int tapsToAdd,
+  }) {
+    analytics.logEvent(
+      name: 'exercise_added_to_routine',
+      parameters: {
+        'source': fromFavorites ? 'favorites' : fromRecents ? 'recents' : fromSearch ? 'search' : 'browse',
+        'taps': tapsToAdd,
+      },
+    );
+  }
+}
+```
+
+---
+
+## 9.11 Resumen Ejecutivo
+
+### Lo que YA está bien (no tocar):
+- ✅ Fuzzy search funciona excelente
+- ✅ Bottom sheet no cierra al añadir (flujo pro)
+- ✅ Favoritos con estrella (acceso rápido)
+- ✅ FilterChips horizontales combinables
+- ✅ Supersets por drag
+- ✅ Import inteligente (voz/OCR)
+
+### Lo que necesita mejora (prioridad alta):
+- 🔧 Historial de recientes en biblioteca
+- 🔧 Swipe actions (duplicar, eliminar rápido)
+- 🔧 Auto-seleccionar día único
+- 🔧 Preview con historial personal
+
+### Lo que sería nice-to-have (prioridad baja):
+- 💡 Índice alfabético A-Z
+- 💡 Vista compacta toggle
+- 💡 Sugerencias contextuales post-añadir
+- 💡 Atajos de teclado para tablet
+
+### Lo que NUNCA hacer:
+- ❌ Simplificar reps a número fijo
+- ❌ Limitar días/ejercicios
+- ❌ Reemplazar biblioteca por sugerencias
+- ❌ Eliminar supersets
+- ❌ Auto-guardar sin feedback
+
+---
+
+*Sección añadida: Enero 2026*
+*Enfoque: Power-user tools para usuarios intermedios/avanzados*
+*Filosofía: Velocidad sin sacrificar control*
+
+---
+
 *Documento creado: Enero 2026*
 *Autor: UX/UI Analysis para Juan Training*

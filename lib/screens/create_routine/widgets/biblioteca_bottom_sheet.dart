@@ -23,6 +23,55 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   String _selectedEquipment = 'Todos';
   String _query = '';
   bool _showFavoritesOnly = false;
+  
+  /// 🆕 Vista compacta (solo lista) vs grid con imágenes
+  bool _compactView = false;
+  
+  /// 🆕 Último ejercicio añadido (para sugerencias)
+  LibraryExercise? _lastAddedExercise;
+  
+  /// 🆕 Sugerencias basadas en el último ejercicio
+  List<LibraryExercise> _suggestions = [];
+
+  /// 🆕 Historial de ejercicios añadidos recientemente (máximo 5)
+  /// Static para persistir entre aperturas del bottom sheet
+  static final List<LibraryExercise> _recentlyAdded = [];
+
+  /// Añade un ejercicio al historial de recientes
+  void _addToRecent(LibraryExercise ex) {
+    _recentlyAdded.removeWhere((e) => e.id == ex.id);
+    _recentlyAdded.insert(0, ex);
+    if (_recentlyAdded.length > 5) _recentlyAdded.removeLast();
+  }
+  
+  /// 🆕 Genera sugerencias de ejercicios complementarios
+  void _generateSuggestions(LibraryExercise addedEx) {
+    final allExercises = ExerciseLibraryService.instance.exercisesNotifier.value;
+    final sameMuscle = allExercises.where((e) => 
+      e.id != addedEx.id && 
+      e.muscleGroup.toLowerCase() == addedEx.muscleGroup.toLowerCase() &&
+      !_recentlyAdded.any((r) => r.id == e.id)
+    ).toList();
+    
+    // Mezclar y tomar 3 sugerencias
+    sameMuscle.shuffle();
+    _suggestions = sameMuscle.take(3).toList();
+    _lastAddedExercise = addedEx;
+  }
+  
+  /// 🆕 Filtro por letra inicial (índice A-Z)
+  String? _selectedLetter;
+  
+  /// Letras disponibles (se calculan dinámicamente)
+  List<String> _getAvailableLetters(List<LibraryExercise> exercises) {
+    final letters = exercises
+        .map((e) => e.name.isNotEmpty ? e.name[0].toUpperCase() : '')
+        .where((l) => l.isNotEmpty)
+        .toSet()
+        .toList();
+    letters.sort();
+    return letters;
+  }
 
   List<String> get _muscles => ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Brazos', 'Hombros', 'Abdominales', 'Gemelos', 'Cardio'];
   List<String> get _equipment => ['Todos', 'Barra', 'Mancuerna', 'Máquina', 'Polea', 'Peso corporal', 'Banco'];
@@ -157,6 +206,175 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
     );
   }
 
+  /// 🆕 Muestra preview del ejercicio con historial personal
+  void _showExercisePreview(BuildContext context, LibraryExercise ex) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 500),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[700]!, width: 1),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Imagen grande
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: SizedBox(
+                  height: 180,
+                  child: _buildImage(ex),
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nombre
+                    Text(
+                      ex.name.toUpperCase(),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Grupo muscular + equipo
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red[900]!.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            ex.muscleGroup.toUpperCase(),
+                            style: GoogleFonts.montserrat(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.redAccent[100],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          ex.equipment,
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Músculos detallados
+                    if (ex.muscles.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: ex.muscles.map((m) => Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            m,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 10,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        )).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    // Descripción
+                    if (ex.description?.isNotEmpty ?? false)
+                      Text(
+                        ex.description!,
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              
+              // Botones de acción
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[850],
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                ),
+                child: Row(
+                  children: [
+                    // Favorito toggle
+                    IconButton(
+                      onPressed: () async {
+                        await ExerciseLibraryService.instance.toggleFavorite(ex.id);
+                        Navigator.pop(ctx);
+                        setState(() {});
+                      },
+                      icon: Icon(
+                        ex.isFavorite ? Icons.star : Icons.star_border,
+                        color: ex.isFavorite ? Colors.amber : Colors.grey,
+                      ),
+                    ),
+                    const Spacer(),
+                    // Cerrar
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(
+                        'CERRAR',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey[400],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Añadir
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        widget.onAdd(ex);
+                        _addToRecent(ex);
+                        _generateSuggestions(ex);
+                        _showAddedSnackbar(context, ex.name);
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: Text(
+                        'AÑADIR',
+                        style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[900],
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     // Wrap in Scaffold to have its own ScaffoldMessenger for snackbars
@@ -183,6 +401,20 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                 ),
                 const Spacer(),
+                // 🆕 Toggle vista compacta/grid
+                IconButton(
+                  icon: Icon(
+                    _compactView ? Icons.grid_view : Icons.view_list,
+                    color: Colors.white,
+                  ),
+                  tooltip: _compactView ? 'Vista grid' : 'Vista compacta',
+                  onPressed: () {
+                    setState(() {
+                      _compactView = !_compactView;
+                    });
+                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                  },
+                ),
                 // Botón crear ejercicio custom
                 IconButton(
                   icon: const Icon(Icons.add_circle, color: Colors.white),
@@ -294,9 +526,220 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     ],
                   ),
                 ),
+                // 🆕 Índice alfabético A-Z
+                if (_query.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ValueListenableBuilder<List<LibraryExercise>>(
+                      valueListenable: ExerciseLibraryService.instance.exercisesNotifier,
+                      builder: (context, exercises, _) {
+                        final letters = _getAvailableLetters(exercises);
+                        return SizedBox(
+                          height: 28,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: letters.length + 1, // +1 for "ALL"
+                            itemBuilder: (ctx, idx) {
+                              if (idx == 0) {
+                                // Botón "Todos"
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 4),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() => _selectedLetter = null);
+                                      try { HapticFeedback.selectionClick(); } catch (_) {}
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _selectedLetter == null 
+                                            ? Colors.blue[700] 
+                                            : Colors.grey[800],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'A-Z',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              final letter = letters[idx - 1];
+                              final isSelected = _selectedLetter == letter;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _selectedLetter = letter);
+                                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                                  },
+                                  child: Container(
+                                    width: 26,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? Colors.blue[700] : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      letter,
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 12,
+                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                        color: isSelected ? Colors.white : Colors.grey[500],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
+
+          // 🆕 Sección: Añadidos recientemente (si no hay búsqueda activa)
+          if (_query.isEmpty && _recentlyAdded.isNotEmpty && !_showFavoritesOnly)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.history, size: 16, color: Colors.grey[500]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'RECIENTES',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 44,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _recentlyAdded.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (ctx, idx) {
+                        final ex = _recentlyAdded[idx];
+                        return ActionChip(
+                          avatar: Icon(Icons.add, size: 16, color: Colors.redAccent[200]),
+                          label: Text(
+                            ex.name.length > 20 ? '${ex.name.substring(0, 17)}...' : ex.name,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          backgroundColor: Colors.grey[850],
+                          side: BorderSide(color: Colors.grey[700]!),
+                          onPressed: () {
+                            try { HapticFeedback.selectionClick(); } catch (_) {}
+                            widget.onAdd(ex);
+                            _showAddedSnackbar(context, ex.name);
+                            // Mover al frente del historial
+                            _addToRecent(ex);
+                            _generateSuggestions(ex);
+                            setState(() {});
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Divider(color: Colors.grey[800], height: 1),
+                ],
+              ),
+            ),
+          
+          // 🆕 Sección: Sugerencias basadas en último ejercicio añadido
+          if (_suggestions.isNotEmpty && _lastAddedExercise != null && _query.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[800]!, width: 1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, size: 16, color: Colors.green[400]),
+                      const SizedBox(width: 6),
+                      Text(
+                        'COMPLEMENTA TU ${_lastAddedExercise!.muscleGroup.toUpperCase()}',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.green[400],
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _suggestions = [];
+                            _lastAddedExercise = null;
+                          });
+                        },
+                        child: Icon(Icons.close, size: 16, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _suggestions.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (ctx, idx) {
+                        final ex = _suggestions[idx];
+                        return ActionChip(
+                          avatar: Icon(Icons.add, size: 14, color: Colors.green[300]),
+                          label: Text(
+                            ex.name.length > 18 ? '${ex.name.substring(0, 15)}...' : ex.name,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          backgroundColor: Colors.green.withValues(alpha: 0.2),
+                          side: BorderSide(color: Colors.green[700]!),
+                          onPressed: () {
+                            try { HapticFeedback.selectionClick(); } catch (_) {}
+                            widget.onAdd(ex);
+                            _addToRecent(ex);
+                            _showAddedSnackbar(context, ex.name);
+                            _generateSuggestions(ex);
+                            setState(() {});
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // List
           Expanded(
@@ -390,6 +833,14 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                   );
                   filtered = fuse.search(_query).map((r) => r.item).toList();
                 }
+                
+                // 🆕 Filtro por letra inicial (índice A-Z)
+                if (_selectedLetter != null) {
+                  filtered = filtered.where((e) => 
+                    e.name.isNotEmpty && 
+                    e.name[0].toUpperCase() == _selectedLetter
+                  ).toList();
+                }
 
                 if (filtered.isEmpty) {
                   return Center(
@@ -397,6 +848,88 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       'No se encontraron ejercicios.',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
+                  );
+                }
+
+                // 🆕 Vista compacta (lista) o grid con imágenes
+                if (_compactView) {
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final ex = filtered[index];
+                      final isCustom = ex.id < 0;
+                      return Card(
+                        color: Colors.grey[900],
+                        margin: const EdgeInsets.only(bottom: 4),
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          leading: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  try { HapticFeedback.selectionClick(); } catch (_) {}
+                                  await ExerciseLibraryService.instance.toggleFavorite(ex.id);
+                                  setState(() {});
+                                },
+                                child: Icon(
+                                  ex.isFavorite ? Icons.star : Icons.star_border,
+                                  color: ex.isFavorite ? Colors.amber : Colors.grey[600],
+                                  size: 20,
+                                ),
+                              ),
+                              if (isCustom) ...[
+                                const SizedBox(width: 4),
+                                Icon(Icons.person, size: 16, color: Colors.purple[400]),
+                              ],
+                            ],
+                          ),
+                          title: Text(
+                            ex.name,
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            '${ex.muscleGroup} • ${ex.equipment}',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.add_circle, color: Colors.red[400]),
+                            onPressed: () {
+                              try { HapticFeedback.selectionClick(); } catch (_) {}
+                              widget.onAdd(ex);
+                              _addToRecent(ex);
+                              _generateSuggestions(ex);
+                              _showAddedSnackbar(context, ex.name);
+                              setState(() {});
+                            },
+                          ),
+                          onTap: () {
+                            try { HapticFeedback.selectionClick(); } catch (_) {}
+                            widget.onAdd(ex);
+                            _addToRecent(ex);
+                            _generateSuggestions(ex);
+                            _showAddedSnackbar(context, ex.name);
+                            setState(() {});
+                          },
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            if (isCustom) {
+                              _showCustomExerciseOptions(context, ex);
+                            } else {
+                              _showExercisePreview(context, ex);
+                            }
+                          },
+                        ),
+                      );
+                    },
                   );
                 }
 
@@ -413,7 +946,14 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     final ex = filtered[index];
                     final isCustom = ex.id < 0; // Ejercicios custom tienen ID negativo
                     return GestureDetector(
-                      onLongPress: isCustom ? () => _showCustomExerciseOptions(context, ex) : null,
+                      onLongPress: () {
+                        HapticFeedback.mediumImpact();
+                        if (isCustom) {
+                          _showCustomExerciseOptions(context, ex);
+                        } else {
+                          _showExercisePreview(context, ex); // 🆕 Preview con historial
+                        }
+                      },
                       child: Card(
                       color: Colors.grey[900],
                       shape: RoundedRectangleBorder(
@@ -514,7 +1054,10 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                               onPressed: () {
                                 try { HapticFeedback.selectionClick(); } catch (_) {}
                                 widget.onAdd(ex);
+                                _addToRecent(ex); // 🆕 Registrar en historial
+                                _generateSuggestions(ex); // 🆕 Generar sugerencias
                                 _showAddedSnackbar(context, ex.name);
+                                setState(() {});
                               },
                               child: const Text('AÑADIR'),
                             ),

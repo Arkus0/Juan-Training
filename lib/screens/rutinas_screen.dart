@@ -1,7 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'create_edit_routine_screen.dart';
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
@@ -77,6 +82,7 @@ class RutinasScreen extends ConsumerWidget {
                 child: _RutinaTile(
                   rutina: rutina,
                   onTap: () => _navigateToEdit(context, rutina),
+                  onDuplicate: () => _duplicateRutina(context, ref, rutina),
                 ),
               );
             },
@@ -133,6 +139,41 @@ class RutinasScreen extends ConsumerWidget {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  /// 🆕 Duplicar rutina completa
+  Future<void> _duplicateRutina(BuildContext context, WidgetRef ref, Rutina rutina) async {
+    try { HapticFeedback.mediumImpact(); } catch (_) {}
+    
+    const uuid = Uuid();
+    
+    // Crear copia con nuevo ID y nombre modificado
+    final newRutina = Rutina(
+      id: uuid.v4(),
+      nombre: '${rutina.nombre} (copia)',
+      creada: DateTime.now(),
+      dias: rutina.dias.map((dia) => dia.copyWith(
+        ejercicios: dia.ejercicios.map((ej) => ej.copyWith(
+          instanceId: uuid.v4(), // Nuevo ID único para cada ejercicio
+        )).toList(),
+      )).toList(),
+    );
+    
+    await ref.read(trainingRepositoryProvider).saveRutina(newRutina);
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'RUTINA DUPLICADA: ${newRutina.nombre.toUpperCase()}',
+            style: AppTypography.button,
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(milliseconds: 2000),
+        ),
+      );
+    }
   }
 
   Future<void> _showImportFlow(BuildContext context, WidgetRef ref) async {
@@ -201,11 +242,13 @@ class RutinasScreen extends ConsumerWidget {
 class _RutinaTile extends StatelessWidget {
   final dynamic rutina;
   final VoidCallback onTap;
+  final VoidCallback onDuplicate; // 🆕
 
   const _RutinaTile({
     Key? key,
     required this.rutina,
     required this.onTap,
+    required this.onDuplicate,
   }) : super(key: key);
 
   @override
@@ -216,6 +259,66 @@ class _RutinaTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
+        onLongPress: () {
+          HapticFeedback.mediumImpact();
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.grey[900],
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            builder: (ctx) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[700],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      rutina.nombre.toUpperCase(),
+                      style: AppTypography.sectionTitle,
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.copy, color: Colors.blue[400]),
+                    title: const Text('Duplicar rutina', style: TextStyle(color: Colors.white)),
+                    subtitle: Text('Crear una copia para modificar', style: TextStyle(color: Colors.grey[500])),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      onDuplicate();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.edit, color: Colors.orange[400]),
+                    title: const Text('Editar rutina', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      onTap();
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.share, color: Colors.green[400]),
+                    title: const Text('Compartir como imagen', style: TextStyle(color: Colors.white)),
+                    subtitle: Text('Exportar rutina para redes sociales', style: TextStyle(color: Colors.grey[500])),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _shareRoutineAsImage(context, rutina);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -256,6 +359,150 @@ class _RutinaTile extends StatelessWidget {
         ),
       ),
     );
+  }
+  
+  /// 🆕 Compartir rutina como imagen para redes sociales
+  Future<void> _shareRoutineAsImage(BuildContext context, dynamic rutina) async {
+    final screenshotController = ScreenshotController();
+    
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+    
+    try {
+      // Capturar el widget de la rutina
+      final Uint8List? imageBytes = await screenshotController.captureFromWidget(
+        MediaQuery(
+          data: const MediaQueryData(),
+          child: Material(
+            color: Colors.grey[900],
+            child: Container(
+              width: 400,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Icon(Icons.fitness_center, color: Colors.red[400], size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          rutina.nombre.toUpperCase(),
+                          style: GoogleFonts.montserrat(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${rutina.dias.length} días • ${rutina.dias.fold(0, (sum, d) => sum + d.ejercicios.length)} ejercicios',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                  ),
+                  const SizedBox(height: 20),
+                  Divider(color: Colors.grey[700]),
+                  const SizedBox(height: 12),
+                  
+                  // Días con ejercicios
+                  ...rutina.dias.map<Widget>((dia) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dia.nombre.toUpperCase(),
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.red[400],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...dia.ejercicios.map<Widget>((ej) => Padding(
+                          padding: const EdgeInsets.only(left: 8, bottom: 4),
+                          child: Row(
+                            children: [
+                              Icon(Icons.circle, size: 6, color: Colors.grey[500]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  ej.nombre,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                ),
+                              ),
+                              Text(
+                                '${ej.series}x${ej.repsRange}',
+                                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        )),
+                      ],
+                    ),
+                  )),
+                  
+                  // Footer
+                  const SizedBox(height: 12),
+                  Divider(color: Colors.grey[700]),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'JUAN TRAINING',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[600],
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        delay: const Duration(milliseconds: 100),
+      );
+      
+      if (context.mounted) Navigator.pop(context); // Cerrar loading
+      
+      if (imageBytes != null) {
+        // Guardar imagen temporalmente
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/rutina_${rutina.id}.png');
+        await file.writeAsBytes(imageBytes);
+        
+        // Compartir
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: '💪 Mi rutina: ${rutina.nombre}',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Cerrar loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al exportar: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
   }
 }
 

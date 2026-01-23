@@ -67,7 +67,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
               await repo.saveNote(exerciseName, controller.text);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('GUARDAR', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: const Text('GUARDAR', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -184,7 +184,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: const TextStyle(color: Colors.white))),
                 ],
@@ -450,8 +450,8 @@ class ExerciseCard extends StatelessWidget {
                 children: [
                   SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
                   SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
-                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
-                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
+                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)))),
+                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)))),
                   SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
                 ],
               ),

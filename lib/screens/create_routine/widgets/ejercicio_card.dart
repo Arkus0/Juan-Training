@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
@@ -35,6 +36,7 @@ class EjercicioCard extends StatefulWidget {
   final Function(EjercicioEnRutina) onUpdate;
   final Function(String alternativaNombre)? onReplace;
   final Function()? onUnlink;
+  final Function()? onDuplicate; // 🆕 Para duplicar ejercicio
 
   const EjercicioCard({
     super.key,
@@ -43,6 +45,7 @@ class EjercicioCard extends StatefulWidget {
     required this.onUpdate,
     this.onReplace,
     this.onUnlink,
+    this.onDuplicate, // 🆕
   });
 
   @override
@@ -261,7 +264,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   Text(
                     widget.ejercicio.musculosPrincipales.join(', '),
                     style: GoogleFonts.montserrat(
-                      fontSize: 10, color: Colors.redAccent[700], fontWeight: FontWeight.bold),
+                      fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   // Series x Reps Inputs with controllers to prevent focus loss
@@ -273,11 +276,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
                           controller: _seriesController,
                           keyboardType: TextInputType.number,
                           style: GoogleFonts.montserrat(
-                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                              fontSize: 14, color: Colors.white, fontWeight: FontWeight.w800),
                           decoration: const InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                           ),
                           onChanged: (val) {
                             final s = int.tryParse(val);
@@ -291,11 +294,11 @@ class _EjercicioCardState extends State<EjercicioCard> {
                         child: TextField(
                           controller: _repsController,
                           style: GoogleFonts.montserrat(
-                              fontSize: 14, color: Colors.redAccent, fontWeight: FontWeight.w800),
+                              fontSize: 14, color: Colors.white, fontWeight: FontWeight.w800),
                           decoration: const InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                           ),
                           onChanged: (val) {
                             widget.onUpdate(widget.ejercicio.copyWith(repsRange: val));
@@ -311,7 +314,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
             // Alternatives button
             if (tieneAlternativas)
               IconButton(
-                icon: Icon(Icons.swap_horiz, color: Colors.redAccent[700], size: 20),
+                icon: Icon(Icons.swap_horiz, color: Colors.orange[600], size: 20),
                 onPressed: () => _showAlternativasDialog(context, libraryExercise),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Ver alternativas',
@@ -328,7 +331,47 @@ class _EjercicioCardState extends State<EjercicioCard> {
       ),
     );
 
-    return card;
+    // 🆕 Envolver en Slidable para swipe actions
+    return Slidable(
+      key: ValueKey(widget.ejercicio.id),
+      // Swipe derecha: Duplicar (acción constructiva)
+      startActionPane: widget.onDuplicate != null
+          ? ActionPane(
+              motion: const DrawerMotion(),
+              extentRatio: 0.25,
+              children: [
+                SlidableAction(
+                  onPressed: (_) {
+                    HapticFeedback.mediumImpact();
+                    widget.onDuplicate!();
+                  },
+                  backgroundColor: Colors.green[700]!,
+                  foregroundColor: Colors.white,
+                  icon: Icons.copy,
+                  label: 'Duplicar',
+                ),
+              ],
+            )
+          : null,
+      // Swipe izquierda: Eliminar (acción destructiva)
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: 0.25,
+        children: [
+          SlidableAction(
+            onPressed: (_) {
+              HapticFeedback.mediumImpact();
+              widget.onRemove();
+            },
+            backgroundColor: Colors.red[700]!,
+            foregroundColor: Colors.white,
+            icon: Icons.delete,
+            label: 'Eliminar',
+          ),
+        ],
+      ),
+      child: card,
+    );
   }
 
   Widget _buildImage(LibraryExercise? libExercise) {

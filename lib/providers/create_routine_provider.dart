@@ -319,6 +319,28 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     state = state.copyWith(dias: newDias);
   }
 
+  /// 🆕 Duplica un ejercicio justo después del original
+  void duplicateExercise(int dayIndex, int exerciseIndex) {
+    final day = state.dias[dayIndex];
+    if (exerciseIndex >= day.ejercicios.length) return;
+
+    final original = day.ejercicios[exerciseIndex];
+    
+    // Crear copia con nuevo instanceId y sin supersetId
+    final duplicate = original.copyWith(
+      instanceId: const Uuid().v4(),
+      supersetId: null, // No mantener la superserie
+    );
+
+    final newEjercicios = [...day.ejercicios];
+    newEjercicios.insert(exerciseIndex + 1, duplicate);
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+  }
+
   // Helper to get visual groups
   // Returns list of lists. Each inner list is a "visual item" (can contain 1 or more exercises).
   List<List<EjercicioEnRutina>> _getVisualGroups(List<EjercicioEnRutina> exercises) {
