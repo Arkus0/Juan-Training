@@ -482,6 +482,15 @@ abstract class AppTypography {
     color: AppColors.textTertiary,
     fontFeatures: [const FontFeature.tabularFigures()],
   );
+
+  /// Body text - Párrafos y contenido general
+  static TextStyle get body => GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+    height: 1.5,
+    letterSpacing: 0.2,
+  );
 }
 
 /// ============================================================================
@@ -503,10 +512,12 @@ abstract class AppSpacing {
 /// ============================================================================
 
 abstract class AppRadius {
+  static const double xs = 2.0;
   static const double sm = 4.0;
   static const double md = 8.0;
   static const double lg = 12.0;
   static const double xl = 16.0;
+  static const double full = 100.0;
   static const double round = 100.0;
 }
 
@@ -976,6 +987,9 @@ abstract class AppDurations {
 
   /// Transiciones rápidas (hover, focus)
   static const Duration fast = Duration(milliseconds: 150);
+
+  /// Transiciones medias (animaciones de widgets)
+  static const Duration medium = Duration(milliseconds: 200);
 
   /// Transiciones normales (modales, cards)
   static const Duration normal = Duration(milliseconds: 250);
