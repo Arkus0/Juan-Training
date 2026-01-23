@@ -208,7 +208,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
               isListening ? Icons.mic : Icons.mic_none,
               color: isListening ? Colors.red[400] : Colors.white70,
             ),
-            tooltip: isListening ? 'Escuchando...' : 'Comandos de voz',
+            tooltip: isListening ? 'Escuchando...' : 'Dictar series (ej: 80kg, 10 reps)',
             style: IconButton.styleFrom(
               backgroundColor: isListening 
                   ? Colors.red[900]?.withValues(alpha: 0.3)

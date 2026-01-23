@@ -35,8 +35,8 @@ class SessionListView extends ConsumerWidget {
           return const SliverToBoxAdapter(
             child: EmptyStateWidget(
               icon: Icons.history_toggle_off,
-              title: 'SIN HISTORIAL',
-              subtitle: 'Tu leyenda comienza con el primer entreno.',
+              title: 'SIN ENTRENAMIENTOS',
+              subtitle: 'Completa tu primer entrenamiento para ver el historial.',
             ),
           );
         }

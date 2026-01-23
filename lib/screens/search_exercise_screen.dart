@@ -55,7 +55,7 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ARSENAL DE EJERCICIOS'),
+        title: const Text('BUSCAR EJERCICIO'),
       ),
       body: Column(
         children: [
@@ -65,7 +65,7 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
               controller: _searchController,
               style: const TextStyle(fontWeight: FontWeight.bold),
               decoration: InputDecoration(
-                hintText: 'BUSCAR ARMA...',
+                hintText: 'Buscar ejercicio...',
                 prefixIcon: Icon(Icons.search, color: Colors.redAccent[700]),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(

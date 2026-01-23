@@ -52,7 +52,7 @@ class RutinasScreen extends ConsumerWidget {
             return EmptyStateWidget(
               icon: Icons.fitness_center,
               title: 'NO HAY RUTINAS',
-              subtitle: '¡CREA TU LEGADO AHORA!',
+              subtitle: 'Crea tu primera rutina para empezar',
               actionLabel: 'CREAR RUTINA',
               onAction: () => _navigateToCreate(context),
             );
