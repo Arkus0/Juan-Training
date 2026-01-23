@@ -29,6 +29,9 @@ class QuickActionsMenu extends StatefulWidget {
   /// Callback cuando se presiona tres puntos (más opciones)
   final VoidCallback? onMoreOptions;
 
+  /// Callback cuando se pide ver el historial del ejercicio
+  final VoidCallback? onHistory;
+
   /// Tiempo de descanso actual en segundos (para mostrar)
   final int currentRestSeconds;
 
@@ -38,6 +41,7 @@ class QuickActionsMenu extends StatefulWidget {
     this.onMaintainGoal,
     this.onRestTimeSelected,
     this.onMoreOptions,
+    this.onHistory,
     this.currentRestSeconds = 90,
   });
 
@@ -113,17 +117,6 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Tres puntos (más opciones) - arriba del todo
-                _ActionButton(
-                  icon: Icons.more_vert,
-                  label: 'MÁS',
-                  color: AppColors.textSecondary,
-                  bgColor: AppColors.bgElevated,
-                  onTap: () => _handleAction(widget.onMoreOptions),
-                  compact: true,
-                ),
-                const SizedBox(height: 8),
-
                 // Timer - Selector de tiempo de descanso
                 _ActionButton(
                   icon: Icons.timer_outlined,
@@ -135,6 +128,17 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                 ),
                 const SizedBox(height: 8),
 
+                // Historial - ver historial del ejercicio
+                _ActionButton(
+                  icon: Icons.history,
+                  label: 'HISTORIAL',
+                  color: AppColors.textSecondary,
+                  bgColor: AppColors.bgElevated,
+                  onTap: () => _handleAction(widget.onHistory),
+                  compact: true,
+                ),
+                const SizedBox(height: 8),
+
                 // Mismo objetivo
                 _ActionButton(
                   icon: Icons.sync_rounded,
@@ -142,6 +146,17 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   color: AppColors.bloodRed,
                   bgColor: AppColors.darkRedSubtle,
                   onTap: () => _handleAction(widget.onMaintainGoal),
+                  compact: true,
+                ),
+                const SizedBox(height: 8),
+
+                // Opciones del ejercicio (acceder a más opciones)
+                _ActionButton(
+                  icon: Icons.more_horiz,
+                  label: 'OPCIONES',
+                  color: AppColors.textSecondary,
+                  bgColor: AppColors.bgElevated,
+                  onTap: () => _handleAction(widget.onMoreOptions),
                   compact: true,
                 ),
                 const SizedBox(height: 8),

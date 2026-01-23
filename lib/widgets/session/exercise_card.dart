@@ -19,6 +19,7 @@ import 'session_set_row.dart';
 import 'focused_set_row.dart';
 import 'advanced_options_modal.dart';
 import 'progression_preview.dart'; // ConsequenceMessage, EmpatheticBanner, etc.
+import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
 import 'session_modifiers.dart'; // AddSetButton
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
@@ -494,37 +495,30 @@ class ExerciseCard extends StatelessWidget {
                               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                               builder: (sheetContext) {
                                 return SafeArea(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Acciones rápidas
-                                        ListTile(
-                                          leading: Icon(Icons.timer, color: AppColors.textSecondary),
-                                          title: Text('Cambiar descanso', style: TextStyle(color: AppColors.textPrimary)),
-                                          onTap: () {
-                                            Navigator.pop(sheetContext);
-                                            if (onRestTimeChange != null) onRestTimeChange!(restSeconds);
-                                          },
-                                        ),
-                                        ListTile(
-                                          leading: Icon(Icons.history, color: AppColors.textSecondary),
-                                          title: Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
-                                          onTap: () {
-                                            Navigator.pop(sheetContext);
-                                            onShowOptions(); // Reutiliza la función para mostrar historial
-                                          },
-                                        ),
-                                        // Opciones del ejercicio
-                                        ListTile(
-                                          leading: Icon(Icons.more_horiz, color: AppColors.textSecondary),
-                                          title: Text('Opciones del ejercicio', style: TextStyle(color: AppColors.textPrimary)),
-                                          onTap: () {
-                                            Navigator.pop(sheetContext);
-                                            onShowOptions();
-                                          },
-                                        ),
-                                      ],
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: QuickActionsMenu(
+                                      currentRestSeconds: restSeconds,
+                                      onRepeat: () {
+                                        Navigator.pop(sheetContext);
+                                        // TODO: implementar repetición de set
+                                      },
+                                      onMaintainGoal: () {
+                                        Navigator.pop(sheetContext);
+                                        // Reutilizar lógica existente: mantener objetivo (si aplica)
+                                      },
+                                      onRestTimeSelected: (s) {
+                                        Navigator.pop(sheetContext);
+                                        if (onRestTimeChange != null) onRestTimeChange!(s);
+                                      },
+                                      onHistory: () {
+                                        Navigator.pop(sheetContext);
+                                        onShowOptions();
+                                      },
+                                      onMoreOptions: () {
+                                        Navigator.pop(sheetContext);
+                                        onShowOptions();
+                                      },
                                     ),
                                   ),
                                 );
