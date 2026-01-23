@@ -583,18 +583,22 @@ class ExerciseCard extends StatelessWidget {
         // Fila horizontal: Botón objetivo y mensaje de dificultad
         Row(
           children: [
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.bgInteractive,
-                foregroundColor: AppColors.textPrimary,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                minimumSize: const Size(0, 32),
+            // Evitar duplicado: si la sugerencia de progresión indica "maintain",
+            // ya se muestra el mensaje "Mismo objetivo hoy" en la tarjeta de progresión.
+            if (progressionDecision == null || progressionDecision!.action != ProgressionAction.maintain)
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bgInteractive,
+                  foregroundColor: AppColors.textPrimary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: const Size(0, 32),
+                ),
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Mismo objetivo hoy', style: TextStyle(fontSize: 13)),
+                onPressed: () {}, // TODO: lógica real
               ),
-              icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Mismo objetivo hoy', style: TextStyle(fontSize: 13)),
-              onPressed: () {}, // TODO: lógica real
-            ),
+
             if (empatheticBannerMessage != null)
               Flexible(
                 child: Padding(
