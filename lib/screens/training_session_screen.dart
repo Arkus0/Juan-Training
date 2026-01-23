@@ -7,13 +7,11 @@ import '../providers/session_progress_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../providers/session_tolerance_provider.dart';
 import '../widgets/session/exercise_card.dart';
-import '../widgets/session/exercise_nav_rail.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/session/tolerance_feedback_widgets.dart';
-import '../widgets/session/quick_actions_menu.dart';
 import '../widgets/session/session_modifiers.dart'; // AddExerciseButton
 import '../widgets/voice/voice_training_button.dart';
 import '../utils/design_system.dart';
@@ -410,20 +408,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             ],
           ),
 
-          // 🎯 NAV RAIL: Guía lateral para navegación rápida entre ejercicios
-          if (exercisesLength > 3)
-            Positioned(
-              right: 4,
-              top: 60,
-              bottom: 100,
-              child: ExerciseNavRailCompact(
-                exercises:
-                    ref.watch(trainingSessionProvider.select((s) => s.exercises)),
-                currentExerciseIndex: currentIncompleteSet?.exerciseIndex ?? 0,
-                onExerciseTap: _scrollToExercise,
-              ),
-            ),
-
           // 🎯 FEEDBACK: Overlay de ejercicio completado
           if (completionInfo != null)
             Positioned(
@@ -463,25 +447,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               ),
             ),
 
-          // 🎯 QUICK ACTIONS: Menú expandible de acciones rápidas
-          Positioned(
-            right: 16,
-            bottom: showTimerBar || restTimerState.isActive ? 100 : 24,
-            child: QuickActionsMenu(
-              currentRestSeconds: ref.watch(trainingSessionProvider.select(
-                (s) => s.exercises.isNotEmpty && currentIncompleteSet != null
-                    ? s.exercises[currentIncompleteSet.exerciseIndex]
-                            .descansoSugeridoSeconds ??
-                        90
-                    : 90,
-              )),
-              onRepeat: () => _repeatCurrentSet(notifier),
-              onMaintainGoal: () => _maintainCurrentGoal(),
-              onRestTimeSelected: (seconds) =>
-                  _updateCurrentExerciseRestTime(seconds),
-              onMoreOptions: () => _showQuickOptionsSheet(context),
-            ),
-          ),
         ],
       ),
     );

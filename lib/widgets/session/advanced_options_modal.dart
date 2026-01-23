@@ -59,14 +59,9 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
           Text('OPCIONES PRO', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.goldAccent)),
           const SizedBox(height: 16),
 
-          // RPE Slider
-          Text('RPE (Esfuerzo Percibido): ${log.rpe ?? "-"}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Slider(
-            value: (log.rpe ?? 0).toDouble(),
-            min: 0,
-            max: 10,
-            divisions: 10,
-            activeColor: AppColors.neonPrimary,
+          // RPE Slider con feedback de color
+          _RpeSliderWithColorFeedback(
+            rpeValue: log.rpe,
             onChanged: (val) {
               notifier.updateLog(widget.exerciseIndex, widget.setIndex, rpe: val == 0 ? null : val.toInt());
             },
@@ -100,6 +95,122 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
           const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+}
+
+/// Widget de slider RPE con feedback de color visual instantáneo
+/// Verde (1-6): Fácil/Moderado
+/// Amarillo (7-8): Difícil
+/// Rojo (9-10): Máximo esfuerzo
+class _RpeSliderWithColorFeedback extends StatelessWidget {
+  final int? rpeValue;
+  final ValueChanged<double> onChanged;
+
+  const _RpeSliderWithColorFeedback({
+    required this.rpeValue,
+    required this.onChanged,
+  });
+
+  /// Obtiene el color según el valor de RPE
+  Color _getRpeColor(int? rpe) {
+    if (rpe == null || rpe == 0) return AppColors.textTertiary;
+    if (rpe <= 6) return const Color(0xFF4CAF50); // Verde
+    if (rpe <= 8) return const Color(0xFFFFB300); // Amarillo/Ámbar
+    return const Color(0xFFE53935); // Rojo
+  }
+
+  /// Obtiene la descripción del RPE
+  String _getRpeLabel(int? rpe) {
+    if (rpe == null || rpe == 0) return '-';
+    if (rpe <= 3) return 'Muy fácil';
+    if (rpe <= 5) return 'Moderado';
+    if (rpe <= 6) return 'Algo difícil';
+    if (rpe <= 7) return 'Difícil';
+    if (rpe <= 8) return 'Muy difícil';
+    if (rpe == 9) return 'Casi al límite';
+    return 'Máximo';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rpe = rpeValue ?? 0;
+    final color = _getRpeColor(rpeValue);
+    final label = _getRpeLabel(rpeValue);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'RPE (Esfuerzo Percibido): ',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            // Badge con el valor y color
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color, width: 1.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    rpe > 0 ? '$rpe' : '-',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      color: color,
+                    ),
+                  ),
+                  if (rpe > 0) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Slider con track coloreado
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: color,
+            inactiveTrackColor: color.withValues(alpha: 0.2),
+            thumbColor: color,
+            overlayColor: color.withValues(alpha: 0.2),
+            valueIndicatorColor: color,
+            valueIndicatorTextStyle: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          child: Slider(
+            value: rpe.toDouble(),
+            min: 0,
+            max: 10,
+            divisions: 10,
+            label: rpe > 0 ? '$rpe' : null,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
 }

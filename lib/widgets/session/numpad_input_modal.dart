@@ -193,7 +193,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      height: screenHeight * 0.58, // Reducido para evitar overflow
+      height: screenHeight * 0.80, // Expandido al 80% para botones más grandes
       decoration: const BoxDecoration(
         color: _ModalColors.bgCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -302,7 +302,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                   ],
                   // Botón plate calculator (solo para KG)
                   if (widget.fieldLabel == 'KG' && widget.onOpenPlateCalc != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     GestureDetector(
                       onTap: () => _openPlateCalculator(),
                       child: Container(
@@ -377,21 +377,20 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
               ),
             ),
 
-            // Numpad - Botones más compactos
+            // Numpad - Botones que se ajustan al espacio disponible
             Expanded(
-              flex: 4,
+              flex: 5,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildNumpadRow(['1', '2', '3']),
+                    Expanded(child: _buildNumpadRow(['1', '2', '3'])),
                     const SizedBox(height: 8),
-                    _buildNumpadRow(['4', '5', '6']),
+                    Expanded(child: _buildNumpadRow(['4', '5', '6'])),
                     const SizedBox(height: 8),
-                    _buildNumpadRow(['7', '8', '9']),
+                    Expanded(child: _buildNumpadRow(['7', '8', '9'])),
                     const SizedBox(height: 8),
-                    _buildNumpadRow(['.', '0', '←']),
+                    Expanded(child: _buildNumpadRow(['.', '0', '←'])),
                   ],
                 ),
               ),
@@ -488,35 +487,36 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final isDecimal = label == '.';
     final isDisabled = isDecimal && widget.isInteger;
 
-    return SizedBox(
-      width: 80, // Más compacto
-      height: 56, // Más compacto
-      child: Material(
-        color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: isDisabled
-              ? null
-              : (isBackspace ? _onBackspace : () => _onDigit(label)),
-          onLongPress: isBackspace ? _onClear : null,
-          borderRadius: BorderRadius.circular(18),
-          child: Center(
-            child: isBackspace
-                ? const Icon(
-                    Icons.backspace_outlined,
-                    color: _ModalColors.textPrimary,
-                    size: 30,
-                  )
-                : Text(
-                    label,
-                    style: GoogleFonts.montserrat(
-                      fontSize: 32, // Más grande
-                      fontWeight: FontWeight.w700,
-                      color: isDisabled
-                          ? _ModalColors.textDisabled
-                          : _ModalColors.textPrimary,
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Material(
+          color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            onTap: isDisabled
+                ? null
+                : (isBackspace ? _onBackspace : () => _onDigit(label)),
+            onLongPress: isBackspace ? _onClear : null,
+            borderRadius: BorderRadius.circular(20),
+            child: Center(
+              child: isBackspace
+                  ? const Icon(
+                      Icons.backspace_outlined,
+                      color: _ModalColors.textPrimary,
+                      size: 32,
+                    )
+                  : Text(
+                      label,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: isDisabled
+                            ? _ModalColors.textDisabled
+                            : _ModalColors.textPrimary,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),

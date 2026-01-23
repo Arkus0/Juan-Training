@@ -330,11 +330,9 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       builder: (dialogContext) => PlateCalculatorDialog(
         currentWeight: currentWeight,
         onWeightSelected: (weight) {
-          Navigator.of(dialogContext).pop(); // Cerrar el dialog
-          // Actualizar el peso directamente en el log (no solo en el numpad)
-          widget.onWeightChanged(weight);
-          // También cerrar el numpad y mostrar el peso seleccionado
-          Navigator.of(context).pop(weight);
+          Navigator.of(dialogContext).pop(); // Solo cerrar el dialog de discos
+          // Actualizar el peso en el callback del numpad (no cerrar el numpad)
+          onWeightSelected(weight);
         },
       ),
     );

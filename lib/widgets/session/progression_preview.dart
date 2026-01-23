@@ -362,6 +362,12 @@ class ProgressionBadge extends StatelessWidget {
     final icon = _getIcon(decision.action);
     final isConfirming = decision.reason.contains('1/2') || 
                          decision.reason.contains('Confirmando');
+    final label = _getShortLabel(decision.action, isConfirming);
+    
+    // No mostrar el badge si la etiqueta está vacía (caso "maintain" sin confirmar)
+    if (label.isEmpty) {
+      return const SizedBox.shrink();
+    }
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -376,7 +382,7 @@ class ProgressionBadge extends StatelessWidget {
           Icon(icon, size: 10, color: color),
           const SizedBox(width: 3),
           Text(
-            _getShortLabel(decision.action, isConfirming),
+            label,
             style: GoogleFonts.montserrat(
               fontSize: 8,
               fontWeight: FontWeight.w800,
@@ -423,8 +429,8 @@ class ProgressionBadge extends StatelessWidget {
       case ProgressionAction.increaseReps:
         return '+REP';
       case ProgressionAction.maintain:
-        // Mostrar estado de confirmación si aplica
-        return isConfirming ? '1/2' : 'REPITE';
+        // Solo mostrar contador de confirmación, no REPITE (ya se muestra "Mismo objetivo hoy" abajo)
+        return isConfirming ? '1/2' : '';
       case ProgressionAction.decreaseWeight:
         return 'DELOAD';
       case ProgressionAction.decreaseReps:

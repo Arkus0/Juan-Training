@@ -34,6 +34,30 @@ class ExerciseCardContainer extends ConsumerStatefulWidget {
 }
 
 class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
+  // 🆕 Estado de colapso local - null significa auto (colapsa al completar)
+  bool? _manualCollapsedState;
+
+  /// Determina si el ejercicio está colapsado
+  bool _isCollapsed(bool allSetsCompleted) {
+    // Si el usuario ha tocado manualmente, usar ese estado
+    if (_manualCollapsedState != null) {
+      return _manualCollapsedState!;
+    }
+    // Auto-colapsar cuando todas las series están completadas
+    return allSetsCompleted;
+  }
+
+  void _toggleCollapse() {
+    final exercise = ref.read(trainingSessionProvider).exercises[widget.exerciseIndex];
+    final allCompleted = exercise.logs.every((log) => log.completed);
+    
+    setState(() {
+      // Toggle basado en el estado actual
+      final currentCollapsed = _isCollapsed(allCompleted);
+      _manualCollapsedState = !currentCollapsed;
+    });
+  }
+
   void _showNotesDialog(BuildContext context, String exerciseName) async {
     final repo = ref.read(trainingRepositoryProvider);
     final String currentNote = await repo.getNote(exerciseName);
@@ -267,6 +291,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
+    // 🆕 Calcular estado de colapso
+    final allSetsCompleted = exercise.logs.every((log) => log.completed);
+    final isCollapsed = _isCollapsed(allSetsCompleted);
+
     return ExerciseCard(
       exerciseIndex: widget.exerciseIndex,
       exercise: exercise,
@@ -277,6 +305,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       empatheticBannerMessage: empatheticBannerMessage,
       focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
       useFocusedInputMode: useFocusedInputMode,
+      isCollapsed: isCollapsed,
+      onToggleCollapse: _toggleCollapse,
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
       onUpdateReps: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
@@ -316,6 +346,8 @@ class ExerciseCard extends StatelessWidget {
   final String? empatheticBannerMessage; // Mensaje empático para días difíciles
   final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
   final bool useFocusedInputMode; // Usar el nuevo modo de entrada con modal
+  final bool isCollapsed; // 🆕 Estado colapsado
+  final VoidCallback? onToggleCollapse; // 🆕 Callback para toggle
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
   final Function(int, String) onUpdateReps;
@@ -337,6 +369,8 @@ class ExerciseCard extends StatelessWidget {
     this.empatheticBannerMessage,
     this.focusSetIndex,
     this.useFocusedInputMode = true,
+    this.isCollapsed = false,
+    this.onToggleCollapse,
     required this.onShowOptions,
     required this.onUpdateWeight,
     required this.onUpdateReps,
@@ -351,182 +385,239 @@ class ExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
+    
+    // 🆕 Calcular si todas las series están completadas
+    final allSetsCompleted = exercise.logs.every((log) => log.completed);
+    final completedSets = exercise.logs.where((log) => log.completed).length;
+    final totalSets = exercise.logs.length;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-             Row(
-               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               children: [
-                 Expanded(
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       Row(
-                         children: [
-                           Flexible(
-                             child: Text(
-                              exercise.nombre.toUpperCase(),
-                              // 🎯 REDISEÑO: Nombre en blanco, sin sombras rojas
-                              style: AppTypography.sectionTitle,
-                             ),
-                           ),
-                           if (showSupersetBadge) ...[
-                             const SizedBox(width: 8),
-                             Container(
-                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                               decoration: BoxDecoration(
-                                 color: Colors.orange[800],
-                                 borderRadius: BorderRadius.circular(4),
-                               ),
-                               child: Text(
-                                 'SS',
-                                 style: GoogleFonts.montserrat(
-                                   fontSize: 10,
-                                   fontWeight: FontWeight.w900,
-                                   color: Colors.white,
-                                 ),
-                               ),
-                             ),
-                           ],
-                         ],
-                       ),
-                       const SizedBox(height: 4),
-                       Row(
-                         children: [
-                           // Contenedor flexible para LAST y Badge
-                           Expanded(
-                             child: Row(
-                               children: [
-                                 if (historyLogs != null && historyLogs!.isNotEmpty)
-                                   Flexible(
-                                     child: Text(
-                                       'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
-                                       style: TextStyle(color: AppColors.textTertiary, fontSize: 11, fontWeight: FontWeight.w500),
-                                       overflow: TextOverflow.ellipsis,
-                                     ),
-                                   ),
-                                 // Badge de progresión v2 (compacto)
-                                 if (progressionDecision != null) ...[
-                                   const SizedBox(width: 8),
-                                   ProgressionBadge(decision: progressionDecision!),
-                                 ],
-                               ],
-                             ),
-                           ),
-                           const SizedBox(width: 8),
-                           // Selector de tiempo de descanso inline (siempre visible)
-                           _RestTimeChip(
-                             seconds: restSeconds,
-                             onChanged: onRestTimeChange,
-                           ),
-                         ],
-                       ),
-                     ],
-                   ),
-                 ),
-                 // Icono opciones
-                 Container(
-                   decoration: BoxDecoration(
-                     color: AppColors.bgInteractive,
-                     borderRadius: BorderRadius.circular(8),
-                     border: Border.all(color: AppColors.border),
-                   ),
-                   child: IconButton(
-                     icon: Icon(Icons.more_horiz, color: AppColors.textSecondary),
-                     onPressed: onShowOptions,
-                     tooltip: 'Opciones del ejercicio',
-                     padding: const EdgeInsets.all(8),
-                     constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                   ),
-                 )
-               ],
-             ),
-
-            // Banner empático para días difíciles (si aplica)
-            if (empatheticBannerMessage != null) ...[
-              const SizedBox(height: 10),
-              EmpatheticBanner(message: empatheticBannerMessage!),
-            ],
-
-            // Card de progresión v2 (si hay sugerencia)
-            if (progressionDecision != null) ...[
-              const SizedBox(height: 12),
-              ProgressionPreviewCard(
-                decision: progressionDecision!,
-                compact: true,
-              ),
-            ],
-
-            const SizedBox(height: 12),
-
-            // Header Row - solo mostrar si NO es modo focalizado
-            if (!useFocusedInputMode)
+      margin: const EdgeInsets.only(bottom: 12),
+      // 🆕 Color diferente si está colapsado/completado
+      color: isCollapsed 
+          ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
+          : null,
+      child: InkWell(
+        // 🆕 Tap en header para colapsar/expandir
+        onTap: isCollapsed ? onToggleCollapse : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(isCollapsed ? 12 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header siempre visible
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: AppColors.textTertiary)))),
-                  SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)))),
-                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
-                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
-                  SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: AppColors.textTertiary))),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: onToggleCollapse,
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        children: [
+                          // 🆕 Icono de expansión/colapso
+                          AnimatedRotation(
+                            turns: isCollapsed ? -0.25 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.expand_more,
+                              size: 20,
+                              color: allSetsCompleted 
+                                  ? AppColors.completedGreen 
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              exercise.nombre.toUpperCase(),
+                              style: AppTypography.sectionTitle.copyWith(
+                                color: allSetsCompleted 
+                                    ? AppColors.completedGreen 
+                                    : AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // 🆕 Check si completado
+                          if (allSetsCompleted) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: AppColors.completedGreen,
+                            ),
+                          ],
+                          // Badge contador cuando colapsado
+                          if (isCollapsed && !allSetsCompleted) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.bloodRed.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.bloodRed, width: 1),
+                              ),
+                              child: Text(
+                                '$completedSets/$totalSets',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.bloodRed,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Acciones rápidas y opciones (solo si no colapsado)
+                  if (!isCollapsed) ...[
+                    _QuickActionsButton(
+                      restSeconds: restSeconds,
+                      historyLogs: historyLogs,
+                      onRestTimeChange: onRestTimeChange,
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.bgInteractive,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.more_horiz, color: AppColors.textSecondary),
+                        onPressed: onShowOptions,
+                        tooltip: 'Opciones del ejercicio',
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-            if (!useFocusedInputMode)
-              const SizedBox(height: 8),
 
-            // 🎯 REDISEÑO: Usar FocusedSetRow en modo focalizado
-            ...List.generate(exercise.logs.length, (setIndex) {
-              final log = exercise.logs[setIndex];
-              final prevLog = (historyLogs != null && setIndex < historyLogs!.length) ? historyLogs![setIndex] : null;
-
-              // Determinar si esta serie es la activa (primera incompleta)
-              final isFirstIncomplete = exercise.logs
-                  .take(setIndex)
-                  .every((l) => l.completed);
-              final isActive = !log.completed && isFirstIncomplete;
-              final isFuture = !log.completed && !isActive;
-
-              if (useFocusedInputMode) {
-                return FocusedSetRow(
-                  key: ValueKey('ex${exerciseIndex}_focused_set$setIndex'),
-                  index: setIndex,
-                  log: log,
-                  prevLog: prevLog,
-                  isActive: isActive,
-                  isFuture: isFuture,
-                  exerciseName: exercise.nombre,
-                  totalSets: exercise.logs.length,
-                  onWeightChanged: (val) => onUpdateWeightDirect?.call(setIndex, val),
-                  onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
-                  onCompleted: (val) => onUpdateCompleted(setIndex, val),
-                  onLongPress: () => onSetLongPress(setIndex),
-                );
-              }
-
-              return SessionSetRow(
-                key: ValueKey('ex${exerciseIndex}_set$setIndex'),
-                index: setIndex,
-                log: log,
-                prevLog: prevLog,
-                onWeightChanged: (val) => onUpdateWeight(setIndex, val),
-                onRepsChanged: (val) => onUpdateReps(setIndex, val),
-                onCompleted: (val) => onUpdateCompleted(setIndex, val),
-                onPlateCalc: (val) => onPlateCalc(setIndex, val),
-                onLongPress: () => onSetLongPress(setIndex),
-                showAdvanced: showAdvanced,
-                shouldFocus: focusSetIndex == setIndex,
-              );
-            }),
-            
-            // 🆕 Botón para añadir series adicionales
-            AddSetButton(exerciseIndex: exerciseIndex),
-          ],
+              // 🆕 Contenido colapsable con animación
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: _buildExpandedContent(restSeconds),
+                crossFadeState: isCollapsed 
+                    ? CrossFadeState.showFirst 
+                    : CrossFadeState.showSecond,
+                duration: const Duration(milliseconds: 200),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  /// Contenido expandido del ejercicio (series, etc.)
+  Widget _buildExpandedContent(int restSeconds) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Badge superset si aplica
+        if (showSupersetBadge) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.orange[800],
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'SUPERSET',
+              style: GoogleFonts.montserrat(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+
+        // Banner empático para días difíciles (si aplica)
+        if (empatheticBannerMessage != null) ...[
+          const SizedBox(height: 10),
+          EmpatheticBanner(message: empatheticBannerMessage!),
+        ],
+
+        // Card de progresión v2 (si hay sugerencia)
+        if (progressionDecision != null) ...[
+          const SizedBox(height: 12),
+          ProgressionPreviewCard(
+            decision: progressionDecision!,
+            compact: true,
+          ),
+        ],
+
+        const SizedBox(height: 12),
+
+        // Header Row - solo mostrar si NO es modo focalizado
+        if (!useFocusedInputMode)
+          Row(
+            children: [
+              SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: AppColors.textTertiary)))),
+              SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)))),
+              Expanded(child: Center(child: Text('KG', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
+              Expanded(child: Center(child: Text('REPS', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
+              SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: AppColors.textTertiary))),
+            ],
+          ),
+        if (!useFocusedInputMode)
+          const SizedBox(height: 8),
+
+        // 🎯 REDISEÑO: Usar FocusedSetRow en modo focalizado
+        ...List.generate(exercise.logs.length, (setIndex) {
+          final log = exercise.logs[setIndex];
+          final prevLog = (historyLogs != null && setIndex < historyLogs!.length) ? historyLogs![setIndex] : null;
+
+          // Determinar si esta serie es la activa (primera incompleta)
+          final isFirstIncomplete = exercise.logs
+              .take(setIndex)
+              .every((l) => l.completed);
+          final isActive = !log.completed && isFirstIncomplete;
+          final isFuture = !log.completed && !isActive;
+
+          if (useFocusedInputMode) {
+            return FocusedSetRow(
+              key: ValueKey('ex${exerciseIndex}_focused_set$setIndex'),
+              index: setIndex,
+              log: log,
+              prevLog: prevLog,
+              isActive: isActive,
+              isFuture: isFuture,
+              exerciseName: exercise.nombre,
+              totalSets: exercise.logs.length,
+              onWeightChanged: (val) => onUpdateWeightDirect?.call(setIndex, val),
+              onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
+              onCompleted: (val) => onUpdateCompleted(setIndex, val),
+              onLongPress: () => onSetLongPress(setIndex),
+            );
+          }
+
+          return SessionSetRow(
+            key: ValueKey('ex${exerciseIndex}_set$setIndex'),
+            index: setIndex,
+            log: log,
+            prevLog: prevLog,
+            onWeightChanged: (val) => onUpdateWeight(setIndex, val),
+            onRepsChanged: (val) => onUpdateReps(setIndex, val),
+            onCompleted: (val) => onUpdateCompleted(setIndex, val),
+            onPlateCalc: (val) => onPlateCalc(setIndex, val),
+            onLongPress: () => onSetLongPress(setIndex),
+            showAdvanced: showAdvanced,
+            shouldFocus: focusSetIndex == setIndex,
+          );
+        }),
+        
+        // 🆕 Botón para añadir series adicionales
+        AddSetButton(exerciseIndex: exerciseIndex),
+      ],
     );
   }
 }
@@ -754,5 +845,189 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
       return '${mins}m ${secs}s';
     }
     return '${seconds}s';
+  }
+}
+
+/// Botón de acciones rápidas (rayito ⚡) para cada ejercicio
+class _QuickActionsButton extends StatelessWidget {
+  final int restSeconds;
+  final List<SerieLog>? historyLogs;
+  final Function(int)? onRestTimeChange;
+
+  const _QuickActionsButton({
+    required this.restSeconds,
+    this.historyLogs,
+    this.onRestTimeChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgInteractive,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: IconButton(
+        icon: Icon(Icons.bolt, color: AppColors.goldAccent),
+        onPressed: () => _showQuickActionsSheet(context),
+        tooltip: 'Acciones rápidas',
+        padding: const EdgeInsets.all(8),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        iconSize: 20,
+      ),
+    );
+  }
+
+  void _showQuickActionsSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text(
+                'ACCIONES RÁPIDAS',
+                style: AppTypography.sectionTitle.copyWith(
+                  color: AppColors.goldAccent,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Historial / LAST
+              if (historyLogs != null && historyLogs!.isNotEmpty)
+                _QuickActionTile(
+                  icon: Icons.history,
+                  iconColor: AppColors.textSecondary,
+                  title: 'Última vez',
+                  subtitle: '${historyLogs!.last.peso}kg × ${historyLogs!.last.reps} reps',
+                  onTap: () => Navigator.pop(ctx),
+                ),
+
+              // Ajustar tiempo de descanso
+              _QuickActionTile(
+                icon: Icons.timer_outlined,
+                iconColor: AppColors.restTeal,
+                title: 'Descanso',
+                subtitle: '${restSeconds}s',
+                trailing: Icon(Icons.edit, size: 16, color: AppColors.textTertiary),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showRestTimePicker(context);
+                },
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showRestTimePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _RestTimePickerSheet(
+        initialSeconds: restSeconds,
+        onSelected: (newSeconds) {
+          onRestTimeChange?.call(newSeconds);
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+}
+
+/// Tile individual para acciones rápidas
+class _QuickActionTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _QuickActionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing!,
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
