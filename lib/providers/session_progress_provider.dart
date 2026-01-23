@@ -270,3 +270,93 @@ final pendingExercisesProvider = Provider<List<String>>((ref) {
       .map((e) => e.nombre)
       .toList();
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// EXERCISE COMPLETION TRACKING
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Estado de un ejercicio recién completado (para mostrar resumen)
+class ExerciseCompletionInfo {
+  final int exerciseIndex;
+  final String exerciseName;
+  final int completedSets;
+  final int targetSets;
+  final int totalReps;
+  final bool metTarget;
+  final String? nextSessionHint;
+  
+  const ExerciseCompletionInfo({
+    required this.exerciseIndex,
+    required this.exerciseName,
+    required this.completedSets,
+    required this.targetSets,
+    required this.totalReps,
+    required this.metTarget,
+    this.nextSessionHint,
+  });
+}
+
+/// Notifier que trackea ejercicios completados y permite mostrar feedback
+class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> {
+  final Ref ref;
+  Set<int> _completedExercises = {};
+  
+  ExerciseCompletionNotifier(this.ref) : super(null) {
+    // Escuchar cambios en el training state
+    ref.listen<TrainingState>(trainingSessionProvider, (prev, next) {
+      _checkForNewlyCompletedExercise(prev, next);
+    });
+  }
+  
+  void _checkForNewlyCompletedExercise(TrainingState? prev, TrainingState next) {
+    for (int i = 0; i < next.exercises.length; i++) {
+      final exercise = next.exercises[i];
+      final allCompleted = exercise.logs.every((log) => log.completed);
+      
+      if (allCompleted && !_completedExercises.contains(i)) {
+        // ¡Este ejercicio acaba de completarse!
+        _completedExercises.add(i);
+        
+        const targetReps = 8; // Default, idealmente vendría del ejercicio
+        final completedSets = exercise.logs.where((l) => l.completed).length;
+        final totalReps = exercise.logs.fold<int>(0, (sum, log) => sum + log.reps);
+        final metTarget = exercise.logs.every((l) => l.reps >= targetReps);
+        
+        state = ExerciseCompletionInfo(
+          exerciseIndex: i,
+          exerciseName: exercise.nombre,
+          completedSets: completedSets,
+          targetSets: exercise.logs.length,
+          totalReps: totalReps,
+          metTarget: metTarget,
+          nextSessionHint: metTarget ? 'Próxima: más peso o reps' : 'Repite este objetivo',
+        );
+        
+        // Auto-clear después de 5 segundos si no se dismissea
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && state?.exerciseIndex == i) {
+            state = null;
+          }
+        });
+        
+        return; // Solo un ejercicio a la vez
+      }
+    }
+  }
+  
+  /// Limpia el estado de completitud mostrado
+  void dismiss() {
+    state = null;
+  }
+  
+  /// Reset para nueva sesión
+  void reset() {
+    _completedExercises = {};
+    state = null;
+  }
+}
+
+/// Provider para ejercicio recién completado
+final exerciseCompletionProvider = StateNotifierProvider<ExerciseCompletionNotifier, ExerciseCompletionInfo?>(
+  (ref) => ExerciseCompletionNotifier(ref),
+);

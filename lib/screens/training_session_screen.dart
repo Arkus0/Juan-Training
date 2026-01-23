@@ -9,6 +9,7 @@ import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
+import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/voice/voice_training_button.dart';
 import '../utils/design_system.dart';
 
@@ -222,6 +223,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
     // Voice available
     final voiceAvailable = ref.watch(voiceAvailableProvider);
+    
+    // 🎯 FEEDBACK: Ejercicio recién completado
+    final completionInfo = ref.watch(exerciseCompletionProvider);
 
     final notifier = ref.read(trainingSessionProvider.notifier);
 
@@ -335,6 +339,29 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               ),
             ],
           ),
+          
+          // 🎯 FEEDBACK: Overlay de ejercicio completado
+          if (completionInfo != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 100, // Encima del timer bar
+              child: GestureDetector(
+                onTap: () => ref.read(exerciseCompletionProvider.notifier).dismiss(),
+                child: AnimatedSlide(
+                  offset: Offset.zero,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: ExerciseSummaryFeedback(
+                    completedSets: completionInfo.completedSets,
+                    targetSets: completionInfo.targetSets,
+                    totalReps: completionInfo.totalReps,
+                    metTarget: completionInfo.metTarget,
+                    nextSessionHint: completionInfo.nextSessionHint,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

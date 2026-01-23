@@ -10,10 +10,12 @@ import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/sesion.dart';
 import '../models/serie_log.dart';
+import '../models/progression_engine_models.dart';
 import 'main_provider.dart';
 import '../repositories/i_training_repository.dart';
 import '../utils/performance_utils.dart';
 import '../services/timer_platform_service.dart';
+import '../services/error_tolerance_system.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
   throw UnimplementedError('trainingRepositoryProvider not overridden');
@@ -327,9 +329,34 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final logs = [...exercise.logs];
     final log = logs[setIndex];
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ERROR TOLERANCE: Validación tolerante de peso (nunca bloquea)
+    // ═══════════════════════════════════════════════════════════════════════
+    double? validatedPeso = peso;
+    ToleranceResult? toleranceResult;
+    
+    if (peso != null && peso > 0) {
+      final category = ExerciseCategory.inferFromName(exercise.nombre);
+      final lastKnownWeight = log.peso > 0 ? log.peso : _getLastKnownWeight(exercise.nombre);
+      
+      toleranceResult = ErrorToleranceRules.evaluateDataEntry(
+        enteredWeight: peso,
+        lastKnownWeight: lastKnownWeight,
+        exerciseName: exercise.nombre,
+        category: category,
+      );
+      
+      // Si hay corrección automática, usarla (pero el usuario puede sobreescribir)
+      if (toleranceResult.needsCorrection && toleranceResult.correctedValue != null) {
+        // Por ahora solo logueamos, no corregimos automáticamente
+        // El feedback se mostrará en UI a través del provider
+        Logger().w('Peso sospechoso en ${exercise.nombre}: $peso kg (esperado ~$lastKnownWeight kg)');
+      }
+    }
+
     final newLog = SerieLog(
       id: log.id, // Preserve UUID
-      peso: peso ?? log.peso,
+      peso: validatedPeso ?? log.peso,
       reps: reps ?? log.reps,
       completed: completed ?? log.completed,
       rpe: rpe ?? log.rpe,
@@ -346,6 +373,18 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     state = state.copyWith(exercises: exercises);
     _saveState();
+  }
+  
+  /// Obtiene el último peso conocido para un ejercicio (del historial)
+  double _getLastKnownWeight(String exerciseName) {
+    final historyLogs = state.history[exerciseName];
+    if (historyLogs != null && historyLogs.isNotEmpty) {
+      // Buscar el primer log con peso > 0
+      for (final log in historyLogs) {
+        if (log.peso > 0) return log.peso;
+      }
+    }
+    return 0.0;
   }
 
   void copyPreviousSet(int exerciseIndex, int setIndex) {
