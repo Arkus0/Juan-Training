@@ -282,14 +282,30 @@ class _SessionSetRowState extends State<SessionSetRow> {
                       // Botón calculadora de discos
                       Positioned(
                         right: 2,
-                        child: GestureDetector(
-                          onTap: _openPlateCalc,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            child: Icon(
-                              Icons.calculate_outlined,
-                              size: 16,
-                              color: Colors.grey[600],
+                        child: Tooltip(
+                          message: 'Calculadora de discos',
+                          child: Material(
+                            color: Colors.transparent,
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.hardEdge,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                _openPlateCalc();
+                              },
+                              customBorder: const CircleBorder(),
+                              child: Semantics(
+                                label: 'Calculadora de discos',
+                                button: true,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Icon(
+                                    Icons.calculate_outlined,
+                                    size: 18,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
