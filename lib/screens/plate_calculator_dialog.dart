@@ -21,7 +21,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
   late TextEditingController _weightController;
   double _barWeight = 20.0;
   // Use common commercial plate denominations (as requested)
-  final List<double> _availablePlates = [20, 15, 10, 5, 2, 1, 0.5, 0.25];
+  final List<double> _availablePlates = [20, 15, 10, 5, 2.5, 1.25];
   List<double> _calculatedPlates = [];
 
   @override

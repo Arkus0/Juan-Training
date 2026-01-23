@@ -172,6 +172,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
         currentWeight: currentVal,
         onWeightSelected: (val) {
           widget.onPlateCalc(val);
+          widget.onWeightChanged(val.toString()); // Forzar refresco visual
         },
       ),
     );

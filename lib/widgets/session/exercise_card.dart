@@ -407,97 +407,137 @@ class ExerciseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header siempre visible
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: onToggleCollapse,
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(
-                        children: [
-                          // 🆕 Icono de expansión/colapso
-                          AnimatedRotation(
-                            turns: isCollapsed ? -0.25 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.expand_more,
-                              size: 20,
-                              color: allSetsCompleted 
-                                  ? AppColors.completedGreen 
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              exercise.nombre.toUpperCase(),
-                              style: AppTypography.sectionTitle.copyWith(
+                Row(
+                  crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: onToggleCollapse,
+                        behavior: HitTestBehavior.opaque,
+                        child: Row(
+                          crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          children: [
+                            // 🆕 Icono de expansión/colapso
+                            AnimatedRotation(
+                              turns: isCollapsed ? -0.25 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                Icons.expand_more,
+                                size: 20,
                                 color: allSetsCompleted 
                                     ? AppColors.completedGreen 
-                                    : AppColors.textPrimary,
+                                    : AppColors.textSecondary,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          // 🆕 Check si completado
-                          if (allSetsCompleted) ...[
                             const SizedBox(width: 8),
-                            Icon(
-                              Icons.check_circle,
-                              size: 18,
-                              color: AppColors.completedGreen,
-                            ),
-                          ],
-                          // Badge contador cuando colapsado
-                          if (isCollapsed && !allSetsCompleted) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.bloodRed.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.bloodRed, width: 1),
-                              ),
+                            Flexible(
                               child: Text(
-                                '$completedSets/$totalSets',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.bloodRed,
+                                exercise.nombre.toUpperCase(),
+                                style: AppTypography.sectionTitle.copyWith(
+                                  fontSize: isCollapsed ? 18 : 19,
+                                  fontWeight: isCollapsed ? FontWeight.w600 : FontWeight.w700,
+                                  color: allSetsCompleted 
+                                      ? AppColors.completedGreen 
+                                      : AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            // 🆕 Check si completado
+                            if (allSetsCompleted) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.check_circle,
+                                size: 18,
+                                color: AppColors.completedGreen,
+                              ),
+                            ],
+                            // Badge contador cuando colapsado
+                            if (isCollapsed && !allSetsCompleted) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bloodRed.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.bloodRed, width: 1),
+                                ),
+                                child: Text(
+                                  '$completedSets/$totalSets',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.bloodRed,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  // Acciones rápidas y opciones (solo si no colapsado)
-                  if (!isCollapsed) ...[
-                    _QuickActionsButton(
-                      restSeconds: restSeconds,
-                      historyLogs: historyLogs,
-                      onRestTimeChange: onRestTimeChange,
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.bgInteractive,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border),
+                    // Botón único de rayito que abre ambas funcionalidades
+                    if (!isCollapsed)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.bgInteractive,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.flash_on, color: AppColors.bloodRed),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: AppColors.bgElevated,
+                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                              builder: (sheetContext) {
+                                return SafeArea(
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Acciones rápidas
+                                        ListTile(
+                                          leading: Icon(Icons.timer, color: AppColors.textSecondary),
+                                          title: Text('Cambiar descanso', style: TextStyle(color: AppColors.textPrimary)),
+                                          onTap: () {
+                                            Navigator.pop(sheetContext);
+                                            if (onRestTimeChange != null) onRestTimeChange!(restSeconds);
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: Icon(Icons.history, color: AppColors.textSecondary),
+                                          title: Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
+                                          onTap: () {
+                                            Navigator.pop(sheetContext);
+                                            onShowOptions(); // Reutiliza la función para mostrar historial
+                                          },
+                                        ),
+                                        // Opciones del ejercicio
+                                        ListTile(
+                                          leading: Icon(Icons.more_horiz, color: AppColors.textSecondary),
+                                          title: Text('Opciones del ejercicio', style: TextStyle(color: AppColors.textPrimary)),
+                                          onTap: () {
+                                            Navigator.pop(sheetContext);
+                                            onShowOptions();
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          tooltip: 'Acciones y opciones',
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        ),
                       ),
-                      child: IconButton(
-                        icon: Icon(Icons.more_horiz, color: AppColors.textSecondary),
-                        onPressed: onShowOptions,
-                        tooltip: 'Opciones del ejercicio',
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                      ),
-                    ),
                   ],
-                ],
-              ),
+                ),
 
               // 🆕 Contenido colapsable con animación
               AnimatedCrossFade(
@@ -540,11 +580,38 @@ class ExerciseCard extends StatelessWidget {
           ),
         ],
 
-        // Banner empático para días difíciles (si aplica)
-        if (empatheticBannerMessage != null) ...[
-          const SizedBox(height: 10),
-          EmpatheticBanner(message: empatheticBannerMessage!),
-        ],
+        // Fila horizontal: Botón objetivo y mensaje de dificultad
+        Row(
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.bgInteractive,
+                foregroundColor: AppColors.textPrimary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                minimumSize: const Size(0, 32),
+              ),
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Mismo objetivo hoy', style: TextStyle(fontSize: 13)),
+              onPressed: () {}, // TODO: lógica real
+            ),
+            if (empatheticBannerMessage != null)
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text(
+                    empatheticBannerMessage!,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ],
+        ),
 
         // Card de progresión v2 (si hay sugerencia)
         if (progressionDecision != null) ...[

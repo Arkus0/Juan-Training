@@ -50,27 +50,8 @@ class MainScreen extends ConsumerWidget {
       // NO mostrar si:
       // 1. Ya hay sesión activa (ActiveSessionBar la maneja)
       // 2. Estamos en tab RUTINAS (tiene su propio FAB)
-      floatingActionButton: hasActiveSession || currentIndex == 0
-          ? null
-          : suggestionAsync.when(
-              data: (suggestion) {
-                if (suggestion == null) return null;
-                return FloatingActionButton.extended(
-                  heroTag: 'quick_start_fab',
-                  onPressed: () => _startSuggestedSession(context, ref, suggestion),
-                  // 🎯 REDISEÑO: Usar color del sistema
-                  backgroundColor: AppColors.actionPrimary,
-                  icon: const Icon(Icons.play_arrow, size: 28),
-                  label: Text(
-                    suggestion.dayName.toUpperCase(),
-                    style: AppTypography.button,
-                  ),
-                );
-              },
-              loading: () => null,
-              error: (_, __) => null,
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: null,
+      floatingActionButtonLocation: null,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
