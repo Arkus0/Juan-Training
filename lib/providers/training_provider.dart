@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
@@ -12,6 +13,7 @@ import '../models/serie_log.dart';
 import 'main_provider.dart';
 import '../repositories/i_training_repository.dart';
 import '../utils/performance_utils.dart';
+import '../services/timer_platform_service.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
   throw UnimplementedError('trainingRepositoryProvider not overridden');
@@ -171,7 +173,87 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   /// Flag para saber si hay un save pendiente que debe ejecutarse inmediatamente
   bool _hasPendingSave = false;
 
-  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState());
+  /// Servicio de comunicación con el timer de plataforma (Android)
+  final TimerPlatformService _timerPlatformService = TimerPlatformService.instance;
+  StreamSubscription<TimerPlatformEvent>? _timerEventSubscription;
+  bool _platformServiceInitialized = false;
+
+  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState()) {
+    _initializePlatformService();
+  }
+
+  /// Inicializa el servicio de timer de plataforma y escucha eventos
+  Future<void> _initializePlatformService() async {
+    if (_platformServiceInitialized) return;
+
+    try {
+      await _timerPlatformService.initialize();
+      _platformServiceInitialized = true;
+
+      // Escuchar eventos del servicio de plataforma (botones de notificación)
+      _timerEventSubscription = _timerPlatformService.eventStream.listen(_handlePlatformTimerEvent);
+
+      Logger().d('TimerPlatformService inicializado en TrainingProvider');
+    } catch (e) {
+      Logger().e('Error inicializando TimerPlatformService', error: e);
+    }
+  }
+
+  /// Maneja eventos del timer de plataforma (desde notificación Android)
+  void _handlePlatformTimerEvent(TimerPlatformEvent event) {
+    switch (event) {
+      case TimerPlatformEvent.pause:
+        // Solo actualizar estado local, el servicio ya pausó
+        if (state.restTimer.isActive && !state.restTimer.isPaused) {
+          final remaining = state.restTimer.remainingSeconds.ceil();
+          state = state.copyWith(
+            restTimer: state.restTimer.copyWith(
+              isPaused: true,
+              totalSeconds: remaining,
+              clearEndTime: true,
+            ),
+          );
+          _saveState();
+        }
+        break;
+
+      case TimerPlatformEvent.resume:
+        // Solo actualizar estado local, el servicio ya reanudó
+        if (state.restTimer.isActive && state.restTimer.isPaused) {
+          final endTime = DateTime.now().add(Duration(seconds: state.restTimer.totalSeconds));
+          state = state.copyWith(
+            restTimer: state.restTimer.copyWith(
+              isPaused: false,
+              endTime: endTime,
+            ),
+          );
+          _saveState();
+        }
+        break;
+
+      case TimerPlatformEvent.skip:
+        // Saltar timer desde notificación
+        stopRest(saveRestTime: true);
+        break;
+
+      case TimerPlatformEvent.add30:
+        // Añadir 30 segundos desde notificación
+        addRestTime(30);
+        break;
+
+      case TimerPlatformEvent.finished:
+        // Timer terminó naturalmente
+        stopRest(saveRestTime: true);
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timerEventSubscription?.cancel();
+    _saveDebouncer.cancel();
+    super.dispose();
+  }
 
   Future<void> startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises, {String? dayName, int? dayIndex}) async {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
@@ -412,6 +494,14 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Iniciar timer en servicio de plataforma (notificación Android)
+    _timerPlatformService.start(
+      seconds: restTime,
+      exerciseIndex: exerciseIndex,
+      setIndex: setIndex,
+    );
+
     return true;
   }
 
@@ -430,6 +520,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Iniciar timer en servicio de plataforma
+    _timerPlatformService.start(seconds: restTime);
   }
 
   void stopRest({bool saveRestTime = true}) {
@@ -457,6 +550,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Detener timer en servicio de plataforma
+    _timerPlatformService.stop();
   }
 
   /// Actualiza el tiempo de descanso en un SerieLog específico (para analytics)
@@ -502,6 +598,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Pausar timer en servicio de plataforma
+    _timerPlatformService.pause();
   }
 
   /// Reanuda el timer de descanso desde donde estaba pausado
@@ -517,6 +616,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Reanudar timer en servicio de plataforma
+    _timerPlatformService.resume();
   }
 
   /// Añade tiempo al timer actual
@@ -539,6 +641,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     }
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Añadir tiempo en servicio de plataforma
+    _timerPlatformService.addTime(seconds);
   }
 
   /// Reinicia el timer de descanso al valor por defecto para el ejercicio actual (o al valor por defecto de la sesión).
@@ -564,6 +669,13 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     _saveState();
     _saveRestTimerToPrefs();
+
+    // Reiniciar timer en servicio de plataforma
+    _timerPlatformService.start(
+      seconds: restTime,
+      exerciseIndex: lastIndex,
+      setIndex: state.restTimer.lastCompletedSetIndex,
+    );
   }
 
   /// Actualiza el tiempo de descanso sugerido para un ejercicio específico
