@@ -30,7 +30,16 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.rutina?.nombre ?? '');
+    // 🎯 P2: Nombre por defecto para nuevas rutinas
+    final defaultName = widget.rutina?.nombre ?? _generateDefaultName();
+    _nameController = TextEditingController(text: defaultName);
+  }
+
+  /// Genera un nombre por defecto basado en la fecha
+  String _generateDefaultName() {
+    final now = DateTime.now();
+    final months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return 'Rutina ${months[now.month - 1]} ${now.year}';
   }
 
   @override

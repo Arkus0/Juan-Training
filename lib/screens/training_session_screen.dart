@@ -55,6 +55,20 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   void _onFinishSession() async {
     final progress = ref.read(sessionProgressProvider);
 
+    // 🎯 P1: Skip dialog si sesión 100% completada - flujo sin fricción
+    if (progress.isComplete) {
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
+
+      // Stop any active rest timer
+      ref.read(trainingSessionProvider.notifier).stopRest();
+      ref.read(sessionProgressProvider.notifier).reset();
+
+      await ref.read(trainingSessionProvider.notifier).finishSession();
+      navigator.pop();
+      return;
+    }
+
     // Mensaje de confirmación según el progreso
     String confirmMessage = '¿Estás seguro de que quieres terminar el entrenamiento?';
     if (progress.percentage < 0.5) {
@@ -68,10 +82,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
-          progress.isComplete ? '¡SESIÓN COMPLETADA!' : '¿TERMINAR SESIÓN?',
+          '¿TERMINAR SESIÓN?',
           style: GoogleFonts.montserrat(
             fontWeight: FontWeight.w900,
-            color: progress.isComplete ? Colors.green[400] : Colors.white,
+            color: Colors.white,
           ),
         ),
         content: Column(
@@ -82,32 +96,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
               confirmMessage,
               style: const TextStyle(color: Colors.white70),
             ),
-            if (progress.isComplete) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[900]?.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[400]!.withValues(alpha: 0.5)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.celebration, color: Colors.green[400]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${progress.completedSets} series completadas',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.green[400],
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
         actions: [
@@ -123,7 +111,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             child: Text(
               'TERMINAR',
               style: TextStyle(
-                color: progress.isComplete ? Colors.green[400] : Colors.redAccent[700],
+                color: Colors.redAccent[700],
                 fontWeight: FontWeight.bold,
               ),
             ),

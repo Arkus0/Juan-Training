@@ -1,12 +1,53 @@
 import '../models/progression_type.dart';
+import '../models/progression_engine_models.dart';
 import '../models/serie_log.dart';
+import 'progression_engine.dart';
 
 /// Servicio que calcula sugerencias de progresión basadas en el historial.
+/// 
+/// NOTA: Este servicio ahora es un wrapper de compatibilidad sobre [ProgressionEngine].
+/// Para nuevas implementaciones, usar directamente [ProgressionEngine.instance].
+/// 
+/// El nuevo motor ofrece:
+/// - Análisis de sesión completa (no solo serie individual)
+/// - Confirmación de 2 sesiones antes de subir peso
+/// - Mensajes descriptivos para el usuario
+/// - Incrementos inteligentes según tipo de ejercicio
 class ProgressionCalculator {
   ProgressionCalculator._internal();
   static final ProgressionCalculator instance = ProgressionCalculator._internal();
+  
+  /// Referencia al nuevo motor de progresión
+  final ProgressionEngine _engine = ProgressionEngine.instance;
+
+  /// Calcula la sugerencia de progresión usando el nuevo motor v2.
+  /// 
+  /// Este método ofrece:
+  /// - Análisis de sesión completa
+  /// - Mensajes descriptivos para el usuario
+  /// - Incrementos inteligentes según tipo de ejercicio
+  /// - Preview del siguiente paso
+  ProgressionDecision? calculateSuggestionV2({
+    required ProgressionType progressionType,
+    required int targetReps,
+    required int maxReps,
+    required List<SerieLog>? previousLogs,
+    String? exerciseName,
+  }) {
+    return _engine.calculateFromLegacyData(
+      progressionType: progressionType,
+      weightIncrement: 2.5, // Será recalculado por el motor según categoría
+      targetReps: targetReps,
+      maxReps: maxReps,
+      previousLogs: previousLogs,
+      setIndex: 0, // Para decisión de sesión, usamos índice 0
+      exerciseName: exerciseName,
+    );
+  }
 
   /// Calcula la sugerencia de progresión para un ejercicio dado su historial.
+  /// 
+  /// DEPRECATED: Usar [calculateSuggestionV2] para acceso al nuevo motor.
   ///
   /// [progressionType]: Tipo de progresión configurado
   /// [weightIncrement]: Incremento de peso para progresión lineal (ej: 2.5kg)

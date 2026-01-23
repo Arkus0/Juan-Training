@@ -242,7 +242,6 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
 
     // Settings
-    final autoStartTimer = ref.watch(autoStartTimerProvider);
     final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
 
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
@@ -274,8 +273,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
              final log = exercise.logs[setIndex];
              final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
              _triggerCompletionFeedback(log, prevLog);
-             // Auto-advance rest con info de ejercicio/serie para auto-focus (si está habilitado)
-             if (autoStartTimer && !isRestActive) {
+             // 🎯 P1: Timer SIEMPRE auto-inicia al completar serie
+             if (!isRestActive) {
                notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
              }
         }
@@ -394,10 +393,20 @@ class ExerciseCard extends StatelessWidget {
                      ],
                    ),
                  ),
-                 IconButton(
-                   icon: const Icon(Icons.more_horiz),
-                   onPressed: onShowOptions,
-                   tooltip: 'Opciones del ejercicio',
+                 // 🎯 P1: Icono opciones más visible
+                 Container(
+                   decoration: BoxDecoration(
+                     color: Colors.grey[850],
+                     borderRadius: BorderRadius.circular(8),
+                     border: Border.all(color: Colors.grey[700]!),
+                   ),
+                   child: IconButton(
+                     icon: Icon(Icons.more_horiz, color: Colors.grey[400]),
+                     onPressed: onShowOptions,
+                     tooltip: 'Opciones del ejercicio',
+                     padding: const EdgeInsets.all(8),
+                     constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                   ),
                  )
                ],
              ),

@@ -194,6 +194,15 @@ class _SessionSetRowState extends State<SessionSetRow> {
     widget.onCompleted(value);
   }
 
+  /// 🎯 P0: Auto-completar serie si peso > 0 y reps > 0 y no está completada
+  void _autoCompleteIfReady() {
+    if (widget.log.completed) return; // Ya completada
+    if (widget.log.peso > 0 && widget.log.reps > 0) {
+      // Marcar como completada automáticamente
+      _handleComplete(true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determinar ghost values
@@ -307,6 +316,8 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     textInputAction: TextInputAction.done,
                     onEditingComplete: () {
                       FocusScope.of(context).unfocus();
+                      // 🎯 P0: Auto-completar si peso > 0 y reps > 0
+                      _autoCompleteIfReady();
                     },
                   ),
                 ),
@@ -426,13 +437,25 @@ class _PrevValueColumn extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'SUG',
-                    style: _SetRowStyles.sugLabel.copyWith(
-                      color: isImprovement
-                          ? Colors.green[400]
-                          : Colors.grey[400],
-                    ),
+                  // 🎯 P0: Indicador TAP prominente
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.touch_app,
+                        size: 8,
+                        color: isImprovement ? Colors.green[400] : Colors.grey[500],
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        'SUG',
+                        style: _SetRowStyles.sugLabel.copyWith(
+                          color: isImprovement
+                              ? Colors.green[400]
+                              : Colors.grey[400],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 1),
                   Text(
@@ -477,11 +500,23 @@ class _PrevValueColumn extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'PREV',
-                    style: _SetRowStyles.prevLabel.copyWith(
-                      color: Colors.grey[500],
-                    ),
+                  // 🎯 P0: Indicador TAP prominente
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.touch_app,
+                        size: 8,
+                        color: Colors.grey[500],
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        'PREV',
+                        style: _SetRowStyles.prevLabel.copyWith(
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 1),
                   Text(

@@ -49,16 +49,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
 
-          _SettingsTile(
-            icon: Icons.play_circle_outline,
-            title: 'Auto-iniciar timer',
-            subtitle: 'Iniciar descanso al completar serie',
-            trailing: Switch(
-              value: settings.autoStartTimer,
-              onChanged: notifier.setAutoStartTimer,
-              activeColor: Colors.redAccent[700],
-            ),
-          ),
+          // 🎯 P1: Timer siempre auto-inicia - setting eliminado para reducir fricción
 
           _SettingsTile(
             icon: Icons.lock_clock,
