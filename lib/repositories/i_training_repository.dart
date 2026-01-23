@@ -38,6 +38,11 @@ abstract class ITrainingRepository {
   Stream<List<Sesion>> watchSesionesHistory({int limit = 50});
   Future<void> saveSesion(Sesion sesion);
   Future<List<Sesion>> getHistoryForExercise(String exerciseName);
+  
+  /// Get expanded history for progression engine v2
+  /// Returns last N sessions with full exercise data for calculating
+  /// consecutive successes/failures
+  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName, {int limit = 4});
 
   // Active Session
   Future<void> saveActiveSession(ActiveSessionData data);

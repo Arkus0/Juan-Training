@@ -97,8 +97,13 @@ class TimerPlatformState {
 class _DefaultDateTime implements DateTime {
   const _DefaultDateTime();
 
+  DateTime get _now => DateTime.now();
+
   @override
-  dynamic noSuchMethod(Invocation invocation) => DateTime.now();
+  int get millisecondsSinceEpoch => _now.millisecondsSinceEpoch;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => _now;
 }
 
 /// Evento recibido desde la plataforma nativa

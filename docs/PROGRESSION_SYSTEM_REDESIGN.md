@@ -13,8 +13,30 @@
 | `lib/models/progression_engine_models.dart` | ✅ Completo | Modelos de datos del nuevo motor |
 | `lib/services/progression_engine.dart` | ✅ Completo | Motor de progresión v2 |
 | `lib/widgets/session/progression_preview.dart` | ✅ Completo | Widget de UI para mostrar predicciones |
+| `lib/providers/progression_provider.dart` | ✅ Completo | Providers Riverpod para progresión |
+| `lib/widgets/session/exercise_card.dart` | ✅ Integrado | UI integrada con ProgressionBadge |
+| `lib/repositories/i_training_repository.dart` | ✅ Actualizado | Método getExpandedHistoryForExercise |
+| `lib/repositories/drift_training_repository.dart` | ✅ Actualizado | Implementación de historial expandido |
 | `lib/services/progression_calculator.dart` | ✅ Actualizado | Wrapper de compatibilidad con v1 |
 | `test/services/progression_engine_test.dart` | ✅ Completo | Tests unitarios (19 tests passing) |
+
+### Providers Disponibles
+
+```dart
+import 'package:juan_training/providers/progression_provider.dart';
+
+// Provider sincrónico (usa historial en memoria)
+final decision = ref.watch(exerciseProgressionProvider(exerciseIndex));
+
+// Provider async (carga historial expandido del repositorio)
+final asyncDecision = ref.watch(expandedProgressionProvider(exerciseName));
+
+// Todas las decisiones de la sesión actual
+final allDecisions = ref.watch(allProgressionDecisionsProvider);
+
+// Resumen de progresión de la sesión
+final summary = ref.watch(sessionProgressionSummaryProvider);
+```
 
 ### Cómo Usar el Nuevo Sistema
 

@@ -31,21 +31,12 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
 
     // Read persisted bar weight from settings after first frame and recalculate
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final defaultBar = ref.read(settingsProvider).barWeight;
       setState(() {
         _barWeight = defaultBar;
       });
       _calculatePlates(double.tryParse(_weightController.text) ?? widget.currentWeight);
-    });
-
-    // Listen for runtime changes in the settings so the dialog updates live
-    ref.listen<UserSettings>(settingsProvider, (previous, next) {
-      if (previous?.barWeight != next.barWeight) {
-        setState(() {
-          _barWeight = next.barWeight;
-          _updateWeight(_weightController.text);
-        });
-      }
     });
 
     // Initial calculation based on passed weight
@@ -103,6 +94,16 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for runtime changes in the settings so the dialog updates live
+    ref.listen<UserSettings>(settingsProvider, (previous, next) {
+      if (previous?.barWeight != next.barWeight) {
+        setState(() {
+          _barWeight = next.barWeight;
+          _updateWeight(_weightController.text);
+        });
+      }
+    });
+
     return Dialog(
       backgroundColor: Colors.grey[900],
       shape: RoundedRectangleBorder(

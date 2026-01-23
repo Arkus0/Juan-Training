@@ -68,6 +68,13 @@ class MockTrainingRepository implements ITrainingRepository {
   }
 
   @override
+  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName, {int limit = 4}) async {
+    // Same as getHistoryForExercise but with limit
+    final all = await getHistoryForExercise(exerciseName);
+    return all.take(limit).toList();
+  }
+
+  @override
   Future<void> saveActiveSession(ActiveSessionData data) async {}
 
   @override

@@ -497,6 +497,56 @@ class DriftTrainingRepository implements ITrainingRepository {
   }
 
   @override
+  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName, {int limit = 4}) async {
+    // Similar to getHistoryForExercise but returns more complete session data
+    // for the progression engine v2 to calculate consecutive successes/failures
+    
+    // 1. Get most recent sessions containing this exercise
+    final distinctSessions = await (db.select(db.sessions, distinct: true).join([
+      innerJoin(db.sessionExercises,
+          db.sessionExercises.sessionId.equalsExp(db.sessions.id))
+    ])
+      ..where(db.sessionExercises.name.equals(exerciseName) &
+          db.sessionExercises.isTarget.equals(false) &
+          db.sessions.completedAt.isNotNull()) // Only completed sessions
+      ..orderBy([OrderingTerm.desc(db.sessions.startTime)])
+      ..limit(limit))
+        .map((r) => r.readTable(db.sessions))
+        .get();
+
+    if (distinctSessions.isEmpty) return [];
+
+    final sessionIds = distinctSessions.map((s) => s.id).toList();
+
+    // 2. Fetch exercises for these sessions
+    final relevantExercises = await (db.select(db.sessionExercises)
+      ..where((e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName)))
+      .get();
+
+    final relevantExerciseIds = relevantExercises.map((e) => e.id).toList();
+
+    // 3. Fetch sets
+    final relevantSets = await (db.select(db.workoutSets)
+      ..where((s) => s.sessionExerciseId.isIn(relevantExerciseIds)))
+      .get();
+
+    // 4. Map to Sesion objects
+    final result = distinctSessions.map((s) {
+      final sExercises = relevantExercises.where((e) => e.sessionId == s.id).toList();
+      final sSets = relevantSets
+          .where((st) => sExercises.any((e) => e.id == st.sessionExerciseId))
+          .toList();
+
+      return _mapSesion(s, sExercises, sSets);
+    }).toList();
+
+    // Ensure order (most recent first)
+    result.sort((a, b) => b.fecha.compareTo(a.fecha));
+
+    return result;
+  }
+
+  @override
   Future<void> saveActiveSession(ActiveSessionData data) async {
     final session = Sesion(
       id: 'active_session', // Placeholder, ignored below

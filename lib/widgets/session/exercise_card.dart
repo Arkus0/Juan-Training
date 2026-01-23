@@ -5,15 +5,18 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/ejercicio.dart';
 import '../../models/serie_log.dart';
 import '../../models/library_exercise.dart';
+import '../../models/progression_engine_models.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/focus_manager_provider.dart';
+import '../../providers/progression_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import 'session_set_row.dart';
 import 'advanced_options_modal.dart';
+import 'progression_preview.dart';
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -244,6 +247,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     // Settings
     final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
 
+    // Progression v2: Obtener decisión de progresión para este ejercicio
+    final progressionDecision = ref.watch(exerciseProgressionProvider(widget.exerciseIndex));
+
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
     // Usa el provider legacy y el nuevo FocusManager
     final focusTarget = ref.watch(timerFinishedFocusProvider);
@@ -263,6 +269,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       historyLogs: historyLogs,
       showAdvanced: showAdvanced,
       showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
+      progressionDecision: progressionDecision,
       focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
@@ -297,6 +304,7 @@ class ExerciseCard extends StatelessWidget {
   final List<SerieLog>? historyLogs;
   final bool showAdvanced;
   final bool showSupersetBadge;
+  final ProgressionDecision? progressionDecision; // Decisión de progresión v2
   final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
@@ -313,6 +321,7 @@ class ExerciseCard extends StatelessWidget {
     required this.historyLogs,
     required this.showAdvanced,
     this.showSupersetBadge = false,
+    this.progressionDecision,
     this.focusSetIndex,
     required this.onShowOptions,
     required this.onUpdateWeight,
@@ -382,6 +391,11 @@ class ExerciseCard extends StatelessWidget {
                                'LAST: ${historyLogs!.last.peso}KG x ${historyLogs!.last.reps}',
                                style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.bold),
                              ),
+                           // Badge de progresión v2 (compacto)
+                           if (progressionDecision != null) ...[
+                             const SizedBox(width: 8),
+                             ProgressionBadge(decision: progressionDecision!),
+                           ],
                            const Spacer(),
                            // Selector de tiempo de descanso inline
                            _RestTimeChip(
@@ -410,6 +424,15 @@ class ExerciseCard extends StatelessWidget {
                  )
                ],
              ),
+
+            // Card de progresión v2 (si hay sugerencia)
+            if (progressionDecision != null) ...[
+              const SizedBox(height: 12),
+              ProgressionPreviewCard(
+                decision: progressionDecision!,
+                compact: true,
+              ),
+            ],
 
             const SizedBox(height: 12),
 
