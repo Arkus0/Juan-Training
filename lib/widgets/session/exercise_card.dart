@@ -18,7 +18,7 @@ import '../../utils/design_system.dart';
 import 'session_set_row.dart';
 import 'focused_set_row.dart';
 import 'advanced_options_modal.dart';
-import 'progression_preview.dart';
+import 'progression_preview.dart'; // ConsequenceMessage, EmpatheticBanner, etc.
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -252,6 +252,9 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     // Progression v2: Obtener decisión de progresión para este ejercicio
     final progressionDecision = ref.watch(exerciseProgressionProvider(widget.exerciseIndex));
+    
+    // Empathetic feedback: mensajes de apoyo para días difíciles
+    final empatheticBannerMessage = ref.watch(exerciseEmpatheticBannerProvider(widget.exerciseIndex));
 
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
     // Usa el provider legacy y el nuevo FocusManager
@@ -273,6 +276,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       showAdvanced: showAdvanced,
       showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
       progressionDecision: progressionDecision,
+      empatheticBannerMessage: empatheticBannerMessage,
       focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
       useFocusedInputMode: useFocusedInputMode,
       onShowOptions: () => _showExerciseOptions(context, exercise),
@@ -311,6 +315,7 @@ class ExerciseCard extends StatelessWidget {
   final bool showAdvanced;
   final bool showSupersetBadge;
   final ProgressionDecision? progressionDecision; // Decisión de progresión v2
+  final String? empatheticBannerMessage; // Mensaje empático para días difíciles
   final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
   final bool useFocusedInputMode; // Usar el nuevo modo de entrada con modal
   final VoidCallback onShowOptions;
@@ -331,6 +336,7 @@ class ExerciseCard extends StatelessWidget {
     required this.showAdvanced,
     this.showSupersetBadge = false,
     this.progressionDecision,
+    this.empatheticBannerMessage,
     this.focusSetIndex,
     this.useFocusedInputMode = true,
     required this.onShowOptions,
@@ -432,6 +438,12 @@ class ExerciseCard extends StatelessWidget {
                  )
                ],
              ),
+
+            // Banner empático para días difíciles (si aplica)
+            if (empatheticBannerMessage != null) ...[
+              const SizedBox(height: 10),
+              EmpatheticBanner(message: empatheticBannerMessage!),
+            ],
 
             // Card de progresión v2 (si hay sugerencia)
             if (progressionDecision != null) ...[

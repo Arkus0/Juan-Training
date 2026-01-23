@@ -738,3 +738,350 @@ class IncrementInfoBadge extends StatelessWidget {
     return weight.toStringAsFixed(2).replaceAll(RegExp(r'\.?0+$'), '');
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// EMPATHETIC FEEDBACK - MENSAJES DE DÍAS DIFÍCILES
+// ════════════════════════════════════════════════════════════════════════════
+// 
+// Filosofía UX (ERROR_TOLERANCE_DESIGN.md + PROGRESSION_USER_EXPERIENCE.md):
+// - Nunca rojo para feedback negativo
+// - Normalizar días difíciles
+// - "No pasa nada" como filosofía base
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Tipos de situación que requieren feedback empático
+enum DifficultDayType {
+  /// Las reps fueron menores al objetivo
+  underperformed,
+  /// El usuario falló la serie
+  failedSet,
+  /// El usuario saltó una sesión
+  missedSession,
+  /// El usuario lleva varias sesiones sin progreso
+  plateau,
+  /// El sistema sugiere un deload
+  deloadRecommended,
+}
+
+/// Widget de feedback empático para días difíciles
+/// 
+/// NUNCA usa rojo - solo colores neutros
+/// Mensajes de apoyo, no de juicio
+class EmpatheticFeedback extends StatelessWidget {
+  final DifficultDayType type;
+  final String? customMessage;
+  final VoidCallback? onDismiss;
+  
+  const EmpatheticFeedback({
+    super.key,
+    required this.type,
+    this.customMessage,
+    this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final message = customMessage ?? _getDefaultMessage();
+    final subtext = _getSubtext();
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        // Gris cálido, nunca rojo
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[700]!,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              // Icono de apoyo, nunca de error
+              Icon(
+                _getIcon(),
+                size: 18,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              if (onDismiss != null)
+                IconButton(
+                  icon: Icon(Icons.close, size: 16, color: Colors.grey[600]),
+                  onPressed: onDismiss,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+            ],
+          ),
+          if (subtext != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtext,
+              style: GoogleFonts.montserrat(
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  String _getDefaultMessage() {
+    switch (type) {
+      case DifficultDayType.underperformed:
+        return 'No pasa nada';
+      case DifficultDayType.failedSet:
+        return 'Ocurre, forma parte del proceso';
+      case DifficultDayType.missedSession:
+        return 'Retomamos donde lo dejaste';
+      case DifficultDayType.plateau:
+        return 'Estás consolidando';
+      case DifficultDayType.deloadRecommended:
+        return 'Tu cuerpo pide recuperarse';
+    }
+  }
+  
+  String? _getSubtext() {
+    switch (type) {
+      case DifficultDayType.underperformed:
+        return 'Completa lo que puedas. La consistencia importa más.';
+      case DifficultDayType.failedSet:
+        return 'El próximo set puede ser diferente.';
+      case DifficultDayType.missedSession:
+        return 'El sistema recuerda tu progreso.';
+      case DifficultDayType.plateau:
+        return 'El cuerpo adapta antes de avanzar.';
+      case DifficultDayType.deloadRecommended:
+        return 'Descansar también es entrenar.';
+    }
+  }
+  
+  IconData _getIcon() {
+    switch (type) {
+      case DifficultDayType.underperformed:
+        return Icons.sentiment_neutral_rounded;
+      case DifficultDayType.failedSet:
+        return Icons.refresh_rounded;
+      case DifficultDayType.missedSession:
+        return Icons.replay_rounded;
+      case DifficultDayType.plateau:
+        return Icons.trending_flat_rounded;
+      case DifficultDayType.deloadRecommended:
+        return Icons.battery_charging_full_rounded;
+    }
+  }
+}
+
+/// Banner compacto para mostrar arriba del ejercicio cuando hay feedback
+class EmpatheticBanner extends StatelessWidget {
+  final String message;
+  final VoidCallback? onTap;
+  
+  const EmpatheticBanner({
+    super.key,
+    required this.message,
+    this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.grey[850]!.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lightbulb_outline_rounded,
+              size: 14,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              message,
+              style: GoogleFonts.montserrat(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[300],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget para mostrar resumen post-ejercicio
+/// 
+/// Muestra de forma positiva lo logrado, incluso si no se alcanzó el objetivo
+class ExerciseSummaryFeedback extends StatelessWidget {
+  final int completedSets;
+  final int targetSets;
+  final int totalReps;
+  final bool metTarget;
+  final String? nextSessionHint;
+  
+  const ExerciseSummaryFeedback({
+    super.key,
+    required this.completedSets,
+    required this.targetSets,
+    required this.totalReps,
+    required this.metTarget,
+    this.nextSessionHint,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: metTarget 
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.grey[850],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: metTarget
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.grey[700]!,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icono y mensaje principal
+          Row(
+            children: [
+              Icon(
+                metTarget ? Icons.check_circle_rounded : Icons.sports_score_rounded,
+                size: 20,
+                color: metTarget ? Colors.green[400] : Colors.grey[400],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                metTarget ? '¡Objetivo cumplido!' : 'Ejercicio completado',
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Stats compactos
+          Row(
+            children: [
+              _StatChip(
+                label: 'Sets',
+                value: '$completedSets/$targetSets',
+                highlighted: completedSets >= targetSets,
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                label: 'Total reps',
+                value: '$totalReps',
+                highlighted: false,
+              ),
+            ],
+          ),
+          
+          // Hint para próxima sesión
+          if (nextSessionHint != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    nextSessionHint!,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool highlighted;
+  
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.highlighted,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: highlighted 
+            ? Colors.green.withValues(alpha: 0.15)
+            : Colors.grey[800],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.montserrat(
+              fontSize: 9,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: highlighted ? Colors.green[400] : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

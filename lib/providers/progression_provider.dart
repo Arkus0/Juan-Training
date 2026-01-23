@@ -5,6 +5,7 @@ import '../models/serie_log.dart';
 import '../models/ejercicio.dart';
 import '../models/sesion.dart';
 import '../services/progression_engine.dart';
+import '../widgets/session/progression_preview.dart';
 import 'training_provider.dart';
 
 /// Provider que calcula las decisiones de progresión para cada ejercicio
@@ -357,3 +358,106 @@ double _calculateConfirmedWeight(List<SerieLog> logs) {
   
   return confirmedWeight;
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// EMPATHETIC FEEDBACK PROVIDERS
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Resultado de análisis empático para un ejercicio
+class EmpatheticFeedbackResult {
+  final DifficultDayType? type;
+  final String? customMessage;
+  final bool shouldShow;
+  
+  const EmpatheticFeedbackResult({
+    this.type,
+    this.customMessage,
+    required this.shouldShow,
+  });
+  
+  static const hide = EmpatheticFeedbackResult(shouldShow: false);
+}
+
+/// Provider que determina si mostrar feedback empático para un ejercicio
+/// 
+/// Detecta:
+/// - Deload/disminución de peso → mostrar mensaje de apoyo
+/// - Series fallidas consecutivas en la sesión actual
+/// - Plateau prolongado
+final exerciseEmpatheticFeedbackProvider = Provider.family<EmpatheticFeedbackResult, int>(
+  (ref, exerciseIndex) {
+    final state = ref.watch(trainingSessionProvider);
+    
+    if (exerciseIndex >= state.exercises.length) {
+      return EmpatheticFeedbackResult.hide;
+    }
+    
+    final exercise = state.exercises[exerciseIndex];
+    final decision = ref.watch(exerciseProgressionProvider(exerciseIndex));
+    
+    // 1. Si la decisión es deload, mostrar feedback empático
+    if (decision != null) {
+      if (decision.action == ProgressionAction.decreaseWeight ||
+          decision.action == ProgressionAction.decreaseReps) {
+        return EmpatheticFeedbackResult(
+          type: DifficultDayType.deloadRecommended,
+          shouldShow: true,
+        );
+      }
+    }
+    
+    // 2. Si hay series fallidas en la sesión actual
+    final failedSets = exercise.logs.where(
+      (log) => log.completed && log.reps < 6, // Asumiendo que <6 reps es "fallo"
+    ).length;
+    
+    if (failedSets >= 2) {
+      return EmpatheticFeedbackResult(
+        type: DifficultDayType.underperformed,
+        customMessage: 'Hoy está siendo difícil',
+        shouldShow: true,
+      );
+    }
+    
+    // 3. Si hay una serie fallida específica
+    final lastCompletedSet = exercise.logs.lastWhere(
+      (log) => log.completed,
+      orElse: () => SerieLog(peso: 0, reps: 0),
+    );
+    
+    if (lastCompletedSet.completed && lastCompletedSet.reps == 0) {
+      // No hay series completadas aún, no mostrar
+      return EmpatheticFeedbackResult.hide;
+    }
+    
+    // 4. Plateau: si el maintain tiene razón de "sin progreso"
+    if (decision?.action == ProgressionAction.maintain &&
+        (decision?.reason.contains('plateau') == true ||
+         decision?.reason.contains('estancado') == true)) {
+      return EmpatheticFeedbackResult(
+        type: DifficultDayType.plateau,
+        shouldShow: true,
+      );
+    }
+    
+    return EmpatheticFeedbackResult.hide;
+  },
+);
+
+/// Provider para el mensaje del banner empático de un ejercicio
+final exerciseEmpatheticBannerProvider = Provider.family<String?, int>(
+  (ref, exerciseIndex) {
+    final feedback = ref.watch(exerciseEmpatheticFeedbackProvider(exerciseIndex));
+    
+    if (!feedback.shouldShow) return null;
+    
+    return feedback.customMessage ?? switch (feedback.type) {
+      DifficultDayType.underperformed => 'No pasa nada',
+      DifficultDayType.failedSet => 'Forma parte del proceso',
+      DifficultDayType.missedSession => 'Retomamos donde lo dejaste',
+      DifficultDayType.plateau => 'Estás consolidando',
+      DifficultDayType.deloadRecommended => 'Tu cuerpo pide recuperarse',
+      null => null,
+    };
+  },
+);
