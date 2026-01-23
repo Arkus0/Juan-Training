@@ -16,6 +16,7 @@ import '../../services/exercise_library_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
 import '../../utils/design_system.dart';
 import 'session_set_row.dart';
+import 'focused_set_row.dart';
 import 'advanced_options_modal.dart';
 import 'progression_preview.dart';
 
@@ -247,6 +248,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     // Settings
     final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
+    final useFocusedInputMode = ref.watch(settingsProvider.select((s) => s.useFocusedInputMode));
 
     // Progression v2: Obtener decisión de progresión para este ejercicio
     final progressionDecision = ref.watch(exerciseProgressionProvider(widget.exerciseIndex));
@@ -272,6 +274,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
       progressionDecision: progressionDecision,
       focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
+      useFocusedInputMode: useFocusedInputMode,
       onShowOptions: () => _showExerciseOptions(context, exercise),
       onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
       onUpdateReps: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
@@ -290,6 +293,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onSetLongPress: (setIndex) => _showAdvancedOptions(context, setIndex),
       onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
+      onUpdateWeightDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+      onUpdateRepsDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
     );
   }
 
@@ -307,6 +312,7 @@ class ExerciseCard extends StatelessWidget {
   final bool showSupersetBadge;
   final ProgressionDecision? progressionDecision; // Decisión de progresión v2
   final int? focusSetIndex; // Set que debe recibir focus (auto-focus del timer)
+  final bool useFocusedInputMode; // Usar el nuevo modo de entrada con modal
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
   final Function(int, String) onUpdateReps;
@@ -314,6 +320,8 @@ class ExerciseCard extends StatelessWidget {
   final Function(int, double) onPlateCalc;
   final Function(int) onSetLongPress;
   final Function(int)? onRestTimeChange;
+  final Function(int, double)? onUpdateWeightDirect; // Para FocusedSetRow
+  final Function(int, int)? onUpdateRepsDirect; // Para FocusedSetRow
 
   const ExerciseCard({
     super.key,
@@ -324,6 +332,7 @@ class ExerciseCard extends StatelessWidget {
     this.showSupersetBadge = false,
     this.progressionDecision,
     this.focusSetIndex,
+    this.useFocusedInputMode = true,
     required this.onShowOptions,
     required this.onUpdateWeight,
     required this.onUpdateReps,
@@ -331,6 +340,8 @@ class ExerciseCard extends StatelessWidget {
     required this.onPlateCalc,
     required this.onSetLongPress,
     this.onRestTimeChange,
+    this.onUpdateWeightDirect,
+    this.onUpdateRepsDirect,
   });
 
   @override
@@ -433,21 +444,48 @@ class ExerciseCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Header Row
-            const Row(
-              children: [
-                SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
-                SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
-                Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
-                Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
-                SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
-              ],
-            ),
-            const SizedBox(height: 8),
+            // Header Row - solo mostrar si NO es modo focalizado
+            if (!useFocusedInputMode)
+              const Row(
+                children: [
+                  SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: Colors.grey)))),
+                  SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: Colors.grey, fontSize: 10)))),
+                  Expanded(child: Center(child: Text('KG', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
+                  Expanded(child: Center(child: Text('REPS', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)))),
+                  SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: Colors.grey))),
+                ],
+              ),
+            if (!useFocusedInputMode)
+              const SizedBox(height: 8),
 
+            // 🎯 REDISEÑO: Usar FocusedSetRow en modo focalizado
             ...List.generate(exercise.logs.length, (setIndex) {
               final log = exercise.logs[setIndex];
               final prevLog = (historyLogs != null && setIndex < historyLogs!.length) ? historyLogs![setIndex] : null;
+
+              // Determinar si esta serie es la activa (primera incompleta)
+              final isFirstIncomplete = exercise.logs
+                  .take(setIndex)
+                  .every((l) => l.completed);
+              final isActive = !log.completed && isFirstIncomplete;
+              final isFuture = !log.completed && !isActive;
+
+              if (useFocusedInputMode) {
+                return FocusedSetRow(
+                  key: ValueKey('ex${exerciseIndex}_focused_set$setIndex'),
+                  index: setIndex,
+                  log: log,
+                  prevLog: prevLog,
+                  isActive: isActive,
+                  isFuture: isFuture,
+                  exerciseName: exercise.nombre,
+                  totalSets: exercise.logs.length,
+                  onWeightChanged: (val) => onUpdateWeightDirect?.call(setIndex, val),
+                  onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
+                  onCompleted: (val) => onUpdateCompleted(setIndex, val),
+                  onLongPress: () => onSetLongPress(setIndex),
+                );
+              }
 
               return SessionSetRow(
                 key: ValueKey('ex${exerciseIndex}_set$setIndex'),

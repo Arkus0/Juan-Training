@@ -956,5 +956,1153 @@ La implementación es gradual para no romper la app existente y permite medir el
 
 ---
 
+---
+
+# PARTE 8: REDISEÑO PANTALLA DE ENTRENAMIENTO — EJECUCIÓN ULTRA-RÁPIDA
+
+> **Objetivo:** Convertir la pantalla de entrenamiento en una interfaz de ejecución donde registrar una serie tome <2 segundos y el usuario solo piense en la serie actual.
+
+## 8.1 Diagnóstico del Estado Actual
+
+### Problemas Identificados en `training_session_screen.dart`:
+
+| Problema | Código Actual | Impacto UX |
+|----------|---------------|------------|
+| **Inputs inline** | `LogInput` embebido en cada fila | Teclado tapa contexto, targets pequeños |
+| **Falta de foco** | Todas las series tienen mismo peso visual | Usuario no sabe cuál es "la importante" |
+| **Ruido de información** | PREV, SUG, tags, badges visibles siempre | Clutter cognitivo, sobrecarga |
+| **Demasiados colores** | Rojo, verde, azul, naranja, púrpura activos | Señales contradictorias |
+| **Scroll manual** | Auto-scroll solo tras timer | Usuario busca la serie activa |
+
+### Flujo Actual (Fricción Alta):
+
+```
+1. Usuario busca visualmente la serie no completada
+2. Toca input pequeño de KG (48dp pero con otros elementos cerca)
+3. Teclado aparece tapando la mitad de la pantalla
+4. Pierde contexto visual de qué serie está editando
+5. Escribe KG, toca siguiente input (REPS)
+6. Escribe REPS
+7. Cierra teclado manualmente
+8. Busca y toca checkbox de completar
+9. ~6-8 toques por serie
+```
+
+---
+
+## 8.2 Nuevo Modelo Mental: "Una Decisión, Un Momento"
+
+### Principio Central:
+> La pantalla de entrenamiento no es para "ver datos". Es para "ejecutar acciones".
+> En cada instante, el usuario debe saber exactamente qué hacer sin pensar.
+
+### Nuevo Flujo (Objetivo: <2 segundos por serie):
+
+```
+1. Serie activa DESTACA automáticamente (verde, grande, centrada)
+2. Usuario toca zona KG o REPS (target grande, 72dp+)
+3. Modal FULLSCREEN aparece con:
+   - Numpad gigante (botones 56dp+)
+   - "Serie 2 de 4 — Press Banca" visible arriba
+   - Valor anterior como referencia sutil
+   - Botón OK enorme (80dp altura)
+4. Usuario escribe valor, toca OK
+5. Modal cierra, valor aplicado
+6. Si KG y REPS tienen valor → Auto-completar serie
+7. Timer inicia automáticamente
+8. ~2-3 toques por serie
+```
+
+---
+
+## 8.3 Estados de la Pantalla
+
+### ESTADO 1: IDLE (Sin serie activa seleccionada)
+
+```
+┌─────────────────────────────────────┐
+│ ▲ PRESS BANCA                       │
+│ ┌─────────────────────────────────┐ │
+│ │ ●1  ██████ KG  ██████ REPS  ✓  │ │  ← Completada (verde tenue, desaturada)
+│ │ ●2  ██████ KG  ██████ REPS  ✓  │ │  ← Completada
+│ │ ●3  [    ] KG  [    ] REPS  ○  │ │  ← ACTIVA (verde borde, 1.5x tamaño)
+│ │ ○4  ┄┄┄┄┄┄ KG  ┄┄┄┄┄┄ REPS  ○  │ │  ← Futura (gris tenue, colapsada)
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+
+Reglas:
+- Serie activa = primera incompleta
+- Auto-scroll la centra en viewport
+- Series pasadas: opacidad 60%, verde sutil
+- Series futuras: opacidad 40%, sin bordes
+```
+
+### ESTADO 2: EDITANDO (Modal de entrada)
+
+```
+┌─────────────────────────────────────┐
+│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  ← Overlay oscuro 80%
+│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ ┌─────────────────────────────────┐ │
+│ │   PRESS BANCA — SERIE 3/4      │ │  ← Contexto claro
+│ │   Anterior: 80kg               │ │  ← Referencia sutil
+│ │                                 │ │
+│ │         [ 82.5 ] KG            │ │  ← Valor actual GRANDE
+│ │                                 │ │
+│ │   ┌─────┬─────┬─────┐          │ │
+│ │   │  1  │  2  │  3  │          │ │  ← Numpad (56dp buttons)
+│ │   ├─────┼─────┼─────┤          │ │
+│ │   │  4  │  5  │  6  │          │ │
+│ │   ├─────┼─────┼─────┤          │ │
+│ │   │  7  │  8  │  9  │          │ │
+│ │   ├─────┼─────┼─────┤          │ │
+│ │   │ ←   │  0  │  .  │          │ │
+│ │   └─────┴─────┴─────┘          │ │
+│ │                                 │ │
+│ │   ┌─────────────────────────┐  │ │
+│ │   │         OK ✓            │  │ │  ← 80dp altura, verde
+│ │   └─────────────────────────┘  │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+
+Reglas:
+- Modal cubre 85% de pantalla
+- NO se ve la lista detrás (evita distracción)
+- Tap fuera del modal = cancelar (no guardar)
+- OK cierra y aplica valor
+- Si es último campo vacío → auto-completar serie
+```
+
+### ESTADO 3: SERIE COMPLETADA (Transición)
+
+```
+┌─────────────────────────────────────┐
+│ │ ●3  80 KG  10 REPS  ✓ ████████ │ │  ← Flash verde 300ms
+│ └─────────────────────────────────┘ │
+│                                     │
+│    → Auto-scroll a serie 4          │
+│    → Timer inicia                   │
+│                                     │
+└─────────────────────────────────────┘
+
+Feedback:
+- Haptic: mediumImpact()
+- Visual: flash verde en la fila (300ms)
+- Audio: (opcional) click suave
+- Timer aparece en bottom bar
+```
+
+### ESTADO 4: DESCANSO ACTIVO
+
+```
+┌─────────────────────────────────────┐
+│ ▼ Timer Bar (siempre visible)       │
+│ ┌─────────────────────────────────┐ │
+│ │ ⏱ 1:32 / 2:00   [+30s] [Skip]  │ │  ← Naranja pulsante
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+
+Reglas:
+- Naranja para timer activo (no rojo = no es error)
+- Botones grandes para +30s y Skip
+- Al terminar: vibración + auto-focus a siguiente serie
+```
+
+---
+
+## 8.4 Jerarquía Visual por Estado
+
+### Matriz de Prominencia:
+
+| Elemento | Serie Pasada | Serie Activa | Serie Futura | Editando |
+|----------|--------------|--------------|--------------|----------|
+| Número serie | 40% opacidad | 100% + verde | 30% opacidad | N/A |
+| Input KG | 60% opacidad | 100% + borde | 30% opacidad | 100% HERO |
+| Input REPS | 60% opacidad | 100% + borde | 30% opacidad | 100% HERO |
+| Checkbox | Verde check | Borde verde | Gris tenue | N/A |
+| PREV/SUG | Oculto | Oculto* | Oculto | Visible sutil |
+| Tags (RPE) | Visible pequeño | Oculto | Oculto | N/A |
+
+*PREV/SUG visible solo en modal de edición como referencia.
+
+### Regla de "3 Niveles de Atención":
+
+```
+NIVEL 1 (100% atención): Serie activa + botón OK en modal
+NIVEL 2 (30% atención): Nombre ejercicio + timer
+NIVEL 3 (10% atención): Todo lo demás (series pasadas/futuras, metadata)
+```
+
+---
+
+## 8.5 Sistema de Colores Simplificado
+
+### Paleta Reducida para Sesión de Entrenamiento:
+
+```dart
+// SOLO estos colores en la pantalla de entrenamiento:
+
+class TrainingColors {
+  // FOCO: Verde para la serie activa y completadas
+  static const activeSet = Color(0xFF4CAF50);      // Borde serie activa
+  static const activeBg = Color(0xFF1B3D1B);       // Fondo serie activa (sutil)
+  static const completed = Color(0xFF2E7D32);      // Series completadas
+  static const completedBg = Color(0xFF1A2E1A);    // Fondo completadas
+  
+  // TIMER: Naranja para descanso (urgencia sin alarma)
+  static const timerActive = Color(0xFFFF9800);    // Timer corriendo
+  static const timerBg = Color(0xFF3D2E1A);        // Fondo timer
+  
+  // NEUTROS: Grises para todo lo demás
+  static const textPrimary = Color(0xFFFAFAFA);    // Valores KG/REPS
+  static const textSecondary = Color(0xFF757575);  // Labels, PREV
+  static const textDisabled = Color(0xFF424242);   // Series futuras
+  static const bgCard = Color(0xFF1C1C1F);         // Card ejercicio
+  static const bgInput = Color(0xFF252528);        // Fondo inputs
+  
+  // ACCIÓN: Verde para OK (no rojo = no es peligroso)
+  static const confirmButton = Color(0xFF4CAF50);  // Botón OK en modal
+}
+
+// ❌ NO USAR en pantalla de entrenamiento:
+// - Rojo (solo para errores reales o cancelar sesión)
+// - Azul (solo para warmup si existe)
+// - Púrpura (eliminar dropset visual diferente)
+```
+
+### Semántica Clara:
+
+| Color | Significado | Uso |
+|-------|-------------|-----|
+| **Verde** | "Hecho" / "Activo" / "OK" | Serie activa, completadas, botón confirmar |
+| **Naranja** | "En espera" / "Timer" | Descanso activo |
+| **Gris claro** | "Información" | Textos, valores |
+| **Gris oscuro** | "No relevante ahora" | Series futuras, metadata |
+
+---
+
+## 8.6 Especificaciones de Espaciado e Interacción
+
+### Touch Targets Mínimos:
+
+```dart
+// Contexto: Gimnasio, manos sudadas, fatiga, prisas
+
+class TrainingTouchTargets {
+  // CRÍTICOS (usados cada serie)
+  static const inputTouchArea = 72.0;     // Zona táctil KG/REPS
+  static const confirmButton = 80.0;      // Altura botón OK
+  static const numpadButton = 56.0;       // Botones del numpad
+  static const checkboxArea = 56.0;       // Zona táctil checkbox
+  
+  // SECUNDARIOS (menos frecuentes)
+  static const timerButton = 48.0;        // +30s, Skip
+  static const exerciseHeader = 48.0;     // Nombre ejercicio (tap para opciones)
+}
+```
+
+### Espaciado de Fila de Serie:
+
+```dart
+// Padding y márgenes para fila de serie
+
+class SetRowSpacing {
+  static const rowPadding = EdgeInsets.symmetric(
+    vertical: 12.0,   // Separación entre filas
+    horizontal: 16.0, // Margen lateral
+  );
+  
+  static const activeRowPadding = EdgeInsets.symmetric(
+    vertical: 16.0,   // 33% más grande cuando activa
+    horizontal: 16.0,
+  );
+  
+  static const inputSpacing = 12.0;  // Entre KG y REPS
+  static const numberWidth = 32.0;   // Ancho del número de serie
+}
+```
+
+### Modal de Entrada Numpad:
+
+```dart
+class NumpadModalSpecs {
+  static const modalHeight = 0.85;        // 85% de altura pantalla
+  static const headerHeight = 80.0;       // Contexto (ejercicio, serie)
+  static const valueDisplayHeight = 72.0; // Valor actual grande
+  static const numpadButtonSize = 56.0;   // Cada botón
+  static const numpadSpacing = 8.0;       // Entre botones
+  static const confirmButtonHeight = 80.0;// Botón OK
+  static const confirmButtonMargin = 24.0;// Margen del OK
+}
+```
+
+---
+
+## 8.7 Propuesta de Implementación Flutter
+
+### 8.7.1 Nuevo Widget: `NumpadInputModal`
+
+```dart
+/// Modal fullscreen para entrada de valores KG/REPS
+/// Diseñado para uso en gimnasio: botones grandes, contexto claro
+
+class NumpadInputModal extends StatefulWidget {
+  final String exerciseName;
+  final int setNumber;
+  final int totalSets;
+  final String fieldLabel; // "KG" o "REPS"
+  final double? previousValue;
+  final double? currentValue;
+  final bool isInteger;
+  final ValueChanged<double> onConfirm;
+
+  const NumpadInputModal({
+    super.key,
+    required this.exerciseName,
+    required this.setNumber,
+    required this.totalSets,
+    required this.fieldLabel,
+    this.previousValue,
+    this.currentValue,
+    required this.isInteger,
+    required this.onConfirm,
+  });
+
+  static Future<double?> show({
+    required BuildContext context,
+    required String exerciseName,
+    required int setNumber,
+    required int totalSets,
+    required String fieldLabel,
+    double? previousValue,
+    double? currentValue,
+    bool isInteger = false,
+  }) {
+    return showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: false,
+      builder: (ctx) => NumpadInputModal(
+        exerciseName: exerciseName,
+        setNumber: setNumber,
+        totalSets: totalSets,
+        fieldLabel: fieldLabel,
+        previousValue: previousValue,
+        currentValue: currentValue,
+        isInteger: isInteger,
+        onConfirm: (val) => Navigator.of(ctx).pop(val),
+      ),
+    );
+  }
+
+  @override
+  State<NumpadInputModal> createState() => _NumpadInputModalState();
+}
+
+class _NumpadInputModalState extends State<NumpadInputModal> {
+  late String _displayValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayValue = widget.currentValue?.toString() ?? '';
+  }
+
+  void _onDigit(String digit) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      // Limitar longitud y validar formato
+      if (_displayValue.length < 6) {
+        if (digit == '.' && _displayValue.contains('.')) return;
+        if (widget.isInteger && digit == '.') return;
+        _displayValue += digit;
+      }
+    });
+  }
+
+  void _onBackspace() {
+    HapticFeedback.selectionClick();
+    if (_displayValue.isNotEmpty) {
+      setState(() {
+        _displayValue = _displayValue.substring(0, _displayValue.length - 1);
+      });
+    }
+  }
+
+  void _onConfirm() {
+    HapticFeedback.mediumImpact();
+    final value = double.tryParse(_displayValue);
+    if (value != null && value > 0) {
+      widget.onConfirm(value);
+    }
+  }
+
+  void _onUsePrevious() {
+    if (widget.previousValue != null) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _displayValue = widget.isInteger 
+            ? widget.previousValue!.toInt().toString()
+            : widget.previousValue.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return Container(
+      height: screenHeight * 0.85,
+      decoration: const BoxDecoration(
+        color: TrainingColors.bgCard,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[700],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header con contexto
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Text(
+                    widget.exerciseName.toUpperCase(),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: TrainingColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SERIE ${widget.setNumber} DE ${widget.totalSets}',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: TrainingColors.activeSet,
+                    ),
+                  ),
+                  if (widget.previousValue != null) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: _onUsePrevious,
+                      child: Text(
+                        'Anterior: ${widget.previousValue}${widget.fieldLabel}  ← Tocar para usar',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 12,
+                          color: TrainingColors.textSecondary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            
+            // Display del valor actual
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _displayValue.isEmpty ? '0' : _displayValue,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 56,
+                      fontWeight: FontWeight.w900,
+                      color: TrainingColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.fieldLabel,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: TrainingColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const Spacer(),
+            
+            // Numpad
+            _buildNumpad(),
+            
+            const Spacer(),
+            
+            // Botón confirmar
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 80,
+                child: ElevatedButton(
+                  onPressed: _displayValue.isNotEmpty ? _onConfirm : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TrainingColors.confirmButton,
+                    disabledBackgroundColor: Colors.grey[800],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check, size: 28),
+                      const SizedBox(width: 12),
+                      Text(
+                        'CONFIRMAR',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumpad() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 48),
+      child: Column(
+        children: [
+          _buildNumpadRow(['1', '2', '3']),
+          const SizedBox(height: 8),
+          _buildNumpadRow(['4', '5', '6']),
+          const SizedBox(height: 8),
+          _buildNumpadRow(['7', '8', '9']),
+          const SizedBox(height: 8),
+          _buildNumpadRow(['←', '0', '.']),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumpadRow(List<String> buttons) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: buttons.map((btn) {
+        final isBackspace = btn == '←';
+        final isDecimal = btn == '.';
+        final isDisabled = isDecimal && widget.isInteger;
+        
+        return SizedBox(
+          width: 72,
+          height: 56,
+          child: Material(
+            color: isDisabled 
+                ? Colors.grey[900] 
+                : TrainingColors.bgInput,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: isDisabled 
+                  ? null 
+                  : (isBackspace ? _onBackspace : () => _onDigit(btn)),
+              borderRadius: BorderRadius.circular(12),
+              child: Center(
+                child: isBackspace
+                    ? Icon(Icons.backspace_outlined, 
+                           color: TrainingColors.textPrimary, size: 24)
+                    : Text(
+                        btn,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: isDisabled 
+                              ? TrainingColors.textDisabled 
+                              : TrainingColors.textPrimary,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+```
+
+### 8.7.2 Nuevo Widget: `FocusedSetRow`
+
+```dart
+/// Fila de serie con estados visuales claros
+/// ACTIVA: Verde, grande, destacada
+/// PASADA: Desaturada, compacta
+/// FUTURA: Muy sutil, colapsada
+
+class FocusedSetRow extends StatelessWidget {
+  final int index;
+  final SerieLog log;
+  final SerieLog? prevLog;
+  final bool isActive;
+  final bool isFuture;
+  final VoidCallback onWeightTap;
+  final VoidCallback onRepsTap;
+  final ValueChanged<bool?> onCompleted;
+
+  const FocusedSetRow({
+    super.key,
+    required this.index,
+    required this.log,
+    this.prevLog,
+    required this.isActive,
+    required this.isFuture,
+    required this.onWeightTap,
+    required this.onRepsTap,
+    required this.onCompleted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Estados visuales
+    final isCompleted = log.completed;
+    
+    // Colores según estado
+    Color bgColor;
+    Color borderColor;
+    Color textColor;
+    double opacity;
+    EdgeInsets padding;
+    
+    if (isCompleted) {
+      bgColor = TrainingColors.completedBg;
+      borderColor = TrainingColors.completed.withOpacity(0.3);
+      textColor = TrainingColors.textSecondary;
+      opacity = 0.7;
+      padding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16);
+    } else if (isActive) {
+      bgColor = TrainingColors.activeBg;
+      borderColor = TrainingColors.activeSet;
+      textColor = TrainingColors.textPrimary;
+      opacity = 1.0;
+      padding = const EdgeInsets.symmetric(vertical: 16, horizontal: 16);
+    } else if (isFuture) {
+      bgColor = Colors.transparent;
+      borderColor = Colors.transparent;
+      textColor = TrainingColors.textDisabled;
+      opacity = 0.4;
+      padding = const EdgeInsets.symmetric(vertical: 6, horizontal: 16);
+    } else {
+      bgColor = Colors.transparent;
+      borderColor = Colors.transparent;
+      textColor = TrainingColors.textSecondary;
+      opacity = 0.6;
+      padding = const EdgeInsets.symmetric(vertical: 8, horizontal: 16);
+    }
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 200),
+      opacity: opacity,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: padding,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: borderColor,
+            width: isActive ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Número de serie
+            _SetNumber(
+              index: index,
+              isCompleted: isCompleted,
+              isActive: isActive,
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Input KG (táctil grande)
+            Expanded(
+              child: _TappableInput(
+                value: log.peso > 0 ? '${log.peso}' : '',
+                label: 'KG',
+                isActive: isActive,
+                isCompleted: isCompleted,
+                textColor: textColor,
+                onTap: isCompleted ? null : onWeightTap,
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Input REPS (táctil grande)
+            Expanded(
+              child: _TappableInput(
+                value: log.reps > 0 ? '${log.reps}' : '',
+                label: 'REPS',
+                isActive: isActive,
+                isCompleted: isCompleted,
+                textColor: textColor,
+                onTap: isCompleted ? null : onRepsTap,
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // Checkbox
+            _CompletionCheckbox(
+              isCompleted: isCompleted,
+              isActive: isActive,
+              onChanged: onCompleted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SetNumber extends StatelessWidget {
+  final int index;
+  final bool isCompleted;
+  final bool isActive;
+
+  const _SetNumber({
+    required this.index,
+    required this.isCompleted,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color bgColor;
+    Color textColor;
+    
+    if (isCompleted) {
+      bgColor = TrainingColors.completed;
+      textColor = Colors.white;
+    } else if (isActive) {
+      bgColor = TrainingColors.activeSet;
+      textColor = Colors.white;
+    } else {
+      bgColor = TrainingColors.bgInput;
+      textColor = TrainingColors.textDisabled;
+    }
+    
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: bgColor,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: isCompleted
+            ? const Icon(Icons.check, color: Colors.white, size: 18)
+            : Text(
+                '${index + 1}',
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _TappableInput extends StatelessWidget {
+  final String value;
+  final String label;
+  final bool isActive;
+  final bool isCompleted;
+  final Color textColor;
+  final VoidCallback? onTap;
+
+  const _TappableInput({
+    required this.value,
+    required this.label,
+    required this.isActive,
+    required this.isCompleted,
+    required this.textColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Touch target mínimo 72dp
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: isActive ? 56 : 44,
+        decoration: BoxDecoration(
+          color: isActive 
+              ? TrainingColors.bgInput 
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isActive
+              ? Border.all(color: TrainingColors.activeSet.withOpacity(0.5))
+              : null,
+        ),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                value.isEmpty ? '—' : value,
+                style: GoogleFonts.montserrat(
+                  fontSize: isActive ? 22 : 16,
+                  fontWeight: FontWeight.w800,
+                  color: value.isEmpty 
+                      ? TrainingColors.textDisabled 
+                      : textColor,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.montserrat(
+                  fontSize: isActive ? 12 : 10,
+                  fontWeight: FontWeight.w600,
+                  color: TrainingColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletionCheckbox extends StatelessWidget {
+  final bool isCompleted;
+  final bool isActive;
+  final ValueChanged<bool?> onChanged;
+
+  const _CompletionCheckbox({
+    required this.isCompleted,
+    required this.isActive,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onChanged(!isCompleted),
+          borderRadius: BorderRadius.circular(8),
+          child: Center(
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isCompleted 
+                    ? TrainingColors.completed 
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isCompleted
+                      ? TrainingColors.completed
+                      : isActive
+                          ? TrainingColors.activeSet
+                          : TrainingColors.textDisabled,
+                  width: 2,
+                ),
+              ),
+              child: isCompleted
+                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### 8.7.3 Refactor del `ExerciseCard`
+
+```dart
+/// Card de ejercicio simplificado
+/// - Header minimalista
+/// - Series con foco claro
+/// - Opciones avanzadas ocultas
+
+class SimplifiedExerciseCard extends StatelessWidget {
+  final Ejercicio exercise;
+  final List<SerieLog>? historyLogs;
+  final int activeSetIndex;
+  final Function(int, double) onWeightChanged;
+  final Function(int, int) onRepsChanged;
+  final Function(int, bool?) onCompleted;
+  final VoidCallback onHeaderTap;
+
+  const SimplifiedExerciseCard({
+    super.key,
+    required this.exercise,
+    this.historyLogs,
+    required this.activeSetIndex,
+    required this.onWeightChanged,
+    required this.onRepsChanged,
+    required this.onCompleted,
+    required this.onHeaderTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      color: TrainingColors.bgCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.border, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header simplificado
+            _SimpleHeader(
+              name: exercise.nombre,
+              onTap: onHeaderTap,
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Lista de series
+            ...List.generate(exercise.logs.length, (i) {
+              final log = exercise.logs[i];
+              final prevLog = (historyLogs != null && i < historyLogs!.length)
+                  ? historyLogs![i]
+                  : null;
+              
+              // Determinar si es la serie activa
+              final isFirstIncomplete = exercise.logs
+                  .take(i)
+                  .every((l) => l.completed);
+              final isActive = !log.completed && isFirstIncomplete;
+              final isFuture = !log.completed && !isActive;
+              
+              return FocusedSetRow(
+                key: ValueKey('${exercise.id}_set_$i'),
+                index: i,
+                log: log,
+                prevLog: prevLog,
+                isActive: isActive,
+                isFuture: isFuture,
+                onWeightTap: () => _openWeightInput(context, i, log, prevLog),
+                onRepsTap: () => _openRepsInput(context, i, log, prevLog),
+                onCompleted: (val) => onCompleted(i, val),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openWeightInput(
+    BuildContext context, 
+    int setIndex, 
+    SerieLog log, 
+    SerieLog? prevLog,
+  ) async {
+    final result = await NumpadInputModal.show(
+      context: context,
+      exerciseName: exercise.nombre,
+      setNumber: setIndex + 1,
+      totalSets: exercise.logs.length,
+      fieldLabel: 'KG',
+      previousValue: prevLog?.peso.toDouble(),
+      currentValue: log.peso > 0 ? log.peso.toDouble() : null,
+      isInteger: false,
+    );
+    
+    if (result != null) {
+      onWeightChanged(setIndex, result);
+    }
+  }
+
+  void _openRepsInput(
+    BuildContext context, 
+    int setIndex, 
+    SerieLog log, 
+    SerieLog? prevLog,
+  ) async {
+    final result = await NumpadInputModal.show(
+      context: context,
+      exerciseName: exercise.nombre,
+      setNumber: setIndex + 1,
+      totalSets: exercise.logs.length,
+      fieldLabel: 'REPS',
+      previousValue: prevLog?.reps.toDouble(),
+      currentValue: log.reps > 0 ? log.reps.toDouble() : null,
+      isInteger: true,
+    );
+    
+    if (result != null) {
+      onRepsChanged(setIndex, result.toInt());
+    }
+  }
+}
+
+class _SimpleHeader extends StatelessWidget {
+  final String name;
+  final VoidCallback onTap;
+
+  const _SimpleHeader({required this.name, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              name.toUpperCase(),
+              style: GoogleFonts.montserrat(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: TrainingColors.textPrimary,
+              ),
+            ),
+          ),
+          Icon(
+            Icons.more_horiz,
+            color: TrainingColors.textSecondary,
+            size: 24,
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+---
+
+## 8.8 Reglas de Auto-Completado
+
+### Lógica de Flujo Optimizado:
+
+```dart
+/// Al cerrar modal de entrada, verificar si auto-completar
+
+void _onInputConfirmed(int exerciseIndex, int setIndex) {
+  final log = exercises[exerciseIndex].logs[setIndex];
+  
+  // Si KG > 0 Y REPS > 0 → Auto-completar serie
+  if (log.peso > 0 && log.reps > 0 && !log.completed) {
+    // 1. Marcar como completada
+    updateLog(exerciseIndex, setIndex, completed: true);
+    
+    // 2. Haptic feedback
+    HapticFeedback.mediumImpact();
+    
+    // 3. Iniciar timer de descanso
+    startRestForExercise(exerciseIndex, setIndex: setIndex);
+    
+    // 4. Auto-scroll a siguiente serie
+    final nextSet = findNextIncompleteSet();
+    if (nextSet != null) {
+      scrollToExercise(nextSet.exerciseIndex);
+    }
+  }
+}
+```
+
+### Prioridad de Acciones:
+
+```
+1. Usuario confirma valor en modal
+2. Modal cierra
+3. SI ambos campos llenos → Auto-completar (sin pregunta)
+4. SI solo un campo → Focus al otro campo (modal se abre automáticamente)
+5. Timer inicia
+6. Scroll a siguiente serie
+```
+
+---
+
+## 8.9 Checklist de Validación
+
+Antes de dar por terminado el rediseño, verificar cada serie:
+
+```markdown
+□ ¿La serie activa es visualmente DOMINANTE (verde, grande)?
+□ ¿Las series pasadas están DESATURADAS (60% opacidad)?
+□ ¿Las series futuras están COLAPSADAS (40% opacidad, sin bordes)?
+□ ¿El touch target de KG/REPS es ≥72dp?
+□ ¿El modal cubre ≥85% de pantalla?
+□ ¿El numpad tiene botones ≥56dp?
+□ ¿El botón OK tiene ≥80dp de altura?
+□ ¿El PREV value es sutil (no compite con input)?
+□ ¿NO hay rojo en la pantalla excepto errores?
+□ ¿El auto-completado funciona sin toques extra?
+□ ¿El scroll automático centra la serie activa?
+□ ¿El timer es naranja (no rojo)?
+```
+
+---
+
+## 8.10 Métricas de Éxito
+
+### Antes del Rediseño:
+- Toques por serie: 6-8
+- Tiempo por serie: 5-10 segundos
+- Errores de input: ~15% (targets pequeños)
+- Fatiga visual: Alta (mucho rojo, sin foco)
+
+### Objetivo Después del Rediseño:
+- Toques por serie: 2-3
+- Tiempo por serie: <2 segundos
+- Errores de input: <5% (targets grandes)
+- Fatiga visual: Baja (verde suave, foco claro)
+
+### Cómo Medir:
+1. **Analytics de toques**: Contar eventos tap por serie completada
+2. **Tiempo entre series**: Timestamp de completado - timestamp de inicio edición
+3. **Errores**: Contar correcciones (backspace en modal)
+4. **Retención**: Sesiones completadas vs abandonadas
+
+---
+
+*Sección añadida: Enero 2026*
+*Enfoque: Ejecución ultra-rápida en contexto de gimnasio*
+
+---
+
 *Documento creado: Enero 2026*
 *Autor: UX/UI Analysis para Juan Training*

@@ -95,6 +95,34 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
+          // Sección Entrada de Datos
+          _SectionHeader(title: 'ENTRADA DE DATOS'),
+          const SizedBox(height: 8),
+
+          _SettingsTile(
+            icon: Icons.touch_app,
+            title: 'Modo entrada rápida',
+            subtitle: 'Modal numpad grande al tocar KG/REPS',
+            trailing: Switch(
+              value: settings.useFocusedInputMode,
+              onChanged: notifier.setUseFocusedInputMode,
+              activeColor: Colors.green[600],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Optimizado para gimnasio: botones grandes, contexto visible, auto-completado.',
+              style: GoogleFonts.montserrat(
+                color: Colors.grey[600],
+                fontSize: 11,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
           // Sección Superseries
           _SectionHeader(title: 'SUPERSERIES'),
           const SizedBox(height: 8),

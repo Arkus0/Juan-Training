@@ -14,6 +14,7 @@ class SettingsKeys {
   static const String reduceVibrations = 'reduce_vibrations';
   static const String barWeightKg = 'bar_weight_kg';
   static const String lockScreenTimerEnabled = 'lock_screen_timer_enabled';
+  static const String useFocusedInputMode = 'use_focused_input_mode';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -37,6 +38,9 @@ class UserSettings {
   /// Mostrar timer de descanso en pantalla de bloqueo
   final bool lockScreenTimerEnabled;
 
+  /// Modo de entrada focalizada: modal numpad en lugar de inputs inline
+  final bool useFocusedInputMode;
+
   const UserSettings({
     this.timerSoundEnabled = false, // Desactivado por defecto (gym = sin sonido)
     this.timerVibrationEnabled = true,
@@ -48,6 +52,7 @@ class UserSettings {
     this.reduceVibrations = false,
     this.barWeight = 20.0,
     this.lockScreenTimerEnabled = true, // Activado por defecto
+    this.useFocusedInputMode = true, // Activado por defecto - UX optimizada
   });
 
   UserSettings copyWith({
@@ -61,6 +66,7 @@ class UserSettings {
     bool? reduceVibrations,
     double? barWeight,
     bool? lockScreenTimerEnabled,
+    bool? useFocusedInputMode,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -73,6 +79,7 @@ class UserSettings {
       reduceVibrations: reduceVibrations ?? this.reduceVibrations,
       barWeight: barWeight ?? this.barWeight,
       lockScreenTimerEnabled: lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
+      useFocusedInputMode: useFocusedInputMode ?? this.useFocusedInputMode,
     );
   }
 }
@@ -106,6 +113,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
       reduceVibrations: reduceVibes,
       barWeight: prefs.getDouble(SettingsKeys.barWeightKg) ?? 20.0,
       lockScreenTimerEnabled: prefs.getBool(SettingsKeys.lockScreenTimerEnabled) ?? true,
+      useFocusedInputMode: prefs.getBool(SettingsKeys.useFocusedInputMode) ?? true,
     );
   }
 
@@ -193,6 +201,13 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.lockScreenTimerEnabled, value);
     state = state.copyWith(lockScreenTimerEnabled: value);
+  }
+
+  /// Activar/desactivar el modo de entrada focalizada (modal numpad)
+  Future<void> setUseFocusedInputMode(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.useFocusedInputMode, value);
+    state = state.copyWith(useFocusedInputMode: value);
   }
 }
 
