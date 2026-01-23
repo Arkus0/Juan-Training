@@ -241,7 +241,8 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with S
               color: isCritical ? AppColors.neonPrimary : Colors.white,
               shadows: [
                 Shadow(
-                  color: (isCritical ? Colors.red : AppColors.live)!.withValues(alpha: 0.8),
+                  // 🎯 NEON IRON: Usar colores del sistema
+                  color: (isCritical ? AppColors.neonPrimaryGlow : AppColors.liveGlow).withValues(alpha: 0.8),
                   blurRadius: isCritical ? 20 : 10,
                   offset: const Offset(0, 0),
                 )

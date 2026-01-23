@@ -36,7 +36,8 @@ class ActiveSessionBar extends ConsumerWidget {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: Colors.redAccent.withAlpha(128)),
+        // 🎯 NEON IRON: Usar colores del sistema
+        border: Border.all(color: AppColors.liveGlow),
       ),
       child: Row(
         children: [

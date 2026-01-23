@@ -369,8 +369,8 @@ class _ActiveSessionState extends StatelessWidget {
                   child: Icon(
                     Icons.recommend_rounded,
                     size: 72,
-                    // 🎯 REDISEÑO: Color de sesión activa
-                    color: AppColors.sessionActive,
+                    // 🎯 NEON IRON: Oro Venice para sesión activa
+                    color: AppColors.goldAccent,
                   ),
                 );
               },
@@ -394,7 +394,8 @@ class _ActiveSessionState extends StatelessWidget {
                 Text(
                   '$completedSets',
                   style: AppTypography.dataLarge.copyWith(
-                    color: AppColors.sessionActive,
+                    // 🎯 NEON IRON: Oro Venice para contador de sesión activa
+                    color: AppColors.goldAccent,
                   ),
                 ),
                 Text(
@@ -443,8 +444,9 @@ class _ActiveSessionState extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onContinue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.sessionActive,
-                  foregroundColor: Colors.black,
+                  // 🎯 NEON IRON: Oro Venice para continuar sesión activa
+                  backgroundColor: AppColors.goldAccent,
+                  foregroundColor: AppColors.bgDeep,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.xl),
                   ),
@@ -452,7 +454,7 @@ class _ActiveSessionState extends StatelessWidget {
                 ),
                 child: Text(
                   'CONTINUAR',
-                  style: AppTypography.buttonPrimary.copyWith(color: Colors.black),
+                  style: AppTypography.buttonPrimary.copyWith(color: AppColors.bgDeep),
                 ),
               ),
             ),

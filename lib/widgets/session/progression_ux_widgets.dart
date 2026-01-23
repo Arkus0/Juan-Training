@@ -128,13 +128,14 @@ class ConsequenceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
+        // 🎯 NEON IRON: Usar cyan para feedback positivo
         color: isPositive 
-            ? Colors.green.withValues(alpha: 0.1)
+            ? AppColors.success.withValues(alpha: 0.1)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isPositive 
-              ? Colors.green.withValues(alpha: 0.3)
+              ? AppColors.success.withValues(alpha: 0.3)
               : theme.colorScheme.outline.withValues(alpha: 0.3),
         ),
       ),
@@ -144,13 +145,13 @@ class ConsequenceChip extends StatelessWidget {
           Icon(
             isPositive ? Icons.check_circle_outline : Icons.info_outline,
             size: 18,
-            color: isPositive ? Colors.green : theme.colorScheme.onSurfaceVariant,
+            color: isPositive ? AppColors.success : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
           Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isPositive ? Colors.green.shade700 : theme.colorScheme.onSurfaceVariant,
+              color: isPositive ? AppColors.neonCyanDark : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -398,7 +399,8 @@ class SetFeedbackWidget extends StatelessWidget {
               children: [
                 Icon(
                   metTarget ? Icons.check_circle : Icons.check_circle_outline,
-                  color: metTarget ? Colors.green : theme.colorScheme.onSurfaceVariant,
+                  // 🎯 NEON IRON: Cyan para éxito
+                  color: metTarget ? AppColors.success : theme.colorScheme.onSurfaceVariant,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -469,15 +471,16 @@ class ExerciseSummaryWidget extends StatelessWidget {
     
     if (isSuccess && isConfirmation) {
       icon = Icons.celebration;
-      iconColor = Colors.amber;
+      // 🎯 NEON IRON: Oro Venice para celebraciones
+      iconColor = AppColors.goldAccent;
       title = '¡NUEVO PESO DESBLOQUEADO!';
     } else if (isSuccess) {
       icon = Icons.check_circle;
-      iconColor = Colors.green;
+      iconColor = AppColors.success;
       title = '¡Bien hecho!';
     } else if (isDeload) {
       icon = Icons.flash_on;
-      iconColor = Colors.orange;
+      iconColor = AppColors.warning;
       title = 'Hora de recuperar';
     } else {
       icon = Icons.check;
@@ -586,12 +589,13 @@ class _NextStepCard extends StatelessWidget {
     
     if (isIncrease) {
       icon = Icons.trending_up;
-      bgColor = Colors.green.withValues(alpha: 0.1);
-      iconColor = Colors.green;
+      // 🎯 NEON IRON: Cyan para progreso
+      bgColor = AppColors.success.withValues(alpha: 0.1);
+      iconColor = AppColors.success;
     } else if (isDecrease) {
       icon = Icons.trending_down;
-      bgColor = Colors.orange.withValues(alpha: 0.1);
-      iconColor = Colors.orange;
+      bgColor = AppColors.warning.withValues(alpha: 0.1);
+      iconColor = AppColors.warning;
     } else {
       icon = Icons.arrow_forward;
       bgColor = theme.colorScheme.surfaceContainerHighest;
@@ -781,10 +785,11 @@ class SeriesProgressIndicator extends StatelessWidget {
           color = theme.colorScheme.surfaceContainerHighest;
           icon = Icons.circle_outlined;
         } else if (metTarget) {
-          color = Colors.green;
+          // 🎯 NEON IRON: Cyan para éxito
+          color = AppColors.success;
           icon = Icons.check_circle;
         } else {
-          color = Colors.orange;
+          color = AppColors.warning;
           icon = Icons.check_circle;
         }
         

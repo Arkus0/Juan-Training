@@ -280,7 +280,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
                           _repsFocusNode.requestFocus();
                         },
                       ),
-                      // Botón calculadora de discos
+                      // Botón calculadora de discos - 🎯 NEON IRON: Mayor visibilidad
                       Positioned(
                         right: 2,
                         child: Tooltip(
@@ -302,8 +302,8 @@ class _SessionSetRowState extends State<SessionSetRow> {
                                   padding: const EdgeInsets.all(8),
                                   child: Icon(
                                     Icons.calculate_outlined,
-                                    size: 18,
-                                    color: Colors.grey[600],
+                                    size: 20,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -436,13 +436,13 @@ class _PrevValueColumn extends StatelessWidget {
         message: 'Copiar sugerencia',
         child: Material(
           color: isImprovement
-              ? Colors.green[900]?.withValues(alpha: 0.3)
+              ? AppColors.success.withValues(alpha: 0.15)
               : Colors.grey[850],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
             side: BorderSide(
               color: isImprovement
-                  ? Colors.green[700]!.withValues(alpha: 0.5)
+                  ? AppColors.success.withValues(alpha: 0.5)
                   : Colors.grey[700]!,
             ),
           ),
@@ -462,14 +462,14 @@ class _PrevValueColumn extends StatelessWidget {
                       Icon(
                         Icons.touch_app,
                         size: 8,
-                        color: isImprovement ? Colors.green[400] : Colors.grey[500],
+                        color: isImprovement ? AppColors.success : Colors.grey[500],
                       ),
                       const SizedBox(width: 2),
                       Text(
                         'SUG',
                         style: _SetRowStyles.sugLabel.copyWith(
                           color: isImprovement
-                              ? Colors.green[400]
+                              ? AppColors.success
                               : Colors.grey[400],
                         ),
                       ),
@@ -480,7 +480,7 @@ class _PrevValueColumn extends StatelessWidget {
                     '${suggestion!.suggestedWeight}',
                     style: _SetRowStyles.sugValue.copyWith(
                       color: isImprovement
-                          ? Colors.green[300]
+                          ? AppColors.neonCyanBright
                           : Colors.grey[300],
                     ),
                   ),
@@ -488,7 +488,7 @@ class _PrevValueColumn extends StatelessWidget {
                     'x${suggestion!.suggestedReps}',
                     style: _SetRowStyles.sugReps.copyWith(
                       color: isImprovement
-                          ? Colors.green[400]
+                          ? AppColors.success
                           : Colors.grey[400],
                     ),
                   ),
@@ -637,7 +637,7 @@ class _TagsRow extends StatelessWidget {
           if (suggestion?.isImprovement == true && suggestion?.message != null)
             _Tag(
               text: suggestion!.message!,
-              color: Colors.green,
+              color: AppColors.success,
               icon: Icons.trending_up,
             ),
           if (log.rpe != null)

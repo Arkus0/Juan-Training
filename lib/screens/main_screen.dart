@@ -48,8 +48,11 @@ class MainScreen extends ConsumerWidget {
         ],
       ),
       // 🎯 UX MEDIO: FAB flotante para acceso rápido a entrenar
-      floatingActionButton: hasActiveSession 
-          ? null  // No mostrar FAB si ya hay sesión activa (ActiveSessionBar la maneja)
+      // NO mostrar si:
+      // 1. Ya hay sesión activa (ActiveSessionBar la maneja)
+      // 2. Estamos en tab RUTINAS (tiene su propio FAB)
+      floatingActionButton: hasActiveSession || currentIndex == 0
+          ? null
           : suggestionAsync.when(
               data: (suggestion) {
                 if (suggestion == null) return null;

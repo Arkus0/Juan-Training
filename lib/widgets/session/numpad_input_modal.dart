@@ -18,14 +18,15 @@ import 'package:google_fonts/google_fonts.dart';
 /// ============================================================================
 
 /// Colores específicos para el modal de entrenamiento
+/// 🎯 NEON IRON: Usar paleta del sistema
 class _ModalColors {
-  static const activeSet = Color(0xFF4CAF50);
-  static const textPrimary = Color(0xFFFAFAFA);
-  static const textSecondary = Color(0xFF757575);
-  static const textDisabled = Color(0xFF424242);
-  static const bgCard = Color(0xFF1C1C1F);
-  static const bgInput = Color(0xFF252528);
-  static const confirmButton = Color(0xFF4CAF50);
+  static const activeSet = AppColors.neonCyan;
+  static const textPrimary = AppColors.textPrimary;
+  static const textSecondary = AppColors.textSecondary;
+  static const textDisabled = AppColors.textDisabled;
+  static const bgCard = AppColors.bgElevated;
+  static const bgInput = AppColors.bgInteractive;
+  static const confirmButton = AppColors.neonCyan;
 }
 
 class NumpadInputModal extends StatefulWidget {
