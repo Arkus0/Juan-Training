@@ -2,25 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/performance_utils.dart';
+import '../../utils/design_system.dart';
 
 // ============================================================================
 // PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
+// 🎯 REDISEÑO: Usar colores del sistema de diseño
 // ============================================================================
 
 class _InputStyles {
   static final inputText = GoogleFonts.montserrat(
     fontWeight: FontWeight.w800,
     fontSize: 18,
-    color: Colors.white,
+    color: AppColors.textPrimary,
   );
 
-  // 🎯 UX MEDIO: Ghost values más visibles (white30 -> white54 + underline hint)
+  // 🎯 UX MEDIO: Ghost values más visibles
   static final ghostText = GoogleFonts.montserrat(
-    color: Colors.white54,
+    color: AppColors.textTertiary,
     fontWeight: FontWeight.w600,
     fontSize: 16,
     decoration: TextDecoration.underline,
-    decorationColor: Colors.white24,
+    decorationColor: AppColors.textTertiary.withOpacity(0.3),
     decorationStyle: TextDecorationStyle.dotted,
   );
 

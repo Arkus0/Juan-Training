@@ -7,6 +7,7 @@ import '../models/rutina.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
 import '../widgets/routine_import_preview_dialog.dart';
+import '../utils/design_system.dart';
 
 class RutinasScreen extends ConsumerWidget {
   const RutinasScreen({Key? key}) : super(key: key);
@@ -117,15 +118,13 @@ class RutinasScreen extends ConsumerWidget {
       SnackBar(
         content: Text(
           'RUTINA ELIMINADA',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: AppTypography.button,
         ),
-        backgroundColor: Colors.red[900],
+        // 🎯 REDISEÑO: Fondo del sistema
+        backgroundColor: AppColors.bgElevated,
         action: SnackBarAction(
           label: 'DESHACER',
-          textColor: Colors.white,
+          textColor: AppColors.actionPrimary,
           onPressed: () {
             ref.read(trainingRepositoryProvider).saveRutina(rutina);
             try { HapticFeedback.lightImpact(); } catch (_) {}
@@ -170,12 +169,10 @@ class RutinasScreen extends ConsumerWidget {
           SnackBar(
             content: Text(
               'RUTINA IMPORTADA: ${confirmedRutina.nombre.toUpperCase()}',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
+              style: AppTypography.button,
             ),
-            backgroundColor: Colors.red[900],
+            // 🎯 REDISEÑO: Verde para éxito
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(milliseconds: 2000),
           ),
@@ -230,14 +227,14 @@ class _RutinaTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       rutina.nombre.toUpperCase(),
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                      ),
+                      // 🎯 REDISEÑO: Usar tipografía del sistema
+                      style: AppTypography.sectionTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(Icons.edit, color: Colors.redAccent[700]),
+                  // 🎯 REDISEÑO: Icono más sutil
+                  Icon(Icons.chevron_right, color: AppColors.textTertiary),
                 ],
               ),
               const SizedBox(height: 12),
@@ -274,13 +271,11 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: Colors.grey[400]),
+        Icon(icon, size: 18, color: AppColors.textTertiary),
         const SizedBox(width: 6),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: Colors.grey[400],
-          ),
+          style: AppTypography.label,
         ),
       ],
     );

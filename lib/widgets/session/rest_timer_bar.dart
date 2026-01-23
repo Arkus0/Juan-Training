@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../utils/performance_utils.dart';
+import '../../utils/design_system.dart';
 
 /// Callback cuando el timer termina, incluye info para auto-focus
 typedef TimerFinishedCallback = void Function({

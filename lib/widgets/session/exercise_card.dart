@@ -14,6 +14,7 @@ import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
 import '../../widgets/common/alternativas_dialog.dart';
+import '../../utils/design_system.dart';
 import 'session_set_row.dart';
 import 'advanced_options_modal.dart';
 import 'progression_preview.dart';
@@ -355,12 +356,8 @@ class ExerciseCard extends StatelessWidget {
                            Flexible(
                              child: Text(
                               exercise.nombre.toUpperCase(),
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.redAccent[700],
-                                shadows: [
-                                  Shadow(color: Colors.red[900]!.withValues(alpha: 0.5), blurRadius: 4, offset: const Offset(0, 2)),
-                                ],
-                              ),
+                              // 🎯 REDISEÑO: Nombre en blanco, sin sombras rojas
+                              style: AppTypography.sectionTitle,
                              ),
                            ),
                            if (showSupersetBadge) ...[

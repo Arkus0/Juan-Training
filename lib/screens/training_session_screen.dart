@@ -10,6 +10,7 @@ import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
 import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/voice/voice_training_button.dart';
+import '../utils/design_system.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
@@ -266,8 +267,9 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
             child: TextButton(
               onPressed: _onFinishSession,
               style: TextButton.styleFrom(
-                backgroundColor: progress.isComplete ? Colors.green[400] : Colors.white,
-                foregroundColor: progress.isComplete ? Colors.white : Colors.red[900],
+                // 🎯 REDISEÑO: Verde cuando completo, blanco normal
+                backgroundColor: progress.isComplete ? AppColors.success : Colors.white,
+                foregroundColor: progress.isComplete ? Colors.white : AppColors.actionPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
@@ -281,7 +283,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                     ),
                   Text(
                     'TERMINAR',
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                    style: AppTypography.button,
                   ),
                 ],
               ),

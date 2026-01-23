@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/main_provider.dart';
 import '../providers/training_provider.dart';
 import '../widgets/session/active_session_bar.dart';
+import '../utils/design_system.dart';
 import 'rutinas_screen.dart';
 import 'train_selection_screen.dart';
 import 'analysis_screen.dart';
@@ -55,14 +56,12 @@ class MainScreen extends ConsumerWidget {
                 return FloatingActionButton.extended(
                   heroTag: 'quick_start_fab',
                   onPressed: () => _startSuggestedSession(context, ref, suggestion),
-                  backgroundColor: Colors.red[900],
+                  // 🎯 REDISEÑO: Usar color del sistema
+                  backgroundColor: AppColors.actionPrimary,
                   icon: const Icon(Icons.play_arrow, size: 28),
                   label: Text(
                     suggestion.dayName.toUpperCase(),
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                    ),
+                    style: AppTypography.button,
                   ),
                 );
               },
@@ -74,17 +73,11 @@ class MainScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
-              width: 1.5,
+              // 🎯 REDISEÑO: Borde sutil
+              color: AppColors.border,
+              width: 1,
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            )
-          ],
         ),
         child: BottomNavigationBar(
           currentIndex: currentIndex,

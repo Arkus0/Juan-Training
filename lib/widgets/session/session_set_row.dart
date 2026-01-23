@@ -5,6 +5,7 @@ import '../../models/serie_log.dart';
 import '../../models/progression_type.dart';
 import '../../screens/plate_calculator_dialog.dart';
 import '../../utils/performance_utils.dart';
+import '../../utils/design_system.dart';
 import 'log_input.dart';
 
 // ============================================================================
@@ -219,10 +220,10 @@ class _SessionSetRowState extends State<SessionSetRow> {
       repsGhost = widget.prevLog!.reps.toString();
     }
 
-    // Colores según estado
+    // Colores según estado - 🎯 REDISEÑO: Verde para completado
     final isCompleted = widget.log.completed;
     final rowColor = isCompleted
-        ? Colors.red[900]!.withValues(alpha: 0.15)
+        ? AppColors.success.withOpacity(0.12)
         : Colors.transparent;
 
     return GestureDetector(
@@ -387,7 +388,8 @@ class _SetNumber extends StatelessWidget {
       bgColor = Colors.purple[700]!;
       label = 'D';
     } else if (isCompleted) {
-      bgColor = Colors.redAccent[700]!;
+      // 🎯 REDISEÑO: Verde para completado
+      bgColor = AppColors.success;
     }
 
     return Container(
@@ -396,11 +398,11 @@ class _SetNumber extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         shape: BoxShape.circle,
-        // Shadows solo si no está en modo performance
+        // 🎯 REDISEÑO: Sombra verde sutil, no roja
         boxShadow: isCompleted && PerformanceMode.instance.showShadows
             ? [
                 BoxShadow(
-                  color: Colors.red[900]!.withValues(alpha: 0.4),
+                  color: AppColors.success.withOpacity(0.4),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),
@@ -567,7 +569,7 @@ class _PrevValueColumn extends StatelessWidget {
   }
 }
 
-/// Checkbox de completado con estilo mejorado
+/// Checkbox de completado con estilo mejorado - 🎯 REDISEÑO: Verde
 class _CompletedCheckbox extends StatelessWidget {
   final bool isCompleted;
   final Function(bool?) onChanged;
@@ -586,11 +588,12 @@ class _CompletedCheckbox extends StatelessWidget {
         scale: 1.2,
         child: Checkbox(
           value: isCompleted,
-          activeColor: Colors.redAccent[700],
+          // 🎯 REDISEÑO: Verde para completado (match modelo mental)
+          activeColor: AppColors.success,
           checkColor: Colors.white,
           onChanged: onChanged,
           side: BorderSide(
-            color: isCompleted ? Colors.redAccent[700]! : Colors.grey[600]!,
+            color: isCompleted ? AppColors.success : Colors.grey[600]!,
             width: 2,
           ),
           shape: RoundedRectangleBorder(

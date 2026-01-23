@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/design_system.dart';
 
 /// Reusable empty state widget for consistent UX across screens
 class EmptyStateWidget extends StatelessWidget {
@@ -26,25 +27,21 @@ class EmptyStateWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 80, color: Colors.grey[800]),
+            Icon(icon, size: 80, color: AppColors.textTertiary),
             const SizedBox(height: 24),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.grey[600],
+              // 🎯 REDISEÑO: Usar tipografía del sistema
+              style: AppTypography.sectionTitle.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: AppTypography.label,
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
@@ -53,12 +50,9 @@ class EmptyStateWidget extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 label: Text(
                   actionLabel!,
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
+                  style: AppTypography.button,
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[900],
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
+                // 🎯 REDISEÑO: Botón usa colores del sistema
               ),
             ],
           ],
@@ -85,17 +79,15 @@ class AppLoadingIndicator extends StatelessWidget {
             height: 48,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.red[900]!),
+              // 🎯 REDISEÑO: Verde para loading
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
             ),
           ),
           if (message != null) ...[
             const SizedBox(height: 16),
             Text(
               message!,
-              style: GoogleFonts.montserrat(
-                color: Colors.grey[500],
-                fontSize: 12,
-              ),
+              style: AppTypography.meta,
             ),
           ],
         ],

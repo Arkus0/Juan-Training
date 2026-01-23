@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
+import '../utils/design_system.dart';
 import 'training_session_screen.dart';
 
 /// ============================================================================
@@ -33,7 +34,8 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
     final suggestionAsync = ref.watch(smartSuggestionProvider);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      // 🎯 REDISEÑO: Fondo del sistema de diseño
+      backgroundColor: AppColors.bgDeep,
       body: SafeArea(
         child: activeSessionAsync.when(
           loading: () => const _LoadingState(),
@@ -220,7 +222,8 @@ class _ZeroThoughtHome extends StatelessWidget {
                     Icon(
                       Icons.fitness_center_rounded,
                       size: showAlternatives ? 48 : 72,
-                      color: Colors.red[400],
+                      // 🎯 REDISEÑO: Rojo solo para CTA, icono en gris
+                      color: AppColors.textSecondary,
                     ),
 
                     SizedBox(height: showAlternatives ? 16 : 32),
@@ -228,12 +231,10 @@ class _ZeroThoughtHome extends StatelessWidget {
                     // Nombre del día: QUÉ PUEDE HACER
                     Text(
                       suggestion.dayName.toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontSize: showAlternatives ? 28 : 36,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
-                      ),
+                      // 🎯 REDISEÑO: Usar tipografía del sistema
+                      style: showAlternatives 
+                          ? AppTypography.heroCompact 
+                          : AppTypography.hero,
                       textAlign: TextAlign.center,
                     ),
 
@@ -242,10 +243,7 @@ class _ZeroThoughtHome extends StatelessWidget {
                     // Contexto mínimo: Validación rápida
                     Text(
                       suggestion.reason,
-                      style: GoogleFonts.montserrat(
-                        color: Colors.grey[500],
-                        fontSize: 14,
-                      ),
+                      style: AppTypography.label,
                       textAlign: TextAlign.center,
                     ),
 
@@ -260,20 +258,17 @@ class _ZeroThoughtHome extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: onStart,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[700],
+                          // 🎯 REDISEÑO: Usar colores del sistema
+                          backgroundColor: AppColors.actionPrimary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.xl),
                           ),
-                          elevation: 8,
+                          elevation: 0,
                         ),
                         child: Text(
                           'ENTRENAR',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
+                          style: AppTypography.buttonPrimary,
                         ),
                       ),
                     ),
@@ -291,17 +286,14 @@ class _ZeroThoughtHome extends StatelessWidget {
                           children: [
                             Text(
                               showAlternatives ? 'Ocultar opciones' : 'Cambiar',
-                              style: GoogleFonts.montserrat(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
+                              style: AppTypography.label,
                             ),
                             const SizedBox(width: 4),
                             Icon(
                               showAlternatives
                                   ? Icons.keyboard_arrow_up_rounded
                                   : Icons.keyboard_arrow_down_rounded,
-                              color: Colors.grey[600],
+                              color: AppColors.textTertiary,
                               size: 20,
                             ),
                           ],
@@ -377,7 +369,8 @@ class _ActiveSessionState extends StatelessWidget {
                   child: Icon(
                     Icons.recommend_rounded,
                     size: 72,
-                    color: Colors.amber[400],
+                    // 🎯 REDISEÑO: Color de sesión activa
+                    color: AppColors.sessionActive,
                   ),
                 );
               },
@@ -388,12 +381,7 @@ class _ActiveSessionState extends StatelessWidget {
             // Nombre de la sesión
             Text(
               rutina.nombre.toUpperCase(),
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-              ),
+              style: AppTypography.heroCompact,
               textAlign: TextAlign.center,
             ),
 
@@ -405,30 +393,25 @@ class _ActiveSessionState extends StatelessWidget {
               children: [
                 Text(
                   '$completedSets',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.amber[400],
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
+                  style: AppTypography.dataLarge.copyWith(
+                    color: AppColors.sessionActive,
                   ),
                 ),
                 Text(
                   ' / $totalSets series',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.grey[500],
-                    fontSize: 16,
-                  ),
+                  style: AppTypography.label,
                 ),
               ],
             ),
 
             const SizedBox(height: 8),
 
-            // Barra de progreso
+            // Barra de progreso - 🎯 REDISEÑO: Verde para progreso
             Container(
               height: 6,
               width: 200,
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: AppColors.bgInteractive,
                 borderRadius: BorderRadius.circular(3),
               ),
               child: FractionallySizedBox(
@@ -436,7 +419,7 @@ class _ActiveSessionState extends StatelessWidget {
                 widthFactor: progress,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.amber[400],
+                    color: AppColors.success,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -448,10 +431,7 @@ class _ActiveSessionState extends StatelessWidget {
             // Tiempo transcurrido
             Text(
               '$elapsedMinutes min',
-              style: GoogleFonts.montserrat(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: AppTypography.meta,
             ),
 
             const SizedBox(height: 48),
@@ -463,20 +443,16 @@ class _ActiveSessionState extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: onContinue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber[600],
+                  backgroundColor: AppColors.sessionActive,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
                   ),
-                  elevation: 8,
+                  elevation: 0,
                 ),
                 child: Text(
                   'CONTINUAR',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                  ),
+                  style: AppTypography.buttonPrimary.copyWith(color: Colors.black),
                 ),
               ),
             ),
@@ -486,18 +462,15 @@ class _ActiveSessionState extends StatelessWidget {
             // Separador visual
             Row(
               children: [
-                Expanded(child: Divider(color: Colors.grey[800])),
+                Expanded(child: Divider(color: AppColors.divider)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     'o',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.grey[700],
-                      fontSize: 12,
-                    ),
+                    style: AppTypography.meta,
                   ),
                 ),
-                Expanded(child: Divider(color: Colors.grey[800])),
+                Expanded(child: Divider(color: AppColors.divider)),
               ],
             ),
 
@@ -508,10 +481,8 @@ class _ActiveSessionState extends StatelessWidget {
               onPressed: onDiscard,
               child: Text(
                 'TERMINAR SESION',
-                style: GoogleFonts.montserrat(
-                  color: Colors.red[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                style: AppTypography.button.copyWith(
+                  color: AppColors.error,
                 ),
               ),
             ),
@@ -540,19 +511,14 @@ class _EmptyState extends StatelessWidget {
             Icon(
               Icons.add_circle_outline_rounded,
               size: 72,
-              color: Colors.grey[700],
+              color: AppColors.textTertiary,
             ),
 
             const SizedBox(height: 32),
 
             Text(
               'CREA TU RUTINA',
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-              ),
+              style: AppTypography.heroCompact,
               textAlign: TextAlign.center,
             ),
 
@@ -560,10 +526,7 @@ class _EmptyState extends StatelessWidget {
 
             Text(
               'Ve a la pestana Rutinas\npara empezar',
-              style: GoogleFonts.montserrat(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
+              style: AppTypography.label,
               textAlign: TextAlign.center,
             ),
           ],
@@ -591,7 +554,8 @@ class _LoadingState extends StatelessWidget {
             height: 48,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              color: Colors.red[400],
+              // 🎯 REDISEÑO: Verde para loading
+              color: AppColors.success,
             ),
           ),
         ],
@@ -645,7 +609,8 @@ class _AlternativesPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[900]?.withValues(alpha: 0.5),
+        // 🎯 REDISEÑO: Fondo del sistema
+        color: AppColors.bgElevated.withOpacity(0.8),
         borderRadius: fullScreen
             ? null
             : const BorderRadius.vertical(top: Radius.circular(24)),

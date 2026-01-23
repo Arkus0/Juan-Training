@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/session_progress_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Barra de progreso de sesión no invasiva (estilo Hevy)
 ///
@@ -102,10 +103,11 @@ class SessionProgressBar extends ConsumerWidget {
     );
   }
 
+  // 🎯 REDISEÑO: Progreso siempre verde (no rojo)
   Color _getProgressColor(double percentage) {
-    if (percentage >= 0.9) return Colors.green[400]!;
-    if (percentage >= 0.75) return Colors.orange[400]!;
-    return Colors.redAccent[700]!;
+    if (percentage >= 0.9) return AppColors.success;
+    if (percentage >= 0.5) return AppColors.progressActive;
+    return AppColors.success.withOpacity(0.7);
   }
 }
 
@@ -190,11 +192,12 @@ class _AnimatedProgressFill extends StatelessWidget {
     );
   }
 
+  // 🎯 REDISEÑO: Verde consistente para progreso
   Color _getColor() {
-    if (isComplete) return Colors.green[400]!;
-    if (percentage >= 0.9) return Colors.green[400]!;
-    if (percentage >= 0.75) return Colors.orange[400]!;
-    return Colors.redAccent[700]!;
+    if (isComplete) return AppColors.success;
+    if (percentage >= 0.75) return AppColors.success;
+    if (percentage >= 0.5) return AppColors.progressActive;
+    return AppColors.success.withOpacity(0.8);
   }
 }
 
