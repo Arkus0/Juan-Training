@@ -108,8 +108,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
           ),
           onTap: (_) => HapticFeedback.selectionClick(),
           tabs: const [
-            Tab(text: 'BITÁCORA'),
-            Tab(text: 'LABORATORIO'),
+            Tab(text: 'HISTORIAL'),
+            Tab(text: 'ESTADÍSTICAS'),
           ],
         ),
       ),
