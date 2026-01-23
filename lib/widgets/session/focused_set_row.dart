@@ -45,6 +45,78 @@ class TrainingColors {
   static const confirmButton = Color(0xFF4CAF50);
 }
 
+// ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
+class _SetRowStyles {
+  static final badgeLabel = GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w800,
+    color: Colors.white,
+  );
+
+  static final badgeLabelDisabled = GoogleFonts.montserrat(
+    fontSize: 14,
+    fontWeight: FontWeight.w800,
+    color: TrainingColors.textDisabled,
+  );
+
+  static final valueActiveText = GoogleFonts.montserrat(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+  );
+
+  static final valueNormalText = GoogleFonts.montserrat(
+    fontSize: 18,
+    fontWeight: FontWeight.w800,
+  );
+
+  static final labelActiveText = GoogleFonts.montserrat(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: TrainingColors.textSecondary,
+  );
+
+  static final labelNormalText = GoogleFonts.montserrat(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    color: TrainingColors.textSecondary,
+  );
+}
+
+// ⚡ OPTIMIZACIÓN: RowStyle constantes pre-definidos para evitar crear objetos en cada build
+class _RowStyles {
+  static const completed = RowStyle(
+    bgColor: TrainingColors.completedBg,
+    borderColor: Color(0x4D2E7D32), // TrainingColors.completed @ 0.3 alpha
+    textColor: TrainingColors.textSecondary,
+    opacity: 0.7,
+    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+  );
+
+  static const active = RowStyle(
+    bgColor: TrainingColors.activeBg,
+    borderColor: TrainingColors.activeSet,
+    textColor: TrainingColors.textPrimary,
+    opacity: 1.0,
+    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+  );
+
+  static const future = RowStyle(
+    bgColor: Colors.transparent,
+    borderColor: Colors.transparent,
+    textColor: TrainingColors.textDisabled,
+    opacity: 0.4,
+    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+  );
+
+  static const past = RowStyle(
+    bgColor: Colors.transparent,
+    borderColor: Colors.transparent,
+    textColor: TrainingColors.textSecondary,
+    opacity: 0.6,
+    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+  );
+}
+
 class FocusedSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
@@ -219,40 +291,12 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
     );
   }
 
+  // ⚡ OPTIMIZACIÓN: Usar constantes pre-definidas en lugar de crear nuevos objetos
   RowStyle _getRowStyle(bool isCompleted, bool isActive, bool isFuture) {
-    if (isCompleted) {
-      return RowStyle(
-        bgColor: TrainingColors.completedBg,
-        borderColor: TrainingColors.completed.withValues(alpha: 0.3),
-        textColor: TrainingColors.textSecondary,
-        opacity: 0.7,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      );
-    } else if (isActive) {
-      return RowStyle(
-        bgColor: TrainingColors.activeBg,
-        borderColor: TrainingColors.activeSet,
-        textColor: TrainingColors.textPrimary,
-        opacity: 1.0,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      );
-    } else if (isFuture) {
-      return RowStyle(
-        bgColor: Colors.transparent,
-        borderColor: Colors.transparent,
-        textColor: TrainingColors.textDisabled,
-        opacity: 0.4,
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      );
-    } else {
-      return RowStyle(
-        bgColor: Colors.transparent,
-        borderColor: Colors.transparent,
-        textColor: TrainingColors.textSecondary,
-        opacity: 0.6,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      );
-    }
+    if (isCompleted) return _RowStyles.completed;
+    if (isActive) return _RowStyles.active;
+    if (isFuture) return _RowStyles.future;
+    return _RowStyles.past;
   }
 
   void _openWeightInput(BuildContext context) async {
@@ -371,11 +415,10 @@ class _SetNumberBadge extends StatelessWidget {
             ? const Icon(Icons.check, color: Colors.white, size: 20)
             : Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                ),
+                // ⚡ OPTIMIZACIÓN: Usar estilo pre-computado
+                style: textColor == Colors.white
+                    ? _SetRowStyles.badgeLabel
+                    : _SetRowStyles.badgeLabelDisabled,
               ),
       ),
     );
@@ -439,22 +482,19 @@ class _TappableValueInput extends StatelessWidget {
             children: [
               Text(
                 _displayValue,
-                style: GoogleFonts.montserrat(
-                  fontSize: isActive ? 24 : 18,
-                  fontWeight: FontWeight.w800,
-                  color: value == null || value == 0
-                      ? TrainingColors.textDisabled
-                      : textColor,
-                ),
+                // ⚡ OPTIMIZACIÓN: Usar estilos pre-computados con color override
+                style: (isActive ? _SetRowStyles.valueActiveText : _SetRowStyles.valueNormalText)
+                    .copyWith(
+                      color: value == null || value == 0
+                          ? TrainingColors.textDisabled
+                          : textColor,
+                    ),
               ),
               const SizedBox(width: 4),
               Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: isActive ? 12 : 10,
-                  fontWeight: FontWeight.w600,
-                  color: TrainingColors.textSecondary,
-                ),
+                // ⚡ OPTIMIZACIÓN: Usar estilos pre-computados
+                style: isActive ? _SetRowStyles.labelActiveText : _SetRowStyles.labelNormalText,
               ),
             ],
           ),

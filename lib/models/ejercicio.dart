@@ -1,5 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'serie_log.dart';
 
+/// Representa un ejercicio durante una sesión de entrenamiento.
+///
+/// Implementa `==` y `hashCode` para optimizar comparaciones en Riverpod selectors,
+/// evitando rebuilds innecesarios cuando los valores no han cambiado realmente.
 class Ejercicio {
   final String id; // Instance ID (UUID)
   final String libraryId; // Reference to Library Exercise ID
@@ -63,4 +68,40 @@ class Ejercicio {
 
   /// Verifica si este ejercicio pertenece a un superset
   bool get isInSuperset => supersetId != null && supersetId!.isNotEmpty;
+
+  /// Número de series completadas (optimización: evita recalcular en cada build)
+  int get completedSetsCount => logs.where((l) => l.completed).length;
+
+  /// Verifica si todas las series están completadas
+  bool get isComplete => logs.isNotEmpty && logs.every((l) => l.completed);
+
+  /// Compara por valor para optimizar rebuilds.
+  /// Dos Ejercicio son iguales si todos sus campos visibles en UI son iguales.
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! Ejercicio) return false;
+    return id == other.id &&
+        libraryId == other.libraryId &&
+        nombre == other.nombre &&
+        series == other.series &&
+        reps == other.reps &&
+        peso == other.peso &&
+        supersetId == other.supersetId &&
+        descansoSugeridoSeconds == other.descansoSugeridoSeconds &&
+        listEquals(logs, other.logs);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        libraryId,
+        nombre,
+        series,
+        reps,
+        peso,
+        supersetId,
+        descansoSugeridoSeconds,
+        Object.hashAll(logs),
+      );
 }

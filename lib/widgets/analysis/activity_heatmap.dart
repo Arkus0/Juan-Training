@@ -136,96 +136,54 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     const gap = 2.0;
     const rows = 7; // Days of week
 
-    // Month labels
-    const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-                        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
     // Calculate all weeks of the year
     final startOfYear = DateTime(year, 1, 1);
     final endOfYear = DateTime(year, 12, 31);
     final totalDays = endOfYear.difference(startOfYear).inDays + 1;
     final weeks = (totalDays / 7).ceil() + 1;
 
+    // Pre-calculate first day weekday once (not in itemBuilder)
+    final firstDayWeekday = startOfYear.weekday;
+
     return SizedBox(
       height: (cellSize + gap) * rows + 24, // +24 for month labels
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Month labels
-            SizedBox(
-              height: 16,
-              child: Row(
-                children: List.generate(12, (month) {
-                  return SizedBox(
-                    width: (cellSize + gap) * (weeks / 12).floor(),
-                    child: Text(
-                      monthLabels[month],
-                      style: GoogleFonts.montserrat(
-                        fontSize: 10,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  );
-                }),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Month labels - static row
+          const _MonthLabelsRow(cellSize: cellSize, gap: gap),
+
+          const SizedBox(height: 8),
+
+          // ⚡ OPTIMIZACIÓN: ListView.builder horizontal para virtualizar semanas
+          // Solo renderiza ~15-20 semanas visibles en pantalla vs las 52+ totales
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(
+                decelerationRate: ScrollDecelerationRate.fast,
               ),
+              // Cache extent para pre-renderizar semanas cercanas
+              cacheExtent: (cellSize + gap) * 10,
+              itemCount: weeks,
+              itemBuilder: (context, weekIndex) {
+                return RepaintBoundary(
+                  child: _WeekColumn(
+                    weekIndex: weekIndex,
+                    year: year,
+                    startOfYear: startOfYear,
+                    firstDayWeekday: firstDayWeekday,
+                    activity: activity,
+                    cellSize: cellSize,
+                    gap: gap,
+                    onDayTap: widget.onDayTap,
+                  ),
+                );
+              },
             ),
-
-            const SizedBox(height: 8),
-
-            // Grid
-            SizedBox(
-              height: (cellSize + gap) * rows,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(weeks, (weekIndex) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: gap),
-                    child: Column(
-                      children: List.generate(rows, (dayOfWeek) {
-                        // Calculate date for this cell
-                        final firstDayOfYear = startOfYear;
-                        final firstDayWeekday = firstDayOfYear.weekday; // 1=Mon, 7=Sun
-
-                        // Adjust to start on Monday
-                        final daysOffset = (weekIndex * 7) + dayOfWeek - (firstDayWeekday - 1);
-                        final cellDate = firstDayOfYear.add(Duration(days: daysOffset));
-
-                        // Skip if outside year
-                        if (cellDate.year != year) {
-                          return SizedBox(
-                            width: cellSize,
-                            height: cellSize + gap,
-                            child: const SizedBox.shrink(),
-                          );
-                        }
-
-                        // Get activity for this date
-                        final normalizedDate = DateTime(cellDate.year, cellDate.month, cellDate.day);
-                        final dayActivity = activity[normalizedDate];
-                        final intensity = dayActivity?.intensityLevel ?? 0;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: gap),
-                          child: _HeatmapCell(
-                            date: cellDate,
-                            intensity: intensity,
-                            activity: dayActivity,
-                            size: cellSize,
-                            onTap: widget.onDayTap,
-                          ),
-                        );
-                      }),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -302,6 +260,108 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
   }
 }
 
+/// Fila de etiquetas de meses - Const para evitar rebuilds
+class _MonthLabelsRow extends StatelessWidget {
+  final double cellSize;
+  final double gap;
+
+  const _MonthLabelsRow({
+    required this.cellSize,
+    required this.gap,
+  });
+
+  static const _monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                               'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  // Pre-computed style para evitar GoogleFonts en build
+  static final _labelStyle = GoogleFonts.montserrat(
+    fontSize: 10,
+    color: AppColors.textTertiary,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    // Aproximación: cada mes ocupa ~4.3 semanas
+    final monthWidth = (cellSize + gap) * 4.3;
+
+    return SizedBox(
+      height: 16,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 12,
+        itemBuilder: (context, month) {
+          return SizedBox(
+            width: monthWidth,
+            child: Text(_monthLabels[month], style: _labelStyle),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Columna de una semana - Extraída para optimizar rebuilds
+class _WeekColumn extends StatelessWidget {
+  final int weekIndex;
+  final int year;
+  final DateTime startOfYear;
+  final int firstDayWeekday;
+  final Map<DateTime, DailyActivity> activity;
+  final double cellSize;
+  final double gap;
+  final Function(DateTime)? onDayTap;
+
+  const _WeekColumn({
+    required this.weekIndex,
+    required this.year,
+    required this.startOfYear,
+    required this.firstDayWeekday,
+    required this.activity,
+    required this.cellSize,
+    required this.gap,
+    this.onDayTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(right: gap),
+      child: Column(
+        children: List.generate(7, (dayOfWeek) {
+          // Calculate date for this cell
+          final daysOffset = (weekIndex * 7) + dayOfWeek - (firstDayWeekday - 1);
+          final cellDate = startOfYear.add(Duration(days: daysOffset));
+
+          // Skip if outside year
+          if (cellDate.year != year) {
+            return SizedBox(
+              width: cellSize,
+              height: cellSize + gap,
+            );
+          }
+
+          // Get activity for this date
+          final normalizedDate = DateTime(cellDate.year, cellDate.month, cellDate.day);
+          final dayActivity = activity[normalizedDate];
+          final intensity = dayActivity?.intensityLevel ?? 0;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: gap),
+            child: _HeatmapCell(
+              date: cellDate,
+              intensity: intensity,
+              activity: dayActivity,
+              size: cellSize,
+              onTap: onDayTap,
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
 /// Individual heatmap cell
 class _HeatmapCell extends StatelessWidget {
   final DateTime date;
@@ -343,7 +403,7 @@ class _HeatmapCell extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(2),
             border: isToday
-                ? Border.all(color: Colors.white.withOpacity(0.5), width: 1)
+                ? Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1)
                 : null,
           ),
         ),
