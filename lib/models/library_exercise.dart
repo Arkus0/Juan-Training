@@ -11,6 +11,12 @@ class LibraryExercise {
   final List<String> secondaryMuscles;
   bool isFavorite; // User-marked favorite
 
+  /// Flag para ejercicios curados manualmente.
+  /// Si es true, la sincronización con API NO puede sobrescribir ni eliminar este ejercicio.
+  /// Los ejercicios bundled (assets/data/exercises.json) son curados por defecto.
+  /// CRÍTICO: Este flag protege la base de datos curada de ser destruida por syncs automáticas.
+  final bool isCurated;
+
   LibraryExercise({
     required this.id,
     required this.name,
@@ -23,6 +29,7 @@ class LibraryExercise {
     this.muscles = const [],
     this.secondaryMuscles = const [],
     this.isFavorite = false,
+    this.isCurated = false,
   });
 
   factory LibraryExercise.fromApi(
@@ -73,6 +80,7 @@ class LibraryExercise {
       'muscles': muscles,
       'secondaryMuscles': secondaryMuscles,
       'isFavorite': isFavorite,
+      'isCurated': isCurated,
     };
   }
 
@@ -117,6 +125,9 @@ class LibraryExercise {
       muscles: normalizeStringList(json['muscles'], defaultKey: 'name'),
       secondaryMuscles: normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
       isFavorite: json['isFavorite'] as bool? ?? false,
+      // CRÍTICO: Ejercicios del JSON bundled son curados por defecto (true).
+      // Solo son false si explícitamente vienen de la API y se marca como tal.
+      isCurated: json['isCurated'] as bool? ?? true,
     );
   }
 
@@ -133,6 +144,7 @@ class LibraryExercise {
     List<String>? muscles,
     List<String>? secondaryMuscles,
     bool? isFavorite,
+    bool? isCurated,
   }) {
     return LibraryExercise(
       id: id ?? this.id,
@@ -146,6 +158,7 @@ class LibraryExercise {
       muscles: muscles ?? this.muscles,
       secondaryMuscles: secondaryMuscles ?? this.secondaryMuscles,
       isFavorite: isFavorite ?? this.isFavorite,
+      isCurated: isCurated ?? this.isCurated,
     );
   }
 }

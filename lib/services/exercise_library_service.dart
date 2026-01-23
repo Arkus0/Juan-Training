@@ -308,11 +308,34 @@ class ExerciseLibraryService {
   }
 
   /// returns true if sync was successful, false otherwise.
+  ///
+  /// PROTECCIÓN CRÍTICA DE EJERCICIOS CURADOS:
+  /// Si la biblioteca contiene ejercicios curados (isCurated = true),
+  /// la sincronización está DESHABILITADA para proteger la base de datos.
+  /// Solo se descargarán imágenes para ejercicios existentes.
   Future<bool> syncLibrary() async {
     if (_isSyncing) {
       _logger.w('Sync already in progress. Skipping.');
       return false;
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CORTAFUEGOS: Protección de ejercicios curados
+    // ═══════════════════════════════════════════════════════════════════════════
+    final hasCuratedExercises = _exercises.any((e) => e.isCurated);
+    if (hasCuratedExercises) {
+      _logger.i('🛡️ CURATED LIBRARY PROTECTION: Biblioteca curada detectada. '
+          'Sync con API deshabilitada para proteger ${_exercises.where((e) => e.isCurated).length} ejercicios curados.');
+
+      // Solo descargar imágenes para ejercicios existentes, NO sincronizar con API
+      if (!kIsWeb) {
+        await _downloadImagesForCuratedLibrary();
+      }
+
+      return true; // No es un error, es comportamiento intencionado
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+
     _isSyncing = true;
     _logger.i('Starting exercise library sync...');
 
@@ -414,6 +437,45 @@ class ExerciseLibraryService {
     }
   }
 
+  /// Descarga imágenes solo para ejercicios existentes en la biblioteca curada.
+  /// NO sincroniza con API, solo descarga imágenes faltantes.
+  Future<void> _downloadImagesForCuratedLibrary() async {
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.every((r) => r == ConnectivityResult.none)) {
+        _logger.d('Offline - skipping image downloads for curated library.');
+        return;
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory('${directory.path}/ejercicios_images');
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+
+      final pendingDownloads = _exercises
+          .where((e) =>
+              e.imageUrls.isNotEmpty &&
+              (e.localImagePath == null ||
+                  !File(e.localImagePath!).existsSync()))
+          .toList();
+
+      if (pendingDownloads.isEmpty) {
+        _logger.d('No images to download for curated library.');
+        return;
+      }
+
+      _logger.i('🖼️ Downloading ${pendingDownloads.length} images for curated library...');
+
+      final exercisesMap = { for (var ex in _exercises) ex.id: ex };
+      await _processImageDownloads(pendingDownloads, imagesDir.path, exercisesMap);
+
+      _logger.i('✅ Image download for curated library completed.');
+    } catch (e, s) {
+      _logger.w('Error downloading images for curated library', error: e, stackTrace: s);
+    }
+  }
+
   LibraryExercise? _parseExerciseFromApi(Map<String, dynamic> item) {
     if (item['name'] == null) {
       _logger.e(
@@ -504,11 +566,32 @@ class ExerciseLibraryService {
       {required bool isPrimary}) {
     int addedCount = 0;
     int mergedCount = 0;
+    int protectedCount = 0;
 
     for (var exercise in newExercises) {
       final existing = exercisesMap[exercise.id];
 
       if (existing != null) {
+        // ═══════════════════════════════════════════════════════════════════════
+        // PROTECCIÓN: Ejercicios curados NO se sobrescriben
+        // ═══════════════════════════════════════════════════════════════════════
+        if (existing.isCurated) {
+          protectedCount++;
+          // Solo permitir actualizar imageUrls y localImagePath de ejercicios curados
+          final Set<String> uniqueImages = {};
+          uniqueImages.addAll(existing.imageUrls);
+          uniqueImages.addAll(exercise.imageUrls);
+
+          if (uniqueImages.length > existing.imageUrls.length) {
+            // Hay nuevas imágenes - actualizar solo eso
+            exercisesMap[exercise.id] = existing.copyWith(
+              imageUrls: uniqueImages.toList(),
+            );
+          }
+          continue; // NO sobrescribir otros campos
+        }
+        // ═══════════════════════════════════════════════════════════════════════
+
         mergedCount++;
         // --- MERGE LOGIC ---
         // If primary (English), we overwrite (since it comes first in our flow).
@@ -541,15 +624,17 @@ class ExerciseLibraryService {
           secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
               ? exercise.secondaryMuscles
               : existing.secondaryMuscles,
+          isCurated: false, // Ejercicios de API NO son curados
         );
       } else {
         addedCount++;
         // --- ADD NEW EXERCISE ---
-        exercisesMap[exercise.id] = exercise;
+        // Ejercicios nuevos de la API NO son curados
+        exercisesMap[exercise.id] = exercise.copyWith(isCurated: false);
       }
     }
     _logger.i(
-        'Merge (isPrimary=$isPrimary): Added $addedCount new, Merged $mergedCount existing.');
+        'Merge (isPrimary=$isPrimary): Added $addedCount new, Merged $mergedCount, Protected $protectedCount curated.');
   }
 
   Future<void> _processImageDownloads(

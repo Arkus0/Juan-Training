@@ -1,28 +1,123 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
+# ============================================================================
+# ANÁLISIS ESTÁTICO — Juan Training
+# ============================================================================
+# Configuración optimizada para rendimiento y calidad de código.
+# Reglas enfocadas en:
+# 1. Prevención de rebuilds innecesarios (const constructors)
+# 2. Widgets eficientes (SizedBox vs Container)
+# 3. Inmutabilidad (final, const)
+# 4. Buenas prácticas de Flutter
+# ============================================================================
 
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+analyzer:
+  errors:
+    # Tratar warnings de rendimiento como errores para no pasarlos por alto
+    prefer_const_constructors: warning
+    prefer_const_declarations: warning
+    prefer_const_literals_to_create_immutables: warning
+    sized_box_for_whitespace: warning
+    use_colored_box: info
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated/**"
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    # ═══════════════════════════════════════════════════════════════════════
+    # RENDIMIENTO: Prevención de rebuilds innecesarios
+    # ═══════════════════════════════════════════════════════════════════════
+    # CRÍTICO: const constructors evitan que Flutter reconstruya widgets
+    # cuando el parent se reconstruye. Diferencia de ms en cada frame.
+    prefer_const_constructors: true
+    prefer_const_constructors_in_immutables: true
+    prefer_const_declarations: true
+    prefer_const_literals_to_create_immutables: true
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # RENDIMIENTO: Widgets eficientes
+    # ═══════════════════════════════════════════════════════════════════════
+    # SizedBox es más eficiente que Container para espaciado
+    # Container crea un DecoratedBox + ConstrainedBox + Padding innecesarios
+    sized_box_for_whitespace: true
+
+    # ColoredBox es más eficiente que Container(color: ...)
+    use_colored_box: true
+
+    # DecoratedBox es más eficiente que Container(decoration: ...)
+    use_decorated_box: true
+
+    # Evitar containers que no hacen nada
+    avoid_unnecessary_containers: true
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # INMUTABILIDAD: Código predecible y seguro
+    # ═══════════════════════════════════════════════════════════════════════
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_final_fields: true
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # BUENAS PRÁCTICAS FLUTTER
+    # ═══════════════════════════════════════════════════════════════════════
+    # child: siempre al final para mejor legibilidad
+    sort_child_properties_last: true
+
+    # Evitar valores redundantes
+    avoid_redundant_argument_values: true
+
+    # BuildContext no debe usarse en async gaps
+    use_build_context_synchronously: true
+
+    # Usar super parameters (Dart 2.17+)
+    use_super_parameters: true
+
+    # Trailing commas para mejor formatting
+    require_trailing_commas: true
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # CALIDAD DE CÓDIGO
+    # ═══════════════════════════════════════════════════════════════════════
+    # Evitar print en producción
+    avoid_print: true
+
+    # Imports ordenados
+    directives_ordering: true
+
+    # Evitar tipos innecesarios
+    omit_local_variable_types: true
+
+    # Usar interpolación de strings
+    prefer_interpolation_to_compose_strings: true
+
+    # Expresiones de colección modernas
+    prefer_collection_literals: true
+
+    # Usar spread operator
+    prefer_spread_collections: true
+
+    # Usar if-null operators
+    prefer_if_null_operators: true
+
+    # Usar null-aware operators
+    prefer_null_aware_operators: true
+
+    # Evitar parámetros posicionales booleanos
+    avoid_positional_boolean_parameters: true
+
+    # Single quotes para consistencia
+    prefer_single_quotes: true
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # DOCUMENTACIÓN (opcional pero recomendado para APIs públicas)
+    # ═══════════════════════════════════════════════════════════════════════
+    # public_member_api_docs: false  # Desactivado para no ser intrusivo
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # DESACTIVADOS INTENCIONALMENTE
+    # ═══════════════════════════════════════════════════════════════════════
+    # Estos pueden ser molestos en desarrollo rápido
+    # lines_longer_than_80_chars: false
+    # always_declare_return_types: false

@@ -312,11 +312,21 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
     for (int i = 0; i < next.exercises.length; i++) {
       final exercise = next.exercises[i];
       final allCompleted = exercise.logs.every((log) => log.completed);
-      
+
       if (allCompleted && !_completedExercises.contains(i)) {
         // ¡Este ejercicio acaba de completarse!
         _completedExercises.add(i);
-        
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // GAME FEEL: Feedback háptico al completar ejercicio
+        // ═══════════════════════════════════════════════════════════════════════
+        // heavyImpact para que el usuario SIENTA la satisfacción de completar.
+        // Esto es crítico para la UX táctil en gimnasio.
+        // ═══════════════════════════════════════════════════════════════════════
+        if (!PerformanceMode.instance.reduceVibrations) {
+          try { HapticFeedback.heavyImpact(); } catch (_) {}
+        }
+
         const targetReps = 8; // Default, idealmente vendría del ejercicio
         final completedSets = exercise.logs.where((l) => l.completed).length;
         final totalReps = exercise.logs.fold<int>(0, (sum, log) => sum + log.reps);
