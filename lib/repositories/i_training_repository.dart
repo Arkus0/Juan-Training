@@ -20,6 +20,12 @@ class ActiveSessionData {
     required this.defaultRestSeconds,
     required this.history,
   });
+
+  /// Total sets completed across all exercises in this session
+  int get completedSets => history.values.fold(0, (sum, logs) => sum + logs.length);
+
+  /// Total sets planned for this session
+  int get totalSets => exercises.fold(0, (sum, ex) => sum + ex.series);
 }
 
 abstract class ITrainingRepository {

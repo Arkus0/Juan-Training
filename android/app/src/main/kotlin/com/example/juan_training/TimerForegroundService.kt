@@ -131,14 +131,14 @@ class TimerForegroundService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val remaining = if (isPaused) {
-            totalSeconds
+        val remaining: Long = if (isPaused) {
+            totalSeconds.toLong()
         } else {
             ((endTimeMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
         }
 
-        val minutes = (remaining / 60).toString().padStart(2, '0')
-        val seconds = (remaining % 60).toString().padStart(2, '0')
+        val minutes = (remaining / 60L).toString().padStart(2, '0')
+        val seconds = (remaining % 60L).toString().padStart(2, '0')
         val timeString = "$minutes:$seconds"
 
         // Progress calculation

@@ -46,8 +46,8 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
               return _ActiveSessionState(
                 rutina: activeSessionData.activeRutina!,
                 startTime: activeSessionData.startTime,
-                completedSets: activeSessionData.completedSets ?? 0,
-                totalSets: activeSessionData.totalSets ?? 0,
+                completedSets: activeSessionData.completedSets,
+                totalSets: activeSessionData.totalSets,
                 onContinue: () => _continueSession(context, ref),
                 onDiscard: () => _showDiscardDialog(context, ref),
               );
