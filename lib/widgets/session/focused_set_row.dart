@@ -44,7 +44,7 @@ class TrainingColors {
   static const confirmButton = Color(0xFF4CAF50);
 }
 
-class FocusedSetRow extends StatelessWidget {
+class FocusedSetRow extends StatefulWidget {
   final int index;
   final SerieLog log;
   final SerieLog? prevLog;
@@ -73,82 +73,145 @@ class FocusedSetRow extends StatelessWidget {
   });
 
   @override
+  State<FocusedSetRow> createState() => _FocusedSetRowState();
+}
+
+class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProviderStateMixin {
+  /// Animación de flash verde al completar
+  late AnimationController _flashController;
+  late Animation<double> _flashAnimation;
+  
+  /// Tracking del estado anterior para detectar completado
+  bool _wasCompleted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _flashController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _flashAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _flashController, curve: Curves.easeOut),
+    );
+    _wasCompleted = widget.log.completed;
+  }
+
+  @override
+  void didUpdateWidget(FocusedSetRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Detectar si se acaba de completar la serie
+    if (widget.log.completed && !_wasCompleted) {
+      _flashController.forward().then((_) => _flashController.reset());
+    }
+    _wasCompleted = widget.log.completed;
+  }
+
+  @override
+  void dispose() {
+    _flashController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isCompleted = log.completed;
+    final isCompleted = widget.log.completed;
 
     // Colores y estilos según estado
-    final RowStyle style = _getRowStyle(isCompleted, isActive, isFuture);
+    final RowStyle style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture);
 
     return GestureDetector(
-      onLongPress: onLongPress,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: style.opacity,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(vertical: 2),
-          padding: style.padding,
-          decoration: BoxDecoration(
-            color: style.bgColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: style.borderColor,
-              width: isActive ? 2 : 1,
-            ),
-          ),
-          child: Row(
+      onLongPress: widget.onLongPress,
+      child: AnimatedBuilder(
+        animation: _flashAnimation,
+        builder: (context, child) {
+          return Stack(
             children: [
-              // Número de serie
-              _SetNumberBadge(
-                index: index,
-                isCompleted: isCompleted,
-                isActive: isActive,
-                isWarmup: log.isWarmup,
-                isDropset: log.isDropset,
-              ),
-
-              const SizedBox(width: 12),
-
-              // Input KG (táctil grande)
-              Expanded(
-                child: _TappableValueInput(
-                  value: log.peso > 0 ? log.peso : null,
-                  label: 'KG',
-                  isActive: isActive,
-                  isCompleted: isCompleted,
-                  textColor: style.textColor,
-                  onTap: isCompleted
-                      ? null
-                      : () => _openWeightInput(context),
+              child!,
+              // 🆕 Flash verde overlay cuando se completa
+              if (_flashAnimation.value > 0)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: TrainingColors.completed.withOpacity(
+                        0.3 * (1 - _flashAnimation.value),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Input REPS (táctil grande)
-              Expanded(
-                child: _TappableValueInput(
-                  value: log.reps > 0 ? log.reps.toDouble() : null,
-                  label: 'REPS',
-                  isActive: isActive,
-                  isCompleted: isCompleted,
-                  textColor: style.textColor,
-                  isInteger: true,
-                  onTap: isCompleted
-                      ? null
-                      : () => _openRepsInput(context),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Checkbox de completado
-              _CompletionCheckbox(
-                isCompleted: isCompleted,
-                isActive: isActive,
-                onChanged: onCompleted,
-              ),
             ],
+          );
+        },
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: style.opacity,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: style.padding,
+            decoration: BoxDecoration(
+              color: style.bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: style.borderColor,
+                width: widget.isActive ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                // Número de serie
+                _SetNumberBadge(
+                  index: widget.index,
+                  isCompleted: isCompleted,
+                  isActive: widget.isActive,
+                  isWarmup: widget.log.isWarmup,
+                  isDropset: widget.log.isDropset,
+                ),
+
+                const SizedBox(width: 12),
+
+                // Input KG (táctil grande)
+                Expanded(
+                  child: _TappableValueInput(
+                    value: widget.log.peso > 0 ? widget.log.peso : null,
+                    label: 'KG',
+                    isActive: widget.isActive,
+                    isCompleted: isCompleted,
+                    textColor: style.textColor,
+                    onTap: isCompleted
+                        ? null
+                        : () => _openWeightInput(context),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Input REPS (táctil grande)
+                Expanded(
+                  child: _TappableValueInput(
+                    value: widget.log.reps > 0 ? widget.log.reps.toDouble() : null,
+                    label: 'REPS',
+                    isActive: widget.isActive,
+                    isCompleted: isCompleted,
+                    textColor: style.textColor,
+                    isInteger: true,
+                    onTap: isCompleted
+                        ? null
+                        : () => _openRepsInput(context),
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Checkbox de completado
+                _CompletionCheckbox(
+                  isCompleted: isCompleted,
+                  isActive: widget.isActive,
+                  onChanged: widget.onCompleted,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -159,7 +222,7 @@ class FocusedSetRow extends StatelessWidget {
     if (isCompleted) {
       return RowStyle(
         bgColor: TrainingColors.completedBg,
-        borderColor: TrainingColors.completed.withOpacity(0.3),
+        borderColor: TrainingColors.completed.withValues(alpha: 0.3),
         textColor: TrainingColors.textSecondary,
         opacity: 0.7,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -194,48 +257,48 @@ class FocusedSetRow extends StatelessWidget {
   void _openWeightInput(BuildContext context) async {
     final result = await NumpadInputModal.show(
       context: context,
-      exerciseName: exerciseName,
-      setNumber: index + 1,
-      totalSets: totalSets,
+      exerciseName: widget.exerciseName,
+      setNumber: widget.index + 1,
+      totalSets: widget.totalSets,
       fieldLabel: 'KG',
-      previousValue: prevLog?.peso.toDouble(),
-      currentValue: log.peso > 0 ? log.peso.toDouble() : null,
+      previousValue: widget.prevLog?.peso.toDouble(),
+      currentValue: widget.log.peso > 0 ? widget.log.peso.toDouble() : null,
       isInteger: false,
     );
 
     if (result != null) {
-      onWeightChanged(result);
+      widget.onWeightChanged(result);
       // 🆕 Auto-completar si ambos campos tienen valor
-      _checkAutoComplete(result, log.reps.toDouble());
+      _checkAutoComplete(result, widget.log.reps.toDouble());
     }
   }
 
   void _openRepsInput(BuildContext context) async {
     final result = await NumpadInputModal.show(
       context: context,
-      exerciseName: exerciseName,
-      setNumber: index + 1,
-      totalSets: totalSets,
+      exerciseName: widget.exerciseName,
+      setNumber: widget.index + 1,
+      totalSets: widget.totalSets,
       fieldLabel: 'REPS',
-      previousValue: prevLog?.reps.toDouble(),
-      currentValue: log.reps > 0 ? log.reps.toDouble() : null,
+      previousValue: widget.prevLog?.reps.toDouble(),
+      currentValue: widget.log.reps > 0 ? widget.log.reps.toDouble() : null,
       isInteger: true,
     );
 
     if (result != null) {
-      onRepsChanged(result.toInt());
+      widget.onRepsChanged(result.toInt());
       // 🆕 Auto-completar si ambos campos tienen valor
-      _checkAutoComplete(log.peso.toDouble(), result);
+      _checkAutoComplete(widget.log.peso.toDouble(), result);
     }
   }
 
   /// 🆕 Verifica si se debe auto-completar la serie
   void _checkAutoComplete(double weight, double reps) {
     // Si ambos valores son > 0 y la serie no está completada
-    if (weight > 0 && reps > 0 && !log.completed) {
+    if (weight > 0 && reps > 0 && !widget.log.completed) {
       // Dar un pequeño delay para que el estado se actualice
       Future.delayed(const Duration(milliseconds: 100), () {
-        onCompleted(true);
+        widget.onCompleted(true);
       });
     }
   }

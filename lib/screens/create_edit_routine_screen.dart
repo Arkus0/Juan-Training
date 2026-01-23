@@ -4,8 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:juan_training/models/rutina.dart';
+import 'package:juan_training/models/sesion.dart';
 import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/models/analysis_models.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
+import 'package:juan_training/providers/training_provider.dart';
 import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
 import 'package:juan_training/services/routine_sharing_service.dart';
@@ -125,14 +128,98 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (bottomSheetContext) => BibliotecaBottomSheet(
-        onAdd: (LibraryExercise ex) {
+        onAdd: (LibraryExercise ex) async {
+          // 🆕 SmartDefaults: buscar historial antes de añadir
+          SmartDefaults? defaults;
+          try {
+            final repo = ref.read(trainingRepositoryProvider);
+            final sessions = await repo.getExpandedHistoryForExercise(ex.name, limit: 3);
+            if (sessions.isNotEmpty) {
+              // Calcular series y reps más comunes del historial
+              defaults = _calculateSmartDefaults(sessions, ex.name);
+            }
+          } catch (_) {
+            // Si falla, usar defaults normales
+          }
+          
           ref
               .read(createRoutineProvider(widget.rutina).notifier)
-              .addExerciseToDay(dayIndex, ex);
+              .addExerciseToDay(
+                dayIndex, 
+                ex,
+                defaultSeries: defaults?.series,
+                defaultRepsRange: defaults?.repsRange,
+              );
           try { HapticFeedback.lightImpact(); } catch (_) {}
           // Snackbar is now shown inside BibliotecaBottomSheet
         },
+        // 🆕 Callback para obtener PR personal
+        getPersonalRecord: (exerciseName) async {
+          try {
+            final repo = ref.read(trainingRepositoryProvider);
+            final prs = await repo.getPersonalRecords(exerciseNames: [exerciseName]);
+            return prs.isNotEmpty ? prs.first : null;
+          } catch (_) {
+            return null;
+          }
+        },
+        // 🆕 Callback para SmartDefaults (usado en preview)
+        getSmartDefaults: (exerciseName) async {
+          try {
+            final repo = ref.read(trainingRepositoryProvider);
+            final sessions = await repo.getExpandedHistoryForExercise(exerciseName, limit: 3);
+            if (sessions.isNotEmpty) {
+              return _calculateSmartDefaults(sessions, exerciseName);
+            }
+          } catch (_) {}
+          return null;
+        },
       ),
+    );
+  }
+  
+  /// 🆕 Calcula SmartDefaults basado en historial del usuario
+  SmartDefaults? _calculateSmartDefaults(List<Sesion> sessions, String exerciseName) {
+    // Recopilar datos de sets del ejercicio
+    int totalSeries = 0;
+    int sessionCount = 0;
+    final repsList = <int>[];
+    
+    for (final session in sessions) {
+      for (final ejercicio in session.ejerciciosCompletados) {
+        if (ejercicio.nombre.toLowerCase() == exerciseName.toLowerCase()) {
+          totalSeries += ejercicio.logs.length;
+          sessionCount++;
+          for (final serie in ejercicio.logs) {
+            if (serie.reps > 0) {
+              repsList.add(serie.reps);
+            }
+          }
+        }
+      }
+    }
+    
+    if (sessionCount == 0) return null;
+    
+    // Series: promedio redondeado
+    final avgSeries = (totalSeries / sessionCount).round();
+    
+    // Reps: rango min-max o valor único
+    if (repsList.isEmpty) {
+      return SmartDefaults(series: avgSeries, repsRange: '8-12');
+    }
+    
+    repsList.sort();
+    final minReps = repsList.first;
+    final maxReps = repsList.last;
+    
+    final repsRange = minReps == maxReps 
+        ? '$minReps' 
+        : '$minReps-$maxReps';
+    
+    return SmartDefaults(
+      series: avgSeries.clamp(1, 10),
+      repsRange: repsRange,
     );
   }
 

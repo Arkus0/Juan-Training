@@ -204,7 +204,12 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     state = state.copyWith(dias: newDias);
   }
 
-  void addExerciseToDay(int dayIndex, LibraryExercise libExercise) {
+  void addExerciseToDay(
+    int dayIndex, 
+    LibraryExercise libExercise, {
+    int? defaultSeries,
+    String? defaultRepsRange,
+  }) {
     // Add exercise immediately without blocking on filesystem I/O
     // Image path validation happens asynchronously
     final newExercise = EjercicioEnRutina(
@@ -215,6 +220,9 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       musculosSecundarios: libExercise.secondaryMuscles,
       equipo: libExercise.equipment,
       localImagePath: libExercise.localImagePath,
+      // 🆕 SmartDefaults: usar valores del historial si están disponibles
+      series: defaultSeries ?? 3,
+      repsRange: defaultRepsRange ?? '8-12',
     );
 
     final day = state.dias[dayIndex];

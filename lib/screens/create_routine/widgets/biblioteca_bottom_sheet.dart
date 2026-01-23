@@ -5,13 +5,44 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fuzzy/fuzzy.dart';
 import 'package:flutter/services.dart';
 import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/models/analysis_models.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
 import 'package:juan_training/widgets/common/create_exercise_dialog.dart';
 
+/// Opciones de ordenación para power-users
+enum SortOption {
+  nameAsc,      // A → Z
+  nameDesc,     // Z → A
+  muscleGroup,  // Agrupado por músculo
+  recentlyUsed, // Últimos usados primero (favoritos primero)
+}
+
+/// 🆕 SmartDefaults: valores sugeridos basados en historial
+class SmartDefaults {
+  final int series;
+  final String repsRange;
+  
+  const SmartDefaults({
+    required this.series,
+    required this.repsRange,
+  });
+}
+
 class BibliotecaBottomSheet extends StatefulWidget {
   final Function(LibraryExercise) onAdd;
+  
+  /// Callback opcional para obtener el PR personal de un ejercicio
+  final Future<PersonalRecord?> Function(String exerciseName)? getPersonalRecord;
+  
+  /// 🆕 Callback para obtener SmartDefaults del historial del usuario
+  final Future<SmartDefaults?> Function(String exerciseName)? getSmartDefaults;
 
-  const BibliotecaBottomSheet({super.key, required this.onAdd});
+  const BibliotecaBottomSheet({
+    super.key, 
+    required this.onAdd,
+    this.getPersonalRecord,
+    this.getSmartDefaults,
+  });
 
   @override
   State<BibliotecaBottomSheet> createState() => _BibliotecaBottomSheetState();
@@ -23,6 +54,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   String _selectedEquipment = 'Todos';
   String _query = '';
   bool _showFavoritesOnly = false;
+  
+  /// 🆕 Ordenación actual
+  SortOption _currentSort = SortOption.nameAsc;
   
   /// 🆕 Vista compacta (solo lista) vs grid con imágenes
   bool _compactView = false;
@@ -75,6 +109,59 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
 
   List<String> get _muscles => ['Todos', 'Pecho', 'Espalda', 'Piernas', 'Brazos', 'Hombros', 'Abdominales', 'Gemelos', 'Cardio'];
   List<String> get _equipment => ['Todos', 'Barra', 'Mancuerna', 'Máquina', 'Polea', 'Peso corporal', 'Banco'];
+
+  /// Helper para construir items del menú de ordenación
+  PopupMenuItem<SortOption> _buildSortMenuItem(SortOption option, String label, IconData icon) {
+    final isSelected = _currentSort == option;
+    return PopupMenuItem<SortOption>(
+      value: option,
+      child: Row(
+        children: [
+          Icon(icon, color: isSelected ? Colors.amber : Colors.white70, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: GoogleFonts.montserrat(
+              color: isSelected ? Colors.amber : Colors.white,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          if (isSelected) ...[
+            const Spacer(),
+            const Icon(Icons.check, color: Colors.amber, size: 18),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Aplica ordenación a la lista de ejercicios
+  List<LibraryExercise> _applySorting(List<LibraryExercise> exercises) {
+    final sorted = List<LibraryExercise>.from(exercises);
+    switch (_currentSort) {
+      case SortOption.nameAsc:
+        sorted.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+      case SortOption.nameDesc:
+        sorted.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+        break;
+      case SortOption.muscleGroup:
+        sorted.sort((a, b) {
+          final cmp = a.muscleGroup.compareTo(b.muscleGroup);
+          return cmp != 0 ? cmp : a.name.compareTo(b.name);
+        });
+        break;
+      case SortOption.recentlyUsed:
+        // Favoritos primero, luego alfabético
+        sorted.sort((a, b) {
+          if (a.isFavorite && !b.isFavorite) return -1;
+          if (!a.isFavorite && b.isFavorite) return 1;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+        break;
+    }
+    return sorted;
+  }
 
   @override
   void dispose() {
@@ -207,13 +294,25 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
   }
 
   /// 🆕 Muestra preview del ejercicio con historial personal
-  void _showExercisePreview(BuildContext context, LibraryExercise ex) {
+  void _showExercisePreview(BuildContext context, LibraryExercise ex) async {
+    // Obtener PR personal si hay callback
+    PersonalRecord? personalRecord;
+    if (widget.getPersonalRecord != null) {
+      try {
+        personalRecord = await widget.getPersonalRecord!(ex.name);
+      } catch (_) {
+        // Ignorar errores
+      }
+    }
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 500),
+          constraints: const BoxConstraints(maxWidth: 340, maxHeight: 550),
           decoration: BoxDecoration(
             color: Colors.grey[900],
             borderRadius: BorderRadius.circular(16),
@@ -249,6 +348,35 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
+                    
+                    // 🆕 Historial personal (PR)
+                    if (personalRecord != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.amber[800]!, Colors.orange[700]!],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.emoji_events, color: Colors.white, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              'TU MEJOR: ${personalRecord.maxWeight.toStringAsFixed(1)}kg × ${personalRecord.repsAtMax}',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     
                     // Grupo muscular + equipo
                     Row(
@@ -401,6 +529,22 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                 ),
                 const Spacer(),
+                // 🆕 Dropdown de ordenación
+                PopupMenuButton<SortOption>(
+                  icon: const Icon(Icons.sort, color: Colors.white),
+                  tooltip: 'Ordenar',
+                  color: Colors.grey[850],
+                  onSelected: (option) {
+                    setState(() => _currentSort = option);
+                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                  },
+                  itemBuilder: (ctx) => [
+                    _buildSortMenuItem(SortOption.nameAsc, 'A → Z', Icons.sort_by_alpha),
+                    _buildSortMenuItem(SortOption.nameDesc, 'Z → A', Icons.sort_by_alpha),
+                    _buildSortMenuItem(SortOption.muscleGroup, 'Por músculo', Icons.fitness_center),
+                    _buildSortMenuItem(SortOption.recentlyUsed, 'Favoritos', Icons.star),
+                  ],
+                ),
                 // 🆕 Toggle vista compacta/grid
                 IconButton(
                   icon: Icon(
@@ -841,6 +985,9 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                     e.name[0].toUpperCase() == _selectedLetter
                   ).toList();
                 }
+                
+                // 🆕 Aplicar ordenación seleccionada
+                filtered = _applySorting(filtered);
 
                 if (filtered.isEmpty) {
                   return Center(

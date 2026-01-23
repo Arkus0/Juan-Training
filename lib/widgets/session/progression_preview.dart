@@ -2,6 +2,142 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/progression_engine_models.dart';
 
+// ════════════════════════════════════════════════════════════════════════════
+// CONSECUENCIA MESSAGE - WIDGET PRINCIPAL DE UX
+// ════════════════════════════════════════════════════════════════════════════
+// 
+// Filosofía UX (de PROGRESSION_USER_EXPERIENCE.md):
+// - Mostrar CONSECUENCIAS, no métricas
+// - "Si lo logras: +2.5kg" en vez de "Incremento: 2.5kg"
+// - Verde sutil, nunca rojo (UX_UI_REDESIGN_GUIDE)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Widget de consecuencia clara: "Si lo logras: siguiente vez 82.5kg"
+/// 
+/// Estados según documento UX:
+/// - Normal: "Si lo logras: +2.5kg"  
+/// - Confirmando: "Repite para confirmar subida"
+/// - Deload: "Peso reducido para recuperar"
+/// - Día difícil: "No pasa nada. Completa lo que puedas."
+class ConsequenceMessage extends StatelessWidget {
+  final ProgressionDecision decision;
+  final bool showIcon;
+  
+  const ConsequenceMessage({
+    super.key,
+    required this.decision,
+    this.showIcon = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final message = _buildMessage();
+    final (bgColor, iconColor) = _getColors();
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: iconColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showIcon) ...[
+            Icon(_getIcon(), size: 14, color: iconColor),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              message,
+              style: GoogleFonts.montserrat(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: iconColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _buildMessage() {
+    final isConfirming = decision.reason.contains('1/2') || 
+                         decision.reason.contains('Confirmando') ||
+                         decision.reason.contains('confirmando');
+    
+    switch (decision.action) {
+      case ProgressionAction.increaseWeight:
+        final weight = _formatWeight(decision.suggestedWeight);
+        return 'Si éxito: ${weight}kg';
+      
+      case ProgressionAction.increaseReps:
+        return 'Siguiente: ${decision.suggestedReps} reps';
+      
+      case ProgressionAction.maintain:
+        if (isConfirming) {
+          return 'Repite para confirmar subida';
+        }
+        return 'Mismo objetivo hoy';
+      
+      case ProgressionAction.decreaseWeight:
+        return 'Peso reducido para recuperar';
+      
+      case ProgressionAction.decreaseReps:
+        return 'Consolidando base';
+    }
+  }
+  
+  (Color, Color) _getColors() {
+    switch (decision.action) {
+      case ProgressionAction.increaseWeight:
+      case ProgressionAction.increaseReps:
+        // Verde sutil (no rojo) - UX_UI guidelines
+        return (
+          Colors.green.withValues(alpha: 0.1),
+          Colors.green[400]!,
+        );
+      case ProgressionAction.maintain:
+        return (
+          Colors.grey[850]!.withValues(alpha: 0.5),
+          Colors.grey[400]!,
+        );
+      case ProgressionAction.decreaseWeight:
+      case ProgressionAction.decreaseReps:
+        // Naranja para deload (no rojo = no error)
+        return (
+          Colors.orange.withValues(alpha: 0.1),
+          Colors.orange[400]!,
+        );
+    }
+  }
+  
+  IconData _getIcon() {
+    switch (decision.action) {
+      case ProgressionAction.increaseWeight:
+        return Icons.check_circle_outline;
+      case ProgressionAction.increaseReps:
+        return Icons.add_circle_outline;
+      case ProgressionAction.maintain:
+        return Icons.sync_rounded;
+      case ProgressionAction.decreaseWeight:
+      case ProgressionAction.decreaseReps:
+        return Icons.flash_on_rounded;
+    }
+  }
+  
+  String _formatWeight(double weight) {
+    if (weight == weight.roundToDouble()) {
+      return weight.toInt().toString();
+    }
+    return weight.toStringAsFixed(1);
+  }
+}
+
 /// Widget que muestra la predicción de progresión de forma clara
 /// 
 /// Diseño:
@@ -22,41 +158,27 @@ class ProgressionPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // En modo compacto, usar el nuevo ConsequenceMessage
+    if (compact) {
+      return GestureDetector(
+        onTap: onTap,
+        child: ConsequenceMessage(decision: decision),
+      );
+    }
+    
     final (bgColor, borderColor, iconColor) = _getColors(decision);
     
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(compact ? 8 : 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor, width: 1.5),
         ),
-        child: compact ? _buildCompact(iconColor) : _buildFull(iconColor),
+        child: _buildFull(iconColor),
       ),
-    );
-  }
-
-  Widget _buildCompact(Color iconColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(_getIcon(decision.action), size: 16, color: iconColor),
-        const SizedBox(width: 6),
-        Text(
-          '${_formatWeight(decision.suggestedWeight)}kg × ${decision.suggestedReps}',
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        if (decision.isImprovement) ...[
-          const SizedBox(width: 4),
-          Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.green[400]),
-        ],
-      ],
     );
   }
 
