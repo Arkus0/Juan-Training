@@ -182,6 +182,18 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   StreamSubscription<TimerPlatformEvent>? _timerEventSubscription;
   bool _platformServiceInitialized = false;
 
+  /// Flag para indicar que el timer terminó mientras la app estaba cerrada
+  /// Se usa para notificar al UI que debe mostrar feedback
+  bool _timerFinishedWhileAway = false;
+
+  /// Getter para que el UI pueda verificar si el timer terminó mientras estaba cerrado
+  bool get timerFinishedWhileAway => _timerFinishedWhileAway;
+
+  /// Limpia el flag de timer terminado (llamar después de mostrar feedback)
+  void clearTimerFinishedWhileAway() {
+    _timerFinishedWhileAway = false;
+  }
+
   TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState()) {
     _initializePlatformService();
   }
@@ -375,10 +387,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // HARD LIMITS: Forzar límites absolutos para proteger integridad de datos
+    // Esto evita que outliers arruinen gráficas y análisis
+    // ═══════════════════════════════════════════════════════════════════════
+    final finalPeso = ErrorToleranceRules.enforceWeightLimits(validatedPeso ?? log.peso);
+    final finalReps = ErrorToleranceRules.enforceRepsLimits(reps ?? log.reps);
+
     final newLog = SerieLog(
       id: log.id, // Preserve UUID
-      peso: validatedPeso ?? log.peso,
-      reps: reps ?? log.reps,
+      peso: finalPeso,
+      reps: finalReps,
       completed: completed ?? log.completed,
       rpe: rpe ?? log.rpe,
       notas: notas ?? log.notas,
@@ -811,6 +830,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _saveState();
   }
 
+  /// Resultado del guardado de sesión para feedback al usuario
+  SessionSaveResult? _lastSaveResult;
+
+  /// Getter para obtener el resultado del último guardado
+  SessionSaveResult? get lastSaveResult => _lastSaveResult;
+
+  /// Limpia el resultado del guardado (llamar después de mostrar feedback)
+  void clearLastSaveResult() {
+    _lastSaveResult = null;
+  }
+
   Future<void> finishSession() async {
     // Modified to allow saving sessions without a routine (Ad-hoc)
     if (state.startTime == null) return;
@@ -821,6 +851,16 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     final endTime = DateTime.now();
     final durationSeconds = endTime.difference(state.startTime!).inSeconds;
+
+    // Contar series completadas para feedback
+    int completedSets = 0;
+    int totalSets = 0;
+    for (final ex in state.exercises) {
+      for (final log in ex.logs) {
+        totalSets++;
+        if (log.completed) completedSets++;
+      }
+    }
 
     final sesion = Sesion(
       id: const Uuid().v4(),
@@ -839,8 +879,38 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // Cancelar cualquier debouncer pendiente
     _saveDebouncer.cancel();
 
+    // Guardar resultado para feedback
+    _lastSaveResult = SessionSaveResult(
+      success: true,
+      completedSets: completedSets,
+      totalSets: totalSets,
+      durationMinutes: durationSeconds ~/ 60,
+    );
+
     state = TrainingState();
     ref.read(bottomNavIndexProvider.notifier).state = 2;
+  }
+
+  /// Descarta la sesión activa sin guardarla.
+  /// IMPORTANTE: Cancela cualquier save pendiente para evitar race conditions.
+  Future<void> discardSession() async {
+    // Cancelar cualquier save pendiente ANTES de limpiar
+    // Esto evita que un save debounced se ejecute después del clear
+    _saveDebouncer.cancel();
+    _hasPendingSave = false;
+
+    // Detener timer si está activo
+    if (state.restTimer.isActive) {
+      _timerPlatformService.stop();
+    }
+
+    // Limpiar storage
+    await clearStorage();
+
+    // Reset state
+    state = TrainingState();
+
+    Logger().d('Sesión descartada correctamente');
   }
 
   // --- Persistence ---
@@ -949,8 +1019,10 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         // If not paused and endTime in past, treat as finished
         if (!rt.isPaused && rt.endTime != null && rt.remainingSeconds <= 0) {
           // Timer already finished while app was closed
-          // We call onTimerFinished behavior: stop and trigger the callbacks when appropriate in UI
+          // Set flag so UI can show feedback when it's ready
+          _timerFinishedWhileAway = true;
           rt = const RestTimerState(isActive: false);
+          Logger().d('Timer había terminado mientras app cerrada - notificando UI');
         }
 
         state = state.copyWith(
@@ -997,6 +1069,24 @@ final trainingSessionProvider = StateNotifierProvider<TrainingSessionNotifier, T
   final repo = ref.watch(trainingRepositoryProvider);
   return TrainingSessionNotifier(ref, repo);
 });
+
+/// Resultado del guardado de sesión para feedback visual
+class SessionSaveResult {
+  final bool success;
+  final int completedSets;
+  final int totalSets;
+  final int durationMinutes;
+
+  const SessionSaveResult({
+    required this.success,
+    required this.completedSets,
+    required this.totalSets,
+    required this.durationMinutes,
+  });
+
+  double get completionRate => totalSets > 0 ? completedSets / totalSets : 0;
+  bool get isComplete => completedSets == totalSets;
+}
 
 /// Modelo de sugerencia inteligente de próximo día a entrenar.
 class SmartWorkoutSuggestion {
