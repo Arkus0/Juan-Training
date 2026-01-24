@@ -167,6 +167,42 @@
 
 ---
 
+## Dependencias Pendientes de Actualización
+
+> Las siguientes dependencias tienen versiones más nuevas con **breaking changes**.
+> Actualizar en un PR separado con testing adecuado.
+
+### 🔴 Breaking Changes (requiere migración)
+
+| Paquete | Actual | Disponible | Riesgo | Notas |
+|---------|--------|------------|--------|-------|
+| `flutter_riverpod` | 2.6.1 | 3.2.0 | **ALTO** | API completamente diferente en v3. Requiere migración de todos los providers. |
+| `fl_chart` | 0.69.2 | 1.1.1 | **ALTO** | Major version. Revisar changelog antes de migrar. |
+| `flutter_local_notifications` | 18.0.1 | 19.5.0 | MEDIO | Cambios en API de permisos Android. |
+| `permission_handler` | 11.3.1 | 12.0.1 | MEDIO | Breaking changes en API. |
+| `just_audio` | 0.9.42 | 0.10.5 | MEDIO | Cambios en API de reproducción. |
+| `connectivity_plus` | 6.1.1 | 7.0.0 | BAJO | Minor API changes. |
+| `flutter_slidable` | 3.1.1 | 4.0.3 | BAJO | Cambios en configuración de acciones. |
+| `google_fonts` | 6.2.1 | 7.1.0 | BAJO | Posibles cambios en carga de fuentes. |
+
+### ✅ Ya actualizados (automático via pub get)
+
+- `fl_chart`: 0.66.2 → 0.69.2
+- `intl`: 0.19.0 → 0.20.2
+- `share_plus`: 7.2.2 → 10.1.4
+- `table_calendar`: 3.1.3 → 3.2.0
+- `flutter_lints`: 3.0.2 → 5.0.0
+- `google_mlkit_text_recognition`: 0.13.1 → 0.14.0
+
+### Recomendación de orden para migración futura
+
+1. **Primero:** `flutter_local_notifications` + `permission_handler` (juntos, relacionados)
+2. **Segundo:** `fl_chart` (revisar breaking changes en gráficas)
+3. **Tercero:** `just_audio` (solo afecta beeps del timer)
+4. **Último:** `flutter_riverpod` 3.x (requiere migración masiva, hacer al final)
+
+---
+
 ## Recomendaciones si vuelves en 6-12 meses
 
 1. **Primer paso:** Escribir tests unitarios para los servicios extraídos:
