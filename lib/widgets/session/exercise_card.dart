@@ -547,16 +547,21 @@ class ExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
-    
+
     // 🆕 Calcular si todas las series están completadas
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final completedSets = exercise.logs.where((log) => log.completed).length;
     final totalSets = exercise.logs.length;
 
+    // 🎯 NUEVO: Índice de la serie actual (primera incompleta)
+    final currentSetIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final currentSetNumber = currentSetIndex == -1 ? totalSets : currentSetIndex + 1;
+    final isLastSet = currentSetNumber == totalSets && !allSetsCompleted;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       // 🆕 Color diferente si está colapsado/completado
-      color: isCollapsed 
+      color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
           : null,
       child: InkWell(
@@ -586,8 +591,8 @@ class ExerciseCard extends StatelessWidget {
                               child: Icon(
                                 Icons.expand_more,
                                 size: 20,
-                                color: allSetsCompleted 
-                                    ? AppColors.completedGreen 
+                                color: allSetsCompleted
+                                    ? AppColors.completedGreen
                                     : AppColors.textSecondary,
                               ),
                             ),
@@ -598,8 +603,8 @@ class ExerciseCard extends StatelessWidget {
                                 style: AppTypography.sectionTitle.copyWith(
                                   fontSize: isCollapsed ? 18 : 19,
                                   fontWeight: isCollapsed ? FontWeight.w600 : FontWeight.w700,
-                                  color: allSetsCompleted 
-                                      ? AppColors.completedGreen 
+                                  color: allSetsCompleted
+                                      ? AppColors.completedGreen
                                       : AppColors.textPrimary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -615,24 +620,16 @@ class ExerciseCard extends StatelessWidget {
                                 color: AppColors.completedGreen,
                               ),
                             ],
-                            // Badge contador cuando colapsado
-                            if (isCollapsed && !allSetsCompleted) ...[
+                            // 🎯 NUEVO: Indicador de serie SIEMPRE VISIBLE (prominente)
+                            // Muestra "Serie X/Y" cuando expandido, "X/Y" cuando colapsado
+                            if (!allSetsCompleted) ...[
                               const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bloodRed.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.bloodRed),
-                                ),
-                                child: Text(
-                                  '$completedSets/$totalSets',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.bloodRed,
-                                  ),
-                                ),
+                              _SeriesIndicator(
+                                currentSet: currentSetNumber,
+                                totalSets: totalSets,
+                                completedSets: completedSets,
+                                isCollapsed: isCollapsed,
+                                isLastSet: isLastSet,
                               ),
                             ],
                           ],
@@ -827,6 +824,141 @@ class ExerciseCard extends StatelessWidget {
         // 🆕 Botón para añadir series adicionales
         AddSetButton(exerciseIndex: exerciseIndex),
       ],
+    );
+  }
+}
+
+/// 🎯 NUEVO: Indicador de series prominente y visible
+/// Responde a: "¿Cuántas llevo? ¿Cuántas quedan?"
+/// - Cuando expandido: Muestra "Serie X / Y" con barra de progreso visual
+/// - Cuando colapsado: Muestra "X/Y" compacto
+/// - Última serie: Destaca con color especial y mensaje "¡ÚLTIMA!"
+class _SeriesIndicator extends StatelessWidget {
+  final int currentSet;
+  final int totalSets;
+  final int completedSets;
+  final bool isCollapsed;
+  final bool isLastSet;
+
+  const _SeriesIndicator({
+    required this.currentSet,
+    required this.totalSets,
+    required this.completedSets,
+    required this.isCollapsed,
+    required this.isLastSet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calcular progreso
+    final progress = totalSets > 0 ? completedSets / totalSets : 0.0;
+
+    // Colores según estado
+    final Color bgColor;
+    final Color textColor;
+    final Color progressColor;
+
+    if (isLastSet) {
+      // Última serie: color de urgencia/celebración
+      bgColor = AppColors.fireRed.withValues(alpha: 0.2);
+      textColor = AppColors.fireRed;
+      progressColor = AppColors.fireRed;
+    } else if (progress >= 0.5) {
+      // Más de la mitad: color de progreso
+      bgColor = AppColors.completedGreen.withValues(alpha: 0.15);
+      textColor = AppColors.completedGreen;
+      progressColor = AppColors.completedGreen;
+    } else {
+      // Menos de la mitad: color neutro/activo
+      bgColor = AppColors.bloodRed.withValues(alpha: 0.15);
+      textColor = AppColors.bloodRed;
+      progressColor = AppColors.bloodRed;
+    }
+
+    if (isCollapsed) {
+      // Versión compacta para estado colapsado
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: textColor.withValues(alpha: 0.5)),
+        ),
+        child: Text(
+          '$completedSets/$totalSets',
+          style: GoogleFonts.montserrat(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
+        ),
+      );
+    }
+
+    // Versión expandida con más información
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icono de serie/repetición
+          Icon(
+            Icons.fitness_center,
+            size: 12,
+            color: textColor,
+          ),
+          const SizedBox(width: 4),
+          // Texto principal
+          Text(
+            isLastSet ? '¡ÚLTIMA!' : 'Serie $currentSet',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Separador
+          Text(
+            '/',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: textColor.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Total de series
+          Text(
+            '$totalSets',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: textColor.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Mini barra de progreso visual
+          SizedBox(
+            width: 24,
+            height: 4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: textColor.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation(progressColor),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

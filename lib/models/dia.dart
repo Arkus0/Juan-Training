@@ -14,6 +14,18 @@ class Dia {
     String? id,
   }) : id = id ?? const Uuid().v4();
 
+  /// Creates a DEEP copy of this day including all exercises.
+  /// This ensures modifications don't affect the original object.
+  /// 🎯 FIX: Usado para evitar que la edición de rutinas guarde cambios sin guardar explícito.
+  Dia deepCopy() {
+    return Dia(
+      id: id,
+      nombre: nombre,
+      ejercicios: ejercicios.map((e) => e.deepCopy()).toList(),
+      progressionType: progressionType,
+    );
+  }
+
   Dia copyWith({
     String? id,
     String? nombre,
