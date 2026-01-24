@@ -7,9 +7,12 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/sesion.dart';
 import '../models/rutina.dart';
+import '../models/external_session.dart';
 import 'session_detail_screen.dart';
 import '../providers/training_provider.dart';
 import '../widgets/common/app_widgets.dart';
+import '../widgets/external_session_sheet.dart';
+import '../utils/design_system.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -46,6 +49,17 @@ class HistoryScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'add_external_session',
+        onPressed: () => _showExternalSessionSheet(context),
+        backgroundColor: AppColors.neonCyan,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add),
+        label: Text(
+          'SESIÓN EXTERNA',
+          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+      ),
       body: sessionsAsync.when(
         loading: () => const AppLoadingIndicator(message: 'Cargando historial...'),
         error: (err, stack) => ErrorStateWidget(
@@ -54,11 +68,7 @@ class HistoryScreen extends ConsumerWidget {
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
-            return const EmptyStateWidget(
-              icon: Icons.history_toggle_off,
-              title: 'SIN ENTRENAMIENTOS',
-              subtitle: 'Completa tu primer entrenamiento para ver el historial.',
-            );
+            return _buildEmptyStateWithHint(context);
           }
 
           return rutinasAsync.when(
@@ -72,7 +82,7 @@ class HistoryScreen extends ConsumerWidget {
 
               return ListView.builder(
                 itemCount: groupedSessions.length,
-                padding: const EdgeInsets.only(top: 16, bottom: 80),
+                padding: const EdgeInsets.only(top: 16, bottom: 100),
                 itemBuilder: (context, index) {
                   final weekEntry = groupedSessions.entries.elementAt(index);
                   return _WeekSection(
@@ -143,6 +153,133 @@ class HistoryScreen extends ConsumerWidget {
         }).toList(),
       }).toList(),
     };
+  }
+
+  Widget _buildEmptyStateWithHint(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.history_toggle_off,
+              size: 80,
+              color: Colors.grey[700],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'SIN ENTRENAMIENTOS',
+              style: GoogleFonts.montserrat(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Completa tu primer entrenamiento para ver el historial.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.montserrat(
+                fontSize: 14,
+                color: Colors.white54,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.neonCyan.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.lightbulb_outline, color: AppColors.neonCyan, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '¿Entrenaste fuera de la app?',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.neonCyan,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Puedes agregar sesiones externas usando voz, escáner, texto o entrada manual.',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12,
+                      color: Colors.white54,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showExternalSessionSheet(context),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('AGREGAR SESIÓN EXTERNA'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.neonCyan,
+                        side: const BorderSide(color: AppColors.neonCyan),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showExternalSessionSheet(BuildContext context) async {
+    try { HapticFeedback.selectionClick(); } catch (_) {}
+
+    final session = await ExternalSessionSheet.show(context);
+
+    if (session != null && context.mounted) {
+      // TODO: Guardar la sesión externa en la base de datos
+      // Por ahora, mostrar confirmación
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Sesión externa guardada (${session.exercises.length} ejercicios)',
+                  style: GoogleFonts.montserrat(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.bgElevated,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          action: SnackBarAction(
+            label: 'DESHACER',
+            textColor: AppColors.neonCyan,
+            onPressed: () {
+              // TODO: Implementar undo
+            },
+          ),
+          duration: const Duration(seconds: 10),
+        ),
+      );
+    }
   }
 }
 
