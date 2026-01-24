@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/session_progress_provider.dart';
-import '../../providers/focus_manager_provider.dart';
 import '../../services/haptics_controller.dart';
 
 /// Widget que observa eventos de la sesión y dispara haptics apropiados.
@@ -61,11 +60,11 @@ class _HapticsObserverState extends ConsumerState<HapticsObserver> {
     ref.listen<SessionProgress>(
       sessionProgressProvider,
       (previous, next) {
-        // Detectar nuevo milestone
-        if (next.newlyReachedMilestone != null) {
-          HapticsController.instance.onMilestone(next.newlyReachedMilestone!);
-          // Marcar como consumido
-          ref.read(sessionProgressProvider.notifier).clearNewlyReachedMilestone();
+        // Detectar nuevo milestone comparando con el anterior
+        final prevMilestone = previous?.lastMilestone ?? 0;
+        final newMilestone = next.lastMilestone;
+        if (newMilestone > prevMilestone && newMilestone > 0) {
+          HapticsController.instance.onMilestone(newMilestone);
         }
       },
     );
@@ -76,10 +75,10 @@ class _HapticsObserverState extends ConsumerState<HapticsObserver> {
     ref.listen<ExerciseCompletionInfo?>(
       exerciseCompletionProvider,
       (previous, next) {
-        if (next?.needsHapticFeedback == true) {
+        if (next != null) {
           HapticsController.instance.onExerciseCompleted();
-          // Marcar como consumido
-          ref.read(exerciseCompletionProvider.notifier).markHapticConsumed();
+          // Marcar como consumido / dismissed para que no vuelva a disparar
+          ref.read(exerciseCompletionProvider.notifier).dismiss();
         }
       },
     );
@@ -87,16 +86,9 @@ class _HapticsObserverState extends ConsumerState<HapticsObserver> {
     // ═══════════════════════════════════════════════════════════════════════
     // OBSERVER: Focus Changes
     // ═══════════════════════════════════════════════════════════════════════
-    ref.listen<FocusManagerState>(
-      focusManagerProvider,
-      (previous, next) {
-        if (next.needsHapticFeedback) {
-          HapticsController.instance.trigger(HapticEvent.focusChanged);
-          // Marcar como consumido
-          ref.read(focusManagerProvider.notifier).markHapticConsumed();
-        }
-      },
-    );
+    // FocusManager ya realiza su propia vibración cuando solicita focus
+    // (requestFocus()): no necesitamos escuchar aquí para evitar duplicados.
+
 
     return widget.child;
   }
