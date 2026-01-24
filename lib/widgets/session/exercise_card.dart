@@ -297,6 +297,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final isCollapsed = _isCollapsed(allSetsCompleted);
 
+    // 🆕 Calcular estado de la serie actual para QuickActions
+    final firstIncompleteSetIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final isCurrentSetDone = firstIncompleteSetIndex == -1; // Todas completadas
+
     return ExerciseCard(
       exerciseIndex: widget.exerciseIndex,
       exercise: exercise,
@@ -329,12 +333,159 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
       onUpdateWeightDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onUpdateRepsDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
+      // 🆕 Quick Actions
+      isCurrentSetDone: isCurrentSetDone,
+      onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
+      onMarkDone: () => _markCurrentSetDone(exercise, historyLogs),
+      onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
     );
   }
 
   void _updateExerciseRestTime(int seconds) {
     final notifier = ref.read(trainingSessionProvider.notifier);
     notifier.updateExerciseRestTime(widget.exerciseIndex, seconds);
+  }
+
+  /// 🆕 QUICK ACTION: Repetir la serie actual (copiar peso/reps de la anterior)
+  void _repeatCurrentSet(Ejercicio exercise, List<SerieLog>? historyLogs) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+
+    // Encontrar la primera serie incompleta
+    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
+    if (firstIncompleteIndex == -1) return; // Todas completadas
+
+    // Buscar la serie anterior completada para copiar datos
+    SerieLog? prevLog;
+    if (firstIncompleteIndex > 0) {
+      prevLog = exercise.logs[firstIncompleteIndex - 1];
+    } else if (historyLogs != null && historyLogs.isNotEmpty) {
+      // Usar historial si es la primera serie
+      prevLog = historyLogs.first;
+    }
+
+    if (prevLog != null) {
+      notifier.updateLog(
+        widget.exerciseIndex,
+        firstIncompleteIndex,
+        peso: prevLog.peso,
+        reps: prevLog.reps,
+      );
+
+      HapticFeedback.mediumImpact();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.repeat_rounded, color: AppColors.textOnAccent, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textOnAccent,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.bloodRed,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🆕 QUICK ACTION: Marcar la serie actual como completada
+  void _markCurrentSetDone(Ejercicio exercise, List<SerieLog>? historyLogs) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    final isRestActive = ref.read(trainingSessionProvider).restTimer.isActive;
+
+    // Encontrar la primera serie incompleta
+    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
+    if (firstIncompleteIndex == -1) return; // Todas completadas
+
+    final log = exercise.logs[firstIncompleteIndex];
+    final prevLog = (historyLogs != null && firstIncompleteIndex < historyLogs.length)
+        ? historyLogs[firstIncompleteIndex]
+        : null;
+
+    // Marcar como completada
+    notifier.updateLog(widget.exerciseIndex, firstIncompleteIndex, completed: true);
+
+    // Trigger feedback de PR
+    _triggerCompletionFeedback(log, prevLog);
+
+    // Auto-iniciar timer
+    if (!isRestActive) {
+      notifier.startRestForExercise(widget.exerciseIndex, setIndex: firstIncompleteIndex);
+    }
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                '¡Serie ${firstIncompleteIndex + 1} completada!',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textOnAccent,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.completedGreen,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// 🆕 QUICK ACTION: Añadir nota rápida al ejercicio
+  void _addQuickNote(String exerciseName, String note) async {
+    final repo = ref.read(trainingRepositoryProvider);
+
+    // Obtener nota existente y añadir la nueva
+    final currentNote = await repo.getNote(exerciseName);
+    final newNote = currentNote != null && currentNote.isNotEmpty
+        ? '$currentNote\n$note'
+        : note;
+
+    await repo.saveNote(exerciseName, newNote);
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.edit_note_rounded, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nota guardada: $note',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textOnAccent,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.techCyan,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
 
@@ -359,6 +510,11 @@ class ExerciseCard extends StatelessWidget {
   final Function(int)? onRestTimeChange;
   final Function(int, double)? onUpdateWeightDirect; // Para FocusedSetRow
   final Function(int, int)? onUpdateRepsDirect; // Para FocusedSetRow
+  // 🆕 Quick Actions callbacks
+  final VoidCallback? onRepeat; // Copiar peso/reps de serie anterior
+  final VoidCallback? onMarkDone; // Marcar serie actual como completada
+  final Function(String)? onQuickNote; // Añadir nota rápida
+  final bool isCurrentSetDone; // Estado de la serie actual
 
   const ExerciseCard({
     super.key,
@@ -382,6 +538,10 @@ class ExerciseCard extends StatelessWidget {
     this.onRestTimeChange,
     this.onUpdateWeightDirect,
     this.onUpdateRepsDirect,
+    this.onRepeat,
+    this.onMarkDone,
+    this.onQuickNote,
+    this.isCurrentSetDone = false,
   });
 
   @override
@@ -493,34 +653,37 @@ class ExerciseCard extends StatelessWidget {
                             showModalBottomSheet(
                               context: context,
                               backgroundColor: AppColors.bgElevated,
+                              isScrollControlled: true, // Para que el teclado no tape el contenido
                               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                               builder: (sheetContext) {
                                 return SafeArea(
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.only(
+                                      left: 16,
+                                      right: 16,
+                                      top: 16,
+                                      bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+                                    ),
                                     child: QuickActionsMenu(
                                       currentRestSeconds: restSeconds,
                                       startExpanded: true,
                                       showToggle: false,
+                                      isCurrentSetDone: isCurrentSetDone,
                                       onRepeat: () {
                                         Navigator.pop(sheetContext);
-                                        // TODO: implementar repetición de set
+                                        onRepeat?.call();
                                       },
-                                      onMaintainGoal: () {
+                                      onMarkDone: () {
                                         Navigator.pop(sheetContext);
-                                        // Reutilizar lógica existente: mantener objetivo (si aplica)
+                                        onMarkDone?.call();
                                       },
                                       onRestTimeSelected: (s) {
                                         Navigator.pop(sheetContext);
-                                        if (onRestTimeChange != null) onRestTimeChange!(s);
+                                        onRestTimeChange?.call(s);
                                       },
-                                      onHistory: () {
+                                      onQuickNote: (note) {
                                         Navigator.pop(sheetContext);
-                                        onShowOptions();
-                                      },
-                                      onMoreOptions: () {
-                                        Navigator.pop(sheetContext);
-                                        onShowOptions();
+                                        onQuickNote?.call(note);
                                       },
                                     ),
                                   ),
@@ -528,7 +691,7 @@ class ExerciseCard extends StatelessWidget {
                               },
                             );
                           },
-                          tooltip: 'Acciones y opciones',
+                          tooltip: 'Acciones rápidas',
                           padding: const EdgeInsets.all(8),
                           constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                         ),
@@ -577,42 +740,20 @@ class ExerciseCard extends StatelessWidget {
           ),
         ],
 
-        // Fila horizontal: Botón objetivo y mensaje de dificultad
-        Row(
-          children: [
-            // Evitar duplicado: si la sugerencia de progresión indica "maintain",
-            // ya se muestra el mensaje "Mismo objetivo hoy" en la tarjeta de progresión.
-            if (progressionDecision == null || progressionDecision!.action != ProgressionAction.maintain)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.bgInteractive,
-                  foregroundColor: AppColors.textPrimary,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: const Size(0, 32),
-                ),
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Mismo objetivo hoy', style: TextStyle(fontSize: 13)),
-                onPressed: () {}, // TODO: lógica real
+        // Mensaje empático para días difíciles (si aplica)
+        if (empatheticBannerMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              empatheticBannerMessage!,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
-
-            if (empatheticBannerMessage != null)
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    empatheticBannerMessage!,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-          ],
-        ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
 
         // Card de progresión v2 (si hay sugerencia)
         if (progressionDecision != null) ...[
@@ -686,233 +827,6 @@ class ExerciseCard extends StatelessWidget {
         // 🆕 Botón para añadir series adicionales
         AddSetButton(exerciseIndex: exerciseIndex),
       ],
-    );
-  }
-}
-
-
-/// Bottom sheet para seleccionar tiempo de descanso
-class _RestTimePickerSheet extends StatefulWidget {
-  final int initialSeconds;
-  final Function(int) onSelected;
-
-  const _RestTimePickerSheet({
-    required this.initialSeconds,
-    required this.onSelected,
-  });
-
-  @override
-  State<_RestTimePickerSheet> createState() => _RestTimePickerSheetState();
-}
-
-class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
-  late int _selectedSeconds;
-
-  // Opciones predefinidas de tiempo
-  static const List<int> _presets = [30, 45, 60, 90, 120, 150, 180, 240, 300];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedSeconds = widget.initialSeconds;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'TIEMPO DE DESCANSO',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Controles +/-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 32),
-                  onPressed: _selectedSeconds > 10
-                      ? () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _selectedSeconds -= 10);
-                        }
-                      : null,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '${_selectedSeconds}s',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 32),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedSeconds += 10);
-                  },
-                  color: AppColors.neonPrimary,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Presets
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: _presets.map((preset) {
-                final isSelected = preset == _selectedSeconds;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedSeconds = preset);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.neonPrimary : Colors.grey[800],
-                      borderRadius: BorderRadius.circular(8),
-                      border: isSelected
-                          ? null
-                          : Border.all(color: Colors.grey[700]!),
-                    ),
-                    child: Text(
-                      _formatPreset(preset),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Botón confirmar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  widget.onSelected(_selectedSeconds);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.neonPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: Text(
-                  'CONFIRMAR',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatPreset(int seconds) {
-    if (seconds >= 60) {
-      final mins = seconds ~/ 60;
-      final secs = seconds % 60;
-      if (secs == 0) return '${mins}m';
-      return '${mins}m ${secs}s';
-    }
-    return '${seconds}s';
-  }
-}
-
-/// Tile individual para acciones rápidas
-class _QuickActionTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const _QuickActionTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!,
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
