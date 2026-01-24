@@ -91,6 +91,7 @@ class Sessions extends Table {
   IntColumn get dayIndex => integer().nullable()(); // Index of day in routine for smart suggestions (v3)
   DateTimeColumn get startTime => dateTime()();
   IntColumn get durationSeconds => integer().nullable()();
+  BoolColumn get isBadDay => boolean().withDefault(const Constant(false))(); // Flag para día malo (v4)
 
   // Active Session Flag: If completedAt is null, it's an active session.
   DateTimeColumn get completedAt => dateTime().nullable()();
@@ -200,11 +201,17 @@ class AppDatabase extends _$AppDatabase {
               // Columns might already exist in some edge cases
             }
           }
-
-
+          // Migration path to version 4: add isBadDay flag for error tolerance
+          if (from < 4) {
+            try {
+              await m.addColumn(sessions, sessions.isBadDay);
+            } catch (e) {
+              // Column might already exist
+            }
+          }
         },
       );
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 }

@@ -361,9 +361,14 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
   void _checkAutoComplete(double weight, double reps) {
     // Si ambos valores son > 0 y la serie no está completada
     if (weight > 0 && reps > 0 && !widget.log.completed) {
+      // Capturar ID del set actual para verificar antes de completar
+      final currentSetId = widget.log.id;
       // Dar un pequeño delay para que el estado se actualice
       Future.delayed(const Duration(milliseconds: 100), () {
-        widget.onCompleted(true);
+        // Solo completar si el widget sigue montado y es el mismo set
+        if (mounted && widget.log.id == currentSetId) {
+          widget.onCompleted(true);
+        }
       });
     }
   }
