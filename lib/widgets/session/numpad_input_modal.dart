@@ -41,7 +41,9 @@ class NumpadInputModal extends StatefulWidget {
   final double? currentValue;
   final bool isInteger;
   final ValueChanged<double> onConfirm;
-  final Function(double, Function(double))? onOpenPlateCalc; // Callback para plate calculator
+  /// Callback para plate calculator
+  /// Parámetros: (pesoActual, callbackParaActualizar, callbackParaAplicarYCerrar)
+  final Function(double, Function(double), Function(double))? onOpenPlateCalc;
 
   const NumpadInputModal({
     super.key,
@@ -66,7 +68,7 @@ class NumpadInputModal extends StatefulWidget {
     double? previousValue,
     double? currentValue,
     bool isInteger = false,
-    Function(double, Function(double))? onOpenPlateCalc,
+    Function(double, Function(double), Function(double))? onOpenPlateCalc,
   }) {
     return showModalBottomSheet<double>(
       context: context,
@@ -211,11 +213,20 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     if (widget.onOpenPlateCalc == null) return;
     HapticFeedback.selectionClick();
     final currentWeight = double.tryParse(_displayValue) ?? 0.0;
-    widget.onOpenPlateCalc!(currentWeight, (newWeight) {
-      setState(() {
-        _displayValue = _formatNumber(newWeight);
-      });
-    });
+    widget.onOpenPlateCalc!(
+      currentWeight,
+      // Callback para solo actualizar el display (sin cerrar)
+      (newWeight) {
+        setState(() {
+          _displayValue = _formatNumber(newWeight);
+        });
+      },
+      // 🆕 Callback para aplicar directamente y cerrar el numpad
+      (newWeight) {
+        // Aplicar y cerrar
+        widget.onConfirm(newWeight);
+      },
+    );
   }
 
   bool get _canConfirm {
