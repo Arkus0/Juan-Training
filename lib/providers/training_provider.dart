@@ -360,7 +360,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
-    
+
     // Crear una nueva serie vacía (o copiando peso/reps de la última si existe)
     SerieLog newLog;
     if (exercise.logs.isNotEmpty) {
@@ -381,15 +381,40 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
     exercises[exerciseIndex] = newExercise;
 
-    // También actualizar targets si aplica
-    final targets = [...state.targets];
-    if (exerciseIndex < targets.length) {
-      targets[exerciseIndex] = targets[exerciseIndex].copyWith(
-        series: newLogs.length,
-      );
-    }
+    // NO actualizamos targets - la rutina original permanece intacta
+    // Esto permite que la sesión sea flexible sin afectar futuros entrenamientos
 
-    state = state.copyWith(exercises: exercises, targets: targets);
+    state = state.copyWith(exercises: exercises);
+    _saveState();
+  }
+
+  /// Elimina una serie de un ejercicio durante la sesión activa
+  ///
+  /// IMPORTANTE: Solo afecta a la sesión actual, NO modifica:
+  /// - La rutina base (targets permanecen intactos)
+  /// - Futuros entrenamientos
+  /// - El motor de progresión (usa ejerciciosCompletados, no targets)
+  void removeSetFromExercise(int exerciseIndex, int setIndex) {
+    if (exerciseIndex >= state.exercises.length) return;
+
+    final exercises = [...state.exercises];
+    final exercise = exercises[exerciseIndex];
+
+    // Protección: no eliminar si solo queda una serie
+    if (exercise.logs.length <= 1) return;
+
+    // Protección: índice válido
+    if (setIndex < 0 || setIndex >= exercise.logs.length) return;
+
+    final newLogs = [...exercise.logs]..removeAt(setIndex);
+    final newExercise = exercise.copyWith(
+      logs: newLogs,
+      series: newLogs.length,
+    );
+    exercises[exerciseIndex] = newExercise;
+
+    // NO tocamos targets - la rutina original permanece intacta
+    state = state.copyWith(exercises: exercises);
     _saveState();
   }
 

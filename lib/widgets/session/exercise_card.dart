@@ -338,6 +338,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
       onMarkDone: () => _markCurrentSetDone(exercise, historyLogs),
       onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
+      // 🆕 ELIMINAR SERIE: Solo afecta sesión activa, no la rutina
+      onDeleteSet: (setIndex) => _deleteSet(setIndex),
     );
   }
 
@@ -487,6 +489,50 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       );
     }
   }
+
+  /// 🆕 ELIMINAR SERIE: Solo afecta la sesión activa
+  ///
+  /// MODELO MENTAL:
+  /// - Rutina ≠ Sesión
+  /// - La sesión es editable y flexible
+  /// - La rutina base (targets) permanece intacta
+  /// - Futuros entrenamientos no se ven afectados
+  void _deleteSet(int setIndex) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    notifier.removeSetFromExercise(widget.exerciseIndex, setIndex);
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.delete_outline, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Serie ${setIndex + 1} eliminada (solo esta sesión)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textOnAccent,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.bloodRed,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'DESHACER',
+            textColor: Colors.white,
+            onPressed: () {
+              // Añadir serie de vuelta
+              notifier.addSetToExercise(widget.exerciseIndex);
+            },
+          ),
+        ),
+      );
+    }
+  }
 }
 
 class ExerciseCard extends StatelessWidget {
@@ -515,6 +561,8 @@ class ExerciseCard extends StatelessWidget {
   final VoidCallback? onMarkDone; // Marcar serie actual como completada
   final Function(String)? onQuickNote; // Añadir nota rápida
   final bool isCurrentSetDone; // Estado de la serie actual
+  // 🆕 Callback para eliminar serie (solo sesión activa)
+  final Function(int)? onDeleteSet;
 
   const ExerciseCard({
     super.key,
@@ -542,6 +590,7 @@ class ExerciseCard extends StatelessWidget {
     this.onMarkDone,
     this.onQuickNote,
     this.isCurrentSetDone = false,
+    this.onDeleteSet,
   });
 
   @override
@@ -559,7 +608,7 @@ class ExerciseCard extends StatelessWidget {
     final isLastSet = currentSetNumber == totalSets && !allSetsCompleted;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16), // 🆕 Más separación entre ejercicios
       // 🆕 Color diferente si está colapsado/completado
       color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
@@ -569,130 +618,174 @@ class ExerciseCard extends StatelessWidget {
         onTap: isCollapsed ? onToggleCollapse : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(isCollapsed ? 12 : 16),
+          // 🆕 Más padding para aire visual
+          padding: EdgeInsets.all(isCollapsed ? 14 : 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header siempre visible
-                Row(
-                  crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+              // Header siempre visible - diseño en 2 líneas para mejor legibilidad
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: onToggleCollapse,
-                        behavior: HitTestBehavior.opaque,
-                        child: Row(
-                          crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                          children: [
-                            // 🆕 Icono de expansión/colapso
-                            AnimatedRotation(
-                              turns: isCollapsed ? -0.25 : 0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                Icons.expand_more,
-                                size: 20,
+                    // Fila 1: Nombre del ejercicio (nunca cortado)
+                    GestureDetector(
+                      onTap: onToggleCollapse,
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        children: [
+                          // Icono de expansión/colapso
+                          AnimatedRotation(
+                            turns: isCollapsed ? -0.25 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.expand_more,
+                              size: 22,
+                              color: allSetsCompleted
+                                  ? AppColors.completedGreen
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Nombre con wrap permitido (2 líneas max)
+                          Expanded(
+                            child: Text(
+                              exercise.nombre.toUpperCase(),
+                              style: AppTypography.sectionTitle.copyWith(
+                                fontSize: isCollapsed ? 16 : 17,
+                                fontWeight: FontWeight.w700,
                                 color: allSetsCompleted
                                     ? AppColors.completedGreen
-                                    : AppColors.textSecondary,
+                                    : AppColors.textPrimary,
+                                height: 1.2,
                               ),
+                              maxLines: 2, // 🆕 Permitir 2 líneas
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                exercise.nombre.toUpperCase(),
-                                style: AppTypography.sectionTitle.copyWith(
-                                  fontSize: isCollapsed ? 18 : 19,
-                                  fontWeight: isCollapsed ? FontWeight.w600 : FontWeight.w700,
-                                  color: allSetsCompleted
-                                      ? AppColors.completedGreen
-                                      : AppColors.textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
+                          ),
+                          // Check si completado
+                          if (allSetsCompleted) ...[
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.check_circle,
+                              size: 20,
+                              color: AppColors.completedGreen,
                             ),
-                            // 🆕 Check si completado
-                            if (allSetsCompleted) ...[
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.check_circle,
-                                size: 18,
-                                color: AppColors.completedGreen,
-                              ),
-                            ],
-                            // 🎯 NUEVO: Indicador de serie SIEMPRE VISIBLE (prominente)
-                            // Muestra "Serie X/Y" cuando expandido, "X/Y" cuando colapsado
-                            if (!allSetsCompleted) ...[
-                              const SizedBox(width: 8),
-                              _SeriesIndicator(
-                                currentSet: currentSetNumber,
-                                totalSets: totalSets,
-                                completedSets: completedSets,
-                                isCollapsed: isCollapsed,
-                                isLastSet: isLastSet,
-                              ),
-                            ],
                           ],
-                        ),
+                        ],
                       ),
                     ),
-                    // Botón único de rayito que abre ambas funcionalidades
-                    if (!isCollapsed)
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: AppColors.bgInteractive,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.flash_on, color: AppColors.bloodRed),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: AppColors.bgElevated,
-                              isScrollControlled: true, // Para que el teclado no tape el contenido
-                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                              builder: (sheetContext) {
-                                return SafeArea(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      left: 16,
-                                      right: 16,
-                                      top: 16,
-                                      bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-                                    ),
-                                    child: QuickActionsMenu(
-                                      currentRestSeconds: restSeconds,
-                                      startExpanded: true,
-                                      showToggle: false,
-                                      isCurrentSetDone: isCurrentSetDone,
-                                      onRepeat: () {
-                                        Navigator.pop(sheetContext);
-                                        onRepeat?.call();
-                                      },
-                                      onMarkDone: () {
-                                        Navigator.pop(sheetContext);
-                                        onMarkDone?.call();
-                                      },
-                                      onRestTimeSelected: (s) {
-                                        Navigator.pop(sheetContext);
-                                        onRestTimeChange?.call(s);
-                                      },
-                                      onQuickNote: (note) {
-                                        Navigator.pop(sheetContext);
-                                        onQuickNote?.call(note);
-                                      },
-                                    ),
+
+                    // Fila 2: Indicador de serie + botón acciones (solo si expandido)
+                    if (!isCollapsed) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const SizedBox(width: 32), // Alineado con el nombre
+                          // Indicador de serie prominente
+                          if (!allSetsCompleted)
+                            _SeriesIndicator(
+                              currentSet: currentSetNumber,
+                              totalSets: totalSets,
+                              completedSets: completedSets,
+                              isCollapsed: false,
+                              isLastSet: isLastSet,
+                            ),
+                          const Spacer(),
+                          // Botón acciones rápidas - touch target grande
+                          Material(
+                            color: AppColors.bgInteractive,
+                            borderRadius: BorderRadius.circular(10),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: AppColors.bgElevated,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                                   ),
+                                  builder: (sheetContext) {
+                                    return SafeArea(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          left: 16,
+                                          right: 16,
+                                          top: 16,
+                                          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+                                        ),
+                                        child: QuickActionsMenu(
+                                          currentRestSeconds: restSeconds,
+                                          startExpanded: true,
+                                          showToggle: false,
+                                          isCurrentSetDone: isCurrentSetDone,
+                                          onRepeat: () {
+                                            Navigator.pop(sheetContext);
+                                            onRepeat?.call();
+                                          },
+                                          onMarkDone: () {
+                                            Navigator.pop(sheetContext);
+                                            onMarkDone?.call();
+                                          },
+                                          onRestTimeSelected: (s) {
+                                            Navigator.pop(sheetContext);
+                                            onRestTimeChange?.call(s);
+                                          },
+                                          onQuickNote: (note) {
+                                            Navigator.pop(sheetContext);
+                                            onQuickNote?.call(note);
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
-                            );
-                          },
-                          tooltip: 'Acciones rápidas',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.flash_on, color: AppColors.bloodRed, size: 18),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'ACCIONES',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ],
+
+                    // Indicador compacto cuando colapsado
+                    if (isCollapsed && !allSetsCompleted) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const SizedBox(width: 32),
+                          _SeriesIndicator(
+                            currentSet: currentSetNumber,
+                            totalSets: totalSets,
+                            completedSets: completedSets,
+                            isCollapsed: true,
+                            isLastSet: isLastSet,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
 
@@ -803,6 +896,9 @@ class ExerciseCard extends StatelessWidget {
               onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
               onCompleted: (val) => onUpdateCompleted(setIndex, val),
               onLongPress: () => onSetLongPress(setIndex),
+              // 🆕 SWIPE-TO-DELETE: Solo si hay más de 1 serie
+              canDelete: exercise.logs.length > 1,
+              onDelete: () => onDeleteSet?.call(setIndex),
             );
           }
 
