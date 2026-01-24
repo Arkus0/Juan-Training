@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
@@ -9,6 +8,7 @@ import '../../services/rest_timer_controller.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../services/timer_platform_service.dart';
+import '../../services/haptics_controller.dart';
 import '../../utils/performance_utils.dart';
 import '../../utils/design_system.dart';
 
@@ -358,17 +358,14 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
           !PerformanceMode.instance.reduceVibrations;
       final soundEnabled = settings.timerSoundEnabled;
 
-      // Vibración
+      // Vibración via HapticsController (lifecycle-aware)
       if (vibrationEnabled) {
-        try {
-          if (secondInt <= 3) {
-            HapticFeedback.heavyImpact();
-          } else if (secondInt <= 5) {
-            HapticFeedback.mediumImpact();
-          } else if (secondInt <= 10) {
-            HapticFeedback.lightImpact();
-          }
-        } catch (_) {}
+        if (secondInt <= 3) {
+          HapticsController.instance.trigger(HapticEvent.restWarning3s);
+        } else if (secondInt <= 5) {
+          HapticsController.instance.trigger(HapticEvent.restWarning5s);
+        }
+        // No vibramos 6-10 para reducir spam
       }
 
       // Sonido (solo últimos 3 segundos para no ser molesto)
@@ -388,14 +385,10 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   void _triggerFinalFeedback() async {
     final settings = ref.read(settingsProvider);
 
-    // Vibración final
+    // Vibración final via HapticsController (lifecycle-aware)
     if (settings.timerVibrationEnabled &&
         !PerformanceMode.instance.reduceVibrations) {
-      try {
-        HapticFeedback.vibrate();
-        await Future.delayed(const Duration(milliseconds: 150));
-        HapticFeedback.vibrate();
-      } catch (_) {}
+      HapticsController.instance.onRestFinished();
     }
 
     // Sonido final
@@ -514,7 +507,7 @@ class _InactiveTimerBar extends StatelessWidget {
                   size: _deleteButtonSize,
                   color: AppColors.bgDeep,
                   onTap: () {
-                    HapticFeedback.selectionClick();
+                    HapticsController.instance.trigger(HapticEvent.buttonTap);
                     onRestartRest!();
                   },
                 ),
@@ -556,7 +549,7 @@ class _InactiveTimerBar extends StatelessWidget {
       ),
     );
     if (confirm == true) {
-      HapticFeedback.heavyImpact();
+      HapticsController.instance.trigger(HapticEvent.inputSubmit);
       onDiscardSession!();
     }
   }
@@ -624,11 +617,11 @@ class _ActiveTimerBar extends StatelessWidget {
           'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}',
       child: GestureDetector(
         onLongPress: () {
-          HapticFeedback.heavyImpact();
+          HapticsController.instance.trigger(HapticEvent.inputSubmit);
           onStopRest();
         },
         onTap: () {
-          HapticFeedback.selectionClick();
+          HapticsController.instance.trigger(HapticEvent.buttonTap);
           if (isPaused) {
             onResumeRest();
           } else {
@@ -730,7 +723,7 @@ class _ActiveTimerBar extends StatelessWidget {
             size: _deleteButtonSize,
             color: AppColors.bgDeep,
             onTap: () {
-              HapticFeedback.selectionClick();
+              HapticsController.instance.trigger(HapticEvent.buttonTap);
               onRestartRest!();
             },
           )
@@ -745,7 +738,7 @@ class _ActiveTimerBar extends StatelessWidget {
           size: _addTimeButtonSize,
           color: AppColors.bgPressed,
           onTap: () {
-            HapticFeedback.selectionClick();
+            HapticsController.instance.trigger(HapticEvent.buttonTap);
             onAddTime();
           },
         ),
@@ -758,7 +751,7 @@ class _ActiveTimerBar extends StatelessWidget {
           size: _skipButtonSize,
           color: AppColors.techCyan,
           onTap: () {
-            HapticFeedback.mediumImpact();
+            HapticsController.instance.trigger(HapticEvent.buttonTap);
             onStopRest();
           },
         ),
@@ -792,7 +785,7 @@ class _ActiveTimerBar extends StatelessWidget {
       ),
     );
     if (confirm == true) {
-      HapticFeedback.heavyImpact();
+      HapticsController.instance.trigger(HapticEvent.inputSubmit);
       onDiscardSession!();
     }
   }
@@ -910,7 +903,7 @@ class _StartRestButton extends StatelessWidget {
         shape: const CircleBorder(),
         child: InkWell(
           onTap: () {
-            HapticFeedback.mediumImpact();
+            HapticsController.instance.trigger(HapticEvent.buttonTap);
             onTap();
           },
           customBorder: const CircleBorder(),
@@ -1110,7 +1103,7 @@ class _TimerControlButtons extends StatelessWidget {
             icon: Icons.add_alarm,
             size: 36,
             onTap: () {
-              HapticFeedback.selectionClick();
+              HapticsController.instance.trigger(HapticEvent.buttonTap);
               onAddTime();
             },
           ),
@@ -1123,7 +1116,7 @@ class _TimerControlButtons extends StatelessWidget {
             size: 36,
             color: AppColors.techCyan, // Cyan consistente para acción
             onTap: () {
-              HapticFeedback.mediumImpact();
+              HapticsController.instance.trigger(HapticEvent.buttonTap);
               onSkip();
             },
           ),

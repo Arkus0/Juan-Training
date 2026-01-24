@@ -13,7 +13,11 @@ import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/session/tolerance_feedback_widgets.dart';
 import '../widgets/session/session_modifiers.dart'; // AddExerciseButton
+import '../widgets/session/haptics_observer.dart';
 import '../widgets/voice/voice_training_button.dart';
+import '../services/haptics_controller.dart';
+import '../services/media_session_service.dart';
+import '../services/media_control_service.dart';
 import '../utils/design_system.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
@@ -43,6 +47,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   @override
   void initState() {
     super.initState();
+
+    // 🎯 HAPTICS: Inicializar controlador de haptics
+    HapticsController.instance.initialize();
+
     // Discovery Tooltip Check (First 3 sessions)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDiscoveryTooltip();
@@ -53,12 +61,46 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           ref.read(trainingSessionProvider).nextIncompleteSet;
       // 🎯 ERROR TOLERANCE: Evaluar gap desde última sesión
       ref.read(sessionToleranceProvider.notifier).evaluateSessionGap();
+
+      // 🎯 MEDIA SESSION: Iniciar MediaSession para mostrar controles del sistema
+      _initializeMediaSession();
     });
+  }
+
+  /// Inicializa la MediaSession para mostrar controles de media del sistema
+  Future<void> _initializeMediaSession() async {
+    // Obtener nombre de la rutina activa
+    final rutinaName = ref.read(trainingSessionProvider).activeRutina?.nombre;
+
+    // Inicializar el servicio
+    MediaSessionManagerService.instance.initialize();
+
+    // Iniciar sesión de media
+    await MediaSessionManagerService.instance.startSession(
+      trainingName: rutinaName ?? 'Entrenamiento',
+    );
+
+    // Conectar con el servicio de control de media para sincronizar estado
+    MediaSessionManagerService.instance.connectToMediaControlService();
+
+    // Configurar callbacks para los botones de media
+    MediaSessionManagerService.instance.onPlayPause = () {
+      MediaControlService.instance.playPause();
+    };
+    MediaSessionManagerService.instance.onNext = () {
+      MediaControlService.instance.next();
+    };
+    MediaSessionManagerService.instance.onPrevious = () {
+      MediaControlService.instance.previous();
+    };
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    // 🎯 MEDIA SESSION: Detener MediaSession al salir del entrenamiento
+    MediaSessionManagerService.instance.stopSession();
+    MediaSessionManagerService.instance.disconnectFromMediaControlService();
     super.dispose();
   }
 
@@ -323,8 +365,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
     _lastKnownIncompleteSet = currentIncompleteSet;
 
-    return Scaffold(
-      appBar: AppBar(
+    // 🎯 HAPTICS: Observer que escucha eventos de providers y dispara haptics
+    return HapticsObserver(
+      child: Scaffold(
+        appBar: AppBar(
         title: Text(
           (activeRutinaName ?? 'Entrenando').toUpperCase(),
           style:
@@ -494,6 +538,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
         ],
       ),
+      ), // End of HapticsObserver
     );
   }
 

@@ -16,6 +16,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
@@ -76,6 +77,32 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="fitness_timer"/>
         </service>
+
+        <!-- MediaSession Service for system media controls -->
+        <!-- This service creates a MediaSession that appears in:
+             - System media controls (notification shade)
+             - Lock screen media controls
+             - Quick settings media player
+             - Volume controls media routing -->
+        <service
+            android:name=".MediaSessionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+        </service>
+
+        <!-- Receiver for media button actions from notification -->
+        <receiver
+            android:name=".MediaButtonReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.juantraining.MEDIA_PLAY"/>
+                <action android:name="com.juantraining.MEDIA_PAUSE"/>
+                <action android:name="com.juantraining.MEDIA_NEXT"/>
+                <action android:name="com.juantraining.MEDIA_PREVIOUS"/>
+            </intent-filter>
+        </receiver>
 
         <!-- Receiver for notification actions -->
         <receiver
