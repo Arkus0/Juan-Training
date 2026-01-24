@@ -7,43 +7,37 @@ import 'haptics_controller.dart';
 
 /// Servicio que gestiona la MediaSession propia de la app.
 ///
-/// IMPORTANTE: Este servicio es lo que hace que aparezca el Media Player
-/// del sistema Android. Sin una MediaSession activa con notificación MediaStyle,
-/// Android NO muestra controles de media.
+/// IMPORTANTE: Este servicio SOLO activa el Media Player del sistema
+/// cuando detecta música REAL reproduciéndose (Spotify, etc).
+/// NO se activa con los beeps del timer.
+///
+/// Comportamiento:
+/// - Escucha cambios en la reproducción de música externa
+/// - Solo muestra controles si hay música activa
+/// - Se desactiva automáticamente cuando la música se detiene
+/// - Respeta el setting mediaControlsEnabled
 ///
 /// Arquitectura:
 /// ```
-/// Flutter UI ──> MediaSessionManagerService ──> MediaSessionService (Android)
-///                        │                              │
-///                        │                              ├── MediaSession (isActive=true)
-///                        │                              └── Notification (MediaStyle)
-///                        │
-///                        └──> MediaControlService (control de Spotify)
+/// MediaControlService (detecta Spotify)
+///         │
+///         ▼
+/// MediaSessionManagerService (decide si mostrar)
+///         │
+///         ▼
+/// MediaSessionService (Android) → Notification MediaStyle
 /// ```
-///
-/// Ciclo de vida:
-/// 1. Usuario inicia entrenamiento → startSession()
-/// 2. MediaSession se activa → aparece en controles del sistema
-/// 3. Usuario toca controles → onPlayPause/onNext/etc callbacks
-/// 4. Callbacks → MediaControlService → KeyEvents → Spotify
-/// 5. Usuario termina entrenamiento → stopSession()
 ///
 /// USO:
 /// ```dart
-/// // Al iniciar entrenamiento
-/// await MediaSessionManagerService.instance.startSession(
+/// // Al iniciar entrenamiento - solo conecta el listener
+/// MediaSessionManagerService.instance.startMonitoring(
 ///   trainingName: 'Push Day',
+///   enabled: settings.mediaControlsEnabled,
 /// );
 ///
-/// // Actualizar estado según música detectada
-/// MediaControlService.instance.sessionStream.listen((session) {
-///   MediaSessionManagerService.instance.updatePlaybackState(
-///     isPlaying: session.playbackState == MediaPlaybackState.playing,
-///   );
-/// });
-///
-/// // Al terminar entrenamiento
-/// await MediaSessionManagerService.instance.stopSession();
+/// // Al terminar entrenamiento - limpia todo
+/// MediaSessionManagerService.instance.stopMonitoring();
 /// ```
 class MediaSessionManagerService {
   static final MediaSessionManagerService instance = MediaSessionManagerService._();
@@ -58,6 +52,10 @@ class MediaSessionManagerService {
   // Estado
   bool _isSessionActive = false;
   bool get isSessionActive => _isSessionActive;
+
+  bool _isMonitoring = false;
+  bool _isEnabled = true;
+  String? _trainingName;
 
   // Callbacks para eventos de media buttons
   VoidCallback? onPlayPause;
@@ -109,27 +107,75 @@ class MediaSessionManagerService {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // CONTROL DE SESIÓN
+  // CONTROL DE MONITOREO
   // ════════════════════════════════════════════════════════════════════════════
 
-  /// Inicia la MediaSession (cuando empieza el entrenamiento)
+  /// Inicia el monitoreo de música externa.
+  /// Solo mostrará controles de media cuando detecte música real reproduciéndose.
   ///
-  /// Esto hace que aparezca el Media Player del sistema con controles
-  /// para controlar la música durante el entrenamiento.
-  Future<bool> startSession({String? trainingName}) async {
+  /// [enabled]: Si es false, no mostrará controles aunque haya música
+  void startMonitoring({String? trainingName, bool enabled = true}) {
+    if (!Platform.isAndroid) return;
+    if (_isMonitoring) return;
+
+    _isMonitoring = true;
+    _isEnabled = enabled;
+    _trainingName = trainingName;
+
+    _logger.i('Iniciando monitoreo de media (enabled: $enabled)');
+
+    // Conectar listener para detectar música
+    _connectMediaListener();
+
+    // Verificar si ya hay música reproduciéndose
+    _checkCurrentMediaState();
+  }
+
+  /// Detiene el monitoreo y la MediaSession
+  Future<void> stopMonitoring() async {
+    if (!Platform.isAndroid) return;
+
+    _isMonitoring = false;
+    _isEnabled = false;
+    _trainingName = null;
+
+    // Desconectar listener
+    _mediaSubscription?.cancel();
+    _mediaSubscription = null;
+
+    // Detener MediaSession si estaba activa
+    await _stopSession();
+
+    _logger.i('Monitoreo de media detenido');
+  }
+
+  /// Actualiza si los controles están habilitados (desde settings)
+  void setEnabled(bool enabled) {
+    _isEnabled = enabled;
+    if (!enabled && _isSessionActive) {
+      _stopSession();
+    } else if (enabled && _isMonitoring) {
+      _checkCurrentMediaState();
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // CONTROL INTERNO DE SESIÓN
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Inicia la MediaSession (interno - solo cuando hay música)
+  Future<bool> _startSession() async {
     if (!Platform.isAndroid) return false;
     if (_isSessionActive) return true;
+    if (!_isEnabled) return false;
 
     try {
       await _channel.invokeMethod('startMediaSession', {
-        'trainingName': trainingName ?? 'Entrenamiento',
+        'trainingName': _trainingName ?? 'Entrenamiento',
       });
 
       _isSessionActive = true;
-      _logger.i('MediaSession iniciada: $trainingName');
-
-      // Sincronizar con estado actual de media
-      await _syncWithCurrentMedia();
+      _logger.i('MediaSession activada (música detectada)');
 
       return true;
     } catch (e) {
@@ -138,19 +184,27 @@ class MediaSessionManagerService {
     }
   }
 
-  /// Detiene la MediaSession (cuando termina el entrenamiento)
-  Future<void> stopSession() async {
+  /// Detiene la MediaSession (interno)
+  Future<void> _stopSession() async {
     if (!Platform.isAndroid) return;
     if (!_isSessionActive) return;
 
     try {
       await _channel.invokeMethod('stopMediaSession');
       _isSessionActive = false;
-      _logger.i('MediaSession detenida');
+      _logger.i('MediaSession desactivada');
     } catch (e) {
       _logger.e('Error deteniendo MediaSession', error: e);
     }
   }
+
+  // Métodos legacy para compatibilidad
+  Future<bool> startSession({String? trainingName}) async {
+    startMonitoring(trainingName: trainingName, enabled: true);
+    return true;
+  }
+
+  Future<void> stopSession() => stopMonitoring();
 
   /// Actualiza el estado de reproducción
   ///
@@ -185,48 +239,82 @@ class MediaSessionManagerService {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // SINCRONIZACIÓN
+  // DETECCIÓN DE MÚSICA
   // ════════════════════════════════════════════════════════════════════════════
 
-  /// Sincroniza con el estado actual de MediaControlService
-  Future<void> _syncWithCurrentMedia() async {
+  /// Verifica el estado actual de música
+  void _checkCurrentMediaState() {
     final session = MediaControlService.instance.currentSession;
+    _handleMediaStateChange(session);
+  }
 
-    // Actualizar estado de reproducción
-    await updatePlaybackState(
-      isPlaying: session.playbackState == MediaPlaybackState.playing,
-    );
+  /// Conecta el listener para detectar cambios en la música
+  StreamSubscription<MediaSessionInfo>? _mediaSubscription;
 
-    // Actualizar metadata si hay info disponible
-    if (session.hasMedia) {
-      await updateMetadata(
-        title: session.title ?? 'Entrenando',
-        artist: session.artist ?? 'Juan Training',
-      );
+  void _connectMediaListener() {
+    _mediaSubscription?.cancel();
+    _mediaSubscription = MediaControlService.instance.sessionStream.listen(_handleMediaStateChange);
+  }
+
+  /// Maneja cambios en el estado de la música
+  /// Activa/desactiva MediaSession según si hay música REAL
+  void _handleMediaStateChange(MediaSessionInfo session) async {
+    if (!_isMonitoring || !_isEnabled) return;
+
+    // Detectar si hay música REAL reproduciéndose
+    // (No beeps del timer - esos no tienen packageName de app de música)
+    final hasMusicApp = session.packageName != null &&
+        _isMusicApp(session.packageName!);
+
+    final isPlaying = session.playbackState == MediaPlaybackState.playing;
+    final hasRealMusic = hasMusicApp && (isPlaying || session.hasMedia);
+
+    if (hasRealMusic) {
+      // Hay música real → activar MediaSession si no está activa
+      if (!_isSessionActive) {
+        await _startSession();
+      }
+
+      // Actualizar estado y metadata
+      await updatePlaybackState(isPlaying: isPlaying);
+      if (session.hasMedia) {
+        await updateMetadata(
+          title: session.title,
+          artist: session.artist,
+        );
+      }
+    } else {
+      // No hay música real → desactivar MediaSession si está activa
+      if (_isSessionActive) {
+        await _stopSession();
+      }
     }
   }
 
-  /// Conecta con MediaControlService para auto-sincronizar
-  StreamSubscription<MediaSessionInfo>? _mediaSubscription;
+  /// Verifica si el packageName es de una app de música conocida
+  bool _isMusicApp(String packageName) {
+    // Lista de apps de música comunes
+    const musicApps = [
+      'com.spotify',
+      'com.google.android.apps.youtube.music',
+      'com.apple.android.music',
+      'com.amazon.mp3',
+      'com.pandora.android',
+      'com.soundcloud.android',
+      'deezer.android.app',
+      'com.tidal',
+      'com.qobuz.music',
+      'com.gaana',
+      'com.jiosaavn.saavn',
+      // Agregar más según sea necesario
+    ];
 
+    return musicApps.any((app) => packageName.toLowerCase().contains(app.toLowerCase()));
+  }
+
+  // Métodos legacy para compatibilidad
   void connectToMediaControlService() {
-    _mediaSubscription?.cancel();
-    _mediaSubscription = MediaControlService.instance.sessionStream.listen((session) {
-      if (_isSessionActive) {
-        // Actualizar estado
-        updatePlaybackState(
-          isPlaying: session.playbackState == MediaPlaybackState.playing,
-        );
-
-        // Actualizar metadata
-        if (session.hasMedia) {
-          updateMetadata(
-            title: session.title,
-            artist: session.artist,
-          );
-        }
-      }
-    });
+    _connectMediaListener();
   }
 
   void disconnectFromMediaControlService() {

@@ -15,6 +15,7 @@ class SettingsKeys {
   static const String barWeightKg = 'bar_weight_kg';
   static const String lockScreenTimerEnabled = 'lock_screen_timer_enabled';
   static const String useFocusedInputMode = 'use_focused_input_mode';
+  static const String mediaControlsEnabled = 'media_controls_enabled';
 }
 
 /// Estado inmutable de las preferencias del usuario
@@ -41,6 +42,10 @@ class UserSettings {
   /// Modo de entrada focalizada: modal numpad en lugar de inputs inline
   final bool useFocusedInputMode;
 
+  /// Mostrar controles de media cuando hay música reproduciéndose
+  /// Solo aparece si hay música activa (Spotify, etc), no con beeps del timer
+  final bool mediaControlsEnabled;
+
   const UserSettings({
     this.timerSoundEnabled = false, // Desactivado por defecto (gym = sin sonido)
     this.timerVibrationEnabled = true,
@@ -53,6 +58,7 @@ class UserSettings {
     this.barWeight = 20.0,
     this.lockScreenTimerEnabled = true, // Activado por defecto
     this.useFocusedInputMode = true, // Activado por defecto - UX optimizada
+    this.mediaControlsEnabled = true, // Activado por defecto
   });
 
   UserSettings copyWith({
@@ -67,6 +73,7 @@ class UserSettings {
     double? barWeight,
     bool? lockScreenTimerEnabled,
     bool? useFocusedInputMode,
+    bool? mediaControlsEnabled,
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
@@ -80,6 +87,7 @@ class UserSettings {
       barWeight: barWeight ?? this.barWeight,
       lockScreenTimerEnabled: lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
       useFocusedInputMode: useFocusedInputMode ?? this.useFocusedInputMode,
+      mediaControlsEnabled: mediaControlsEnabled ?? this.mediaControlsEnabled,
     );
   }
 }
@@ -114,6 +122,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
       barWeight: prefs.getDouble(SettingsKeys.barWeightKg) ?? 20.0,
       lockScreenTimerEnabled: prefs.getBool(SettingsKeys.lockScreenTimerEnabled) ?? true,
       useFocusedInputMode: prefs.getBool(SettingsKeys.useFocusedInputMode) ?? true,
+      mediaControlsEnabled: prefs.getBool(SettingsKeys.mediaControlsEnabled) ?? true,
     );
   }
 
@@ -208,6 +217,13 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.useFocusedInputMode, value);
     state = state.copyWith(useFocusedInputMode: value);
+  }
+
+  /// Activar/desactivar controles de media (solo cuando hay música)
+  Future<void> setMediaControlsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(SettingsKeys.mediaControlsEnabled, value);
+    state = state.copyWith(mediaControlsEnabled: value);
   }
 }
 

@@ -6,6 +6,7 @@ import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../providers/session_tolerance_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
@@ -67,21 +68,21 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     });
   }
 
-  /// Inicializa la MediaSession para mostrar controles de media del sistema
+  /// Inicializa el monitoreo de MediaSession.
+  /// Solo mostrará controles si hay música real (Spotify, etc), no con beeps.
   Future<void> _initializeMediaSession() async {
-    // Obtener nombre de la rutina activa
+    // Obtener configuración
+    final settings = ref.read(settingsProvider);
     final rutinaName = ref.read(trainingSessionProvider).activeRutina?.nombre;
 
     // Inicializar el servicio
     MediaSessionManagerService.instance.initialize();
 
-    // Iniciar sesión de media
-    await MediaSessionManagerService.instance.startSession(
+    // Iniciar monitoreo (solo mostrará controles si hay música real)
+    MediaSessionManagerService.instance.startMonitoring(
       trainingName: rutinaName ?? 'Entrenamiento',
+      enabled: settings.mediaControlsEnabled,
     );
-
-    // Conectar con el servicio de control de media para sincronizar estado
-    MediaSessionManagerService.instance.connectToMediaControlService();
 
     // Configurar callbacks para los botones de media
     MediaSessionManagerService.instance.onPlayPause = () {
@@ -98,9 +99,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    // 🎯 MEDIA SESSION: Detener MediaSession al salir del entrenamiento
-    MediaSessionManagerService.instance.stopSession();
-    MediaSessionManagerService.instance.disconnectFromMediaControlService();
+    // 🎯 MEDIA SESSION: Detener monitoreo al salir del entrenamiento
+    MediaSessionManagerService.instance.stopMonitoring();
     super.dispose();
   }
 

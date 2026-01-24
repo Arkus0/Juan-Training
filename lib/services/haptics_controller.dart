@@ -33,6 +33,9 @@ enum HapticEvent {
 
   // === Música ===
   mediaCommand,        // Comando de media enviado
+
+  // === Rutinas ===
+  routineForged,       // ¡Rutina creada! ("Rutina forjada")
 }
 
 /// Nivel de importancia del evento - determina si se throttlea
@@ -236,6 +239,9 @@ class HapticsController with WidgetsBindingObserver {
   /// Feedback para media
   void onMediaCommand() => trigger(HapticEvent.mediaCommand);
 
+  /// Feedback para rutina creada ("Rutina forjada")
+  void onRoutineForged() => trigger(HapticEvent.routineForged);
+
   // ════════════════════════════════════════════════════════════════════════════
   // IMPLEMENTACIÓN INTERNA
   // ════════════════════════════════════════════════════════════════════════════
@@ -245,6 +251,7 @@ class HapticsController with WidgetsBindingObserver {
       // Critical - siempre vibra
       case HapticEvent.prAchieved:
       case HapticEvent.sessionCompleted:
+      case HapticEvent.routineForged:
         return _HapticPriority.critical;
 
       // High - importantes
@@ -299,6 +306,7 @@ class HapticsController with WidgetsBindingObserver {
         case HapticEvent.exerciseCompleted:
         case HapticEvent.restFinished:
         case HapticEvent.voiceStopped:
+        case HapticEvent.routineForged:
           HapticFeedback.heavyImpact();
           break;
 
