@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
@@ -17,6 +17,8 @@ import '../repositories/i_training_repository.dart';
 import '../utils/performance_utils.dart';
 import '../services/timer_platform_service.dart';
 import '../services/error_tolerance_system.dart';
+import '../services/rest_timer_controller.dart';
+import '../services/session_persistence_service.dart';
 import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
@@ -38,57 +40,7 @@ final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
   return repo.watchActiveSession();
 });
 
-/// Estado avanzado del timer de descanso
-class RestTimerState {
-  final bool isActive;
-  final bool isPaused;
-  final int totalSeconds;
-  final DateTime? endTime; // Tiempo absoluto de fin (para persistir entre rebuilds)
-  final int? lastCompletedExerciseIndex;
-  final int? lastCompletedSetIndex;
-
-  const RestTimerState({
-    this.isActive = false,
-    this.isPaused = false,
-    this.totalSeconds = 90,
-    this.endTime,
-    this.lastCompletedExerciseIndex,
-    this.lastCompletedSetIndex,
-  });
-
-  RestTimerState copyWith({
-    bool? isActive,
-    bool? isPaused,
-    int? totalSeconds,
-    DateTime? endTime,
-    int? lastCompletedExerciseIndex,
-    int? lastCompletedSetIndex,
-    bool clearEndTime = false,
-  }) {
-    return RestTimerState(
-      isActive: isActive ?? this.isActive,
-      isPaused: isPaused ?? this.isPaused,
-      totalSeconds: totalSeconds ?? this.totalSeconds,
-      endTime: clearEndTime ? null : (endTime ?? this.endTime),
-      lastCompletedExerciseIndex: lastCompletedExerciseIndex ?? this.lastCompletedExerciseIndex,
-      lastCompletedSetIndex: lastCompletedSetIndex ?? this.lastCompletedSetIndex,
-    );
-  }
-
-  /// Calcula segundos restantes basado en endTime
-  double get remainingSeconds {
-    if (!isActive || endTime == null) return totalSeconds.toDouble();
-    if (isPaused) return totalSeconds.toDouble(); // Cuando pausado, mantener el valor pausado
-    final remaining = endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
-    return remaining > 0 ? remaining : 0;
-  }
-
-  /// Progreso del timer (0.0 a 1.0)
-  double get progress {
-    if (totalSeconds <= 0) return 1.0;
-    return 1.0 - (remainingSeconds / totalSeconds);
-  }
-}
+// RestTimerState importado desde rest_timer_controller.dart
 
 class TrainingState {
   final Rutina? activeRutina;
@@ -1001,6 +953,15 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       await prefs.setString('rest_timer', json.encode(map));
     } catch (e) {
       Logger().e('Error saving rest timer to prefs', error: e);
+    }
+  }
+
+  Future<void> _clearRestTimerFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('rest_timer');
+    } catch (e) {
+      Logger().e('Error clearing rest timer from prefs', error: e);
     }
   }
 

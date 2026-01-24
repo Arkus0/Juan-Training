@@ -120,20 +120,34 @@
 
 **Archivo:** `lib/providers/training_provider.dart`
 
-**Estado:** ⏳ PENDIENTE
+**Estado:** ✅ FASE 1 COMPLETADA
 
-**Refactorización sugerida:** Dividir en:
-1. `TrainingSessionNotifier` - Solo estado de ejercicios
-2. `RestTimerController` - Timer específico
-3. `SessionPersistenceService` - Save/restore
+**Refactorización realizada:**
+1. ✅ `RestTimerController` creado (`lib/services/rest_timer_controller.dart`)
+   - Lógica de timer de descanso encapsulada
+   - Manejo de superseries
+   - Persistencia en SharedPreferences
+   - Comunicación con TimerPlatformService
+2. ✅ `SessionPersistenceService` creado (`lib/services/session_persistence_service.dart`)
+   - Debouncing de saves
+   - Flush de saves pendientes
+   - Restore de sesión con manejo de errores
+3. ✅ `RestTimerState` movido a `rest_timer_controller.dart` e importado
 
-**Recomendación:** Hacer después de completar la refactorización del repositorio.
+**Fase 2 (pendiente):** Integrar completamente los servicios en el notifier.
+- Requiere tests de integración antes de proceder
+- El notifier aún mantiene la lógica inline pero las clases están listas para uso
+
+**Beneficios actuales:**
+- Clases testeables de forma independiente
+- Separación clara de responsabilidades
+- API pública sin cambios (compatibilidad total)
 
 ---
 
 ### Zonas Frágiles (cambiar con cuidado)
 
-1. **`EjercicioEnRutina` → `Ejercicio` mapping** (`training_provider.dart:262-284`)
+1. **`EjercicioEnRutina` → `Ejercicio` mapping** (`training_provider.dart:229-251`)
    - Conversión manual entre modelos. Si añades campo a uno, debes recordar añadirlo al otro.
 
 2. **IDs con sufijo `_target`** (`drift_training_repository.dart:375-407`)
@@ -142,18 +156,38 @@
 3. **Migraciones de BD sin reversibilidad** (`database.dart:178-206`)
    - Las migraciones usan try-catch vacíos. Si una migración falla parcialmente, BD queda en estado inconsistente.
 
+4. **RestTimerState duplicación temporal** (`rest_timer_controller.dart` vs uso en `training_provider.dart`)
+   - La clase `RestTimerState` se define en `rest_timer_controller.dart` y se importa en el provider.
+   - Si se modifica, verificar que ambos usos sean consistentes.
+
 ---
 
 ## Recomendaciones si vuelves en 6-12 meses
 
-1. **Primer paso:** Escribir test de integración del flujo completo:
+1. **Primer paso:** Escribir tests unitarios para `RestTimerController` y `SessionPersistenceService`:
+   ```
+   // RestTimerController
+   - start/stop/pause/resume timer
+   - superset logic (shouldStartTimerForSuperset)
+   - persistence in SharedPreferences
+
+   // SessionPersistenceService
+   - debounced saves
+   - flush pending saves
+   - restore with error handling
+   ```
+
+2. **Segundo paso:** Escribir test de integración del flujo completo:
    ```
    startSession → updateLog → completeSet → finishSession → verify DB
    ```
 
-2. **Segundo paso:** Refactorizar `TrainingSessionNotifier` ANTES de añadir features.
+3. **Tercer paso:** Integrar servicios en `TrainingSessionNotifier`:
+   - Hacer que el notifier delegue a `RestTimerController` para timer
+   - Hacer que el notifier delegue a `SessionPersistenceService` para persistencia
+   - Esto reducirá las líneas del notifier de ~1000 a ~400
 
-3. **Tercer paso:** Revisar este documento y decidir qué fixes siguen siendo relevantes.
+4. **Cuarto paso:** Revisar este documento y decidir qué fixes siguen siendo relevantes.
 
 ---
 
