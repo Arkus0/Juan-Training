@@ -116,32 +116,37 @@
 
 ---
 
-### `TrainingSessionNotifier` - 1000+ líneas
+### ~~`TrainingSessionNotifier` - 1000+ líneas~~ ✅ COMPLETADO
 
 **Archivo:** `lib/providers/training_provider.dart`
 
-**Estado:** ✅ FASE 1 COMPLETADA
+**Estado:** ✅ COMPLETADO
+
+**Resultado:**
+- `training_provider.dart`: **802 líneas** (antes ~1160, reducción del 30%)
+- `rest_timer_controller.dart`: ~340 líneas
+- `session_persistence_service.dart`: ~100 líneas
 
 **Refactorización realizada:**
-1. ✅ `RestTimerController` creado (`lib/services/rest_timer_controller.dart`)
+1. ✅ `RestTimerController` creado e integrado
    - Lógica de timer de descanso encapsulada
-   - Manejo de superseries
+   - Manejo de superseries (`shouldStartTimerForSuperset`)
    - Persistencia en SharedPreferences
    - Comunicación con TimerPlatformService
-2. ✅ `SessionPersistenceService` creado (`lib/services/session_persistence_service.dart`)
+2. ✅ `SessionPersistenceService` creado e integrado
    - Debouncing de saves
    - Flush de saves pendientes
    - Restore de sesión con manejo de errores
-3. ✅ `RestTimerState` movido a `rest_timer_controller.dart` e importado
+3. ✅ `TrainingSessionNotifier` refactorizado para delegar
+   - Timer: delega a `RestTimerController`
+   - Persistencia: delega a `SessionPersistenceService`
+   - Solo mantiene lógica de ejercicios/estado
 
-**Fase 2 (pendiente):** Integrar completamente los servicios en el notifier.
-- Requiere tests de integración antes de proceder
-- El notifier aún mantiene la lógica inline pero las clases están listas para uso
-
-**Beneficios actuales:**
-- Clases testeables de forma independiente
+**Beneficios:**
 - Separación clara de responsabilidades
+- Cada clase es testeable de forma independiente
 - API pública sin cambios (compatibilidad total)
+- Código más mantenible y comprensible
 
 ---
 
@@ -156,15 +161,15 @@
 3. **Migraciones de BD sin reversibilidad** (`database.dart:178-206`)
    - Las migraciones usan try-catch vacíos. Si una migración falla parcialmente, BD queda en estado inconsistente.
 
-4. **RestTimerState duplicación temporal** (`rest_timer_controller.dart` vs uso en `training_provider.dart`)
-   - La clase `RestTimerState` se define en `rest_timer_controller.dart` y se importa en el provider.
-   - Si se modifica, verificar que ambos usos sean consistentes.
+4. ~~**RestTimerState duplicación temporal**~~ ✅ RESUELTO
+   - `RestTimerState` ahora solo existe en `rest_timer_controller.dart`
+   - El provider lo importa y usa sin duplicación
 
 ---
 
 ## Recomendaciones si vuelves en 6-12 meses
 
-1. **Primer paso:** Escribir tests unitarios para `RestTimerController` y `SessionPersistenceService`:
+1. **Primer paso:** Escribir tests unitarios para los servicios extraídos:
    ```
    // RestTimerController
    - start/stop/pause/resume timer
@@ -182,12 +187,7 @@
    startSession → updateLog → completeSet → finishSession → verify DB
    ```
 
-3. **Tercer paso:** Integrar servicios en `TrainingSessionNotifier`:
-   - Hacer que el notifier delegue a `RestTimerController` para timer
-   - Hacer que el notifier delegue a `SessionPersistenceService` para persistencia
-   - Esto reducirá las líneas del notifier de ~1000 a ~400
-
-4. **Cuarto paso:** Revisar este documento y decidir qué fixes siguen siendo relevantes.
+3. **Tercer paso:** Revisar este documento y decidir qué mejoras adicionales son relevantes.
 
 ---
 
