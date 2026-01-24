@@ -35,6 +35,12 @@ class QuickActionsMenu extends StatefulWidget {
   /// Tiempo de descanso actual en segundos (para mostrar)
   final int currentRestSeconds;
 
+  /// Si true, el menú se abre inicialmente expandido (útil para mostrar dentro de un sheet)
+  final bool startExpanded;
+
+  /// Si false, no se muestra el FAB toggle (útil al renderizar dentro de un modal para evitar duplicidad)
+  final bool showToggle;
+
   const QuickActionsMenu({
     super.key,
     this.onRepeat,
@@ -43,6 +49,8 @@ class QuickActionsMenu extends StatefulWidget {
     this.onMoreOptions,
     this.onHistory,
     this.currentRestSeconds = 90,
+    this.startExpanded = false,
+    this.showToggle = true,
   });
 
   @override
@@ -70,6 +78,12 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     _rotateAnimation = Tween<double>(begin: 0, end: 0.5).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
+
+    // Start expanded if requested (useful when rendering inside a modal)
+    _isExpanded = widget.startExpanded;
+    if (_isExpanded) {
+      _controller.value = 1.0;
+    }
   }
 
   @override
@@ -168,7 +182,6 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   color: AppColors.textOnAccent,
                   bgColor: AppColors.bloodRed,
                   onTap: () => _handleAction(widget.onRepeat),
-                  compact: false,
                   isPrimary: true,
                 ),
                 const SizedBox(height: 12),
@@ -177,12 +190,14 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
           ),
         ),
 
-        // FAB principal (toggle)
-        _MainFab(
-          isExpanded: _isExpanded,
-          rotateAnimation: _rotateAnimation,
-          onTap: _toggle,
-        ),
+        // FAB principal (toggle) - opcional según contexto
+        widget.showToggle
+            ? _MainFab(
+                isExpanded: _isExpanded,
+                rotateAnimation: _rotateAnimation,
+                onTap: _toggle,
+              )
+            : const SizedBox.shrink(),
       ],
     );
   }
@@ -290,7 +305,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
                     color: AppColors.restTeal.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.restTeal.withValues(alpha: 0.3)),
+                        color: AppColors.restTeal.withValues(alpha: 0.3),),
                   ),
                   child: Text(
                     _formatTime(_selectedSeconds),
@@ -387,7 +402,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
   }
 
   Widget _buildControlButton(
-      {required IconData icon, required VoidCallback onTap}) {
+      {required IconData icon, required VoidCallback onTap,}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -411,7 +426,7 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
       final mins = seconds ~/ 60;
       final secs = seconds % 60;
       if (secs == 0) return '${mins}m';
-      return '${mins}:${secs.toString().padLeft(2, '0')}';
+      return '$mins:${secs.toString().padLeft(2, '0')}';
     }
     return '${seconds}s';
   }
@@ -461,7 +476,6 @@ class _ActionButton extends StatelessWidget {
                     BoxShadow(
                       color: color.withValues(alpha: 0.4),
                       blurRadius: 12,
-                      spreadRadius: 0,
                     ),
                   ]
                 : null,
@@ -515,7 +529,7 @@ class _MainFab extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
@@ -532,7 +546,6 @@ class _MainFab extends StatelessWidget {
               BoxShadow(
                 color: AppColors.bloodRed.withValues(alpha: 0.4),
                 blurRadius: 16,
-                spreadRadius: 0,
                 offset: const Offset(0, 4),
               ),
             ],

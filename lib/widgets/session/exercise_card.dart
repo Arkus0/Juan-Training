@@ -500,6 +500,8 @@ class ExerciseCard extends StatelessWidget {
                                     padding: const EdgeInsets.all(16),
                                     child: QuickActionsMenu(
                                       currentRestSeconds: restSeconds,
+                                      startExpanded: true,
+                                      showToggle: false,
                                       onRepeat: () {
                                         Navigator.pop(sheetContext);
                                         // TODO: implementar repetición de set
@@ -688,75 +690,6 @@ class ExerciseCard extends StatelessWidget {
   }
 }
 
-/// Chip compacto para mostrar y editar el tiempo de descanso por ejercicio
-class _RestTimeChip extends StatelessWidget {
-  final int seconds;
-  final Function(int)? onChanged;
-
-  const _RestTimeChip({
-    required this.seconds,
-    this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Cambiar tiempo de descanso',
-      child: Material(
-        color: Colors.grey[850],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey[700]!),
-        ),
-        child: InkWell(
-          onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.timer_outlined, size: 12, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  '${seconds}s',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                if (onChanged != null) ...[
-                  const SizedBox(width: 2),
-                  Icon(Icons.edit, size: 10, color: Colors.grey[600]),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showRestTimePicker(BuildContext context) {
-    HapticFeedback.selectionClick();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _RestTimePickerSheet(
-        initialSeconds: seconds,
-        onSelected: (newSeconds) {
-          onChanged?.call(newSeconds);
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
-}
 
 /// Bottom sheet para seleccionar tiempo de descanso
 class _RestTimePickerSheet extends StatefulWidget {
@@ -911,120 +844,6 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
       return '${mins}m ${secs}s';
     }
     return '${seconds}s';
-  }
-}
-
-/// Botón de acciones rápidas (rayito ⚡) para cada ejercicio
-class _QuickActionsButton extends StatelessWidget {
-  final int restSeconds;
-  final List<SerieLog>? historyLogs;
-  final Function(int)? onRestTimeChange;
-
-  const _QuickActionsButton({
-    required this.restSeconds,
-    this.historyLogs,
-    this.onRestTimeChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.bgInteractive,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.bolt, color: AppColors.goldAccent),
-        onPressed: () => _showQuickActionsSheet(context),
-        tooltip: 'Acciones rápidas',
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-        iconSize: 20,
-      ),
-    );
-  }
-
-  void _showQuickActionsSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'ACCIONES RÁPIDAS',
-                style: AppTypography.sectionTitle.copyWith(
-                  color: AppColors.goldAccent,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Historial / LAST
-              if (historyLogs != null && historyLogs!.isNotEmpty)
-                _QuickActionTile(
-                  icon: Icons.history,
-                  iconColor: AppColors.textSecondary,
-                  title: 'Última vez',
-                  subtitle: '${historyLogs!.last.peso}kg × ${historyLogs!.last.reps} reps',
-                  onTap: () => Navigator.pop(ctx),
-                ),
-
-              // Ajustar tiempo de descanso
-              _QuickActionTile(
-                icon: Icons.timer_outlined,
-                iconColor: AppColors.restTeal,
-                title: 'Descanso',
-                subtitle: '${restSeconds}s',
-                trailing: const Icon(Icons.edit, size: 16, color: AppColors.textTertiary),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showRestTimePicker(context);
-                },
-              ),
-
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showRestTimePicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _RestTimePickerSheet(
-        initialSeconds: restSeconds,
-        onSelected: (newSeconds) {
-          onRestTimeChange?.call(newSeconds);
-          Navigator.pop(ctx);
-        },
-      ),
-    );
   }
 }
 
