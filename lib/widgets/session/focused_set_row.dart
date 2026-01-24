@@ -82,6 +82,7 @@ class _SetRowStyles {
 }
 
 // ⚡ OPTIMIZACIÓN: RowStyle constantes - JERARQUÍA VISUAL CLARA
+// 🆕 Padding aumentado para mejor usabilidad con dedos sudados/fatiga
 class _RowStyles {
   // COMPLETADA: Verde apagado, sutil pero satisfactoria
   static const completed = RowStyle(
@@ -89,7 +90,7 @@ class _RowStyles {
     borderColor: Color(0x402E8B57), // Verde @ 0.25 alpha
     textColor: TrainingColors.textSecondary,
     opacity: 0.6, // Desaturada
-    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12), // 🆕 Más padding
   );
 
   // ACTIVA: Rojo prominente, LA ÚNICA que destaca
@@ -98,7 +99,7 @@ class _RowStyles {
     borderColor: TrainingColors.activeSet,
     textColor: TrainingColors.textPrimary,
     opacity: 1.0,
-    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14), // 🆕 Más padding
   );
 
   // FUTURA: Casi invisible
@@ -107,7 +108,7 @@ class _RowStyles {
     borderColor: Colors.transparent,
     textColor: TrainingColors.textDisabled,
     opacity: 0.3, // Muy sutil
-    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12), // 🆕 Más padding
   );
 
   // PASADA (sin completar): Sutil
@@ -116,7 +117,7 @@ class _RowStyles {
     borderColor: Colors.transparent,
     textColor: TrainingColors.textSecondary,
     opacity: 0.5,
-    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), // 🆕 Más padding
   );
 }
 
@@ -132,6 +133,8 @@ class FocusedSetRow extends StatefulWidget {
   final Function(int) onRepsChanged;
   final ValueChanged<bool?> onCompleted;
   final VoidCallback? onLongPress;
+  final VoidCallback? onDelete; // 🆕 Callback para eliminar serie
+  final bool canDelete; // 🆕 Si se puede eliminar (>1 serie)
 
   const FocusedSetRow({
     super.key,
@@ -146,6 +149,8 @@ class FocusedSetRow extends StatefulWidget {
     required this.onRepsChanged,
     required this.onCompleted,
     this.onLongPress,
+    this.onDelete,
+    this.canDelete = false,
   });
 
   @override
@@ -196,7 +201,8 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
     // Colores y estilos según estado
     final RowStyle style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture);
 
-    return GestureDetector(
+    // 🆕 Contenido base de la fila
+    Widget rowContent = GestureDetector(
       onLongPress: widget.onLongPress,
       child: AnimatedBuilder(
         animation: _flashAnimation,
@@ -224,7 +230,7 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
           opacity: style.opacity,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(vertical: 2),
+            margin: const EdgeInsets.symmetric(vertical: 4), // 🆕 Más separación entre series
             padding: style.padding,
             decoration: BoxDecoration(
               color: style.bgColor,
@@ -292,6 +298,50 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
         ),
       ),
     );
+
+    // 🆕 SWIPE-TO-DELETE: Solo si se puede eliminar (más de 1 serie)
+    if (widget.canDelete && widget.onDelete != null) {
+      return Dismissible(
+        key: Key('dismissible_set_${widget.log.id}'),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (direction) async {
+          // Confirmación rápida con haptic
+          HapticFeedback.mediumImpact();
+          return true; // Sin diálogo - acción inmediata para gimnasio
+        },
+        onDismissed: (direction) {
+          widget.onDelete!();
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          margin: const EdgeInsets.symmetric(vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.bloodRed.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'ELIMINAR',
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+        child: rowContent,
+      );
+    }
+
+    return rowContent;
   }
 
   // ⚡ OPTIMIZACIÓN: Usar constantes pre-definidas en lugar de crear nuevos objetos
@@ -312,8 +362,8 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       previousValue: widget.prevLog?.peso.toDouble(),
       currentValue: widget.log.peso > 0 ? widget.log.peso.toDouble() : null,
       isInteger: false,
-      onOpenPlateCalc: (currentWeight, onWeightSelected) {
-        _showPlateCalculator(context, currentWeight, onWeightSelected);
+      onOpenPlateCalc: (currentWeight, onWeightUpdate, onApplyAndClose) {
+        _showPlateCalculator(context, currentWeight, onApplyAndClose);
       },
     );
 
@@ -324,15 +374,16 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
     }
   }
 
-  void _showPlateCalculator(BuildContext context, double currentWeight, Function(double) onWeightSelected) {
+  /// 🆕 Muestra calculadora de placas - "APLICAR" cierra todo y aplica directamente
+  void _showPlateCalculator(BuildContext context, double currentWeight, Function(double) onApplyAndClose) {
     showDialog(
       context: context,
       builder: (dialogContext) => PlateCalculatorDialog(
         currentWeight: currentWeight,
         onWeightSelected: (weight) {
-          Navigator.of(dialogContext).pop(); // Solo cerrar el dialog de discos
-          // Actualizar el peso en el callback del numpad (no cerrar el numpad)
-          onWeightSelected(weight);
+          Navigator.of(dialogContext).pop(); // Cerrar dialog de placas
+          // 🎯 FIX: Aplicar directamente y cerrar numpad (el callback hace pop del numpad)
+          onApplyAndClose(weight);
         },
       ),
     );

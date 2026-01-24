@@ -4,45 +4,67 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../utils/design_system.dart';
 
 /// ============================================================================
-/// QUICK ACTIONS MENU — Menú Expandible de Acciones Rápidas
+/// QUICK ACTIONS MENU — Grid 2x2 de Acciones Rápidas Mid-Workout
 /// ============================================================================
 ///
-/// FAB expandible con acciones rápidas durante el entrenamiento:
-/// - REPITE: Repetir la serie actual con mismo peso/reps
-/// - Mismo objetivo: Mantener progresión actual
-/// - Timer: Iniciar timer de descanso
-/// - ⋮ (tres puntos): Más opciones
+/// Menú flat con 4 acciones que responden a: "¿Esto me ayuda AHORA?"
 ///
-/// Diseño: Aggressive Red palette, underground gym aesthetic
+/// Acciones:
+/// - REPITE: Copiar peso/reps de la serie anterior
+/// - HECHO: Marcar la serie actual como completada
+/// - DESCANSO: Ajustar tiempo de descanso (inline)
+/// - NOTA: Añadir nota rápida al ejercicio
+///
+/// Principios:
+/// - Máximo 4 acciones (grid 2x2)
+/// - Sin navegación profunda
+/// - Cierre automático tras acción
+/// - Feedback háptico
 /// ============================================================================
+
+/// Tipos de acciones rápidas disponibles
+enum QuickActionType {
+  repeat,    // Copiar peso/reps de serie anterior
+  markDone,  // Marcar serie actual como completada
+  restTimer, // Ajustar tiempo de descanso
+  quickNote, // Añadir nota rápida
+}
 
 class QuickActionsMenu extends StatefulWidget {
   /// Callback cuando se presiona "REPITE"
   final VoidCallback? onRepeat;
 
-  /// Callback cuando se presiona "Mismo objetivo"
-  final VoidCallback? onMaintainGoal;
+  /// Callback cuando se presiona "HECHO"
+  final VoidCallback? onMarkDone;
 
   /// Callback cuando se selecciona un tiempo de descanso
   final Function(int seconds)? onRestTimeSelected;
 
-  /// Callback cuando se presiona tres puntos (más opciones)
-  final VoidCallback? onMoreOptions;
-
-  /// Callback cuando se pide ver el historial del ejercicio
-  final VoidCallback? onHistory;
+  /// Callback cuando se añade una nota rápida
+  final Function(String note)? onQuickNote;
 
   /// Tiempo de descanso actual en segundos (para mostrar)
   final int currentRestSeconds;
 
+  /// Si la serie actual ya está completada (para cambiar estado de HECHO)
+  final bool isCurrentSetDone;
+
+  /// Si true, el menú se abre inicialmente expandido
+  final bool startExpanded;
+
+  /// Si false, no se muestra el FAB toggle
+  final bool showToggle;
+
   const QuickActionsMenu({
     super.key,
     this.onRepeat,
-    this.onMaintainGoal,
+    this.onMarkDone,
     this.onRestTimeSelected,
-    this.onMoreOptions,
-    this.onHistory,
+    this.onQuickNote,
     this.currentRestSeconds = 90,
+    this.isCurrentSetDone = false,
+    this.startExpanded = false,
+    this.showToggle = true,
   });
 
   @override
@@ -56,11 +78,19 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
   late Animation<double> _expandAnimation;
   late Animation<double> _rotateAnimation;
 
+  // Estado para el picker de descanso inline
+  bool _showRestPicker = false;
+  late int _selectedRestSeconds;
+
+  // Estado para nota rápida inline
+  bool _showNotePicker = false;
+  final TextEditingController _noteController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     _expandAnimation = CurvedAnimation(
@@ -70,11 +100,18 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     _rotateAnimation = Tween<double>(begin: 0, end: 0.5).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
+
+    _selectedRestSeconds = widget.currentRestSeconds;
+    _isExpanded = widget.startExpanded;
+    if (_isExpanded) {
+      _controller.value = 1.0;
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -86,6 +123,9 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
         _controller.forward();
       } else {
         _controller.reverse();
+        // Reset inline pickers
+        _showRestPicker = false;
+        _showNotePicker = false;
       }
     });
   }
@@ -95,89 +135,40 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
       HapticFeedback.selectionClick();
       action();
     }
-    // Cerrar el menú después de la acción
-    if (_isExpanded) {
+  }
+
+  void _closeMenu() {
+    if (_isExpanded && widget.showToggle) {
       _toggle();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Si estamos en modo modal (showToggle=false), mostrar directamente el contenido
+    if (!widget.showToggle) {
+      return _buildModalContent();
+    }
+
+    // Modo FAB expandible
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Opciones expandibles (de arriba a abajo)
+        // Contenido expandible
         SizeTransition(
           sizeFactor: _expandAnimation,
           axisAlignment: -1,
           child: FadeTransition(
             opacity: _expandAnimation,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Timer - Selector de tiempo de descanso
-                _ActionButton(
-                  icon: Icons.timer_outlined,
-                  label: '${widget.currentRestSeconds}s',
-                  color: AppColors.restTeal,
-                  bgColor: AppColors.restTeal.withValues(alpha: 0.15),
-                  onTap: () => _showRestTimePicker(context),
-                  compact: true,
-                ),
-                const SizedBox(height: 8),
-
-                // Historial - ver historial del ejercicio
-                _ActionButton(
-                  icon: Icons.history,
-                  label: 'HISTORIAL',
-                  color: AppColors.textSecondary,
-                  bgColor: AppColors.bgElevated,
-                  onTap: () => _handleAction(widget.onHistory),
-                  compact: true,
-                ),
-                const SizedBox(height: 8),
-
-                // Mismo objetivo
-                _ActionButton(
-                  icon: Icons.sync_rounded,
-                  label: 'OBJETIVO',
-                  color: AppColors.bloodRed,
-                  bgColor: AppColors.darkRedSubtle,
-                  onTap: () => _handleAction(widget.onMaintainGoal),
-                  compact: true,
-                ),
-                const SizedBox(height: 8),
-
-                // Opciones del ejercicio (acceder a más opciones)
-                _ActionButton(
-                  icon: Icons.more_horiz,
-                  label: 'OPCIONES',
-                  color: AppColors.textSecondary,
-                  bgColor: AppColors.bgElevated,
-                  onTap: () => _handleAction(widget.onMoreOptions),
-                  compact: true,
-                ),
-                const SizedBox(height: 8),
-
-                // REPITE - acción principal (más cerca del FAB)
-                _ActionButton(
-                  icon: Icons.repeat_rounded,
-                  label: 'REPITE',
-                  color: AppColors.textOnAccent,
-                  bgColor: AppColors.bloodRed,
-                  onTap: () => _handleAction(widget.onRepeat),
-                  compact: false,
-                  isPrimary: true,
-                ),
-                const SizedBox(height: 12),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildGridContent(),
             ),
           ),
         ),
 
-        // FAB principal (toggle)
+        // FAB principal
         _MainFab(
           isExpanded: _isExpanded,
           rotateAnimation: _rotateAnimation,
@@ -187,220 +178,438 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     );
   }
 
-  /// Muestra el picker de tiempo de descanso
-  void _showRestTimePicker(BuildContext context) {
-    // Cerrar el menú primero
-    if (_isExpanded) {
-      _toggle();
-    }
+  /// Contenido para modo modal (dentro de bottom sheet)
+  Widget _buildModalContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Handle
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.border,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 16),
 
-    HapticFeedback.selectionClick();
+        // Título
+        Text(
+          'ACCIONES RÁPIDAS',
+          style: GoogleFonts.montserrat(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            color: AppColors.bloodRed,
+            letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 16),
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _RestTimePickerSheet(
-        initialSeconds: widget.currentRestSeconds,
-        onSelected: (seconds) {
-          widget.onRestTimeSelected?.call(seconds);
-          Navigator.pop(ctx);
-        },
+        // Grid de acciones o picker inline
+        if (_showRestPicker)
+          _buildInlineRestPicker()
+        else if (_showNotePicker)
+          _buildInlineNotePicker()
+        else
+          _buildGridContent(),
+
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  /// Grid 2x2 de acciones
+  Widget _buildGridContent() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 280),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Fila 1: REPITE + HECHO
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.repeat_rounded,
+                  label: 'REPITE',
+                  sublabel: 'Mismo peso/reps',
+                  color: AppColors.bloodRed,
+                  onTap: () {
+                    _handleAction(widget.onRepeat);
+                    _closeMenu();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _QuickActionTile(
+                  icon: widget.isCurrentSetDone
+                      ? Icons.check_circle
+                      : Icons.check_circle_outline,
+                  label: widget.isCurrentSetDone ? 'HECHA' : 'HECHO',
+                  sublabel: 'Marcar serie',
+                  color: widget.isCurrentSetDone
+                      ? AppColors.completedGreen
+                      : AppColors.textPrimary,
+                  filled: widget.isCurrentSetDone,
+                  onTap: () {
+                    _handleAction(widget.onMarkDone);
+                    _closeMenu();
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Fila 2: DESCANSO + NOTA
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.timer_outlined,
+                  label: _formatTime(widget.currentRestSeconds),
+                  sublabel: 'Descanso',
+                  color: AppColors.restTeal,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _showRestPicker = true;
+                      _showNotePicker = false;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _QuickActionTile(
+                  icon: Icons.edit_note_rounded,
+                  label: 'NOTA',
+                  sublabel: 'Añadir nota',
+                  color: AppColors.techCyan,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _showNotePicker = true;
+                      _showRestPicker = false;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
-}
 
-/// Bottom sheet para seleccionar tiempo de descanso
-class _RestTimePickerSheet extends StatefulWidget {
-  final int initialSeconds;
-  final Function(int) onSelected;
+  /// Picker de descanso inline (reemplaza el grid temporalmente)
+  Widget _buildInlineRestPicker() {
+    const presets = [30, 60, 90, 120, 180];
 
-  const _RestTimePickerSheet({
-    required this.initialSeconds,
-    required this.onSelected,
-  });
-
-  @override
-  State<_RestTimePickerSheet> createState() => _RestTimePickerSheetState();
-}
-
-class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
-  late int _selectedSeconds;
-
-  // Opciones predefinidas de tiempo
-  static const List<int> _presets = [30, 45, 60, 90, 120, 150, 180, 240, 300];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedSeconds = widget.initialSeconds;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 300),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header con botón volver
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, size: 20),
+                color: AppColors.textSecondary,
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _showRestPicker = false);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              'TIEMPO DE DESCANSO',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: AppColors.restTeal,
-                letterSpacing: 1.5,
+              const SizedBox(width: 8),
+              Text(
+                'TIEMPO DE DESCANSO',
+                style: GoogleFonts.montserrat(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.restTeal,
+                  letterSpacing: 1,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
+            ],
+          ),
+          const SizedBox(height: 12),
 
-            // Controles +/-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildControlButton(
-                  icon: Icons.remove_circle_outline,
-                  onTap: () {
-                    if (_selectedSeconds > 15) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedSeconds -= 15);
-                    }
-                  },
-                ),
-                const SizedBox(width: 24),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.restTeal.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: AppColors.restTeal.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    _formatTime(_selectedSeconds),
-                    style: GoogleFonts.montserrat(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.restTeal,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                _buildControlButton(
-                  icon: Icons.add_circle_outline,
-                  onTap: () {
-                    if (_selectedSeconds < 600) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedSeconds += 15);
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Presets
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: _presets.map((seconds) {
-                final isSelected = seconds == _selectedSeconds;
-                return GestureDetector(
-                  onTap: () {
+          // Display actual + controles
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildRestControl(
+                icon: Icons.remove,
+                onTap: () {
+                  if (_selectedRestSeconds > 15) {
                     HapticFeedback.selectionClick();
-                    setState(() => _selectedSeconds = seconds);
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.restTeal.withValues(alpha: 0.2)
-                          : AppColors.bgInteractive,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color:
-                            isSelected ? AppColors.restTeal : AppColors.border,
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Text(
-                      _formatTime(seconds),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? AppColors.restTeal
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-
-            // Botón confirmar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => widget.onSelected(_selectedSeconds),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.restTeal,
-                  foregroundColor: AppColors.bgDeep,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    setState(() => _selectedRestSeconds -= 15);
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.restTeal.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.restTeal.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  'CONFIRMAR',
+                  _formatTime(_selectedRestSeconds),
                   style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.restTeal,
                   ),
                 ),
               ),
+              const SizedBox(width: 16),
+              _buildRestControl(
+                icon: Icons.add,
+                onTap: () {
+                  if (_selectedRestSeconds < 600) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedRestSeconds += 15);
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Presets compactos
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: presets.map((seconds) {
+              final isSelected = seconds == _selectedRestSeconds;
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedRestSeconds = seconds);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.restTeal.withValues(alpha: 0.2)
+                        : AppColors.bgInteractive,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? AppColors.restTeal : AppColors.border,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    _formatTime(seconds),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? AppColors.restTeal : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Botón confirmar
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                widget.onRestTimeSelected?.call(_selectedRestSeconds);
+                setState(() => _showRestPicker = false);
+                _closeMenu();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.restTeal,
+                foregroundColor: AppColors.bgDeep,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'CONFIRMAR',
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestControl({required IconData icon, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.bgInteractive,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(icon, size: 24, color: AppColors.textSecondary),
         ),
       ),
     );
   }
 
-  Widget _buildControlButton(
-      {required IconData icon, required VoidCallback onTap}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.bgInteractive,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.border),
+  /// Picker de nota inline
+  Widget _buildInlineNotePicker() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 300),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header con botón volver
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, size: 20),
+                color: AppColors.textSecondary,
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _showNotePicker = false);
+                  _noteController.clear();
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'NOTA RÁPIDA',
+                style: GoogleFonts.montserrat(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.techCyan,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
           ),
-          child: Icon(icon, size: 32, color: AppColors.textSecondary),
+          const SizedBox(height: 12),
+
+          // Campo de texto
+          TextField(
+            controller: _noteController,
+            autofocus: true,
+            maxLines: 2,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Ej: Subir peso próxima vez, ajustar agarre...',
+              hintStyle: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+              ),
+              filled: true,
+              fillColor: AppColors.bgInteractive,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: AppColors.techCyan, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.all(12),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Sugerencias rápidas
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _buildQuickNoteSuggestion('🔼 Subir peso'),
+              _buildQuickNoteSuggestion('⚡ Más reps'),
+              _buildQuickNoteSuggestion('🎯 Mejorar técnica'),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Botón guardar
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final note = _noteController.text.trim();
+                if (note.isNotEmpty) {
+                  HapticFeedback.mediumImpact();
+                  widget.onQuickNote?.call(note);
+                  _noteController.clear();
+                  setState(() => _showNotePicker = false);
+                  _closeMenu();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.techCyan,
+                foregroundColor: AppColors.bgDeep,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'GUARDAR NOTA',
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickNoteSuggestion(String text) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        _noteController.text = text;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.bgInteractive,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );
@@ -411,30 +620,28 @@ class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
       final mins = seconds ~/ 60;
       final secs = seconds % 60;
       if (secs == 0) return '${mins}m';
-      return '${mins}:${secs.toString().padLeft(2, '0')}';
+      return '$mins:${secs.toString().padLeft(2, '0')}';
     }
     return '${seconds}s';
   }
 }
 
-/// Botón de acción individual del menú expandible
-class _ActionButton extends StatelessWidget {
+/// Tile individual para el grid de acciones
+class _QuickActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String sublabel;
   final Color color;
-  final Color bgColor;
   final VoidCallback onTap;
-  final bool compact;
-  final bool isPrimary;
+  final bool filled;
 
-  const _ActionButton({
+  const _QuickActionTile({
     required this.icon,
     required this.label,
+    required this.sublabel,
     required this.color,
-    required this.bgColor,
     required this.onTap,
-    this.compact = false,
-    this.isPrimary = false,
+    this.filled = false,
   });
 
   @override
@@ -443,46 +650,41 @@ class _ActionButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(compact ? 20 : 24),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 12 : 16,
-            vertical: compact ? 8 : 10,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(compact ? 20 : 24),
+            color: filled
+                ? color.withValues(alpha: 0.15)
+                : AppColors.bgInteractive,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isPrimary ? color : color.withValues(alpha: 0.3),
-              width: isPrimary ? 2 : 1,
+              color: filled ? color : AppColors.border,
+              width: filled ? 1.5 : 1,
             ),
-            boxShadow: isPrimary
-                ? [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : null,
           ),
-          child: Row(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: compact ? 16 : 20,
-                color: color,
-              ),
-              const SizedBox(width: 6),
+              Icon(icon, size: 24, color: color),
+              const SizedBox(height: 4),
               Text(
                 label,
                 style: GoogleFonts.montserrat(
-                  fontSize: compact ? 10 : 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: color,
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.3,
                 ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                sublabel,
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  color: AppColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -515,7 +717,7 @@ class _MainFab extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
@@ -532,7 +734,6 @@ class _MainFab extends StatelessWidget {
               BoxShadow(
                 color: AppColors.bloodRed.withValues(alpha: 0.4),
                 blurRadius: 16,
-                spreadRadius: 0,
                 offset: const Offset(0, 4),
               ),
             ],

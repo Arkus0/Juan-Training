@@ -6,6 +6,7 @@ import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/dia.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
+import 'package:juan_training/models/detected_exercise_draft.dart';
 import 'package:juan_training/repositories/i_training_repository.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
 import 'training_provider.dart';
@@ -28,8 +29,16 @@ final routineExpandedDayProvider = StateProvider.family<int, String?>((ref, ruti
 class CreateRoutineNotifier extends StateNotifier<Rutina> {
   final ITrainingRepository _repository;
 
+  /// 🎯 FIX CRÍTICO: Usar `deepCopy()` para evitar que los cambios
+  /// durante la edición afecten la rutina original.
+  ///
+  /// ANTES (BUG): `copyWith()` hacía shallow copy, los cambios en días/ejercicios
+  /// modificaban la rutina original aunque el usuario no guardara.
+  ///
+  /// AHORA: `deepCopy()` crea una copia profunda completamente independiente.
+  /// Solo se persiste cuando el usuario pulsa "Guardar" explícitamente.
   CreateRoutineNotifier(this._repository, Rutina? existingRutina)
-      : super(existingRutina?.copyWith() ?? _createEmptyRoutine()) {
+      : super(existingRutina?.deepCopy() ?? _createEmptyRoutine()) {
     if (existingRutina == null) {
       addDay();
     }
@@ -200,6 +209,67 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         repsRange: repsRange,
       ));
     }
+
+    final updatedDay = day.copyWith(
+      ejercicios: [...day.ejercicios, ...newExercises],
+    );
+
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
+  }
+
+  /// Añade ejercicios desde DetectedExerciseDraft (nuevo flujo unificado OCR/Voz)
+  ///
+  /// Este método convierte los drafts validados a EjercicioEnRutina,
+  /// manejando correctamente superseries si existen.
+  Future<void> addExercisesFromDrafts(
+    int dayIndex,
+    List<DetectedExerciseDraft> drafts,
+  ) async {
+    if (drafts.isEmpty) return;
+    if (dayIndex >= state.dias.length) return;
+
+    final day = state.dias[dayIndex];
+    final libraryService = ExerciseLibraryService.instance;
+    final newExercises = <EjercicioEnRutina>[];
+
+    // Mapa para trackear supersets: supersetGroup -> supersetId (UUID)
+    final supersetMap = <int, String>{};
+
+    for (final draft in drafts) {
+      if (!draft.isValid || draft.currentMatchedId == null) continue;
+
+      // Obtener datos completos del ejercicio de biblioteca
+      final libExercise = libraryService.exercises.firstWhere(
+        (e) => e.id == draft.currentMatchedId,
+        orElse: () => LibraryExercise(
+          id: draft.currentMatchedId!,
+          name: draft.currentMatchedName ?? 'Desconocido',
+          muscleGroup: '',
+          equipment: '',
+        ),
+      );
+
+      // Manejar superseries
+      String? supersetId;
+      if (draft.isSuperset && draft.supersetGroup > 0) {
+        supersetId = supersetMap.putIfAbsent(
+          draft.supersetGroup,
+          () => const Uuid().v4(),
+        );
+      }
+
+      // Convertir draft a EjercicioEnRutina
+      final ejercicio = draft.toEjercicioEnRutina(
+        libExercise,
+        supersetId: supersetId,
+      );
+
+      newExercises.add(ejercicio);
+    }
+
+    if (newExercises.isEmpty) return;
 
     final updatedDay = day.copyWith(
       ejercicios: [...day.ejercicios, ...newExercises],

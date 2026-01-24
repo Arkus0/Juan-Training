@@ -297,6 +297,10 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final isCollapsed = _isCollapsed(allSetsCompleted);
 
+    // 🆕 Calcular estado de la serie actual para QuickActions
+    final firstIncompleteSetIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final isCurrentSetDone = firstIncompleteSetIndex == -1; // Todas completadas
+
     return ExerciseCard(
       exerciseIndex: widget.exerciseIndex,
       exercise: exercise,
@@ -329,12 +333,205 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
       onUpdateWeightDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onUpdateRepsDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
+      // 🆕 Quick Actions
+      isCurrentSetDone: isCurrentSetDone,
+      onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
+      onMarkDone: () => _markCurrentSetDone(exercise, historyLogs),
+      onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
+      // 🆕 ELIMINAR SERIE: Solo afecta sesión activa, no la rutina
+      onDeleteSet: (setIndex) => _deleteSet(setIndex),
     );
   }
 
   void _updateExerciseRestTime(int seconds) {
     final notifier = ref.read(trainingSessionProvider.notifier);
     notifier.updateExerciseRestTime(widget.exerciseIndex, seconds);
+  }
+
+  /// 🆕 QUICK ACTION: Repetir la serie actual (copiar peso/reps de la anterior)
+  void _repeatCurrentSet(Ejercicio exercise, List<SerieLog>? historyLogs) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+
+    // Encontrar la primera serie incompleta
+    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
+    if (firstIncompleteIndex == -1) return; // Todas completadas
+
+    // Buscar la serie anterior completada para copiar datos
+    SerieLog? prevLog;
+    if (firstIncompleteIndex > 0) {
+      prevLog = exercise.logs[firstIncompleteIndex - 1];
+    } else if (historyLogs != null && historyLogs.isNotEmpty) {
+      // Usar historial si es la primera serie
+      prevLog = historyLogs.first;
+    }
+
+    if (prevLog != null) {
+      notifier.updateLog(
+        widget.exerciseIndex,
+        firstIncompleteIndex,
+        peso: prevLog.peso,
+        reps: prevLog.reps,
+      );
+
+      HapticFeedback.mediumImpact();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.repeat_rounded, color: AppColors.textOnAccent, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textOnAccent,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.bloodRed,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🆕 QUICK ACTION: Marcar la serie actual como completada
+  void _markCurrentSetDone(Ejercicio exercise, List<SerieLog>? historyLogs) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    final isRestActive = ref.read(trainingSessionProvider).restTimer.isActive;
+
+    // Encontrar la primera serie incompleta
+    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
+    if (firstIncompleteIndex == -1) return; // Todas completadas
+
+    final log = exercise.logs[firstIncompleteIndex];
+    final prevLog = (historyLogs != null && firstIncompleteIndex < historyLogs.length)
+        ? historyLogs[firstIncompleteIndex]
+        : null;
+
+    // Marcar como completada
+    notifier.updateLog(widget.exerciseIndex, firstIncompleteIndex, completed: true);
+
+    // Trigger feedback de PR
+    _triggerCompletionFeedback(log, prevLog);
+
+    // Auto-iniciar timer
+    if (!isRestActive) {
+      notifier.startRestForExercise(widget.exerciseIndex, setIndex: firstIncompleteIndex);
+    }
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                '¡Serie ${firstIncompleteIndex + 1} completada!',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textOnAccent,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.completedGreen,
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// 🆕 QUICK ACTION: Añadir nota rápida al ejercicio
+  void _addQuickNote(String exerciseName, String note) async {
+    final repo = ref.read(trainingRepositoryProvider);
+
+    // Obtener nota existente y añadir la nueva
+    final currentNote = await repo.getNote(exerciseName);
+    final newNote = currentNote != null && currentNote.isNotEmpty
+        ? '$currentNote\n$note'
+        : note;
+
+    await repo.saveNote(exerciseName, newNote);
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.edit_note_rounded, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nota guardada: $note',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textOnAccent,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.techCyan,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  /// 🆕 ELIMINAR SERIE: Solo afecta la sesión activa
+  ///
+  /// MODELO MENTAL:
+  /// - Rutina ≠ Sesión
+  /// - La sesión es editable y flexible
+  /// - La rutina base (targets) permanece intacta
+  /// - Futuros entrenamientos no se ven afectados
+  void _deleteSet(int setIndex) {
+    final notifier = ref.read(trainingSessionProvider.notifier);
+    notifier.removeSetFromExercise(widget.exerciseIndex, setIndex);
+
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.delete_outline, color: AppColors.textOnAccent, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Serie ${setIndex + 1} eliminada (solo esta sesión)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textOnAccent,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.bloodRed,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'DESHACER',
+            textColor: Colors.white,
+            onPressed: () {
+              // Añadir serie de vuelta
+              notifier.addSetToExercise(widget.exerciseIndex);
+            },
+          ),
+        ),
+      );
+    }
   }
 }
 
@@ -359,6 +556,13 @@ class ExerciseCard extends StatelessWidget {
   final Function(int)? onRestTimeChange;
   final Function(int, double)? onUpdateWeightDirect; // Para FocusedSetRow
   final Function(int, int)? onUpdateRepsDirect; // Para FocusedSetRow
+  // 🆕 Quick Actions callbacks
+  final VoidCallback? onRepeat; // Copiar peso/reps de serie anterior
+  final VoidCallback? onMarkDone; // Marcar serie actual como completada
+  final Function(String)? onQuickNote; // Añadir nota rápida
+  final bool isCurrentSetDone; // Estado de la serie actual
+  // 🆕 Callback para eliminar serie (solo sesión activa)
+  final Function(int)? onDeleteSet;
 
   const ExerciseCard({
     super.key,
@@ -382,21 +586,31 @@ class ExerciseCard extends StatelessWidget {
     this.onRestTimeChange,
     this.onUpdateWeightDirect,
     this.onUpdateRepsDirect,
+    this.onRepeat,
+    this.onMarkDone,
+    this.onQuickNote,
+    this.isCurrentSetDone = false,
+    this.onDeleteSet,
   });
 
   @override
   Widget build(BuildContext context) {
     final restSeconds = exercise.descansoSugeridoSeconds ?? 90;
-    
+
     // 🆕 Calcular si todas las series están completadas
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final completedSets = exercise.logs.where((log) => log.completed).length;
     final totalSets = exercise.logs.length;
 
+    // 🎯 NUEVO: Índice de la serie actual (primera incompleta)
+    final currentSetIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final currentSetNumber = currentSetIndex == -1 ? totalSets : currentSetIndex + 1;
+    final isLastSet = currentSetNumber == totalSets && !allSetsCompleted;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16), // 🆕 Más separación entre ejercicios
       // 🆕 Color diferente si está colapsado/completado
-      color: isCollapsed 
+      color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
           : null,
       child: InkWell(
@@ -404,133 +618,174 @@ class ExerciseCard extends StatelessWidget {
         onTap: isCollapsed ? onToggleCollapse : null,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: EdgeInsets.all(isCollapsed ? 12 : 16),
+          // 🆕 Más padding para aire visual
+          padding: EdgeInsets.all(isCollapsed ? 14 : 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header siempre visible
-                Row(
-                  crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+              // Header siempre visible - diseño en 2 líneas para mejor legibilidad
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: onToggleCollapse,
-                        behavior: HitTestBehavior.opaque,
-                        child: Row(
-                          crossAxisAlignment: isCollapsed ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                          children: [
-                            // 🆕 Icono de expansión/colapso
-                            AnimatedRotation(
-                              turns: isCollapsed ? -0.25 : 0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                Icons.expand_more,
-                                size: 20,
-                                color: allSetsCompleted 
-                                    ? AppColors.completedGreen 
-                                    : AppColors.textSecondary,
-                              ),
+                    // Fila 1: Nombre del ejercicio (nunca cortado)
+                    GestureDetector(
+                      onTap: onToggleCollapse,
+                      behavior: HitTestBehavior.opaque,
+                      child: Row(
+                        children: [
+                          // Icono de expansión/colapso
+                          AnimatedRotation(
+                            turns: isCollapsed ? -0.25 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.expand_more,
+                              size: 22,
+                              color: allSetsCompleted
+                                  ? AppColors.completedGreen
+                                  : AppColors.textSecondary,
                             ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                exercise.nombre.toUpperCase(),
-                                style: AppTypography.sectionTitle.copyWith(
-                                  fontSize: isCollapsed ? 18 : 19,
-                                  fontWeight: isCollapsed ? FontWeight.w600 : FontWeight.w700,
-                                  color: allSetsCompleted 
-                                      ? AppColors.completedGreen 
-                                      : AppColors.textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+                          ),
+                          const SizedBox(width: 10),
+                          // Nombre con wrap permitido (2 líneas max)
+                          Expanded(
+                            child: Text(
+                              exercise.nombre.toUpperCase(),
+                              style: AppTypography.sectionTitle.copyWith(
+                                fontSize: isCollapsed ? 16 : 17,
+                                fontWeight: FontWeight.w700,
+                                color: allSetsCompleted
+                                    ? AppColors.completedGreen
+                                    : AppColors.textPrimary,
+                                height: 1.2,
                               ),
+                              maxLines: 2, // 🆕 Permitir 2 líneas
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            // 🆕 Check si completado
-                            if (allSetsCompleted) ...[
-                              const SizedBox(width: 8),
-                              const Icon(
-                                Icons.check_circle,
-                                size: 18,
-                                color: AppColors.completedGreen,
-                              ),
-                            ],
-                            // Badge contador cuando colapsado
-                            if (isCollapsed && !allSetsCompleted) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bloodRed.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.bloodRed),
-                                ),
-                                child: Text(
-                                  '$completedSets/$totalSets',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.bloodRed,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          ),
+                          // Check si completado
+                          if (allSetsCompleted) ...[
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.check_circle,
+                              size: 20,
+                              color: AppColors.completedGreen,
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                     ),
-                    // Botón único de rayito que abre ambas funcionalidades
-                    if (!isCollapsed)
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: AppColors.bgInteractive,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.flash_on, color: AppColors.bloodRed),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: AppColors.bgElevated,
-                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                              builder: (sheetContext) {
-                                return SafeArea(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: QuickActionsMenu(
-                                      currentRestSeconds: restSeconds,
-                                      onRepeat: () {
-                                        Navigator.pop(sheetContext);
-                                        // TODO: implementar repetición de set
-                                      },
-                                      onMaintainGoal: () {
-                                        Navigator.pop(sheetContext);
-                                        // Reutilizar lógica existente: mantener objetivo (si aplica)
-                                      },
-                                      onRestTimeSelected: (s) {
-                                        Navigator.pop(sheetContext);
-                                        if (onRestTimeChange != null) onRestTimeChange!(s);
-                                      },
-                                      onHistory: () {
-                                        Navigator.pop(sheetContext);
-                                        onShowOptions();
-                                      },
-                                      onMoreOptions: () {
-                                        Navigator.pop(sheetContext);
-                                        onShowOptions();
-                                      },
-                                    ),
+
+                    // Fila 2: Indicador de serie + botón acciones (solo si expandido)
+                    if (!isCollapsed) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const SizedBox(width: 32), // Alineado con el nombre
+                          // Indicador de serie prominente
+                          if (!allSetsCompleted)
+                            _SeriesIndicator(
+                              currentSet: currentSetNumber,
+                              totalSets: totalSets,
+                              completedSets: completedSets,
+                              isCollapsed: false,
+                              isLastSet: isLastSet,
+                            ),
+                          const Spacer(),
+                          // Botón acciones rápidas - touch target grande
+                          Material(
+                            color: AppColors.bgInteractive,
+                            borderRadius: BorderRadius.circular(10),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  backgroundColor: AppColors.bgElevated,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                                   ),
+                                  builder: (sheetContext) {
+                                    return SafeArea(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          left: 16,
+                                          right: 16,
+                                          top: 16,
+                                          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+                                        ),
+                                        child: QuickActionsMenu(
+                                          currentRestSeconds: restSeconds,
+                                          startExpanded: true,
+                                          showToggle: false,
+                                          isCurrentSetDone: isCurrentSetDone,
+                                          onRepeat: () {
+                                            Navigator.pop(sheetContext);
+                                            onRepeat?.call();
+                                          },
+                                          onMarkDone: () {
+                                            Navigator.pop(sheetContext);
+                                            onMarkDone?.call();
+                                          },
+                                          onRestTimeSelected: (s) {
+                                            Navigator.pop(sheetContext);
+                                            onRestTimeChange?.call(s);
+                                          },
+                                          onQuickNote: (note) {
+                                            Navigator.pop(sheetContext);
+                                            onQuickNote?.call(note);
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
-                            );
-                          },
-                          tooltip: 'Acciones y opciones',
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                        ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.flash_on, color: AppColors.bloodRed, size: 18),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'ACCIONES',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ],
+
+                    // Indicador compacto cuando colapsado
+                    if (isCollapsed && !allSetsCompleted) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const SizedBox(width: 32),
+                          _SeriesIndicator(
+                            currentSet: currentSetNumber,
+                            totalSets: totalSets,
+                            completedSets: completedSets,
+                            isCollapsed: true,
+                            isLastSet: isLastSet,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
 
@@ -575,42 +830,20 @@ class ExerciseCard extends StatelessWidget {
           ),
         ],
 
-        // Fila horizontal: Botón objetivo y mensaje de dificultad
-        Row(
-          children: [
-            // Evitar duplicado: si la sugerencia de progresión indica "maintain",
-            // ya se muestra el mensaje "Mismo objetivo hoy" en la tarjeta de progresión.
-            if (progressionDecision == null || progressionDecision!.action != ProgressionAction.maintain)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.bgInteractive,
-                  foregroundColor: AppColors.textPrimary,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: const Size(0, 32),
-                ),
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Mismo objetivo hoy', style: TextStyle(fontSize: 13)),
-                onPressed: () {}, // TODO: lógica real
+        // Mensaje empático para días difíciles (si aplica)
+        if (empatheticBannerMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              empatheticBannerMessage!,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
-
-            if (empatheticBannerMessage != null)
-              Flexible(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    empatheticBannerMessage!,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-          ],
-        ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
 
         // Card de progresión v2 (si hay sugerencia)
         if (progressionDecision != null) ...[
@@ -663,6 +896,9 @@ class ExerciseCard extends StatelessWidget {
               onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
               onCompleted: (val) => onUpdateCompleted(setIndex, val),
               onLongPress: () => onSetLongPress(setIndex),
+              // 🆕 SWIPE-TO-DELETE: Solo si hay más de 1 serie
+              canDelete: exercise.logs.length > 1,
+              onDelete: () => onDeleteSet?.call(setIndex),
             );
           }
 
@@ -688,411 +924,136 @@ class ExerciseCard extends StatelessWidget {
   }
 }
 
-/// Chip compacto para mostrar y editar el tiempo de descanso por ejercicio
-class _RestTimeChip extends StatelessWidget {
-  final int seconds;
-  final Function(int)? onChanged;
+/// 🎯 NUEVO: Indicador de series prominente y visible
+/// Responde a: "¿Cuántas llevo? ¿Cuántas quedan?"
+/// - Cuando expandido: Muestra "Serie X / Y" con barra de progreso visual
+/// - Cuando colapsado: Muestra "X/Y" compacto
+/// - Última serie: Destaca con color especial y mensaje "¡ÚLTIMA!"
+class _SeriesIndicator extends StatelessWidget {
+  final int currentSet;
+  final int totalSets;
+  final int completedSets;
+  final bool isCollapsed;
+  final bool isLastSet;
 
-  const _RestTimeChip({
-    required this.seconds,
-    this.onChanged,
+  const _SeriesIndicator({
+    required this.currentSet,
+    required this.totalSets,
+    required this.completedSets,
+    required this.isCollapsed,
+    required this.isLastSet,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Cambiar tiempo de descanso',
-      child: Material(
-        color: Colors.grey[850],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey[700]!),
-        ),
-        child: InkWell(
-          onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.timer_outlined, size: 12, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  '${seconds}s',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                if (onChanged != null) ...[
-                  const SizedBox(width: 2),
-                  Icon(Icons.edit, size: 10, color: Colors.grey[600]),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+    // Calcular progreso
+    final progress = totalSets > 0 ? completedSets / totalSets : 0.0;
 
-  void _showRestTimePicker(BuildContext context) {
-    HapticFeedback.selectionClick();
+    // Colores según estado
+    final Color bgColor;
+    final Color textColor;
+    final Color progressColor;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _RestTimePickerSheet(
-        initialSeconds: seconds,
-        onSelected: (newSeconds) {
-          onChanged?.call(newSeconds);
-          Navigator.pop(context);
-        },
-      ),
-    );
-  }
-}
-
-/// Bottom sheet para seleccionar tiempo de descanso
-class _RestTimePickerSheet extends StatefulWidget {
-  final int initialSeconds;
-  final Function(int) onSelected;
-
-  const _RestTimePickerSheet({
-    required this.initialSeconds,
-    required this.onSelected,
-  });
-
-  @override
-  State<_RestTimePickerSheet> createState() => _RestTimePickerSheetState();
-}
-
-class _RestTimePickerSheetState extends State<_RestTimePickerSheet> {
-  late int _selectedSeconds;
-
-  // Opciones predefinidas de tiempo
-  static const List<int> _presets = [30, 45, 60, 90, 120, 150, 180, 240, 300];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedSeconds = widget.initialSeconds;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'TIEMPO DE DESCANSO',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Controles +/-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 32),
-                  onPressed: _selectedSeconds > 10
-                      ? () {
-                          HapticFeedback.selectionClick();
-                          setState(() => _selectedSeconds -= 10);
-                        }
-                      : null,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  '${_selectedSeconds}s',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 32),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedSeconds += 10);
-                  },
-                  color: AppColors.neonPrimary,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Presets
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: _presets.map((preset) {
-                final isSelected = preset == _selectedSeconds;
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedSeconds = preset);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.neonPrimary : Colors.grey[800],
-                      borderRadius: BorderRadius.circular(8),
-                      border: isSelected
-                          ? null
-                          : Border.all(color: Colors.grey[700]!),
-                    ),
-                    child: Text(
-                      _formatPreset(preset),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Botón confirmar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  HapticFeedback.mediumImpact();
-                  widget.onSelected(_selectedSeconds);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.neonPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: Text(
-                  'CONFIRMAR',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatPreset(int seconds) {
-    if (seconds >= 60) {
-      final mins = seconds ~/ 60;
-      final secs = seconds % 60;
-      if (secs == 0) return '${mins}m';
-      return '${mins}m ${secs}s';
+    if (isLastSet) {
+      // Última serie: color de urgencia/celebración
+      bgColor = AppColors.fireRed.withValues(alpha: 0.2);
+      textColor = AppColors.fireRed;
+      progressColor = AppColors.fireRed;
+    } else if (progress >= 0.5) {
+      // Más de la mitad: color de progreso
+      bgColor = AppColors.completedGreen.withValues(alpha: 0.15);
+      textColor = AppColors.completedGreen;
+      progressColor = AppColors.completedGreen;
+    } else {
+      // Menos de la mitad: color neutro/activo
+      bgColor = AppColors.bloodRed.withValues(alpha: 0.15);
+      textColor = AppColors.bloodRed;
+      progressColor = AppColors.bloodRed;
     }
-    return '${seconds}s';
-  }
-}
 
-/// Botón de acciones rápidas (rayito ⚡) para cada ejercicio
-class _QuickActionsButton extends StatelessWidget {
-  final int restSeconds;
-  final List<SerieLog>? historyLogs;
-  final Function(int)? onRestTimeChange;
+    if (isCollapsed) {
+      // Versión compacta para estado colapsado
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: textColor.withValues(alpha: 0.5)),
+        ),
+        child: Text(
+          '$completedSets/$totalSets',
+          style: GoogleFonts.montserrat(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
+        ),
+      );
+    }
 
-  const _QuickActionsButton({
-    required this.restSeconds,
-    this.historyLogs,
-    this.onRestTimeChange,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
+    // Versión expandida con más información
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.bgInteractive,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.bolt, color: AppColors.goldAccent),
-        onPressed: () => _showQuickActionsSheet(context),
-        tooltip: 'Acciones rápidas',
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-        iconSize: 20,
-      ),
-    );
-  }
-
-  void _showQuickActionsSheet(BuildContext context) {
-    HapticFeedback.lightImpact();
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'ACCIONES RÁPIDAS',
-                style: AppTypography.sectionTitle.copyWith(
-                  color: AppColors.goldAccent,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Historial / LAST
-              if (historyLogs != null && historyLogs!.isNotEmpty)
-                _QuickActionTile(
-                  icon: Icons.history,
-                  iconColor: AppColors.textSecondary,
-                  title: 'Última vez',
-                  subtitle: '${historyLogs!.last.peso}kg × ${historyLogs!.last.reps} reps',
-                  onTap: () => Navigator.pop(ctx),
-                ),
-
-              // Ajustar tiempo de descanso
-              _QuickActionTile(
-                icon: Icons.timer_outlined,
-                iconColor: AppColors.restTeal,
-                title: 'Descanso',
-                subtitle: '${restSeconds}s',
-                trailing: const Icon(Icons.edit, size: 16, color: AppColors.textTertiary),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showRestTimePicker(context);
-                },
-              ),
-
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showRestTimePicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => _RestTimePickerSheet(
-        initialSeconds: restSeconds,
-        onSelected: (newSeconds) {
-          onRestTimeChange?.call(newSeconds);
-          Navigator.pop(ctx);
-        },
-      ),
-    );
-  }
-}
-
-/// Tile individual para acciones rápidas
-class _QuickActionTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const _QuickActionTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+        color: bgColor,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!,
-            ],
+        border: Border.all(color: textColor.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icono de serie/repetición
+          Icon(
+            Icons.fitness_center,
+            size: 12,
+            color: textColor,
           ),
-        ),
+          const SizedBox(width: 4),
+          // Texto principal
+          Text(
+            isLastSet ? '¡ÚLTIMA!' : 'Serie $currentSet',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Separador
+          Text(
+            '/',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: textColor.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(width: 4),
+          // Total de series
+          Text(
+            '$totalSets',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: textColor.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Mini barra de progreso visual
+          SizedBox(
+            width: 24,
+            height: 4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: textColor.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation(progressColor),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

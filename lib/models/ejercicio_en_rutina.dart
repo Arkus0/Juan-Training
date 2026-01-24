@@ -43,6 +43,30 @@ class EjercicioEnRutina {
     this.targetRpe,
   }) : instanceId = instanceId ?? const Uuid().v4();
 
+  /// Creates a DEEP copy of this exercise for isolated editing.
+  /// This ensures modifications don't affect the original object.
+  /// 🎯 FIX: Usado para evitar que la edición de rutinas guarde cambios sin guardar explícito.
+  EjercicioEnRutina deepCopy() {
+    return EjercicioEnRutina(
+      id: id,
+      nombre: nombre,
+      descripcion: descripcion,
+      musculosPrincipales: List<String>.from(musculosPrincipales),
+      musculosSecundarios: List<String>.from(musculosSecundarios),
+      equipo: equipo,
+      localImagePath: localImagePath,
+      series: series,
+      repsRange: repsRange,
+      descansoSugerido: descansoSugerido,
+      notas: notas,
+      instanceId: instanceId,
+      supersetId: supersetId,
+      progressionType: progressionType,
+      weightIncrement: weightIncrement,
+      targetRpe: targetRpe,
+    );
+  }
+
   /// Creates a copy with updated fields.
   /// To explicitly clear nullable fields, pass the special [clearField] value.
   EjercicioEnRutina copyWith({

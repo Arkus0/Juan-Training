@@ -14,6 +14,19 @@ class Rutina {
     required this.creada,
   });
 
+  /// Creates a DEEP copy of this routine including all days and exercises.
+  /// This ensures modifications don't affect the original object.
+  /// 🎯 FIX CRÍTICO: Usado para evitar que la edición de rutinas guarde cambios
+  /// cuando el usuario hace "Back" en lugar de "Guardar".
+  Rutina deepCopy() {
+    return Rutina(
+      id: id,
+      nombre: nombre,
+      dias: dias.map((d) => d.deepCopy()).toList(),
+      creada: creada,
+    );
+  }
+
   Rutina copyWith({
     String? id,
     String? nombre,

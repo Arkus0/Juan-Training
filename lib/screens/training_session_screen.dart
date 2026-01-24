@@ -334,12 +334,14 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
           const MusicAppBarAction(),
           // Botón de voz en AppBar (al lado de terminar)
+          // Incluye contexto de la serie activa para feedback claro
           voiceAvailable.when(
             data: (available) => available
                 ? VoiceTrainingButton(
                     enabled: true,
                     onCommand: (command) =>
                         _handleVoiceCommand(command, notifier),
+                    context: _buildVoiceContext(),
                   )
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
@@ -494,6 +496,30 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
         ],
       ),
+    );
+  }
+
+  /// Construye el contexto de voz para mostrar qué serie se modificará
+  VoiceTrainingContext? _buildVoiceContext() {
+    final sessionState = ref.read(trainingSessionProvider);
+    final nextSet = sessionState.nextIncompleteSet;
+
+    if (nextSet == null || nextSet.exerciseIndex >= sessionState.exercises.length) {
+      return null;
+    }
+
+    final exercise = sessionState.exercises[nextSet.exerciseIndex];
+    final log = exercise.logs.length > nextSet.setIndex
+        ? exercise.logs[nextSet.setIndex]
+        : null;
+
+    return VoiceTrainingContext(
+      exerciseName: exercise.nombre,
+      currentSet: nextSet.setIndex + 1,
+      totalSets: exercise.logs.length,
+      currentWeight: log?.peso,
+      currentReps: log?.reps,
+      currentRpe: log?.rpe,
     );
   }
 
