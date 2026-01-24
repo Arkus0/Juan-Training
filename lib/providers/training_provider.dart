@@ -1,10 +1,7 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/rutina.dart';
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
@@ -14,9 +11,9 @@ import '../models/progression_engine_models.dart';
 import '../models/library_exercise.dart';
 import 'main_provider.dart';
 import '../repositories/i_training_repository.dart';
-import '../utils/performance_utils.dart';
-import '../services/timer_platform_service.dart';
 import '../services/error_tolerance_system.dart';
+import '../services/rest_timer_controller.dart';
+import '../services/session_persistence_service.dart';
 import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
@@ -38,57 +35,7 @@ final activeSessionStreamProvider = StreamProvider<ActiveSessionData?>((ref) {
   return repo.watchActiveSession();
 });
 
-/// Estado avanzado del timer de descanso
-class RestTimerState {
-  final bool isActive;
-  final bool isPaused;
-  final int totalSeconds;
-  final DateTime? endTime; // Tiempo absoluto de fin (para persistir entre rebuilds)
-  final int? lastCompletedExerciseIndex;
-  final int? lastCompletedSetIndex;
-
-  const RestTimerState({
-    this.isActive = false,
-    this.isPaused = false,
-    this.totalSeconds = 90,
-    this.endTime,
-    this.lastCompletedExerciseIndex,
-    this.lastCompletedSetIndex,
-  });
-
-  RestTimerState copyWith({
-    bool? isActive,
-    bool? isPaused,
-    int? totalSeconds,
-    DateTime? endTime,
-    int? lastCompletedExerciseIndex,
-    int? lastCompletedSetIndex,
-    bool clearEndTime = false,
-  }) {
-    return RestTimerState(
-      isActive: isActive ?? this.isActive,
-      isPaused: isPaused ?? this.isPaused,
-      totalSeconds: totalSeconds ?? this.totalSeconds,
-      endTime: clearEndTime ? null : (endTime ?? this.endTime),
-      lastCompletedExerciseIndex: lastCompletedExerciseIndex ?? this.lastCompletedExerciseIndex,
-      lastCompletedSetIndex: lastCompletedSetIndex ?? this.lastCompletedSetIndex,
-    );
-  }
-
-  /// Calcula segundos restantes basado en endTime
-  double get remainingSeconds {
-    if (!isActive || endTime == null) return totalSeconds.toDouble();
-    if (isPaused) return totalSeconds.toDouble(); // Cuando pausado, mantener el valor pausado
-    final remaining = endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
-    return remaining > 0 ? remaining : 0;
-  }
-
-  /// Progreso del timer (0.0 a 1.0)
-  double get progress {
-    if (totalSeconds <= 0) return 1.0;
-    return 1.0 - (remainingSeconds / totalSeconds);
-  }
-}
+// RestTimerState importado desde rest_timer_controller.dart
 
 class TrainingState {
   final Rutina? activeRutina;
@@ -174,105 +121,63 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   final Ref ref;
   final ITrainingRepository _repository;
 
-  /// Debouncer para optimizar saves a BD (evitar saves excesivos durante input)
-  final Debouncer _saveDebouncer = Debouncer(
-    delay: const Duration(milliseconds: 500),
-  );
+  /// Controlador de timer de descanso (delegación de responsabilidad)
+  late final RestTimerController _timerController;
 
-  /// Flag para saber si hay un save pendiente que debe ejecutarse inmediatamente
-  bool _hasPendingSave = false;
+  /// Servicio de persistencia (delegación de responsabilidad)
+  late final SessionPersistenceService _persistenceService;
 
-  /// Servicio de comunicación con el timer de plataforma (Android)
-  final TimerPlatformService _timerPlatformService = TimerPlatformService.instance;
-  StreamSubscription<TimerPlatformEvent>? _timerEventSubscription;
-  bool _platformServiceInitialized = false;
+  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState()) {
+    _initializeServices();
+  }
 
-  /// Flag para indicar que el timer terminó mientras la app estaba cerrada
-  /// Se usa para notificar al UI que debe mostrar feedback
-  bool _timerFinishedWhileAway = false;
+  /// Inicializa los servicios delegados
+  Future<void> _initializeServices() async {
+    // Inicializar controlador de timer
+    _timerController = RestTimerController();
+    _timerController.onStateChanged = _onTimerStateChanged;
+    _timerController.onTimerFinishedWhileAway = () {
+      // Timer terminó mientras app cerrada - el getter lo expondrá al UI
+    };
+    await _timerController.initialize();
+
+    // Inicializar servicio de persistencia
+    _persistenceService = SessionPersistenceService(_repository);
+    _persistenceService.getSessionData = _getCurrentSessionData;
+  }
+
+  /// Callback cuando el timer cambia de estado
+  void _onTimerStateChanged(RestTimerState timerState) {
+    state = state.copyWith(
+      restTimer: timerState,
+      isRestActive: timerState.isActive,
+    );
+  }
+
+  /// Obtiene los datos de sesión actuales para persistencia
+  ActiveSessionData _getCurrentSessionData() {
+    return ActiveSessionData(
+      activeRutina: state.activeRutina,
+      exercises: state.exercises,
+      targets: state.targets,
+      startTime: state.startTime,
+      defaultRestSeconds: state.defaultRestSeconds,
+      history: state.history,
+    );
+  }
 
   /// Getter para que el UI pueda verificar si el timer terminó mientras estaba cerrado
-  bool get timerFinishedWhileAway => _timerFinishedWhileAway;
+  bool get timerFinishedWhileAway => _timerController.timerFinishedWhileAway;
 
   /// Limpia el flag de timer terminado (llamar después de mostrar feedback)
   void clearTimerFinishedWhileAway() {
-    _timerFinishedWhileAway = false;
-  }
-
-  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState()) {
-    _initializePlatformService();
-  }
-
-  /// Inicializa el servicio de timer de plataforma y escucha eventos
-  Future<void> _initializePlatformService() async {
-    if (_platformServiceInitialized) return;
-
-    try {
-      await _timerPlatformService.initialize();
-      _platformServiceInitialized = true;
-
-      // Escuchar eventos del servicio de plataforma (botones de notificación)
-      _timerEventSubscription = _timerPlatformService.eventStream.listen(_handlePlatformTimerEvent);
-
-      Logger().d('TimerPlatformService inicializado en TrainingProvider');
-    } catch (e) {
-      Logger().e('Error inicializando TimerPlatformService', error: e);
-    }
-  }
-
-  /// Maneja eventos del timer de plataforma (desde notificación Android)
-  void _handlePlatformTimerEvent(TimerPlatformEvent event) {
-    switch (event) {
-      case TimerPlatformEvent.pause:
-        // Solo actualizar estado local, el servicio ya pausó
-        if (state.restTimer.isActive && !state.restTimer.isPaused) {
-          final remaining = state.restTimer.remainingSeconds.ceil();
-          state = state.copyWith(
-            restTimer: state.restTimer.copyWith(
-              isPaused: true,
-              totalSeconds: remaining,
-              clearEndTime: true,
-            ),
-          );
-          _saveState();
-        }
-        break;
-
-      case TimerPlatformEvent.resume:
-        // Solo actualizar estado local, el servicio ya reanudó
-        if (state.restTimer.isActive && state.restTimer.isPaused) {
-          final endTime = DateTime.now().add(Duration(seconds: state.restTimer.totalSeconds));
-          state = state.copyWith(
-            restTimer: state.restTimer.copyWith(
-              isPaused: false,
-              endTime: endTime,
-            ),
-          );
-          _saveState();
-        }
-        break;
-
-      case TimerPlatformEvent.skip:
-        // Saltar timer desde notificación
-        stopRest(saveRestTime: true);
-        break;
-
-      case TimerPlatformEvent.add30:
-        // Añadir 30 segundos desde notificación
-        addRestTime(30);
-        break;
-
-      case TimerPlatformEvent.finished:
-        // Timer terminó naturalmente
-        stopRest(saveRestTime: true);
-        break;
-    }
+    _timerController.clearTimerFinishedWhileAway();
   }
 
   @override
   void dispose() {
-    _timerEventSubscription?.cancel();
-    _saveDebouncer.cancel();
+    _timerController.dispose();
+    _persistenceService.dispose();
     super.dispose();
   }
 
@@ -530,99 +435,32 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _saveState();
   }
 
-  /// Verifica si el ejercicio es el último de su superset que tiene sets pendientes
-  /// Retorna true si debe iniciar el timer, false si hay más ejercicios en el superset
-  bool _shouldStartTimerForSuperset(int exerciseIndex, int setIndex) {
-    // Validación defensiva: verificar índice válido
-    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) return true;
-
-    final exercise = state.exercises[exerciseIndex];
-
-    // Si no está en superset, siempre iniciar timer
-    if (!exercise.isInSuperset) return true;
-
-    final supersetId = exercise.supersetId!;
-
-    // Encontrar todos los ejercicios del mismo superset
-    final supersetExercises = <int>[];
-    for (int i = 0; i < state.exercises.length; i++) {
-      if (state.exercises[i].supersetId == supersetId) {
-        supersetExercises.add(i);
-      }
-    }
-
-    // Si solo hay un ejercicio en el superset (raro pero posible), iniciar timer
-    if (supersetExercises.length <= 1) return true;
-
-    // Verificar si el ejercicio actual es el último del superset en orden
-    final currentPositionInSuperset = supersetExercises.indexOf(exerciseIndex);
-    final isLastInSuperset = currentPositionInSuperset == supersetExercises.length - 1;
-
-    // Si es el último del superset, iniciar timer
-    if (isLastInSuperset) return true;
-
-    // Si no es el último, verificar si el siguiente ejercicio del superset
-    // tiene el mismo set (round) pendiente - si no, iniciar timer
-    final nextInSuperset = supersetExercises[currentPositionInSuperset + 1];
-    final nextExercise = state.exercises[nextInSuperset];
-
-    // Si el siguiente ejercicio ya tiene ese set completado, es que estamos
-    // terminando una ronda completa del superset
-    if (setIndex < nextExercise.logs.length && nextExercise.logs[setIndex].completed) {
-      // La ronda ya fue completada, verificar si hay más rondas
-      final allRoundsComplete = supersetExercises.every((idx) {
-        final ex = state.exercises[idx];
-        return setIndex >= ex.logs.length - 1 || ex.logs[setIndex].completed;
-      });
-      return allRoundsComplete;
-    }
-
-    // El siguiente ejercicio del superset tiene ese set pendiente, no iniciar timer
-    return false;
-  }
-
-  /// Obtiene el tiempo de descanso sugerido para un superset (del último ejercicio)
-  int _getSupersetRestTime(int exerciseIndex) {
-    // Validación defensiva: verificar índice válido
-    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) {
-      return state.defaultRestSeconds;
-    }
-
-    final exercise = state.exercises[exerciseIndex];
-
-    if (!exercise.isInSuperset) {
-      return exercise.descansoSugeridoSeconds ?? state.defaultRestSeconds;
-    }
-
-    final supersetId = exercise.supersetId!;
-
-    // Buscar el último ejercicio del superset para usar su descanso
-    int? lastSupersetRestTime;
-    for (int i = state.exercises.length - 1; i >= 0; i--) {
-      if (state.exercises[i].supersetId == supersetId) {
-        lastSupersetRestTime = state.exercises[i].descansoSugeridoSeconds;
-        break;
-      }
-    }
-
-    return lastSupersetRestTime ?? state.defaultRestSeconds;
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TIMER DE DESCANSO - Delegado a RestTimerController
+  // ═══════════════════════════════════════════════════════════════════════════
 
   /// Inicia el timer de descanso para un ejercicio específico
   /// @param exerciseIndex Índice del ejercicio que acaba de completarse
   /// @param setIndex Índice del set que acaba de completarse (para auto-focus)
   /// @return true si el timer se inició, false si estamos en medio de un superset
   bool startRestForExercise(int exerciseIndex, {int? setIndex}) {
-    // Verificar lógica de superseries
-    if (setIndex != null && !_shouldStartTimerForSuperset(exerciseIndex, setIndex)) {
-      // Estamos en medio de un superset, no iniciar timer
+    // Verificar lógica de superseries usando el controlador
+    if (setIndex != null && !_timerController.shouldStartTimerForSuperset(
+      exerciseIndex: exerciseIndex,
+      setIndex: setIndex,
+      exercises: state.exercises,
+    )) {
       return false;
     }
 
     final exercise = state.exercises[exerciseIndex];
-    int restTime = _getSupersetRestTime(exerciseIndex);
+    int restTime = _timerController.getSupersetRestTime(
+      exerciseIndex: exerciseIndex,
+      exercises: state.exercises,
+      defaultRestSeconds: state.defaultRestSeconds,
+    );
 
-    // Fallback: Try to find configured rest time in the active routine
+    // Fallback: buscar tiempo configurado en la rutina activa
     if (restTime == state.defaultRestSeconds && state.activeRutina != null) {
       for (final day in state.activeRutina!.dias) {
         final match = day.ejercicios.firstWhereOrNull((e) => e.instanceId == exercise.id);
@@ -633,81 +471,38 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       }
     }
 
-    final endTime = DateTime.now().add(Duration(seconds: restTime));
-
-    state = state.copyWith(
-      defaultRestSeconds: restTime,
-      isRestActive: true,
-      restTimer: RestTimerState(
-        isActive: true,
-        isPaused: false,
-        totalSeconds: restTime,
-        endTime: endTime,
-        lastCompletedExerciseIndex: exerciseIndex,
-        lastCompletedSetIndex: setIndex,
-      ),
-    );
-    _saveState();
-    _saveRestTimerToPrefs();
-
-    // Iniciar timer en servicio de plataforma (notificación Android)
-    _timerPlatformService.start(
+    state = state.copyWith(defaultRestSeconds: restTime);
+    _timerController.start(
       seconds: restTime,
       exerciseIndex: exerciseIndex,
       setIndex: setIndex,
     );
-
+    _saveState();
     return true;
   }
 
   void startRest() {
-    final restTime = state.defaultRestSeconds;
-    final endTime = DateTime.now().add(Duration(seconds: restTime));
-
-    state = state.copyWith(
-      isRestActive: true,
-      restTimer: RestTimerState(
-        isActive: true,
-        isPaused: false,
-        totalSeconds: restTime,
-        endTime: endTime,
-      ),
-    );
+    _timerController.start(seconds: state.defaultRestSeconds);
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Iniciar timer en servicio de plataforma
-    _timerPlatformService.start(seconds: restTime);
   }
 
   void stopRest({bool saveRestTime = true}) {
-    // Guardar el tiempo de descanso en el SerieLog si corresponde
+    // Guardar el tiempo de descanso real en el SerieLog (para analytics)
     if (saveRestTime && state.restTimer.isActive) {
       final exerciseIndex = state.restTimer.lastCompletedExerciseIndex;
       final setIndex = state.restTimer.lastCompletedSetIndex;
-
       if (exerciseIndex != null && setIndex != null) {
-        // Calcular el tiempo real descansado
-        final totalTime = state.restTimer.totalSeconds;
-        final remainingTime = state.restTimer.remainingSeconds.ceil();
-        final actualRestTime = totalTime - remainingTime;
-
-        // Solo guardar si descansó al menos un poco
-        if (actualRestTime > 0) {
+        final actualRestTime = _timerController.stop(saveRestTime: true);
+        if (actualRestTime != null && actualRestTime > 0) {
           _updateLogRestTime(exerciseIndex, setIndex, actualRestTime);
         }
+      } else {
+        _timerController.stop(saveRestTime: false);
       }
+    } else {
+      _timerController.stop(saveRestTime: false);
     }
-
-    state = state.copyWith(
-      isRestActive: false,
-      restTimer: const RestTimerState(isActive: false),
-    );
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Detener timer en servicio de plataforma
-    _timerPlatformService.stop();
   }
 
   /// Actualiza el tiempo de descanso en un SerieLog específico (para analytics)
@@ -736,101 +531,34 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     exercises[exerciseIndex] = exercise.copyWith(logs: logs);
     state = state.copyWith(exercises: exercises);
-    // No llamar _saveState() aquí, se llamará en stopRest()
   }
 
-  /// Pausa el timer de descanso (guarda el tiempo restante)
   void pauseRest() {
-    if (!state.restTimer.isActive || state.restTimer.isPaused) return;
-
-    final remaining = state.restTimer.remainingSeconds.ceil();
-    state = state.copyWith(
-      restTimer: state.restTimer.copyWith(
-        isPaused: true,
-        totalSeconds: remaining, // Guardar tiempo restante
-        clearEndTime: true,
-      ),
-    );
+    _timerController.pause();
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Pausar timer en servicio de plataforma
-    _timerPlatformService.pause();
   }
 
-  /// Reanuda el timer de descanso desde donde estaba pausado
   void resumeRest() {
-    if (!state.restTimer.isActive || !state.restTimer.isPaused) return;
-
-    final endTime = DateTime.now().add(Duration(seconds: state.restTimer.totalSeconds));
-    state = state.copyWith(
-      restTimer: state.restTimer.copyWith(
-        isPaused: false,
-        endTime: endTime,
-      ),
-    );
+    _timerController.resume();
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Reanudar timer en servicio de plataforma
-    _timerPlatformService.resume();
   }
 
-  /// Añade tiempo al timer actual
   void addRestTime(int seconds) {
-    if (!state.restTimer.isActive) return;
-
-    final newTotal = state.restTimer.totalSeconds + seconds;
-    if (state.restTimer.isPaused) {
-      state = state.copyWith(
-        restTimer: state.restTimer.copyWith(totalSeconds: newTotal),
-      );
-    } else {
-      final newEndTime = state.restTimer.endTime?.add(Duration(seconds: seconds));
-      state = state.copyWith(
-        restTimer: state.restTimer.copyWith(
-          totalSeconds: newTotal,
-          endTime: newEndTime,
-        ),
-      );
-    }
+    _timerController.addTime(seconds);
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Añadir tiempo en servicio de plataforma
-    _timerPlatformService.addTime(seconds);
   }
 
-  /// Reinicia el timer de descanso al valor por defecto para el ejercicio actual (o al valor por defecto de la sesión).
   void restartRest() {
-    // Determinar tiempo de descanso objetivo: intentar usar el último ejercicio si existe
     final lastIndex = state.restTimer.lastCompletedExerciseIndex;
-    int restTime;
-    if (lastIndex != null) {
-      restTime = _getSupersetRestTime(lastIndex);
-    } else {
-      restTime = state.defaultRestSeconds;
-    }
-
-    final endTime = DateTime.now().add(Duration(seconds: restTime));
-
-    state = state.copyWith(
-      restTimer: state.restTimer.copyWith(
-        isActive: true,
-        isPaused: false,
-        totalSeconds: restTime,
-        endTime: endTime,
-      ),
-    );
+    int restTime = lastIndex != null
+        ? _timerController.getSupersetRestTime(
+            exerciseIndex: lastIndex,
+            exercises: state.exercises,
+            defaultRestSeconds: state.defaultRestSeconds,
+          )
+        : state.defaultRestSeconds;
+    _timerController.restart(restTime);
     _saveState();
-    _saveRestTimerToPrefs();
-
-    // Reiniciar timer en servicio de plataforma
-    _timerPlatformService.start(
-      seconds: restTime,
-      exerciseIndex: lastIndex,
-      setIndex: state.restTimer.lastCompletedSetIndex,
-    );
   }
 
   /// Actualiza el tiempo de descanso sugerido para un ejercicio específico
@@ -855,11 +583,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 
   Future<void> finishSession() async {
-    // Modified to allow saving sessions without a routine (Ad-hoc)
     if (state.startTime == null) return;
-    if (state.exercises.isEmpty) return; // Should not save empty session
+    if (state.exercises.isEmpty) return;
 
-    // Forzar save pendiente antes de finalizar
     await flushPendingSave();
 
     final endTime = DateTime.now();
@@ -877,7 +603,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
     final sesion = Sesion(
       id: const Uuid().v4(),
-      rutinaId: state.activeRutina?.id ?? '', // Handle null routine
+      rutinaId: state.activeRutina?.id ?? '',
       dayName: state.dayName,
       dayIndex: state.dayIndex,
       fecha: endTime,
@@ -886,14 +612,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       durationSeconds: durationSeconds,
     );
 
-    // FIX: Usar método atómico para evitar estado inconsistente
-    // Si hay crash entre save y clear, podrían quedar sesiones duplicadas
+    // Guardar sesión y limpiar de forma atómica
     await _repository.finishAndClearSession(sesion);
-    // Limpiar también SharedPreferences del timer
-    await _clearRestTimerFromPrefs();
-
-    // Cancelar cualquier debouncer pendiente
-    _saveDebouncer.cancel();
+    await _timerController.clearPrefs();
 
     // Guardar resultado para feedback
     _lastSaveResult = SessionSaveResult(
@@ -907,176 +628,61 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     ref.read(bottomNavIndexProvider.notifier).state = 2;
   }
 
-  /// Descarta la sesión activa sin guardarla.
-  /// IMPORTANTE: Cancela cualquier save pendiente para evitar race conditions.
+  /// Descarta la sesión activa sin guardarla
   Future<void> discardSession() async {
-    // Cancelar cualquier save pendiente ANTES de limpiar
-    // Esto evita que un save debounced se ejecute después del clear
-    _saveDebouncer.cancel();
-    _hasPendingSave = false;
-
     // Detener timer si está activo
     if (state.restTimer.isActive) {
-      _timerPlatformService.stop();
+      _timerController.stop(saveRestTime: false);
     }
 
-    // Limpiar storage
-    await clearStorage();
+    // Descartar sesión (cancela saves pendientes internamente)
+    await _persistenceService.discardSession();
+    await _timerController.clearPrefs();
 
-    // Reset state
     state = TrainingState();
-
     Logger().d('Sesión descartada correctamente');
   }
 
-  // --- Persistence ---
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PERSISTENCIA - Delegado a SessionPersistenceService
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Guarda el estado con debounce para evitar saves excesivos durante input rápido.
-  /// Use _saveStateImmediate() para saves que necesitan ser inmediatos.
+  /// Guarda el estado con debounce para evitar saves excesivos
   void _saveState() {
-    _hasPendingSave = true;
-    _saveDebouncer.run(() {
-      _saveStateImmediate();
-    });
-  }
-
-  /// Guarda el estado inmediatamente sin debounce.
-  /// Usar para eventos importantes como completar un set o terminar sesión.
-  Future<void> _saveStateImmediate() async {
-    _hasPendingSave = false;
-
-    // Removed strict check for activeRutina to allow Ad-Hoc saves
-    if (state.exercises.isEmpty) return;
-
-    final data = ActiveSessionData(
-      activeRutina: state.activeRutina,
-      exercises: state.exercises,
-      targets: state.targets,
-      startTime: state.startTime,
-      defaultRestSeconds: state.defaultRestSeconds,
-      history: state.history,
-    );
-
-    try {
-      await _repository.saveActiveSession(data);
-      // Persist rest timer to SharedPreferences (separate key)
-      await _saveRestTimerToPrefs();
-    } catch (e) {
-      Logger().e('Error saving session state', error: e);
-    }
+    _persistenceService.saveWithDebounce();
+    _timerController.saveToPrefs();
   }
 
   /// Fuerza el save si hay uno pendiente (llamar antes de operaciones críticas)
   Future<void> flushPendingSave() async {
-    if (_hasPendingSave) {
-      _saveDebouncer.cancel();
-      await _saveStateImmediate();
-    }
+    await _persistenceService.flushPendingSave();
   }
 
   Future<void> clearStorage() async {
-    await _repository.clearActiveSession();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('rest_timer');
-  }
-
-  Future<void> _saveRestTimerToPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final rt = state.restTimer;
-      if (!rt.isActive) {
-        await prefs.remove('rest_timer');
-        return;
-      }
-
-      final map = {
-        'isActive': rt.isActive,
-        'isPaused': rt.isPaused,
-        'totalSeconds': rt.totalSeconds,
-        'endTimeMs': rt.endTime?.millisecondsSinceEpoch,
-        'lastExerciseIndex': rt.lastCompletedExerciseIndex,
-        'lastSetIndex': rt.lastCompletedSetIndex,
-      };
-
-      await prefs.setString('rest_timer', json.encode(map));
-    } catch (e) {
-      Logger().e('Error saving rest timer to prefs', error: e);
-    }
-  }
-
-  Future<void> _loadRestTimerFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final s = prefs.getString('rest_timer');
-      if (s == null) return;
-      final Map<String, dynamic> m = json.decode(s);
-
-      final bool isActive = m['isActive'] == true;
-      final bool isPaused = m['isPaused'] == true;
-      final int totalSeconds = (m['totalSeconds'] as num?)?.toInt() ?? state.defaultRestSeconds;
-      final int? endTimeMs = (m['endTimeMs'] as num?)?.toInt();
-      final int? lastExerciseIndex = (m['lastExerciseIndex'] as num?)?.toInt();
-      final int? lastSetIndex = (m['lastSetIndex'] as num?)?.toInt();
-
-      DateTime? endTime;
-      if (endTimeMs != null) endTime = DateTime.fromMillisecondsSinceEpoch(endTimeMs);
-
-      // Restore into state only if active and endTime in future or paused
-      if (isActive) {
-        var rt = RestTimerState(
-          isActive: true,
-          isPaused: isPaused,
-          totalSeconds: totalSeconds,
-          endTime: endTime,
-          lastCompletedExerciseIndex: lastExerciseIndex,
-          lastCompletedSetIndex: lastSetIndex,
-        );
-
-        // If not paused and endTime in past, treat as finished
-        if (!rt.isPaused && rt.endTime != null && rt.remainingSeconds <= 0) {
-          // Timer already finished while app was closed
-          // Set flag so UI can show feedback when it's ready
-          _timerFinishedWhileAway = true;
-          rt = const RestTimerState(isActive: false);
-          Logger().d('Timer había terminado mientras app cerrada - notificando UI');
-        }
-
-        state = state.copyWith(
-          restTimer: rt,
-          isRestActive: rt.isActive,
-        );
-      }
-    } catch (e) {
-      Logger().e('Error loading rest timer from prefs', error: e);
-    }
+    await _persistenceService.clearActiveSession();
+    await _timerController.clearPrefs();
   }
 
   Future<void> restoreFromStorage() async {
-    try {
-      final data = await _repository.getActiveSession();
-
-      if (data != null) {
-        // Safe Restore: Load data even if activeRutina is missing (deleted routine)
-        state = TrainingState(
+    final data = await _persistenceService.restoreSession();
+    if (data != null) {
+      state = TrainingState(
         activeRutina: data.activeRutina,
         exercises: data.exercises,
         targets: data.targets,
         startTime: data.startTime ?? DateTime.now(),
         defaultRestSeconds: data.defaultRestSeconds,
-        isRestActive: false, // Do not restore timer active flag until we check prefs
+        isRestActive: false,
         history: data.history,
         showAdvancedOptions: false,
       );
 
-        // Try to restore active rest timer from SharedPreferences
-        await _loadRestTimerFromPrefs();
-      }
-    } catch (e) {
-      Logger().e('Error restoring session', error: e);
-      // Fallback: If critical failure, clear storage to prevent crash loop.
-      // Ideally, we could try to rescue partial data here, but getActiveSession
-      // handles the DB read. If that threw, the data is likely corrupt.
-      await clearStorage();
+      // Restaurar timer desde SharedPreferences
+      await _timerController.loadFromPrefs();
+      state = state.copyWith(
+        restTimer: _timerController.state,
+        isRestActive: _timerController.state.isActive,
+      );
     }
   }
 }

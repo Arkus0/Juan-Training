@@ -116,24 +116,43 @@
 
 ---
 
-### `TrainingSessionNotifier` - 1000+ líneas
+### ~~`TrainingSessionNotifier` - 1000+ líneas~~ ✅ COMPLETADO
 
 **Archivo:** `lib/providers/training_provider.dart`
 
-**Estado:** ⏳ PENDIENTE
+**Estado:** ✅ COMPLETADO
 
-**Refactorización sugerida:** Dividir en:
-1. `TrainingSessionNotifier` - Solo estado de ejercicios
-2. `RestTimerController` - Timer específico
-3. `SessionPersistenceService` - Save/restore
+**Resultado:**
+- `training_provider.dart`: **802 líneas** (antes ~1160, reducción del 30%)
+- `rest_timer_controller.dart`: ~340 líneas
+- `session_persistence_service.dart`: ~100 líneas
 
-**Recomendación:** Hacer después de completar la refactorización del repositorio.
+**Refactorización realizada:**
+1. ✅ `RestTimerController` creado e integrado
+   - Lógica de timer de descanso encapsulada
+   - Manejo de superseries (`shouldStartTimerForSuperset`)
+   - Persistencia en SharedPreferences
+   - Comunicación con TimerPlatformService
+2. ✅ `SessionPersistenceService` creado e integrado
+   - Debouncing de saves
+   - Flush de saves pendientes
+   - Restore de sesión con manejo de errores
+3. ✅ `TrainingSessionNotifier` refactorizado para delegar
+   - Timer: delega a `RestTimerController`
+   - Persistencia: delega a `SessionPersistenceService`
+   - Solo mantiene lógica de ejercicios/estado
+
+**Beneficios:**
+- Separación clara de responsabilidades
+- Cada clase es testeable de forma independiente
+- API pública sin cambios (compatibilidad total)
+- Código más mantenible y comprensible
 
 ---
 
 ### Zonas Frágiles (cambiar con cuidado)
 
-1. **`EjercicioEnRutina` → `Ejercicio` mapping** (`training_provider.dart:262-284`)
+1. **`EjercicioEnRutina` → `Ejercicio` mapping** (`training_provider.dart:229-251`)
    - Conversión manual entre modelos. Si añades campo a uno, debes recordar añadirlo al otro.
 
 2. **IDs con sufijo `_target`** (`drift_training_repository.dart:375-407`)
@@ -142,18 +161,33 @@
 3. **Migraciones de BD sin reversibilidad** (`database.dart:178-206`)
    - Las migraciones usan try-catch vacíos. Si una migración falla parcialmente, BD queda en estado inconsistente.
 
+4. ~~**RestTimerState duplicación temporal**~~ ✅ RESUELTO
+   - `RestTimerState` ahora solo existe en `rest_timer_controller.dart`
+   - El provider lo importa y usa sin duplicación
+
 ---
 
 ## Recomendaciones si vuelves en 6-12 meses
 
-1. **Primer paso:** Escribir test de integración del flujo completo:
+1. **Primer paso:** Escribir tests unitarios para los servicios extraídos:
+   ```
+   // RestTimerController
+   - start/stop/pause/resume timer
+   - superset logic (shouldStartTimerForSuperset)
+   - persistence in SharedPreferences
+
+   // SessionPersistenceService
+   - debounced saves
+   - flush pending saves
+   - restore with error handling
+   ```
+
+2. **Segundo paso:** Escribir test de integración del flujo completo:
    ```
    startSession → updateLog → completeSet → finishSession → verify DB
    ```
 
-2. **Segundo paso:** Refactorizar `TrainingSessionNotifier` ANTES de añadir features.
-
-3. **Tercer paso:** Revisar este documento y decidir qué fixes siguen siendo relevantes.
+3. **Tercer paso:** Revisar este documento y decidir qué mejoras adicionales son relevantes.
 
 ---
 
