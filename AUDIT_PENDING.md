@@ -91,18 +91,28 @@
 
 ## Deuda Técnica (EN PROGRESO)
 
-### `DriftTrainingRepository` - 1300+ líneas
+### ~~`DriftTrainingRepository` - 1300+ líneas~~ ✅ COMPLETADO
 
 **Archivo:** `lib/repositories/drift_training_repository.dart`
 
-**Estado:** 🔄 EN PROGRESO
+**Estado:** ✅ COMPLETADO
 
 **Progreso:**
 - ✅ `RoutineRepository` extraído (`lib/repositories/routine_repository.dart`)
-- ⏳ `SessionRepository` - Pendiente
-- ⏳ `AnalyticsRepository` - Pendiente
+- ✅ `SessionRepository` extraído (`lib/repositories/session_repository.dart`)
+- ✅ `AnalyticsRepository` extraído (`lib/repositories/analytics_repository.dart`)
+- ✅ `DriftTrainingRepository` refactorizado para delegar a repositorios especializados
 
-**Patrón a seguir:** Ver `RoutineRepository` como ejemplo de extracción.
+**Resultado:**
+- `drift_training_repository.dart`: ~125 líneas (facade que delega)
+- `routine_repository.dart`: ~220 líneas
+- `session_repository.dart`: ~470 líneas
+- `analytics_repository.dart`: ~540 líneas
+
+**Beneficios:**
+- Separación clara de responsabilidades
+- Cada repositorio es testeable de forma independiente
+- API pública (`ITrainingRepository`) sin cambios
 
 ---
 
