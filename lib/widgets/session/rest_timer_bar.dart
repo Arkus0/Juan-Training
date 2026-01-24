@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/rest_timer_controller.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../services/timer_platform_service.dart';
