@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/training_provider.dart';
-import 'package:juan_training/models/rest_timer_state.dart';
+import 'package:juan_training/services/rest_timer_controller.dart';
 import '../../screens/training_session_screen.dart';
 
 class ActiveSessionBar extends ConsumerWidget {
