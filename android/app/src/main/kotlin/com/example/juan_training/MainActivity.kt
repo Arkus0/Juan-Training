@@ -18,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val MUSIC_CHANNEL = "juan_training/music_launcher"
     private val TIMER_CHANNEL = "com.juantraining/timer_service"
+    private val MEDIA_SESSION_CHANNEL = "com.juantraining/media_session"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -96,6 +97,53 @@ class MainActivity : FlutterActivity() {
 
         // Store the Flutter engine for use by TimerActionReceiver
         TimerActionReceiver.flutterEngine = flutterEngine
+
+        // Store for MediaSessionService
+        MediaSessionService.flutterEngine = flutterEngine
+
+        // MediaSession service channel
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MEDIA_SESSION_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "startMediaSession" -> {
+                        val trainingName = call.argument<String>("trainingName")
+                        val intent = Intent(this, MediaSessionService::class.java).apply {
+                            action = MediaSessionService.ACTION_START
+                            putExtra(MediaSessionService.EXTRA_TRAINING_NAME, trainingName)
+                        }
+                        startForegroundService(intent)
+                        result.success(true)
+                    }
+                    "stopMediaSession" -> {
+                        val intent = Intent(this, MediaSessionService::class.java).apply {
+                            action = MediaSessionService.ACTION_STOP
+                        }
+                        startService(intent)
+                        result.success(true)
+                    }
+                    "updatePlaybackState" -> {
+                        val isPlaying = call.argument<Boolean>("isPlaying") ?: false
+                        val intent = Intent(this, MediaSessionService::class.java).apply {
+                            action = MediaSessionService.ACTION_UPDATE_STATE
+                            putExtra(MediaSessionService.EXTRA_IS_PLAYING, isPlaying)
+                        }
+                        startService(intent)
+                        result.success(true)
+                    }
+                    "updateMetadata" -> {
+                        val title = call.argument<String>("title")
+                        val artist = call.argument<String>("artist")
+                        val intent = Intent(this, MediaSessionService::class.java).apply {
+                            action = MediaSessionService.ACTION_UPDATE_METADATA
+                            putExtra(MediaSessionService.EXTRA_TITLE, title)
+                            putExtra(MediaSessionService.EXTRA_ARTIST, artist)
+                        }
+                        startService(intent)
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     /**

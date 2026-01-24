@@ -13,6 +13,7 @@ import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_s
 import 'package:juan_training/services/routine_sharing_service.dart';
 import 'package:juan_training/services/routine_ocr_service.dart';
 import 'package:juan_training/services/voice_input_service.dart';
+import 'package:juan_training/services/haptics_controller.dart';
 import 'package:juan_training/widgets/routine_import_dialog.dart';
 import 'package:juan_training/widgets/voice/voice_input_sheet.dart';
 import 'package:juan_training/widgets/smart_import_sheet.dart';
@@ -67,7 +68,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             backgroundColor: AppColors.neonPrimary,
           ),
         );
-        try { HapticFeedback.vibrate(); } catch (_) {}
+        HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
         return;
       }
 
@@ -83,19 +84,13 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       });
       overlay.insert(entry);
 
-      // Vibrate approximation using HapticFeedback
-      try {
-        HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 50));
-        HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 200));
-      } catch (_) {} // best-effort haptic feedback
-
+      // 🎯 RUTINA FORJADA: Vibración fuerte de celebración
+      HapticsController.instance.onRoutineForged();
 
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('RUTINA FORJADA',
+          content: Text('¡RUTINA FORJADA!',
             style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
           backgroundColor: AppColors.neonPrimaryPressed,
         ),
@@ -116,7 +111,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           backgroundColor: AppColors.neonPrimary,
         ),
       );
-      try { HapticFeedback.vibrate(); } catch (_) {}
+      HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
       final logger = Logger();
       logger.e('Unexpected error in _saveRoutine', error: e, stackTrace: s);
       return;

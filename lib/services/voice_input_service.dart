@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
@@ -8,6 +7,7 @@ import '../models/library_exercise.dart';
 import 'exercise_matching_service.dart';
 import 'exercise_parsing_service.dart';
 import 'voice_audio_feedback_service.dart';
+import 'haptics_controller.dart';
 
 /// Estado del reconocimiento de voz (usado internamente por el servicio)
 enum VoiceServiceState {
@@ -214,10 +214,8 @@ class VoiceInputService {
     }
 
     try {
-      // Vibración de inicio
-      try {
-        HapticFeedback.mediumImpact();
-      } catch (_) {}
+      // Vibración de inicio via HapticsController (lifecycle-aware)
+      HapticsController.instance.onVoiceStarted();
 
       // Audio feedback de inicio
       if (_audioFeedbackEnabled) {
@@ -270,10 +268,8 @@ class VoiceInputService {
         await _audioFeedback.playStopListening();
       }
 
-      // Vibración de parada
-      try {
-        HapticFeedback.heavyImpact();
-      } catch (_) {}
+      // Vibración de parada via HapticsController (lifecycle-aware)
+      HapticsController.instance.onVoiceStopped();
     }
 
     final transcript = _currentTranscript;

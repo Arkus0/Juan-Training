@@ -36,6 +36,8 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // AndroidX Media for MediaStyle notifications and MediaSession compat
+    implementation("androidx.media:media:1.7.0")
 }
 
     buildTypes {
