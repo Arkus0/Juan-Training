@@ -232,6 +232,84 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
+          // Sección Guías / Ayuda
+          const _SectionHeader(title: 'CÓMO FUNCIONA'),
+          const SizedBox(height: 8),
+
+          _GuideTile(
+            icon: Icons.mic,
+            title: 'Entrada por voz',
+            subtitle: 'Dicta ejercicios, series y pesos',
+            onTap: () => _showGuideDialog(
+              context,
+              icon: Icons.mic,
+              title: 'Entrada por voz',
+              bullets: [
+                'Di el nombre del ejercicio y se buscará automáticamente',
+                'Puedes dictar peso y repeticiones: "80 kilos, 10 reps"',
+                'Si no entiende bien, te pedirá confirmar',
+                'Funciona mejor en entornos sin mucho ruido',
+                'Mantén pulsado el botón de micrófono para hablar',
+              ],
+            ),
+          ),
+
+          _GuideTile(
+            icon: Icons.document_scanner,
+            title: 'Importar con cámara (OCR)',
+            subtitle: 'Escanea rutinas escritas o impresas',
+            onTap: () => _showGuideDialog(
+              context,
+              icon: Icons.document_scanner,
+              title: 'Importar con cámara',
+              bullets: [
+                'Toma foto de una rutina escrita o impresa',
+                'La app intentará reconocer ejercicios y series',
+                'Siempre te mostrará una previsualización para revisar',
+                'Puedes editar cualquier error antes de guardar',
+                'Funciona mejor con texto claro y bien iluminado',
+              ],
+            ),
+          ),
+
+          _GuideTile(
+            icon: Icons.help_outline,
+            title: 'Por qué pide confirmar',
+            subtitle: 'Entendiendo las confirmaciones',
+            onTap: () => _showGuideDialog(
+              context,
+              icon: Icons.help_outline,
+              title: 'Por qué pide confirmar',
+              bullets: [
+                'La voz y el OCR no son 100% precisos',
+                'Cuando la app no está segura, te pide confirmar',
+                'Esto evita errores silenciosos en tu registro',
+                'Es mejor confirmar que arreglar después',
+                'Con el tiempo, la app aprende de tus ejercicios',
+              ],
+            ),
+          ),
+
+          _GuideTile(
+            icon: Icons.trending_up,
+            title: 'Progresión automática',
+            subtitle: 'Cómo aumenta el peso automáticamente',
+            onTap: () => _showGuideDialog(
+              context,
+              icon: Icons.trending_up,
+              title: 'Progresión automática',
+              bullets: [
+                'Puedes configurar progresión por ejercicio',
+                'Cuando completas todas las series, sube el peso',
+                'Tipos: lineal (+2.5kg), doble progresión, % 1RM',
+                'La progresión se aplica en la siguiente sesión',
+                'Puedes desactivarla en cualquier momento',
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
           // Info de la app
           const _SectionHeader(title: 'INFORMACIÓN'),
           const SizedBox(height: 8),
@@ -1014,4 +1092,144 @@ class _InstructionStep extends StatelessWidget {
       ),
     );
   }
+}
+
+// ============================================================================
+// SECCIÓN DE GUÍAS / AYUDA
+// ============================================================================
+
+/// Tile para guías explicativas - abre un diálogo al tocar
+class _GuideTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _GuideTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.white70),
+        title: Text(
+          title,
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.montserrat(
+            fontSize: 12,
+            color: Colors.grey[500],
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Colors.grey[600],
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Muestra un diálogo de guía con icono, título y bullets
+void _showGuideDialog(
+  BuildContext context, {
+  required IconData icon,
+  required String title,
+  required List<String> bullets,
+}) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: Colors.grey[900],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.bloodRed.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.bloodRed, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: bullets
+            .map((bullet) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: AppColors.bloodRed,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          bullet,
+                          style: GoogleFonts.montserrat(
+                            color: Colors.grey[300],
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(
+            'ENTENDIDO',
+            style: GoogleFonts.montserrat(
+              color: AppColors.bloodRed,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

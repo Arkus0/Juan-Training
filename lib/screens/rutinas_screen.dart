@@ -343,7 +343,7 @@ class _RutinaTile extends StatelessWidget {
               Row(
                 children: [
                   _InfoChip(
-                    icon: Icons.calendar_view_week,
+                    icon: Icons.calendar_today,
                     label: '${rutina.dias.length} DÍAS',
                   ),
                   const SizedBox(width: 16),

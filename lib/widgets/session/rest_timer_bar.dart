@@ -445,13 +445,21 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
 }
 
 /// Barra inactiva: botón para iniciar descanso + ajuste de tiempo
-/// Extraída como widget separado para evitar rebuilds
+/// 🎯 REDISEÑO: Grid horizontal consistente con barra activa
+///
+/// Estructura (izq → der):
+/// [16px] [Duration selector] [flex] [Delete 32px] [8px] [Start 48px] [16px]
 class _InactiveTimerBar extends StatelessWidget {
   final int seconds;
   final ValueChanged<int> onDurationChange;
   final VoidCallback onStartRest;
   final VoidCallback? onDiscardSession;
   final VoidCallback? onRestartRest;
+
+  // Constantes consistentes con barra activa
+  static const double _horizontalPadding = 16.0;
+  static const double _deleteButtonSize = 32.0;
+  static const double _startButtonSize = 48.0;
 
   const _InactiveTimerBar({
     required this.seconds,
@@ -464,7 +472,7 @@ class _InactiveTimerBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: const BoxDecoration(
         color: AppColors.bgElevated,
         border: Border(
@@ -473,80 +481,98 @@ class _InactiveTimerBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            _TimeDurationSelector(
-              seconds: seconds,
-              onChanged: onDurationChange,
-            ),
-
-            // Basura centrada en la barra inactiva
-            Expanded(
-              child: Center(
-                child: (onDiscardSession != null)
-                    ? Tooltip(
-                        message: 'Descartar sesión',
-                        child: _CircleButton(
-                          icon: Icons.delete_outline,
-                          size: 36,
-                          color: AppColors.bgDeep,
-                          onTap: () async {
-                            // FIX: Diálogo simplificado para uso en gimnasio (nadie lee textos largos)
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: AppColors.bgElevated,
-                                title: const Text('¿Descartar sesión?', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
-                                content: const Text('Se perderán los datos.', style: TextStyle(color: AppColors.textSecondary)),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('NO')),
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed))),
-                                ],
-                              ),
-                            );
-                            if (confirm == true) {
-                              HapticFeedback.heavyImpact();
-                              onDiscardSession!();
-                            }
-                          },
-                        ),
-                      )
-                    : (onRestartRest != null)
-                        ? Tooltip(
-                            message: 'Reiniciar descanso',
-                            child: _CircleButton(
-                              icon: Icons.refresh,
-                              size: 36,
-                              color: AppColors.bgDeep,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                onRestartRest!();
-                              },
-                            ),
-                          )
-                        : const Tooltip(
-                            message: 'Descartar sesión',
-                            child: _CircleButton(
-                              icon: Icons.delete_outline,
-                              size: 36,
-                              color: AppColors.bgDeep,
-                              onTap: null,
-                            ),
-                          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ═══════════════════════════════════════════════════════
+              // IZQUIERDA: Selector de duración
+              // ═══════════════════════════════════════════════════════
+              _TimeDurationSelector(
+                seconds: seconds,
+                onChanged: onDurationChange,
               ),
-            ),
 
-            _StartRestButton(onTap: onStartRest),
-            const SizedBox(width: 4), // Pequeño margen derecho
-          ],
+              // Espacio flexible
+              const Spacer(),
+
+              // ═══════════════════════════════════════════════════════
+              // DERECHA: Controles
+              // ═══════════════════════════════════════════════════════
+              // Delete/Restart - terciario
+              if (onDiscardSession != null)
+                _CircleButton(
+                  icon: Icons.delete_outline,
+                  size: _deleteButtonSize,
+                  color: AppColors.bgDeep,
+                  onTap: () => _showDiscardDialog(context),
+                )
+              else if (onRestartRest != null)
+                _CircleButton(
+                  icon: Icons.refresh,
+                  size: _deleteButtonSize,
+                  color: AppColors.bgDeep,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onRestartRest!();
+                  },
+                ),
+
+              const SizedBox(width: 12),
+
+              // Start - PRIMARIO (más grande, destacado)
+              _StartRestButton(onTap: onStartRest, size: _startButtonSize),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Future<void> _showDiscardDialog(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: const Text(
+          '¿Descartar sesión?',
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
+        ),
+        content: const Text(
+          'Se perderán los datos.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('NO'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      HapticFeedback.heavyImpact();
+      onDiscardSession!();
+    }
+  }
 }
 
 /// Barra activa: timer compacto con controles
-/// 🎯 MEJORA UX: Barra más alta (72px) y prominente con mejor contraste
+/// 🎯 REDISEÑO UX: Grid horizontal explícita con jerarquía visual clara
+///
+/// Estructura (izq → der):
+/// [16px] [Timer 52px] [12px] [Estado flex] [12px] [Controles] [16px]
+///
+/// Jerarquía de tamaños:
+/// - Timer circular: 52px (DOMINANTE - info principal)
+/// - Skip button: 44px (acción primaria de controles)
+/// - +30s button: 36px (secundario)
+/// - Delete button: 32px (terciario, discreto)
 class _ActiveTimerBar extends StatelessWidget {
   final double displaySeconds;
   final RestTimerState timerState;
@@ -556,6 +582,15 @@ class _ActiveTimerBar extends StatelessWidget {
   final VoidCallback onAddTime;
   final VoidCallback? onDiscardSession;
   final VoidCallback? onRestartRest;
+
+  // 🎯 CONSTANTES: Espaciado y tamaños consistentes
+  static const double _barHeight = 68.0;
+  static const double _horizontalPadding = 16.0;
+  static const double _elementGap = 12.0;
+  static const double _timerSize = 52.0;
+  static const double _skipButtonSize = 44.0;
+  static const double _addTimeButtonSize = 36.0;
+  static const double _deleteButtonSize = 32.0;
 
   const _ActiveTimerBar({
     required this.displaySeconds,
@@ -577,12 +612,12 @@ class _ActiveTimerBar extends StatelessWidget {
     final isCritical = seconds <= 10;
     final isPaused = timerState.isPaused;
 
-    // 🎯 NUEVO: Colores de borde según estado para feedback visual inmediato
+    // Colores según estado
     final borderColor = isPaused
         ? AppColors.warning
         : isCritical
             ? AppColors.fireRed
-            : const Color(0xFF00CED1); // Teal brillante
+            : const Color(0xFF00CED1);
 
     return Semantics(
       label:
@@ -601,9 +636,8 @@ class _ActiveTimerBar extends StatelessWidget {
           }
         },
         child: Container(
-          height: 72, // 🎯 AUMENTADO: 72px (era 64px)
+          height: _barHeight,
           decoration: BoxDecoration(
-            // 🎯 NUEVO: Fondo con tinte del color activo para destacar
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -617,10 +651,9 @@ class _ActiveTimerBar extends StatelessWidget {
             border: Border(
               top: BorderSide(
                 color: borderColor,
-                width: isCritical ? 3 : 2, // 🎯 AUMENTADO: Borde más grueso
+                width: isCritical ? 3 : 2,
               ),
             ),
-            // 🎯 NUEVO: Glow del borde superior
             boxShadow: PerformanceMode.instance.showShadows
                 ? [
                     BoxShadow(
@@ -633,95 +666,135 @@ class _ActiveTimerBar extends StatelessWidget {
           ),
           child: SafeArea(
             top: false,
-            child: Row(
-              children: [
-                const SizedBox(width: 12),
-                // Espacio central: botón de basura en el centro de la barra
-                Expanded(
-                  child: Center(
-                    child: (onDiscardSession != null)
-                    ? Tooltip(
-                        message: 'Descartar sesión',
-                        child: _CircleButton(
-                          icon: Icons.delete_outline,
-                          size: 36,
-                          color: AppColors.bgDeep,
-                          onTap: () async {
-                            // FIX: Diálogo simplificado para uso en gimnasio (nadie lee textos largos)
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: AppColors.bgElevated,
-                                title: const Text('¿Descartar sesión?', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
-                                content: const Text('Se perderán los datos.', style: TextStyle(color: AppColors.textSecondary)),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('NO')),
-                                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed))),
-                                ],
-                              ),
-                            );
-                            if (confirm == true) {
-                              HapticFeedback.heavyImpact();
-                              onDiscardSession!();
-                            }
-                          },
-                        ),
-                      )
-                    : (onRestartRest != null)
-                        ? Tooltip(
-                            message: 'Reiniciar descanso',
-                            child: _CircleButton(
-                              icon: Icons.refresh,
-                              size: 36,
-                              color: AppColors.bgDeep,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                onRestartRest!();
-                              },
-                            ),
-                          )
-                        : const Tooltip(
-                            message: 'Descartar sesión',
-                            child: _CircleButton(
-                              icon: Icons.delete_outline,
-                              size: 36,
-                              color: AppColors.bgDeep,
-                              onTap: null,
-                            ),
-                          ),
+            // 🎯 GRID HORIZONTAL: Padding simétrico + Row con alineación central
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // ═══════════════════════════════════════════════════════
+                  // IZQUIERDA: Timer circular (DOMINANTE)
+                  // ═══════════════════════════════════════════════════════
+                  RepaintBoundary(
+                    child: _CircularTimerProgress(
+                      progress: progress,
+                      seconds: seconds,
+                      isCritical: isCritical,
+                      isPaused: isPaused,
+                      size: _timerSize,
+                    ),
                   ),
-                ),
 
-                const SizedBox(width: 12),
-                // Progreso circular con countdown (ahora a la derecha)
-                RepaintBoundary(
-                  child: _CircularTimerProgress(
-                    progress: progress,
-                    seconds: seconds,
-                    isCritical: isCritical,
-                    isPaused: isPaused,
+                  const SizedBox(width: _elementGap),
+
+                  // ═══════════════════════════════════════════════════════
+                  // CENTRO: Estado + hint (flexible, ocupa espacio restante)
+                  // ═══════════════════════════════════════════════════════
+                  Expanded(
+                    child: _TimerStateLabel(isPaused: isPaused),
                   ),
-                ),
-                const SizedBox(width: 12),
 
-                // Texto de estado (compacto) y botones
-                SizedBox(
-                  width: 120,
-                  child: _TimerStateLabel(isPaused: isPaused),
-                ),
-                // Botones de control (sin basura aquí)
-                _TimerControlButtons(
-                  isPaused: isPaused,
-                  onAddTime: onAddTime,
-                  onSkip: onStopRest,
-                ),
-                const SizedBox(width: 8),
-              ],
+                  const SizedBox(width: _elementGap),
+
+                  // ═══════════════════════════════════════════════════════
+                  // DERECHA: Controles con jerarquía clara
+                  // ═══════════════════════════════════════════════════════
+                  _buildControlsGroup(context, isPaused),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  /// Grupo de controles con jerarquía visual clara
+  /// Orden: [Delete 32px] [+30s 36px] [Skip 44px]
+  Widget _buildControlsGroup(BuildContext context, bool isPaused) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Delete/Restart - TERCIARIO (más pequeño, discreto)
+        if (onDiscardSession != null)
+          _CircleButton(
+            icon: Icons.delete_outline,
+            size: _deleteButtonSize,
+            color: AppColors.bgDeep,
+            onTap: () => _showDiscardDialog(context),
+          )
+        else if (onRestartRest != null)
+          _CircleButton(
+            icon: Icons.refresh,
+            size: _deleteButtonSize,
+            color: AppColors.bgDeep,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onRestartRest!();
+            },
+          )
+        else
+          SizedBox(width: _deleteButtonSize), // Mantener espacio para alineación
+
+        const SizedBox(width: 8),
+
+        // +30s - SECUNDARIO
+        _CircleButton(
+          icon: Icons.more_time,
+          size: _addTimeButtonSize,
+          color: AppColors.bgPressed,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onAddTime();
+          },
+        ),
+
+        const SizedBox(width: 8),
+
+        // Skip - PRIMARIO (más grande, destacado)
+        _CircleButton(
+          icon: Icons.skip_next_rounded,
+          size: _skipButtonSize,
+          color: AppColors.techCyan,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onStopRest();
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showDiscardDialog(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        title: const Text(
+          '¿Descartar sesión?',
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
+        ),
+        content: const Text(
+          'Se perderán los datos.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('NO'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      HapticFeedback.heavyImpact();
+      onDiscardSession!();
+    }
   }
 }
 
@@ -766,10 +839,15 @@ class _TimerStateLabel extends StatelessWidget {
   }
 }
 
-/// Selector de duración de descanso (modo inactivo) - Rojo para +
+/// Selector de duración de descanso (modo inactivo)
+/// 🎯 REDISEÑO: Espaciado consistente y jerarquía clara
 class _TimeDurationSelector extends StatelessWidget {
   final int seconds;
   final ValueChanged<int> onChanged;
+
+  // Tamaños consistentes
+  static const double _buttonSize = 28.0;
+  static const double _gap = 8.0;
 
   const _TimeDurationSelector({
     required this.seconds,
@@ -780,6 +858,7 @@ class _TimeDurationSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'DESCANSO',
@@ -788,17 +867,22 @@ class _TimeDurationSelector extends StatelessWidget {
         const SizedBox(width: 12),
         _CircleButton(
           icon: Icons.remove,
-          size: 24,
+          size: _buttonSize,
+          color: AppColors.bgDeep,
           onTap: seconds > 10 ? () => onChanged(seconds - 10) : null,
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text('${seconds}s', style: _TimerStyles.durationDisplay),
+        const SizedBox(width: _gap),
+        SizedBox(
+          width: 48, // Ancho fijo para evitar saltos
+          child: Center(
+            child: Text('${seconds}s', style: _TimerStyles.durationDisplay),
+          ),
         ),
+        const SizedBox(width: _gap),
         _CircleButton(
           icon: Icons.add,
-          size: 24,
-          color: AppColors.bloodRed, // Rojo Ferrari para acción
+          size: _buttonSize,
+          color: AppColors.bloodRed,
           onTap: () => onChanged(seconds + 10),
         ),
       ],
@@ -806,18 +890,23 @@ class _TimeDurationSelector extends StatelessWidget {
   }
 }
 
-/// Botón para iniciar descanso - Rojo Ferrari, circular 48px
+/// Botón para iniciar descanso - Rojo Ferrari, circular
+/// 🎯 REDISEÑO: Tamaño configurable para consistencia
 class _StartRestButton extends StatelessWidget {
   final VoidCallback onTap;
+  final double size;
 
-  const _StartRestButton({required this.onTap});
+  const _StartRestButton({
+    required this.onTap,
+    this.size = 48.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'Iniciar descanso',
       child: Material(
-        color: AppColors.bloodRed, // Rojo Ferrari para acción principal
+        color: AppColors.bloodRed,
         shape: const CircleBorder(),
         child: InkWell(
           onTap: () {
@@ -825,11 +914,14 @@ class _StartRestButton extends StatelessWidget {
             onTap();
           },
           customBorder: const CircleBorder(),
-          child: Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            child: Icon(Icons.play_arrow_rounded, size: 28, color: AppColors.textOnAccent),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Icon(
+              Icons.play_arrow_rounded,
+              size: size * 0.58,
+              color: AppColors.textOnAccent,
+            ),
           ),
         ),
       ),
@@ -839,21 +931,23 @@ class _StartRestButton extends StatelessWidget {
 
 /// Indicador de progreso circular con countdown
 /// 🎯 MEJORA UX: Timer GRANDE y VISIBLE para gimnasio
-/// - Tamaño aumentado a 64px (era 48px)
+/// - Tamaño configurable (default 52px)
 /// - Color TEAL brillante para máximo contraste (#00CED1)
 /// - Glow animado que "respira" para atraer atención
-/// - Texto 24px bold (era 18px)
+/// - Texto proporcional al tamaño
 class _CircularTimerProgress extends StatefulWidget {
   final double progress;
   final int seconds;
   final bool isCritical;
   final bool isPaused;
+  final double size;
 
   const _CircularTimerProgress({
     required this.progress,
     required this.seconds,
     required this.isCritical,
     required this.isPaused,
+    this.size = 52.0,
   });
 
   @override
@@ -933,8 +1027,8 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
         return Transform.scale(
           scale: scale,
           child: Container(
-            width: 64, // 🎯 AUMENTADO: 64px (era 48px)
-            height: 64,
+            width: widget.size,
+            height: widget.size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               // 🎯 NUEVO: Glow que "respira"
@@ -967,11 +1061,11 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
                   backgroundColor: Colors.transparent,
                   valueColor: AlwaysStoppedAnimation(timerColor),
                 ),
-                // 🎯 TEXTO GRANDE: 24px bold
+                // Texto proporcional al tamaño del widget
                 Text(
                   '${widget.seconds}',
                   style: GoogleFonts.montserrat(
-                    fontSize: 24, // Era 18px
+                    fontSize: widget.size * 0.4, // Proporcional al tamaño
                     fontWeight: FontWeight.w900,
                     color: timerColor,
                     shadows: widget.isCritical
