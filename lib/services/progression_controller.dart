@@ -235,7 +235,7 @@ class ExecutionData {
   
   /// Calcula éxitos consecutivos
   int get consecutiveSuccesses {
-    int count = 0;
+    var count = 0;
     for (final session in sessionHistory) {
       if (session.isSuccess) {
         count++;
@@ -248,7 +248,7 @@ class ExecutionData {
   
   /// Calcula fracasos consecutivos
   int get consecutiveFailures {
-    int count = 0;
+    var count = 0;
     for (final session in sessionHistory) {
       if (!session.isSuccess) {
         count++;
@@ -404,7 +404,7 @@ class LinearProgressionModel implements ProgressionModel {
     // STALL DETECTION (Rippetoe): 3 fallos al MISMO peso
     // ════════════════════════════════════════════════════════════════════════
     // Calcular fallos al peso actual
-    int failuresAtWeight = 0;
+    var failuresAtWeight = 0;
     for (final session in data.sessionHistory) {
       if ((session.weight - data.confirmedWeight).abs() > 0.1) break;
       if (!session.isSuccess) failuresAtWeight++;
@@ -415,7 +415,7 @@ class LinearProgressionModel implements ProgressionModel {
         currentState == ControllerState.plateau ||
         currentState == ControllerState.deloading) {
       final deloadAmount = data.confirmedWeight * 0.10; // 10% deload (Rippetoe)
-      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity);
+      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity).toDouble();
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
         suggestedWeight: newWeight,
@@ -453,7 +453,6 @@ class LinearProgressionModel implements ProgressionModel {
         suggestedReps: data.targetReps,
         reason: 'Casi completa, repetir',
         userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg. Casi lo tienes.',
-        confidence: ProgressionConfidence.medium,
         nextStepPreview: 'Si completas todas: +${_fmt(data.increment)}kg',
       );
     }
@@ -465,7 +464,6 @@ class LinearProgressionModel implements ProgressionModel {
       suggestedReps: data.targetReps,
       reason: 'Fallo ${failuresAtWeight + 1}/3, reintentar',
       userMessage: 'Repite ${_fmt(data.confirmedWeight)}kg. Fallo ${failuresAtWeight + 1}/3.',
-      confidence: ProgressionConfidence.medium,
       nextStepPreview: failuresAtWeight >= 1
           ? 'Si fallas de nuevo: deload 10%'
           : 'Si fallas 2 más: deload',
@@ -531,7 +529,7 @@ class DoubleProgressionModel implements ProgressionModel {
     // ════════════════════════════════════════════════════════════════════════
     // STALL/DELOAD: 2 fallos al mismo peso → deload 10%
     // ════════════════════════════════════════════════════════════════════════
-    int failuresAtWeight = 0;
+    var failuresAtWeight = 0;
     for (final session in data.sessionHistory) {
       if ((session.weight - data.confirmedWeight).abs() > 0.1) break;
       if (!session.isSuccess) failuresAtWeight++;
@@ -541,7 +539,7 @@ class DoubleProgressionModel implements ProgressionModel {
         currentState == ControllerState.plateau ||
         currentState == ControllerState.deloading) {
       final deloadAmount = data.confirmedWeight * 0.10; // 10% deload
-      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity);
+      final newWeight = (data.confirmedWeight - deloadAmount).clamp(0, double.infinity).toDouble();
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
         suggestedWeight: newWeight,
@@ -617,7 +615,6 @@ class DoubleProgressionModel implements ProgressionModel {
       suggestedReps: data.targetReps,
       reason: 'Día difícil, mantener',
       userMessage: 'Repite el objetivo. Un día malo no cambia nada.',
-      confidence: ProgressionConfidence.medium,
     );
   }
 
@@ -687,7 +684,7 @@ class RpeProgressionModel implements ProgressionModel {
       final newWeight = data.confirmedWeight - data.increment;
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
-        suggestedWeight: newWeight.clamp(0, double.infinity),
+        suggestedWeight: newWeight.clamp(0, double.infinity).toDouble(),
         suggestedReps: data.targetReps,
         reason: 'Fatiga: RPE consistentemente alto',
         userMessage: 'RPE alto. Baja a ${_fmt(newWeight)}kg para recuperar.',
@@ -726,7 +723,7 @@ class RpeProgressionModel implements ProgressionModel {
       final newWeight = data.confirmedWeight - data.increment;
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
-        suggestedWeight: newWeight.clamp(0, double.infinity),
+        suggestedWeight: newWeight.clamp(0, double.infinity).toDouble(),
         suggestedReps: data.targetReps,
         reason: 'RPE ${avgRpe.toStringAsFixed(1)} > 9',
         userMessage: 'RPE muy alto. Baja a ${_fmt(newWeight)}kg.',
@@ -741,7 +738,6 @@ class RpeProgressionModel implements ProgressionModel {
       suggestedReps: data.targetReps,
       reason: 'RPE ${avgRpe.toStringAsFixed(1)} alto (1 sesión)',
       userMessage: 'RPE alto hoy. Repite para evaluar.',
-      confidence: ProgressionConfidence.medium,
     );
   }
   
@@ -954,7 +950,7 @@ class ProgressionController {
       from: from,
       to: to,
       reason: reason,
-    ));
+    ),);
     
     // Mantener solo últimas 20 transiciones
     if (_transitionHistory.length > 20) {

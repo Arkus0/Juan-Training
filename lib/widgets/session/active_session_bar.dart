@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/training_provider.dart';
+import 'package:juan_training/models/rest_timer_state.dart';
 import '../../screens/training_session_screen.dart';
 
 class ActiveSessionBar extends ConsumerWidget {
@@ -28,7 +29,7 @@ class ActiveSessionBar extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.darkRed,  // #8B0000 - rojo oscuro sutil
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.bloodRed.withOpacity(0.3), width: 1),
+        border: Border.all(color: AppColors.bloodRed.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -36,7 +37,7 @@ class ActiveSessionBar extends ConsumerWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: AppColors.bloodRed,
               boxShadow: [
@@ -58,7 +59,7 @@ class ActiveSessionBar extends ConsumerWidget {
               },
               child: Text(
                 '$rutinaName • ${minutes}m',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
@@ -94,7 +95,7 @@ class ActiveSessionBar extends ConsumerWidget {
                     TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('CANCELAR')),
                     TextButton(
                       onPressed: () => Navigator.of(ctx).pop(true), 
-                      child: Text('DESCARTAR', style: TextStyle(color: AppColors.bloodRed)),
+                      child: const Text('DESCARTAR', style: TextStyle(color: AppColors.bloodRed)),
                     ),
                   ],
                 ),
@@ -103,7 +104,7 @@ class ActiveSessionBar extends ConsumerWidget {
                 await ref.read(trainingSessionProvider.notifier).finishSession();
               }
             },
-            child: Icon(Icons.close, color: AppColors.textTertiary, size: 16),
+            child: const Icon(Icons.close, color: AppColors.textTertiary, size: 16),
           ),
         ],
       ),

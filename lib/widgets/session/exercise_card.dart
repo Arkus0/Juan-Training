@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/ejercicio.dart';
-import '../../models/serie_log.dart';
 import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
-import '../../providers/training_provider.dart';
-import '../../providers/settings_provider.dart';
+import '../../models/serie_log.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/training_provider.dart';
 import '../../screens/training_session_screen.dart';
 import '../../services/alternativas_service.dart';
 import '../../services/exercise_library_service.dart';
-import '../../widgets/common/alternativas_dialog.dart';
 import '../../utils/design_system.dart';
-import 'session_set_row.dart';
-import 'focused_set_row.dart';
+import '../../widgets/common/alternativas_dialog.dart';
 import 'advanced_options_modal.dart';
+import 'focused_set_row.dart';
 import 'progression_preview.dart'; // ConsequenceMessage, EmpatheticBanner, etc.
 import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
 import 'session_modifiers.dart'; // AddSetButton
+import 'session_set_row.dart';
 
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -61,7 +62,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
   void _showNotesDialog(BuildContext context, String exerciseName) async {
     final repo = ref.read(trainingRepositoryProvider);
-    final String currentNote = await repo.getNote(exerciseName);
+    final currentNote = await repo.getNote(exerciseName);
 
     if (!context.mounted) return;
 
@@ -75,8 +76,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         content: TextField(
           controller: controller,
           maxLines: 5,
-          style: TextStyle(color: AppColors.textPrimary),
-          decoration: InputDecoration(
+          style: const TextStyle(color: AppColors.textPrimary),
+          decoration: const InputDecoration(
             hintText: 'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
             hintStyle: TextStyle(color: AppColors.textTertiary),
             enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
@@ -86,14 +87,14 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('CANCELAR', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('CANCELAR', style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () async {
               await repo.saveNote(exerciseName, controller.text);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: Text('GUARDAR', style: TextStyle(color: AppColors.techCyan, fontWeight: FontWeight.bold)),
+            child: const Text('GUARDAR', style: TextStyle(color: AppColors.techCyan, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -102,7 +103,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
   void _showExerciseOptions(BuildContext context, Ejercicio exercise) {
     // Convert string ID to int safely
-    final int? libId = int.tryParse(exercise.libraryId);
+    final libId = int.tryParse(exercise.libraryId);
 
     final hasAlternativas = libId != null && AlternativasService.instance.hasAlternativas(libId);
 
@@ -121,8 +122,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                 Text(exercise.nombre.toUpperCase(), style: AppTypography.sectionTitle),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: Icon(Icons.history, color: AppColors.textSecondary),
-                  title: Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
+                  leading: const Icon(Icons.history, color: AppColors.textSecondary),
+                  title: const Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
@@ -141,7 +142,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   ),
                   subtitle: Text(
                     hasAlternativas ? 'Ejercicios similares disponibles' : 'Sin alternativas registradas',
-                    style: TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
                   ),
                   onTap: () {
                     if (!hasAlternativas) return;
@@ -183,8 +184,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.note_alt_outlined, color: AppColors.textSecondary),
-                  title: Text('Notas del Ejercicio', style: TextStyle(color: AppColors.textPrimary)),
+                  leading: const Icon(Icons.note_alt_outlined, color: AppColors.textSecondary),
+                  title: const Text('Notas del Ejercicio', style: TextStyle(color: AppColors.textPrimary)),
                   onTap: () {
                      Navigator.pop(sheetContext);
                      _showNotesDialog(context, exercise.nombre);
@@ -205,18 +206,18 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         backgroundColor: AppColors.bgElevated,
         title: Text('HISTORIAL: $name', style: AppTypography.sectionTitle),
         content: logs == null || logs.isEmpty
-            ? Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary))
+            ? const Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary))
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ÚLTIMA SESIÓN:', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: TextStyle(color: AppColors.textPrimary))),
+                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: const TextStyle(color: AppColors.textPrimary))),
                 ],
               ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('CERRAR', style: TextStyle(color: AppColors.techCyan))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR', style: TextStyle(color: AppColors.techCyan))),
         ],
       ),
     );
@@ -240,16 +241,16 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   void _triggerCompletionFeedback(SerieLog current, SerieLog? previous) async {
     // Check for "PR" or better performance
     if (previous != null) {
-      bool improved = false;
+      var improved = false;
       if (current.peso > previous.peso) improved = true;
       if (current.peso == previous.peso && current.reps > previous.reps) improved = true;
 
       if (improved) {
         if (mounted) {
            ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(
+             const SnackBar(
                content: Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', 
-                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textOnAccent)),
+                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textOnAccent),),
                backgroundColor: AppColors.goldAccent, // Oro para PR
                behavior: SnackBarBehavior.floating,
              ),
@@ -448,7 +449,7 @@ class ExerciseCard extends StatelessWidget {
                             // 🆕 Check si completado
                             if (allSetsCompleted) ...[
                               const SizedBox(width: 8),
-                              Icon(
+                              const Icon(
                                 Icons.check_circle,
                                 size: 18,
                                 color: AppColors.completedGreen,
@@ -462,7 +463,7 @@ class ExerciseCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: AppColors.bloodRed.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.bloodRed, width: 1),
+                                  border: Border.all(color: AppColors.bloodRed),
                                 ),
                                 child: Text(
                                   '$completedSets/$totalSets',
@@ -480,14 +481,14 @@ class ExerciseCard extends StatelessWidget {
                     ),
                     // Botón único de rayito que abre ambas funcionalidades
                     if (!isCollapsed)
-                      Container(
+                      DecoratedBox(
                         decoration: BoxDecoration(
                           color: AppColors.bgInteractive,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppColors.border),
                         ),
                         child: IconButton(
-                          icon: Icon(Icons.flash_on, color: AppColors.bloodRed),
+                          icon: const Icon(Icons.flash_on, color: AppColors.bloodRed),
                           onPressed: () {
                             showModalBottomSheet(
                               context: context,
@@ -599,7 +600,7 @@ class ExerciseCard extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
                     empatheticBannerMessage!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -624,7 +625,7 @@ class ExerciseCard extends StatelessWidget {
 
         // Header Row - solo mostrar si NO es modo focalizado
         if (!useFocusedInputMode)
-          Row(
+          const Row(
             children: [
               SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: AppColors.textTertiary)))),
               SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)))),
@@ -705,7 +706,7 @@ class _RestTimeChip extends StatelessWidget {
         color: Colors.grey[850],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey[700]!, width: 1),
+          side: BorderSide(color: Colors.grey[700]!),
         ),
         child: InkWell(
           onTap: onChanged != null ? () => _showRestTimePicker(context) : null,
@@ -927,14 +928,14 @@ class _QuickActionsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.bgInteractive,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
       ),
       child: IconButton(
-        icon: Icon(Icons.bolt, color: AppColors.goldAccent),
+        icon: const Icon(Icons.bolt, color: AppColors.goldAccent),
         onPressed: () => _showQuickActionsSheet(context),
         tooltip: 'Acciones rápidas',
         padding: const EdgeInsets.all(8),
@@ -994,7 +995,7 @@ class _QuickActionsButton extends StatelessWidget {
                 iconColor: AppColors.restTeal,
                 title: 'Descanso',
                 subtitle: '${restSeconds}s',
-                trailing: Icon(Icons.edit, size: 16, color: AppColors.textTertiary),
+                trailing: const Icon(Icons.edit, size: 16, color: AppColors.textTertiary),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showRestTimePicker(context);

@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:just_audio/just_audio.dart';
 
 /// Servicio singleton para reproducir beeps del timer
@@ -41,7 +42,7 @@ class TimerAudioService {
 
   /// Reproduce un beep de media intensidad (últimos 5-3 segundos)
   Future<void> playMediumBeep() async {
-    await _playTone(_mediumFrequency, duration: 150);
+    await _playTone(_mediumFrequency);
   }
 
   /// Reproduce un beep de alta intensidad (últimos 2-1 segundos)
@@ -66,10 +67,10 @@ class TimerAudioService {
       final numSamples = (sampleRate * duration / 1000).round();
       final samples = Float64List(numSamples);
 
-      for (int i = 0; i < numSamples; i++) {
+      for (var i = 0; i < numSamples; i++) {
         final t = i / sampleRate;
         // Envelope simple (fade in/out para evitar clicks)
-        double envelope = 1.0;
+        var envelope = 1.0;
         final fadeLength = numSamples ~/ 10;
         if (i < fadeLength) {
           envelope = i / fadeLength;
@@ -83,10 +84,10 @@ class TimerAudioService {
       final pcmBytes = _float64ToPcm16(samples);
 
       // Envolver en contenedor WAV para que ExoPlayer/Media3 detecte el formato
-      final wavBytes = _pcm16ToWav(pcmBytes, sampleRate, channels: 1, bitsPerSample: 16);
+      final wavBytes = _pcm16ToWav(pcmBytes, sampleRate);
 
       // Crear fuente de audio desde bytes WAV
-      final audioSource = _SineWaveAudioSource(wavBytes, sampleRate, contentType: 'audio/wav');
+      final audioSource = _SineWaveAudioSource(wavBytes, sampleRate);
       await _player!.setAudioSource(audioSource);
       await _player!.play();
     } catch (e) {
@@ -99,9 +100,9 @@ class TimerAudioService {
     x = x % (2 * 3.14159265359);
     if (x > 3.14159265359) x -= 2 * 3.14159265359;
 
-    double result = x;
-    double term = x;
-    for (int i = 1; i <= 7; i++) {
+    var result = x;
+    var term = x;
+    for (var i = 1; i <= 7; i++) {
       term *= -x * x / ((2 * i) * (2 * i + 1));
       result += term;
     }
@@ -110,7 +111,7 @@ class TimerAudioService {
 
   Uint8List _float64ToPcm16(Float64List samples) {
     final bytes = Uint8List(samples.length * 2);
-    for (int i = 0; i < samples.length; i++) {
+    for (var i = 0; i < samples.length; i++) {
       final sample = (samples[i] * 32767).clamp(-32768, 32767).toInt();
       bytes[i * 2] = sample & 0xFF;
       bytes[i * 2 + 1] = (sample >> 8) & 0xFF;
@@ -171,7 +172,7 @@ class _SineWaveAudioSource extends StreamAudioSource {
   final Uint8List _bytes;
   final String contentType;
 
-  _SineWaveAudioSource(this._bytes, int _sampleRate, {this.contentType = 'audio/wav'});
+  _SineWaveAudioSource(this._bytes, int _sampleRate) : contentType = 'audio/wav';
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {

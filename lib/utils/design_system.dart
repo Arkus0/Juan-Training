@@ -394,8 +394,6 @@ abstract class AppColors {
   /// Gradiente dorado para celebraciones (contenido)
   static const LinearGradient goldGradient = LinearGradient(
     colors: [goldDark, goldAccent],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
   );
 
   // Alias removido: neonGradient no debe usarse
@@ -668,7 +666,6 @@ abstract class AppShadows {
     BoxShadow(
       color: color.withOpacity(0.3),
       blurRadius: 12,
-      spreadRadius: 0,
     ),
   ];
 }
@@ -696,7 +693,6 @@ ThemeData buildAppTheme() {
       tertiary: AppColors.goldAccent,
       onTertiary: AppColors.bgDeep,
       surface: AppColors.bgElevated,
-      onSurface: AppColors.textPrimary,
       error: AppColors.error,
       onError: AppColors.textOnAccent,
     ),
@@ -731,7 +727,7 @@ ThemeData buildAppTheme() {
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.border, width: 1),
+        side: const BorderSide(color: AppColors.border),
       ),
     ),
 
@@ -1280,7 +1276,6 @@ abstract class AppDecorations {
           BoxShadow(
             color: AppColors.neonCyanGlow,
             blurRadius: 8,
-            spreadRadius: 0,
           ),
         ],
       );
@@ -1331,7 +1326,6 @@ class CompletedIndicator extends StatelessWidget {
                 const BoxShadow(
                   color: AppColors.neonCyanGlow,
                   blurRadius: 8,
-                  spreadRadius: 0,
                 ),
               ]
             : null,
@@ -1401,8 +1395,8 @@ class NeonButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: showGlow ? AppDecorations.primaryButtonGlow : null,
+    return DecoratedBox(
+      decoration: showGlow ? AppDecorations.primaryButtonGlow : const BoxDecoration(),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(

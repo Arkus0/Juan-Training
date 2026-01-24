@@ -1,11 +1,12 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../models/library_exercise.dart';
 import '../../providers/voice_input_provider.dart';
 import '../../services/voice_input_service.dart';
-import '../../models/library_exercise.dart';
+import '../../utils/design_system.dart';
 import 'voice_mic_button.dart';
 
 /// Sheet modal para dictado de ejercicios por voz
@@ -38,8 +39,6 @@ class VoiceInputSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
       builder: (ctx) => VoiceInputSheet(
         onConfirm: onConfirm,
         onCancel: () => Navigator.of(ctx).pop(),
@@ -252,7 +251,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const _PulsingDot(color: Colors.green, size: 8),
+                    const _PulsingDot(color: Colors.green),
                     const SizedBox(width: 8),
                     Text(
                       'ESCUCHA CONTINUA',
@@ -270,7 +269,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
 
             // Preview de transcripción
             const VoiceTranscriptPreview(
-              fontSize: 16,
+              
             ),
             const SizedBox(height: 16),
 
@@ -967,7 +966,7 @@ class _PulsingDot extends StatefulWidget {
 
   const _PulsingDot({
     required this.color,
-    this.size = 8,
+    this.size = 8.0,
   });
 
   @override

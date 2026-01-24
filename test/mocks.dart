@@ -64,7 +64,7 @@ class MockTrainingRepository implements ITrainingRepository {
     // Check both completed and target exercises for history matches
     return _sesiones.where((s) =>
       s.ejerciciosCompletados.any((e) => e.nombre == exerciseName) ||
-      s.ejerciciosObjetivo.any((e) => e.nombre == exerciseName)
+      s.ejerciciosObjetivo.any((e) => e.nombre == exerciseName),
     ).toList();
   }
 
@@ -88,6 +88,12 @@ class MockTrainingRepository implements ITrainingRepository {
 
   @override
   Future<void> clearActiveSession() async {}
+
+  @override
+  Future<void> finishAndClearSession(Sesion sesion) async {
+    // Simulate atomic save + clear: add to history and clear active session
+    await saveSesion(sesion);
+  }
 
   @override
   Future<String> getNote(String exerciseName) async {

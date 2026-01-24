@@ -1,10 +1,13 @@
-import '../../utils/design_system.dart';
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../providers/training_provider.dart';
+import 'package:juan_training/models/rest_timer_state.dart';
+import '../../utils/design_system.dart';
 
 /// Widget flotante que muestra el timer de descanso cuando está activo
 /// y el usuario está fuera de la pantalla de entrenamiento.

@@ -199,8 +199,8 @@ class StrengthTrend extends ConsumerWidget {
 
   Widget _buildChart(List<StrengthDataPoint> dataPoints) {
     // Calculate min/max for Y axis
-    double minY = double.infinity;
-    double maxY = double.negativeInfinity;
+    var minY = double.infinity;
+    var maxY = double.negativeInfinity;
     for (final point in dataPoints) {
       if (point.estimated1RM < minY) minY = point.estimated1RM;
       if (point.estimated1RM > maxY) maxY = point.estimated1RM;
@@ -233,7 +233,6 @@ class StrengthTrend extends ConsumerWidget {
               minY: minY,
               maxY: maxY,
               gridData: FlGridData(
-                show: true,
                 drawHorizontalLine: true,
                 drawVerticalLine: false,
                 horizontalInterval: (maxY - minY) / 4,
@@ -279,10 +278,10 @@ class StrengthTrend extends ConsumerWidget {
                   ),
                 ),
                 topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
+                  
                 ),
                 rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
+                  
                 ),
               ),
               borderData: FlBorderData(show: false),
@@ -295,7 +294,6 @@ class StrengthTrend extends ConsumerWidget {
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
-                    show: true,
                     getDotPainter: (spot, percent, barData, index) {
                       return FlDotCirclePainter(
                         radius: 4,
@@ -319,10 +317,7 @@ class StrengthTrend extends ConsumerWidget {
                 ),
               ],
               lineTouchData: LineTouchData(
-                enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  tooltipBgColor: const Color(0xFF2A2A2A),
-                  tooltipRoundedRadius: 8,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.spotIndex;

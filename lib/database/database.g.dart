@@ -1457,6 +1457,16 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
   late final GeneratedColumn<int> durationSeconds = GeneratedColumn<int>(
       'duration_seconds', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _isBadDayMeta =
+      const VerificationMeta('isBadDay');
+  @override
+  late final GeneratedColumn<bool> isBadDay = GeneratedColumn<bool>(
+      'is_bad_day', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_bad_day" IN (0, 1))'),
+      defaultValue: const Constant(false));
   static const VerificationMeta _completedAtMeta =
       const VerificationMeta('completedAt');
   @override
@@ -1471,6 +1481,7 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
         dayIndex,
         startTime,
         durationSeconds,
+        isBadDay,
         completedAt
       ];
   @override
@@ -1512,6 +1523,10 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
           durationSeconds.isAcceptableOrUnknown(
               data['duration_seconds']!, _durationSecondsMeta));
     }
+    if (data.containsKey('is_bad_day')) {
+      context.handle(_isBadDayMeta,
+          isBadDay.isAcceptableOrUnknown(data['is_bad_day']!, _isBadDayMeta));
+    }
     if (data.containsKey('completed_at')) {
       context.handle(
           _completedAtMeta,
@@ -1539,6 +1554,8 @@ class $SessionsTable extends Sessions with TableInfo<$SessionsTable, Session> {
           .read(DriftSqlType.dateTime, data['${effectivePrefix}start_time'])!,
       durationSeconds: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}duration_seconds']),
+      isBadDay: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_bad_day'])!,
       completedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at']),
     );
@@ -1557,6 +1574,7 @@ class Session extends DataClass implements Insertable<Session> {
   final int? dayIndex;
   final DateTime startTime;
   final int? durationSeconds;
+  final bool isBadDay;
   final DateTime? completedAt;
   const Session(
       {required this.id,
@@ -1565,6 +1583,7 @@ class Session extends DataClass implements Insertable<Session> {
       this.dayIndex,
       required this.startTime,
       this.durationSeconds,
+      required this.isBadDay,
       this.completedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1583,6 +1602,7 @@ class Session extends DataClass implements Insertable<Session> {
     if (!nullToAbsent || durationSeconds != null) {
       map['duration_seconds'] = Variable<int>(durationSeconds);
     }
+    map['is_bad_day'] = Variable<bool>(isBadDay);
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
     }
@@ -1605,6 +1625,7 @@ class Session extends DataClass implements Insertable<Session> {
       durationSeconds: durationSeconds == null && nullToAbsent
           ? const Value.absent()
           : Value(durationSeconds),
+      isBadDay: Value(isBadDay),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
@@ -1621,6 +1642,7 @@ class Session extends DataClass implements Insertable<Session> {
       dayIndex: serializer.fromJson<int?>(json['dayIndex']),
       startTime: serializer.fromJson<DateTime>(json['startTime']),
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
+      isBadDay: serializer.fromJson<bool>(json['isBadDay']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
     );
   }
@@ -1634,6 +1656,7 @@ class Session extends DataClass implements Insertable<Session> {
       'dayIndex': serializer.toJson<int?>(dayIndex),
       'startTime': serializer.toJson<DateTime>(startTime),
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
+      'isBadDay': serializer.toJson<bool>(isBadDay),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
     };
   }
@@ -1645,6 +1668,7 @@ class Session extends DataClass implements Insertable<Session> {
           Value<int?> dayIndex = const Value.absent(),
           DateTime? startTime,
           Value<int?> durationSeconds = const Value.absent(),
+          bool? isBadDay,
           Value<DateTime?> completedAt = const Value.absent()}) =>
       Session(
         id: id ?? this.id,
@@ -1655,6 +1679,7 @@ class Session extends DataClass implements Insertable<Session> {
         durationSeconds: durationSeconds.present
             ? durationSeconds.value
             : this.durationSeconds,
+        isBadDay: isBadDay ?? this.isBadDay,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
       );
   Session copyWithCompanion(SessionsCompanion data) {
@@ -1667,6 +1692,7 @@ class Session extends DataClass implements Insertable<Session> {
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
           : this.durationSeconds,
+      isBadDay: data.isBadDay.present ? data.isBadDay.value : this.isBadDay,
       completedAt:
           data.completedAt.present ? data.completedAt.value : this.completedAt,
     );
@@ -1681,6 +1707,7 @@ class Session extends DataClass implements Insertable<Session> {
           ..write('dayIndex: $dayIndex, ')
           ..write('startTime: $startTime, ')
           ..write('durationSeconds: $durationSeconds, ')
+          ..write('isBadDay: $isBadDay, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
         .toString();
@@ -1688,7 +1715,7 @@ class Session extends DataClass implements Insertable<Session> {
 
   @override
   int get hashCode => Object.hash(id, routineId, dayName, dayIndex, startTime,
-      durationSeconds, completedAt);
+      durationSeconds, isBadDay, completedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1699,6 +1726,7 @@ class Session extends DataClass implements Insertable<Session> {
           other.dayIndex == this.dayIndex &&
           other.startTime == this.startTime &&
           other.durationSeconds == this.durationSeconds &&
+          other.isBadDay == this.isBadDay &&
           other.completedAt == this.completedAt);
 }
 
@@ -1709,6 +1737,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
   final Value<int?> dayIndex;
   final Value<DateTime> startTime;
   final Value<int?> durationSeconds;
+  final Value<bool> isBadDay;
   final Value<DateTime?> completedAt;
   final Value<int> rowid;
   const SessionsCompanion({
@@ -1718,6 +1747,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.dayIndex = const Value.absent(),
     this.startTime = const Value.absent(),
     this.durationSeconds = const Value.absent(),
+    this.isBadDay = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1728,6 +1758,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     this.dayIndex = const Value.absent(),
     required DateTime startTime,
     this.durationSeconds = const Value.absent(),
+    this.isBadDay = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -1739,6 +1770,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     Expression<int>? dayIndex,
     Expression<DateTime>? startTime,
     Expression<int>? durationSeconds,
+    Expression<bool>? isBadDay,
     Expression<DateTime>? completedAt,
     Expression<int>? rowid,
   }) {
@@ -1749,6 +1781,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       if (dayIndex != null) 'day_index': dayIndex,
       if (startTime != null) 'start_time': startTime,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (isBadDay != null) 'is_bad_day': isBadDay,
       if (completedAt != null) 'completed_at': completedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1761,6 +1794,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       Value<int?>? dayIndex,
       Value<DateTime>? startTime,
       Value<int?>? durationSeconds,
+      Value<bool>? isBadDay,
       Value<DateTime?>? completedAt,
       Value<int>? rowid}) {
     return SessionsCompanion(
@@ -1770,6 +1804,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
       dayIndex: dayIndex ?? this.dayIndex,
       startTime: startTime ?? this.startTime,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      isBadDay: isBadDay ?? this.isBadDay,
       completedAt: completedAt ?? this.completedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1796,6 +1831,9 @@ class SessionsCompanion extends UpdateCompanion<Session> {
     if (durationSeconds.present) {
       map['duration_seconds'] = Variable<int>(durationSeconds.value);
     }
+    if (isBadDay.present) {
+      map['is_bad_day'] = Variable<bool>(isBadDay.value);
+    }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
@@ -1814,6 +1852,7 @@ class SessionsCompanion extends UpdateCompanion<Session> {
           ..write('dayIndex: $dayIndex, ')
           ..write('startTime: $startTime, ')
           ..write('durationSeconds: $durationSeconds, ')
+          ..write('isBadDay: $isBadDay, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4276,6 +4315,7 @@ typedef $$SessionsTableCreateCompanionBuilder = SessionsCompanion Function({
   Value<int?> dayIndex,
   required DateTime startTime,
   Value<int?> durationSeconds,
+  Value<bool> isBadDay,
   Value<DateTime?> completedAt,
   Value<int> rowid,
 });
@@ -4286,6 +4326,7 @@ typedef $$SessionsTableUpdateCompanionBuilder = SessionsCompanion Function({
   Value<int?> dayIndex,
   Value<DateTime> startTime,
   Value<int?> durationSeconds,
+  Value<bool> isBadDay,
   Value<DateTime?> completedAt,
   Value<int> rowid,
 });
@@ -4340,6 +4381,9 @@ class $$SessionsTableFilterComposer
       column: $table.durationSeconds,
       builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<bool> get isBadDay => $composableBuilder(
+      column: $table.isBadDay, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
 
@@ -4393,6 +4437,9 @@ class $$SessionsTableOrderingComposer
       column: $table.durationSeconds,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isBadDay => $composableBuilder(
+      column: $table.isBadDay, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
 }
@@ -4423,6 +4470,9 @@ class $$SessionsTableAnnotationComposer
 
   GeneratedColumn<int> get durationSeconds => $composableBuilder(
       column: $table.durationSeconds, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBadDay =>
+      $composableBuilder(column: $table.isBadDay, builder: (column) => column);
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
@@ -4478,6 +4528,7 @@ class $$SessionsTableTableManager extends RootTableManager<
             Value<int?> dayIndex = const Value.absent(),
             Value<DateTime> startTime = const Value.absent(),
             Value<int?> durationSeconds = const Value.absent(),
+            Value<bool> isBadDay = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4488,6 +4539,7 @@ class $$SessionsTableTableManager extends RootTableManager<
             dayIndex: dayIndex,
             startTime: startTime,
             durationSeconds: durationSeconds,
+            isBadDay: isBadDay,
             completedAt: completedAt,
             rowid: rowid,
           ),
@@ -4498,6 +4550,7 @@ class $$SessionsTableTableManager extends RootTableManager<
             Value<int?> dayIndex = const Value.absent(),
             required DateTime startTime,
             Value<int?> durationSeconds = const Value.absent(),
+            Value<bool> isBadDay = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4508,6 +4561,7 @@ class $$SessionsTableTableManager extends RootTableManager<
             dayIndex: dayIndex,
             startTime: startTime,
             durationSeconds: durationSeconds,
+            isBadDay: isBadDay,
             completedAt: completedAt,
             rowid: rowid,
           ),
