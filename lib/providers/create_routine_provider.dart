@@ -29,8 +29,16 @@ final routineExpandedDayProvider = StateProvider.family<int, String?>((ref, ruti
 class CreateRoutineNotifier extends StateNotifier<Rutina> {
   final ITrainingRepository _repository;
 
+  /// 🎯 FIX CRÍTICO: Usar `deepCopy()` para evitar que los cambios
+  /// durante la edición afecten la rutina original.
+  ///
+  /// ANTES (BUG): `copyWith()` hacía shallow copy, los cambios en días/ejercicios
+  /// modificaban la rutina original aunque el usuario no guardara.
+  ///
+  /// AHORA: `deepCopy()` crea una copia profunda completamente independiente.
+  /// Solo se persiste cuando el usuario pulsa "Guardar" explícitamente.
   CreateRoutineNotifier(this._repository, Rutina? existingRutina)
-      : super(existingRutina?.copyWith() ?? _createEmptyRoutine()) {
+      : super(existingRutina?.deepCopy() ?? _createEmptyRoutine()) {
     if (existingRutina == null) {
       addDay();
     }

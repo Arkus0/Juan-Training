@@ -546,6 +546,7 @@ class _InactiveTimerBar extends StatelessWidget {
 }
 
 /// Barra activa: timer compacto con controles
+/// 🎯 MEJORA UX: Barra más alta (72px) y prominente con mejor contraste
 class _ActiveTimerBar extends StatelessWidget {
   final double displaySeconds;
   final RestTimerState timerState;
@@ -576,6 +577,13 @@ class _ActiveTimerBar extends StatelessWidget {
     final isCritical = seconds <= 10;
     final isPaused = timerState.isPaused;
 
+    // 🎯 NUEVO: Colores de borde según estado para feedback visual inmediato
+    final borderColor = isPaused
+        ? AppColors.warning
+        : isCritical
+            ? AppColors.fireRed
+            : const Color(0xFF00CED1); // Teal brillante
+
     return Semantics(
       label:
           'Timer de descanso: $seconds segundos restantes${isPaused ? ", pausado" : ""}',
@@ -593,30 +601,32 @@ class _ActiveTimerBar extends StatelessWidget {
           }
         },
         child: Container(
-          height: 64,
+          height: 72, // 🎯 AUMENTADO: 72px (era 64px)
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            // 🎯 NUEVO: Fondo con tinte del color activo para destacar
+            gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.bgElevated,
+                isCritical
+                    ? AppColors.fireRed.withValues(alpha: 0.1)
+                    : AppColors.bgElevated,
                 AppColors.bgDeep,
               ],
             ),
             border: Border(
               top: BorderSide(
-                color: isCritical ? AppColors.goldAccent : AppColors.border,
-                width: isCritical ? 2 : 1,
+                color: borderColor,
+                width: isCritical ? 3 : 2, // 🎯 AUMENTADO: Borde más grueso
               ),
             ),
-            // Shadows solo si no está en modo performance
+            // 🎯 NUEVO: Glow del borde superior
             boxShadow: PerformanceMode.instance.showShadows
                 ? [
                     BoxShadow(
-                      color: (isCritical ? AppColors.live : AppColors.bgDeep)
-                          .withValues(alpha: 0.5),
-                      blurRadius: 8,
-                      offset: const Offset(0, -2),
+                      color: borderColor.withValues(alpha: 0.4),
+                      blurRadius: isCritical ? 16 : 8,
+                      offset: const Offset(0, -4),
                     ),
                   ]
                 : null,
@@ -716,6 +726,7 @@ class _ActiveTimerBar extends StatelessWidget {
 }
 
 /// Label de estado del timer - extraído para evitar rebuilds
+/// 🎯 MEJORA UX: Labels más grandes y con color activo
 class _TimerStateLabel extends StatelessWidget {
   final bool isPaused;
 
@@ -723,20 +734,31 @@ class _TimerStateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🎯 NUEVO: Usar teal brillante para estado activo
+    final activeColor = const Color(0xFF00CED1);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           isPaused ? 'PAUSADO' : 'DESCANSANDO',
-          style: _TimerStyles.stateLabel.copyWith(
-            color: isPaused ? AppColors.warning : AppColors.textTertiary,
+          style: GoogleFonts.montserrat(
+            fontSize: 12, // Aumentado de 10
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: isPaused ? AppColors.warning : activeColor,
           ),
         ),
+        const SizedBox(height: 2),
         Text(
           isPaused ? 'Toca para reanudar' : 'Toca para pausar',
-          style: _TimerStyles.hintLabel.copyWith(
-            color: AppColors.textTertiary,
+          style: GoogleFonts.montserrat(
+            fontSize: 10, // Aumentado de 9
+            fontWeight: FontWeight.w500,
+            color: isPaused
+                ? AppColors.warning.withValues(alpha: 0.7)
+                : AppColors.textSecondary,
           ),
         ),
       ],
@@ -816,8 +838,12 @@ class _StartRestButton extends StatelessWidget {
 }
 
 /// Indicador de progreso circular con countdown
-/// Optimizado: usa progress simple en lugar de TweenAnimationBuilder
-class _CircularTimerProgress extends StatelessWidget {
+/// 🎯 MEJORA UX: Timer GRANDE y VISIBLE para gimnasio
+/// - Tamaño aumentado a 64px (era 48px)
+/// - Color TEAL brillante para máximo contraste (#00CED1)
+/// - Glow animado que "respira" para atraer atención
+/// - Texto 24px bold (era 18px)
+class _CircularTimerProgress extends StatefulWidget {
   final double progress;
   final int seconds;
   final bool isCritical;
@@ -831,42 +857,138 @@ class _CircularTimerProgress extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // AGGRESSIVE RED: Timer countdown en rojo oscuro para urgencia
-    // Warning (oro) cuando está pausado, rojo brillante cuando crítico
-    final color = isPaused
-        ? AppColors.warning
-        : isCritical
-            ? AppColors.fireRed  // #FF3333 cuando quedan pocos segundos
-            : AppColors.darkRed; // #8B0000 countdown normal
+  State<_CircularTimerProgress> createState() => _CircularTimerProgressState();
+}
 
-    return SizedBox(
-      width: 48, // Ligeramente más grande
-      height: 48,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Fondo del círculo
-          const CircularProgressIndicator(
-            value: 1.0,
-            strokeWidth: 3,
-            backgroundColor: AppColors.bgDeep,
-            valueColor: AlwaysStoppedAnimation(AppColors.bgDeep),
+class _CircularTimerProgressState extends State<_CircularTimerProgress>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    // Solo animar si está activo y no pausado
+    if (!widget.isPaused) {
+      _pulseController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_CircularTimerProgress oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Controlar animación según estado
+    if (widget.isPaused && !oldWidget.isPaused) {
+      _pulseController.stop();
+    } else if (!widget.isPaused && oldWidget.isPaused) {
+      _pulseController.repeat(reverse: true);
+    }
+    // Acelerar pulso en estado crítico
+    if (widget.isCritical && !oldWidget.isCritical) {
+      _pulseController.duration = const Duration(milliseconds: 600);
+      _pulseController.repeat(reverse: true);
+    } else if (!widget.isCritical && oldWidget.isCritical) {
+      _pulseController.duration = const Duration(milliseconds: 1200);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 🎯 NUEVO: Colores de ALTO CONTRASTE para visibilidad en gimnasio
+    // - Pausado: Amarillo warning (visible, indica estado)
+    // - Crítico (<10s): Blanco brillante con glow rojo (MÁXIMA URGENCIA)
+    // - Normal: Cyan/Teal brillante (#00CED1) - contraste 8:1 sobre fondo oscuro
+    final Color timerColor;
+    final Color glowColor;
+
+    if (widget.isPaused) {
+      timerColor = AppColors.warning;
+      glowColor = AppColors.warning.withValues(alpha: 0.5);
+    } else if (widget.isCritical) {
+      timerColor = Colors.white; // Máxima visibilidad en crítico
+      glowColor = AppColors.fireRed.withValues(alpha: 0.8);
+    } else {
+      timerColor = const Color(0xFF00CED1); // Dark Turquoise - alto contraste
+      glowColor = const Color(0xFF00CED1).withValues(alpha: 0.5);
+    }
+
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        final scale = widget.isPaused ? 1.0 : _pulseAnimation.value;
+
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 64, // 🎯 AUMENTADO: 64px (era 48px)
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              // 🎯 NUEVO: Glow que "respira"
+              boxShadow: PerformanceMode.instance.showShadows
+                  ? [
+                      BoxShadow(
+                        color: glowColor,
+                        blurRadius: widget.isCritical ? 20 : 12,
+                        spreadRadius: widget.isCritical ? 4 : 2,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Fondo del círculo - más visible
+                CircularProgressIndicator(
+                  value: 1.0,
+                  strokeWidth: 4,
+                  backgroundColor: AppColors.bgDeep,
+                  valueColor: AlwaysStoppedAnimation(
+                    timerColor.withValues(alpha: 0.2),
+                  ),
+                ),
+                // Progreso activo
+                CircularProgressIndicator(
+                  value: widget.progress.clamp(0.0, 1.0),
+                  strokeWidth: 4,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation(timerColor),
+                ),
+                // 🎯 TEXTO GRANDE: 24px bold
+                Text(
+                  '${widget.seconds}',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 24, // Era 18px
+                    fontWeight: FontWeight.w900,
+                    color: timerColor,
+                    shadows: widget.isCritical
+                        ? [
+                            Shadow(
+                              color: glowColor,
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              ],
+            ),
           ),
-          // Progreso - sin TweenAnimationBuilder para mejor rendimiento
-          CircularProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            strokeWidth: 3,
-            backgroundColor: Colors.transparent,
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
-          // Texto del countdown - Rojo intenso
-          Text(
-            '$seconds',
-            style: _TimerStyles.countdownLarge.copyWith(color: color),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
