@@ -151,7 +151,12 @@ class TrainingState {
     );
   }
 
-  /// Obtiene el índice del siguiente set no completado (para auto-focus)
+  /// Obtiene el índice del siguiente set no completado (para auto-focus).
+  ///
+  /// Nota: Itera en orden lineal por índice de ejercicio. Si el usuario añade
+  /// ejercicios dinámicamente y luego edita ejercicios anteriores, el auto-focus
+  /// siempre irá al primer set no completado en orden de lista, lo cual puede
+  /// resultar en saltos de foco no intuitivos en algunos casos edge.
   ({int exerciseIndex, int setIndex})? get nextIncompleteSet {
     for (int exIdx = 0; exIdx < exercises.length; exIdx++) {
       final exercise = exercises[exIdx];
@@ -528,6 +533,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   /// Verifica si el ejercicio es el último de su superset que tiene sets pendientes
   /// Retorna true si debe iniciar el timer, false si hay más ejercicios en el superset
   bool _shouldStartTimerForSuperset(int exerciseIndex, int setIndex) {
+    // Validación defensiva: verificar índice válido
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) return true;
+
     final exercise = state.exercises[exerciseIndex];
 
     // Si no está en superset, siempre iniciar timer
@@ -575,6 +583,11 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   /// Obtiene el tiempo de descanso sugerido para un superset (del último ejercicio)
   int _getSupersetRestTime(int exerciseIndex) {
+    // Validación defensiva: verificar índice válido
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) {
+      return state.defaultRestSeconds;
+    }
+
     final exercise = state.exercises[exerciseIndex];
 
     if (!exercise.isInSuperset) {

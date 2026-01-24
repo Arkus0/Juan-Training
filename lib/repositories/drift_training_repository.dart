@@ -60,10 +60,11 @@ class DriftTrainingRepository implements ITrainingRepository {
       );
     }).toList();
 
-    // Sort days
+    // Sort days (con manejo de inconsistencias de BD)
     dias.sort((a, b) {
-      final dayA = days.firstWhere((d) => d.id == a.id);
-      final dayB = days.firstWhere((d) => d.id == b.id);
+      final dayA = days.firstWhereOrNull((d) => d.id == a.id);
+      final dayB = days.firstWhereOrNull((d) => d.id == b.id);
+      if (dayA == null || dayB == null) return 0; // Mantener orden si hay inconsistencia
       return dayA.dayIndex.compareTo(dayB.dayIndex);
     });
 
@@ -126,6 +127,7 @@ class DriftTrainingRepository implements ITrainingRepository {
       dayIndex: sessionRow.dayIndex,
       fecha: sessionRow.startTime,
       durationSeconds: sessionRow.durationSeconds,
+      isBadDay: sessionRow.isBadDay,
       ejerciciosCompletados: mapExercises(completedRows),
       ejerciciosObjetivo: mapExercises(targetRows),
     );
@@ -361,6 +363,7 @@ class DriftTrainingRepository implements ITrainingRepository {
           dayIndex: Value(sesion.dayIndex),
           startTime: sesion.fecha,
           durationSeconds: Value(sesion.durationSeconds),
+          isBadDay: Value(sesion.isBadDay),
           completedAt: isCompleted
               ? Value(sesion.fecha
                   .add(Duration(seconds: sesion.durationSeconds ?? 0)))

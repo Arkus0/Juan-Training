@@ -1,15 +1,14 @@
 # Auditoría Técnica - Issues Pendientes
 
 > Generado: 2026-01-23
-> Última revisión de código completa realizada.
-> Este documento lista issues identificados pero NO corregidos.
+> Última actualización: 2026-01-24
+> Este documento lista issues identificados y su estado.
 
 ---
 
 ## Fixes Aplicados (Referencia)
 
-Los siguientes issues fueron corregidos en commits `aef0640` y `00b739c`:
-
+### Commits `aef0640` y `00b739c`:
 - ✅ Timer restore cuando endTime en pasado
 - ✅ Race condition en discard session
 - ✅ Diálogo sospechoso múltiple (flag dialogShowing)
@@ -20,166 +19,105 @@ Los siguientes issues fueron corregidos en commits `aef0640` y `00b739c`:
 - ✅ finishSession atómico
 - ✅ Outliers en estimate1RM
 
+### Commit `411014b` - Issues de auditoría pendientes:
+- ✅ Sort de días usa `firstWhereOrNull` para evitar StateError
+- ✅ Auto-complete verifica setId antes de completar
+- ✅ Validación defensiva en funciones de superset
+- ✅ `didChangeAppLifecycleState` sincroniza con TimerPlatformService
+- ✅ Campo `isBadDay` añadido a Sessions (migración v4)
+- ✅ Ghost values con indicación visual mejorada
+- ✅ Documentación de `nextIncompleteSet`
+
+### Commit `c66c334` - Dependencias y refactorización:
+- ✅ Dependencias actualizadas a versiones recientes
+- ✅ Eliminadas dependencias no usadas (timer_count_down, reorderables, etc.)
+- ✅ Creado `RoutineRepository` como ejemplo de extracción
+
 ---
 
 ## Issues Pendientes por Prioridad
 
-### 🔴 CRÍTICO
+### ~~🔴 CRÍTICO~~ ✅ COMPLETADO
 
-#### 1. Sort de días sin orElse puede crashear silenciosamente
+#### ~~1. Sort de días sin orElse puede crashear silenciosamente~~
 
-**Archivo:** `lib/repositories/drift_training_repository.dart:64-67`
+~~**Archivo:** `lib/repositories/drift_training_repository.dart:64-67`~~
 
-```dart
-dias.sort((a, b) {
-  final dayA = days.firstWhere((d) => d.id == a.id);  // ← Sin orElse
-  final dayB = days.firstWhere((d) => d.id == b.id);
-  return dayA.dayIndex.compareTo(dayB.dayIndex);
-});
-```
-
-**Problema:** Si hay inconsistencia entre `dias` y `days` (corrupción de BD o migración fallida), lanza `StateError`. El try-catch externo devuelve lista vacía → rutinas desaparecen sin explicación.
-
-**Fix sugerido:**
-```dart
-dias.sort((a, b) {
-  final dayA = days.firstWhereOrNull((d) => d.id == a.id);
-  final dayB = days.firstWhereOrNull((d) => d.id == b.id);
-  if (dayA == null || dayB == null) return 0; // Mantener orden original si hay inconsistencia
-  return dayA.dayIndex.compareTo(dayB.dayIndex);
-});
-```
+**Estado:** ✅ CORREGIDO en commit `411014b`
 
 ---
 
-### 🟠 ALTO
+### ~~🟠 ALTO~~ ✅ COMPLETADO
 
-#### 2. Auto-complete con delay arbitrario puede marcar set incorrecto
+#### ~~2. Auto-complete con delay arbitrario puede marcar set incorrecto~~
 
-**Archivo:** `lib/widgets/session/focused_set_row.dart:361-369`
-
-```dart
-Future.delayed(const Duration(milliseconds: 100), () {
-  widget.onCompleted(true);
-});
-```
-
-**Problema:** Si el usuario navega a otro set antes de que el delay termine, se marca el set incorrecto.
-
-**Fix sugerido:** Usar un token/ID de set y verificar que sigue siendo el mismo antes de completar:
-```dart
-final currentSetId = widget.setId;
-Future.delayed(const Duration(milliseconds: 100), () {
-  if (mounted && widget.setId == currentSetId) {
-    widget.onCompleted(true);
-  }
-});
-```
+**Estado:** ✅ CORREGIDO - Ahora verifica `widget.log.id` antes de completar
 
 ---
 
-#### 3. Superset con ejercicio eliminado mid-session causa timer inconsistente
+#### ~~3. Superset con ejercicio eliminado mid-session causa timer inconsistente~~
 
-**Archivos:**
-- `lib/providers/training_provider.dart` (`_shouldStartTimerForSuperset`, `_getSupersetRestTime`)
-
-**Problema:** Si el usuario elimina un ejercicio que pertenece a un superset durante la sesión, las funciones que iteran sobre `state.exercises` buscando por `supersetId` pueden no encontrar todos los ejercicios esperados, causando:
-- Timer que no inicia cuando debería
-- Timer que inicia cuando no debería
-- Cálculo incorrecto del tiempo de descanso del superset
-
-**Fix sugerido:** Validar existencia de todos los ejercicios del superset antes de operar, o limpiar `supersetId` de ejercicios huérfanos.
+**Estado:** ✅ CORREGIDO - Validación defensiva de índices añadida
 
 ---
 
-### 🟡 MEDIO
+### ~~🟡 MEDIO~~ ✅ COMPLETADO
 
-#### 4. `didChangeAppLifecycleState` no sincroniza con timer Android
+#### ~~4. `didChangeAppLifecycleState` no sincroniza con timer Android~~
 
-**Archivo:** `lib/widgets/session/rest_timer_bar.dart:255-260`
-
-```dart
-@override
-void didChangeAppLifecycleState(AppLifecycleState state) {
-  if (state == AppLifecycleState.resumed) {
-    _updateDisplay();  // ← Solo actualiza display, no verifica timer nativo
-  }
-}
-```
-
-**Problema:** Si Android mata el servicio de timer mientras la app está en background, Dart no lo detecta. El timer visual puede mostrar tiempo incorrecto.
-
-**Fix sugerido:** Al volver a foreground, consultar `TimerPlatformService` para verificar estado real del timer nativo y sincronizar.
+**Estado:** ✅ CORREGIDO - Sincroniza con `TimerPlatformService.instance.state`
 
 ---
 
-#### 5. "Día malo" no persiste entre sesiones
+#### ~~5. "Día malo" no persiste entre sesiones~~
 
-**Archivo:** `lib/services/error_tolerance_system.dart` (`BadDayResult`)
-
-**Problema:** El `BadDayResult` se calcula en tiempo real, pero el flag `affectsProgression: false` no se guarda en la BD. La próxima vez que se calcule progresión, no sabe que la sesión anterior fue un "día malo aislado".
-
-**Impacto:** La progresión podría castigar incorrectamente al usuario por un día malo aislado en la siguiente sesión.
-
-**Fix sugerido:** Guardar flag `isBadDay` en la tabla `Sessions` para que el motor de progresión lo considere.
+**Estado:** ✅ CORREGIDO - Campo `isBadDay` añadido a tabla Sessions (migración v4)
 
 ---
 
-#### 6. Ghost values sin indicación visual de interactividad
+#### ~~6. Ghost values sin indicación visual de interactividad~~
 
-**Archivo:** `lib/widgets/session/focused_set_row.dart`
-
-**Problema:** Los valores de sesión anterior (ghost values) aparecen en gris pero no hay indicación de que tocarlos los copiará. El método `copyPreviousSet` existe pero no está expuesto visualmente.
-
-**Fix sugerido:** Añadir tooltip o animación sutil que indique que los valores grises son "tocables para copiar".
+**Estado:** ✅ CORREGIDO - Tooltip añadido + borde destacado cuando input vacío
 
 ---
 
-### 🟢 BAJO
+### ~~🟢 BAJO~~ ✅ DOCUMENTADO
 
-#### 7. `nextIncompleteSet` no considera ejercicios añadidos dinámicamente
+#### ~~7. `nextIncompleteSet` no considera ejercicios añadidos dinámicamente~~
 
-**Archivo:** `lib/providers/training_provider.dart`
-
-**Problema:** El getter `nextIncompleteSet` itera en orden lineal. Si el usuario añade un ejercicio al final y luego edita uno anterior, el auto-focus podría saltar de forma confusa.
-
-**Impacto:** UX confusa en casos edge, no crítico.
+**Estado:** ✅ DOCUMENTADO - Comentario explica el comportamiento lineal
 
 ---
 
-## Deuda Técnica (NO urgente, para refactorización futura)
+## Deuda Técnica (EN PROGRESO)
+
+### `DriftTrainingRepository` - 1300+ líneas
+
+**Archivo:** `lib/repositories/drift_training_repository.dart`
+
+**Estado:** 🔄 EN PROGRESO
+
+**Progreso:**
+- ✅ `RoutineRepository` extraído (`lib/repositories/routine_repository.dart`)
+- ⏳ `SessionRepository` - Pendiente
+- ⏳ `AnalyticsRepository` - Pendiente
+
+**Patrón a seguir:** Ver `RoutineRepository` como ejemplo de extracción.
+
+---
 
 ### `TrainingSessionNotifier` - 1000+ líneas
 
 **Archivo:** `lib/providers/training_provider.dart`
 
-**Problema:** Hace demasiado:
-- Gestión de estado de ejercicios
-- Gestión de timer de descanso
-- Gestión de persistencia
-- Comunicación con plataforma Android
-- Cálculo de siguiente set incompleto
+**Estado:** ⏳ PENDIENTE
 
 **Refactorización sugerida:** Dividir en:
 1. `TrainingSessionNotifier` - Solo estado de ejercicios
 2. `RestTimerController` - Timer específico
 3. `SessionPersistenceService` - Save/restore
 
----
-
-### `DriftTrainingRepository` - 1300+ líneas
-
-**Archivo:** `lib/repositories/drift_training_repository.dart`
-
-**Problema:** Mezcla:
-- CRUD de rutinas
-- CRUD de sesiones
-- Análisis y métricas
-
-**Refactorización sugerida:** Dividir en repositorios especializados:
-1. `RoutineRepository`
-2. `SessionRepository`
-3. `AnalyticsRepository`
+**Recomendación:** Hacer después de completar la refactorización del repositorio.
 
 ---
 

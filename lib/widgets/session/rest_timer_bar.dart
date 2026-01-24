@@ -7,6 +7,7 @@ import '../../providers/training_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
+import '../../services/timer_platform_service.dart';
 import '../../utils/performance_utils.dart';
 import '../../utils/design_system.dart';
 
@@ -256,7 +257,24 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
     if (state == AppLifecycleState.resumed &&
         widget.timerState.isActive &&
         !widget.timerState.isPaused) {
+      // Sincronizar con timer nativo de Android
+      _syncWithPlatformTimer();
       _updateDisplay();
+    }
+  }
+
+  /// Sincroniza el estado del timer Dart con el timer nativo de Android
+  void _syncWithPlatformTimer() {
+    final platformState = TimerPlatformService.instance.state;
+    // Si el timer nativo ya terminó pero Dart aún lo cree activo, forzar actualización
+    if (platformState.isFinished && widget.timerState.isActive) {
+      // El timer terminó mientras la app estaba en background
+      _stopTicker();
+      _triggerFinalFeedback();
+      widget.onTimerFinished(
+        lastExerciseIndex: widget.timerState.lastCompletedExerciseIndex,
+        lastSetIndex: widget.timerState.lastCompletedSetIndex,
+      );
     }
   }
 

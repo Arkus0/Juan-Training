@@ -9,6 +9,7 @@ class Sesion {
   final List<Ejercicio> ejerciciosCompletados;
   final List<Ejercicio> ejerciciosObjetivo;
   final int? durationSeconds;
+  final bool isBadDay; // Flag para "día malo" que no debe afectar progresión
 
   Sesion({
     required this.id,
@@ -19,6 +20,7 @@ class Sesion {
     required this.ejerciciosCompletados,
     required this.ejerciciosObjetivo,
     this.durationSeconds,
+    this.isBadDay = false,
   });
 
   Sesion copyWith({
@@ -30,6 +32,7 @@ class Sesion {
     List<Ejercicio>? ejerciciosCompletados,
     List<Ejercicio>? ejerciciosObjetivo,
     int? durationSeconds,
+    bool? isBadDay,
   }) {
     return Sesion(
       id: id ?? this.id,
@@ -40,6 +43,7 @@ class Sesion {
       ejerciciosCompletados: ejerciciosCompletados ?? this.ejerciciosCompletados,
       ejerciciosObjetivo: ejerciciosObjetivo ?? this.ejerciciosObjetivo,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      isBadDay: isBadDay ?? this.isBadDay,
     );
   }
 

@@ -278,60 +278,71 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  // Valor anterior (si existe) - más compacto
+                  // Valor anterior (si existe) - con indicación visual mejorada
                   if (widget.previousValue != null && widget.previousValue! > 0) ...[
                     const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _onUsePrevious,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _ModalColors.bgInput,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: AppColors.border,
+                    Tooltip(
+                      message: 'Toca para usar el valor de tu sesión anterior',
+                      child: GestureDetector(
+                        onTap: _onUsePrevious,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.history,
-                              size: 14,
-                              color: _ModalColors.textSecondary,
+                          decoration: BoxDecoration(
+                            color: _ModalColors.bgInput,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              // Borde más visible si el input está vacío
+                              color: _displayValue.isEmpty
+                                  ? _ModalColors.activeSet.withOpacity(0.5)
+                                  : AppColors.border,
+                              width: _displayValue.isEmpty ? 1.5 : 1,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Anterior: ${_formatNumber(widget.previousValue!)} ${widget.fieldLabel}',
-                              style: GoogleFonts.montserrat(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: _ModalColors.textSecondary,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 14,
+                                color: _displayValue.isEmpty
+                                    ? _ModalColors.activeSet
+                                    : _ModalColors.textSecondary,
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _ModalColors.activeSet.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'USAR',
+                              const SizedBox(width: 6),
+                              Text(
+                                'Anterior: ${_formatNumber(widget.previousValue!)} ${widget.fieldLabel}',
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                  color: _ModalColors.activeSet,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _displayValue.isEmpty
+                                      ? _ModalColors.textPrimary
+                                      : _ModalColors.textSecondary,
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _ModalColors.activeSet.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'USAR',
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: _ModalColors.activeSet,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
