@@ -15,6 +15,7 @@ enum VoiceActionType {
   setRpe,
   addNote,
   markDone,
+  nextSet,
   addExercise,
   removeExercise,
 }

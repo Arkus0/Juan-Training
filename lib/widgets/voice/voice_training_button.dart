@@ -1,10 +1,11 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/voice_input_provider.dart' as vip;
+
 import '../../models/voice_action.dart';
+import '../../providers/voice_input_provider.dart' as vip;
+import '../../utils/design_system.dart';
 import 'voice_training_fab.dart' show VoiceTrainingCommand, VoiceCommandType;
 
 // Re-exportar los tipos del FAB para compatibilidad
@@ -125,10 +126,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       if (command != null) {
         // Registrar acción para undo
         notifier.recordAction(vip.VoiceAction(
-          actionType: _commandTypeToActionType(command.type),
-          newValue: command.value ?? command.note,
           description: _getActionDescription(command),
-          timestamp: DateTime.now(),
         ));
         widget.onCommand(command);
       } else {
