@@ -133,7 +133,6 @@ class VoiceUndoSnackbar {
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
         ),
-        duration: const Duration(seconds: 4),
         action: onRetry != null
             ? SnackBarAction(
                 label: 'REINTENTAR',
@@ -163,6 +162,9 @@ class VoiceUndoSnackbar {
         return Icons.add_circle;
       case VoiceActionType.removeExercise:
         return Icons.remove_circle;
+      default:
+        // Fallback seguro (no debería llegar aquí si enum es exhaustivo)
+        return Icons.help_outline;
     }
   }
 }
