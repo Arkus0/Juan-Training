@@ -5,12 +5,10 @@ import '../providers/settings_provider.dart';
 
 class PlateCalculatorDialog extends ConsumerStatefulWidget {
   final double currentWeight;
-  final Function(double) onWeightSelected;
 
   const PlateCalculatorDialog({
     super.key,
     required this.currentWeight,
-    required this.onWeightSelected,
   });
 
   @override
@@ -52,15 +50,15 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
       return;
     }
 
-    double remaining = (targetWeight - _barWeight) / 2;
-    List<double> plates = [];
+    var remaining = (targetWeight - _barWeight) / 2;
+    final plates = <double>[];
 
     if (remaining < 0) {
       setState(() => _calculatedPlates = []);
       return;
     }
 
-    for (var plate in _availablePlates) {
+    for (final plate in _availablePlates) {
       while (remaining >= plate) {
         plates.add(plate);
         remaining -= plate;
@@ -144,7 +142,6 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 const SizedBox(width: 16),
                                 // Left side plates (mirror)
@@ -223,8 +220,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                 ElevatedButton(
                   onPressed: () {
                     final w = double.tryParse(_weightController.text);
-                    if (w != null) widget.onWeightSelected(w);
-                    Navigator.pop(context);
+                    if (w != null) Navigator.of(context).pop(w);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[900],
@@ -270,7 +266,7 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.black, width: 1),
+            border: Border.all(),
           ),
         ),
         const SizedBox(height: 4),

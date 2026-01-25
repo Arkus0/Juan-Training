@@ -15,6 +15,10 @@ import 'repositories/drift_training_repository.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Configuración de caché de imágenes
+  PaintingBinding.instance.imageCache.maximumSize = 300;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 150 * 1024 * 1024;
+
   // Drift
   final appDb = AppDatabase();
   final driftRepository = DriftTrainingRepository(appDb);

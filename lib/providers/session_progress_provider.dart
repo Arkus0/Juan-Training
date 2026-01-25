@@ -1,6 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
-import '../utils/performance_utils.dart';
 import '../models/ejercicio.dart';
 import 'training_provider.dart';
 
@@ -24,6 +22,10 @@ class SessionProgress {
   /// Último milestone alcanzado (0, 25, 50, 75, 100)
   final int lastMilestone;
 
+  /// Milestone que acaba de alcanzarse (para trigger de haptics desde UI)
+  /// Se resetea a null después de ser consumido
+  final int? newlyReachedMilestone;
+
   /// Si la sesión está completa
   final bool isComplete;
 
@@ -39,6 +41,7 @@ class SessionProgress {
     this.lastMilestone = 0,
     this.isComplete = false,
     this.supersets = const [],
+    this.newlyReachedMilestone,
   });
 
   SessionProgress copyWith({
@@ -50,6 +53,8 @@ class SessionProgress {
     int? lastMilestone,
     bool? isComplete,
     List<SupersetProgressInfo>? supersets,
+    int? newlyReachedMilestone,
+    bool clearNewlyReachedMilestone = false,
   }) {
     return SessionProgress(
       totalSets: totalSets ?? this.totalSets,
@@ -60,6 +65,7 @@ class SessionProgress {
       lastMilestone: lastMilestone ?? this.lastMilestone,
       isComplete: isComplete ?? this.isComplete,
       supersets: supersets ?? this.supersets,
+      newlyReachedMilestone: clearNewlyReachedMilestone ? null : (newlyReachedMilestone ?? this.newlyReachedMilestone),
     );
   }
 
@@ -187,9 +193,11 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
       currentMilestone = 25;
     }
 
-    // Notificar milestone si es nuevo
+    // Detectar si hay un nuevo milestone alcanzado
+    // La vibración se delega a la UI que observe newlyReachedMilestone
+    int? newMilestone;
     if (currentMilestone > _lastNotifiedMilestone) {
-      _triggerMilestoneVibration(currentMilestone);
+      newMilestone = currentMilestone;
       _lastNotifiedMilestone = currentMilestone;
     }
 
@@ -202,30 +210,15 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
       lastMilestone: currentMilestone,
       isComplete: isComplete,
       supersets: supersetInfos,
+      newlyReachedMilestone: newMilestone,
     );
   }
 
-  /// Vibración de celebración en milestones
-  Future<void> _triggerMilestoneVibration(int milestone) async {
-    if (PerformanceMode.instance.reduceVibrations) return;
-
-    try {
-      switch (milestone) {
-        case 50:
-          try { HapticFeedback.mediumImpact(); } catch (_) {}
-          break;
-        case 75:
-          try { HapticFeedback.heavyImpact(); } catch (_) {}
-          break;
-        case 100:
-          try { HapticFeedback.vibrate(); } catch (_) {}
-          await Future.delayed(const Duration(milliseconds: 150));
-          try { HapticFeedback.vibrate(); } catch (_) {}
-          await Future.delayed(const Duration(milliseconds: 150));
-          try { HapticFeedback.vibrate(); } catch (_) {}
-          break;
-      }
-    } catch (_) {}
+  /// Marca el milestone como consumido (llamar desde UI después de trigger haptic)
+  void clearNewlyReachedMilestone() {
+    if (state.newlyReachedMilestone != null) {
+      state = state.copyWith(clearNewlyReachedMilestone: true);
+    }
   }
 
   /// Reinicia el tracking de milestones (para nueva sesión)
@@ -284,7 +277,12 @@ class ExerciseCompletionInfo {
   final int totalReps;
   final bool metTarget;
   final String? nextSessionHint;
-  
+
+  /// Flag para indicar que este es un evento nuevo que requiere haptic feedback
+  /// La UI debe llamar a HapticsController.instance.onExerciseCompleted() y luego
+  /// llamar a notifier.markHapticConsumed()
+  final bool needsHapticFeedback;
+
   const ExerciseCompletionInfo({
     required this.exerciseIndex,
     required this.exerciseName,
@@ -293,7 +291,21 @@ class ExerciseCompletionInfo {
     required this.totalReps,
     required this.metTarget,
     this.nextSessionHint,
+    this.needsHapticFeedback = false,
   });
+
+  ExerciseCompletionInfo copyWith({bool? needsHapticFeedback}) {
+    return ExerciseCompletionInfo(
+      exerciseIndex: exerciseIndex,
+      exerciseName: exerciseName,
+      completedSets: completedSets,
+      targetSets: targetSets,
+      totalReps: totalReps,
+      metTarget: metTarget,
+      nextSessionHint: nextSessionHint,
+      needsHapticFeedback: needsHapticFeedback ?? this.needsHapticFeedback,
+    );
+  }
 }
 
 /// Notifier que trackea ejercicios completados y permite mostrar feedback
@@ -320,12 +332,10 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
         // ═══════════════════════════════════════════════════════════════════════
         // GAME FEEL: Feedback háptico al completar ejercicio
         // ═══════════════════════════════════════════════════════════════════════
-        // heavyImpact para que el usuario SIENTA la satisfacción de completar.
-        // Esto es crítico para la UX táctil en gimnasio.
+        // La vibración se delega al HapticsController desde la UI.
+        // El provider solo marca que el ejercicio se completó (justCompleted: true).
+        // La UI observa este flag y llama a HapticsController.instance.onExerciseCompleted()
         // ═══════════════════════════════════════════════════════════════════════
-        if (!PerformanceMode.instance.reduceVibrations) {
-          try { HapticFeedback.heavyImpact(); } catch (_) {}
-        }
 
         const targetReps = 8; // Default, idealmente vendría del ejercicio
         final completedSets = exercise.logs.where((l) => l.completed).length;
@@ -340,6 +350,7 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
           totalReps: totalReps,
           metTarget: metTarget,
           nextSessionHint: metTarget ? 'Próxima: más peso o reps' : 'Repite este objetivo',
+          needsHapticFeedback: true, // La UI debe consumir esto y disparar haptic
         );
         
         // Auto-clear después de 5 segundos si no se dismissea
@@ -358,7 +369,14 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
   void dismiss() {
     state = null;
   }
-  
+
+  /// Marca que el haptic feedback fue ejecutado (llamar desde UI)
+  void markHapticConsumed() {
+    if (state?.needsHapticFeedback == true) {
+      state = state!.copyWith(needsHapticFeedback: false);
+    }
+  }
+
   /// Reset para nueva sesión
   void reset() {
     _completedExercises = {};

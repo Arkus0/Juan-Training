@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 /**
@@ -26,6 +27,7 @@ import androidx.core.app.NotificationCompat
 class TimerForegroundService : Service() {
 
     companion object {
+        private const val TAG = "TimerForegroundService"
         const val CHANNEL_ID = "timer_foreground_channel"
         const val NOTIFICATION_ID = 1002
 
@@ -104,6 +106,18 @@ class TimerForegroundService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Log.i(TAG, "Service killed via Swipe-Away")
+        releaseWakeLock()
+
+        // Cancel notification explicitly
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.cancel(NOTIFICATION_ID)
+
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
 
     override fun onDestroy() {
         handler.removeCallbacks(updateRunnable)

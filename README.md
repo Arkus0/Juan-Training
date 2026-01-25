@@ -1,128 +1,128 @@
-# 💪 Juan Training: La Biblioteca del Dolor
+# 🏋️‍♂️ Juan Training: La Biblioteca del Dolor
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev/)
-[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev/)
-[![Architecture](https://img.shields.io/badge/Architecture-Riverpod%20%2B%20Drift-purple)](https://riverpod.dev/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+> **"Enterprise-Grade Hypertrophy Management System."** — *Ronnie "The King" Coleman (CEO Espiritual)*
 
-> *"No pain, no gain. Pero sin datos, solo hay dolor sin gloria."*
+**Juan Training** no es otra aplicación de fitness genérica para contar pasos. Es una plataforma de ingeniería de software de alto rendimiento diseñada específicamente para la gestión de datos de hipertrofia y fuerza. Construida con una arquitectura robusta **Offline-First**, esta herramienta permite a los culturistas serios registrar, analizar y optimizar su progreso con precisión quirúrgica, eliminando la fricción entre el hierro y los datos.
 
-Bienvenido a **Juan Training**, la herramienta definitiva para el culturista serio. Olvida las libretas sudadas y las apps genéricas de fitness que te cobran por respirar. Aquí venimos a levantar pesado, registrar cada gramo y construir un legado.
-
-Esta es tu **Biblioteca del Dolor**. Una app offline-first, rápida como un rayo y sólida como el acero, diseñada para gestionar tus rutinas de hipertrofia y fuerza con precisión quirúrgica. Creada por y para entusiastas del hierro.
+Aquí no hay suscripciones, no hay anuncios y no hay excusas. Solo **Heavy Duty Software** para **Heavy Duty Training**.
 
 ---
 
-## 📸 La Sala de Trofeos (Screenshots)
+## 🏆 Capacidades Operativas (Features)
 
-*La interfaz visual donde se forjan las leyendas.*
+Infraestructura desplegada y totalmente funcional en la versión actual `1.0.0+1`.
 
-| Pantalla Principal | Editor de Rutinas | Modo Entrenamiento |
-|:---:|:---:|:---:|
-| ![Dashboard](assets/screenshots/dashboard_placeholder.png) | ![Rutinas](assets/screenshots/rutinas_placeholder.png) | ![Entreno](assets/screenshots/workout_placeholder.png) |
+### 🧠 **Ingesta de Datos Inteligente (Smart Input)**
+*   **Reconocimiento Óptico (OCR) on-device:** Implementación de **Google ML Kit** para escanear rutinas escritas en pizarras o papel. Detecta series, repeticiones y pesos automáticamente.
+*   **Comandos de Voz (Voice Ops):** Sistema de dictado natural ("Añade sentadilla 4 por 10") procesado localmente con feedback de audio. Entrena sin tocar la pantalla.
+*   **Smart Suggestions:** Algoritmos predictivos que sugieren el siguiente día de entrenamiento basándose en tu historial y frecuencia de recuperación.
 
-*(Nota: Screenshots reales en proceso de definición muscular. Próximamente)*
+### ⚙️ **Gestión de Rutinas & Superseries**
+*   **Arquitectura de Superseries Atómicas:** Agrupación visual y lógica de ejercicios. Se mueven, editan y ejecutan como una unidad indivisible.
+*   **Edición No Destructiva:** Funcionalidad "Undo" global y sistema "Swipe-to-Dismiss" con red de seguridad.
+*   **Duplicación de Días:** Clonación profunda de estructuras de entrenamiento para iteración rápida de microciclos.
 
----
+### ⚡ **Modo Entrenamiento (Workout Execution)**
+*   **Timer Híbrido (Android Exclusive):** Servicio en primer plano (`Foreground Service`) que mantiene el temporizador de descanso visible y funcional incluso en la pantalla de bloqueo.
+*   **Control Multimedia Táctico (Android Exclusive):** Interfaz nativa (Kotlin bridge) para controlar Spotify/Música sin salir de la sesión de entrenamiento.
+*   **Ghost Values:** Proyección de datos históricos (peso/reps anteriores) directamente en los campos de entrada para facilitar la sobrecarga progresiva (Progressive Overload).
+*   **Feedback Háptico:** Respuesta táctil en cada interacción crítica para confirmar acciones sin necesidad de validación visual constante.
 
-## 🏆 Características de Campeón (Features)
-
-Esta app no es para "tonificar". Es para progresar.
-
-### 🏋️‍♂️ **Gestión de Rutinas "Old School"**
-*   **Drag & Drop Táctico:** Reorganiza tus ejercicios y días arrastrando y soltando. Tan satisfactorio como cargar un disco de 20kg.
-*   **Superseries Reales:** Agrupa ejercicios en superseries visuales. Se mueven juntos, se editan juntos. Sin líos de IDs.
-*   **Duplicación de Días:** Copia tu "Leg Day" completo para la semana siguiente. Menos configuración, más hierro.
-*   **Swipe-to-Dismiss con Undo:** ¿Te equivocaste borrando? Desliza para eliminar, pero con red de seguridad (Undo) por si el pre-entreno te jugó una mala pasada.
-*   **Notas Detalladas:** Añade notas a tus ejercicios (setup del banco, altura del asiento) para no olvidar nunca tu configuración óptima.
-
-### 🧠 **Entrenamiento Inteligente**
-*   **Timer No Invasivo:** Barra de progreso discreta y avisos por vibración/sonido. Concéntrate en respirar, no en mirar el móvil.
-*   **Ghost Values 👻:** Visualiza tus marcas de la sesión anterior (peso/reps) en gris claro justo donde escribes. Supera tu "yo" del pasado en cada serie.
-*   **RPE & Tipos de Serie:** Registra RPE, Fallo, Calentamiento o Dropsets. Data real para un análisis real.
-*   **Auto-Focus & Smart Input:** La app sabe dónde tienes que escribir. Flujo de trabajo optimizado para manos con magnesio.
-*   **Inicio Smart:** La app sugiere automáticamente el día de rutina que toca hoy.
-
-### 📚 **Biblioteca Masiva (Wger API)**
-*   **700+ Ejercicios:** Base de datos completa, offline y con imágenes (thumbnails).
-*   **Alternativas Biomecánicas:** ¿Máquina ocupada? La app te sugiere alternativas basadas en el mismo grupo muscular.
-*   **Búsqueda Fuzzy:** Encuentra "Press de Banca" aunque escribas "banc pres".
-*   **Favoritos:** Acceso rápido a tus movimientos "Signature".
-
-### 📊 **Progresión y Datos**
-*   **Historial de Sesiones:** Revisa tus entrenamientos pasados y compáralos con lo planeado.
-*   **Progresión Lineal/Doble:** Herramientas integradas para asegurar la sobrecarga progresiva.
-*   **Offline First:** Todo se guarda en tu dispositivo. No necesitas internet para entrenar en la cueva.
+### 📊 **Analítica Avanzada (Analysis Lab)**
+*   **Centro de Comando (AnalysisScreen):** Dashboard unificado que reemplaza al historial lineal tradicional.
+*   **Métricas de Rendimiento:**
+    *   **Activity Heatmap:** Visualización de consistencia estilo GitHub.
+    *   **Symmetry Radar:** Análisis de balance muscular.
+    *   **Recovery Monitor:** Estimación de fatiga sistémica.
+    *   **Hall of Fame:** Registro automático de PRs (Personal Records) históricos.
 
 ---
 
-## ⚙️ Ingeniería Bajo el Capó
+## 🏗️ Stack Tecnológico (The Tech Stack)
 
-Construida con los mejores "esteroides" tecnológicos del ecosistema Flutter 2026.
+Construido sobre cimientos sólidos. "Light weight framework, heavy weight performance."
 
-*   **Flutter 3.x & Dart 3.x:** Última tecnología, null-safety total.
-*   **Drift (SQLite):** Base de datos relacional robusta (migrada desde Hive). Soporta SQL complejo para consultas de historial y estadísticas.
-*   **Riverpod:** Gestión de estado reactiva, testable y modular.
-*   **Arquitectura Limpia:** Separación clara entre UI (`screens`), Lógica (`providers`) y Datos (`repositories`, `database`).
+*   **Core:** Flutter 3.x & Dart 3.x (Null Safety).
+*   **Estado:** `flutter_riverpod` v2 (Gestión reactiva y testable).
+*   **Persistencia:** `drift` (SQLite) con `sqlite3_flutter_libs`. Base de datos relacional para consultas complejas de análisis.
+*   **Machine Learning:** `google_mlkit_text_recognition` (Versión 'thin' con descarga dinámica de modelos).
+*   **Speech:** `speech_to_text` (Motores nativos offline).
+*   **Nativo (Android):** Código Kotlin para `MediaSessionManager` y `ForegroundServices`.
 
 ---
 
-## 🚀 Instalación y Despliegue
+## 📋 Requisitos del Sistema
 
-¿Quieres compilar tu propia versión? Sigue estos pasos, recluta.
+Para desplegar este entorno de desarrollo necesitarás:
 
-### Requisitos
-*   Flutter SDK instalado (Canal Stable).
-*   Un editor de código decente (VS Code / Android Studio).
-*   Ganas de programar (y de entrenar).
+*   **Flutter SDK:** Canal Stable (versión >= 3.0.0).
+*   **Dart SDK:** Compatible (versión >= 3.0.0).
+*   **Entorno Android:** Android SDK actualizado (para compilar las features nativas).
+*   **Dispositivo Físico:** Recomendado para probar OCR, Voz y Vibración (los emuladores carecen de hardware de cámara/micrófono fiel).
 
-### Pasos
-1.  **Clona el repositorio:**
+---
+
+## 🚀 Protocolo de Instalación
+
+Sigue estos pasos estrictos. No te saltes el día de pierna, no te saltes el `build_runner`.
+
+1.  **Clonar el Repositorio:**
     ```bash
-    git clone https://github.com/Arkus0/Juan-Training.git
-    cd Juan-Training
+    git clone <repository_url>
+    cd juan_training
     ```
 
-2.  **Instala las dependencias:**
+2.  **Instalar Dependencias:**
     ```bash
     flutter pub get
     ```
 
 3.  **Generación de Código (CRÍTICO):**
-    Usamos `Drift` y `Riverpod Generator`. Debes correr el `build_runner` para generar los archivos `.g.dart` (modelos, base de datos, providers).
+    Este proyecto utiliza metaprogramación intensiva para Drift (BBDD) y Riverpod (Providers). Debes compilar los generadores antes de ejecutar.
     ```bash
     dart run build_runner build --delete-conflicting-outputs
     ```
 
-4.  **Ejecuta la app:**
+4.  **Ejecución:**
     ```bash
     flutter run
     ```
 
 ---
 
-## 🗺️ Roadmap (El Camino al Mr. Olympia)
+## 📂 Estructura del Proyecto
 
-Aún nos queda camino para alcanzar la perfección física (y de software).
+Organización modular para escalabilidad empresarial.
 
-- [ ] 🎵 **Integración Spotify:** Controla tu playlist de "Heavy Metal Gym" sin salir de la app.
-- [ ] 👁️ **OCR / Voz:** Importa rutinas de fotos o dicta tus series entre jadeos.
-- [ ] 📈 **Gráficas Avanzadas:** Progresión de volumen, 1RM estimado y frecuencia por grupo muscular.
-- [ ] ☁️ **Cloud Sync:** Backup en la nube y sincronización multiplataforma.
-- [ ] 🌍 **Internacionalización:** Traducir la Biblioteca del Dolor a otros idiomas.
+```text
+lib/
+├── database/       # Definiciones de esquemas Drift y DAOs.
+├── models/         # Modelos de dominio (Rutina, Sesion, Ejercicio).
+├── providers/      # Lógica de negocio y gestión de estado (Riverpod).
+├── repositories/   # Capa de abstracción de datos.
+├── screens/        # Interfaces de usuario (UI).
+│   ├── analysis/   # Dashboards y gráficas.
+│   └── ...
+├── services/       # Lógica externa (OCR, Voz, Audio, Validaciones).
+├── utils/          # Design System, formateadores y helpers.
+├── widgets/        # Componentes reutilizables atómicos.
+└── main.dart       # Punto de entrada y configuración global.
+```
 
 ---
 
-## 🤝 Únete al Equipo (Contribución)
+## ⚠️ Notas de Despliegue
 
-Actualmente buscamos **Beta Testers** valientes.
-
-Si encuentras un bug (que no sea un insecto real en tu gimnasio) o tienes una idea para una feature, **abre un Issue**. El código es open source, así que los Pull Requests son bienvenidos si siguen el estándar de calidad "Pro". ¡Ayúdanos a hacer la mejor app de culturismo del mundo!
+*   **Permisos Android:** El `AndroidManifest.xml` está configurado para solicitar permisos de **Cámara** (OCR), **Micrófono** (Voz), **Notificaciones** (Timer) y **Overlay** (Servicios).
+*   **Modelos ML:** La app está configurada para descargar el modelo de OCR vía Google Play Services la primera vez que se usa, manteniendo el APK ligero.
+*   **Plataformas:** Aunque el core es Flutter (multiplataforma), las funcionalidades de **Timer en Pantalla de Bloqueo** y **Control de Medios** tienen implementaciones nativas específicas en `android/app/src/main/kotlin`. En iOS estas features pueden tener comportamiento limitado.
 
 ---
 
-## 📄 Licencia
+## 🤝 Contribución (Join the Crew)
 
-Este proyecto está bajo la Licencia **MIT**. Eres libre de usarlo, modificarlo y aprender de él.
+Buscamos desarrolladores que levanten código tan pesado como sus sentadillas.
 
-> *"Light weight, baby!"* — Ronnie Coleman (Patrón Espiritual del Proyecto)
+Si encuentras un bug o quieres optimizar una query SQL, abre un **Pull Request**. El estándar de calidad es alto: código limpio, tipado estricto y respeto por la arquitectura Riverpod/Drift.
+
+> *"Todo el mundo quiere ser un bodybuilder, pero nadie quiere levantar pesos pesados... ni escribir tests unitarios."*

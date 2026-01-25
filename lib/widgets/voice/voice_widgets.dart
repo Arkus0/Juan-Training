@@ -1,11 +1,21 @@
 // Voice Input Widgets
 // Barrel file para exportar todos los widgets de entrada por voz
 //
-// Sistema de voz rediseñado con Push-To-Talk obligatorio
-// Ver docs/VOICE_SYSTEM_UX_DESIGN.md para documentación completa
+// Sistema de voz v2.0 - Push To Talk
+// - Escucha solo mientras el botón está pulsado
+// - Feedback visual claro por estado
+// - Fallbacks proactivos
+// - Indicadores de confianza
 
 export 'voice_mic_button.dart';
 export 'voice_input_sheet.dart';
 export 'voice_training_fab.dart';
-export 'voice_training_button.dart';
-export 'voice_undo_snackbar.dart';
+
+// Push To Talk v2.0
+export 'ptt_voice_button.dart';
+
+// Feedback y UX
+export 'voice_feedback_widgets.dart';
+
+// Captura unificada (Voz/OCR/Texto/Manual)
+export 'unified_capture_button.dart';

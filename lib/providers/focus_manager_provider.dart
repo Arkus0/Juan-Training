@@ -1,6 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
-import '../utils/performance_utils.dart';
 
 /// Estado inmutable que representa el target de focus actual
 class FocusTarget {
@@ -55,10 +53,15 @@ class FocusManagerState {
   final bool isKeyboardVisible;
   final bool vibrateOnFocus;
 
+  /// Flag que indica que hay un nuevo focus que necesita haptic feedback
+  /// La UI debe observar esto y llamar a HapticsController.instance.trigger(HapticEvent.focusChanged)
+  final bool needsHapticFeedback;
+
   const FocusManagerState({
     this.currentTarget,
     this.isKeyboardVisible = false,
     this.vibrateOnFocus = true,
+    this.needsHapticFeedback = false,
   });
 
   FocusManagerState copyWith({
@@ -66,11 +69,13 @@ class FocusManagerState {
     bool? isKeyboardVisible,
     bool? vibrateOnFocus,
     bool clearTarget = false,
+    bool? needsHapticFeedback,
   }) {
     return FocusManagerState(
       currentTarget: clearTarget ? null : (currentTarget ?? this.currentTarget),
       isKeyboardVisible: isKeyboardVisible ?? this.isKeyboardVisible,
       vibrateOnFocus: vibrateOnFocus ?? this.vibrateOnFocus,
+      needsHapticFeedback: needsHapticFeedback ?? this.needsHapticFeedback,
     );
   }
 }
@@ -93,6 +98,10 @@ class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
     FocusField field = FocusField.weight,
     bool vibrate = true,
   }) {
+    // Vibración delegada a la UI via needsHapticFeedback flag
+    // La UI debe llamar a HapticsController.instance.trigger(HapticEvent.focusChanged)
+    final shouldVibrate = vibrate && state.vibrateOnFocus;
+
     state = state.copyWith(
       currentTarget: FocusTarget(
         exerciseIndex: exerciseIndex,
@@ -100,17 +109,18 @@ class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
         field: field,
         timestamp: DateTime.now(),
       ),
+      needsHapticFeedback: shouldVibrate,
     );
-
-    // Vibración suave como feedback
-    if (vibrate && state.vibrateOnFocus) {
-      _triggerFocusVibration();
-    }
   }
 
   /// Limpia el target de focus actual (después de que el widget lo consume)
   void clearFocus() {
-    state = state.copyWith(clearTarget: true);
+    state = state.copyWith(clearTarget: true, needsHapticFeedback: false);
+  }
+
+  /// Marca que el haptic feedback fue consumido (llamar desde UI)
+  void markHapticConsumed() {
+    state = state.copyWith(needsHapticFeedback: false);
   }
 
   /// Avanza al siguiente campo (KG -> REPS)
@@ -137,13 +147,6 @@ class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
   /// Habilita/deshabilita vibración en focus
   void setVibrateOnFocus(bool enabled) {
     state = state.copyWith(vibrateOnFocus: enabled);
-  }
-
-  /// Vibración suave para feedback de focus
-  Future<void> _triggerFocusVibration() async {
-    if (!PerformanceMode.instance.reduceVibrations) {
-      try { HapticFeedback.selectionClick(); } catch (_) {}
-    }
   }
 }
 

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../services/media_control_service.dart';
+import '../../services/haptics_controller.dart';
 import '../../utils/design_system.dart';
 
 /// 🎯 NEON IRON: Control de música ultra-compacto para AppBar
@@ -54,7 +54,7 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
   }
 
   Future<void> _onPlayPause() async {
-    HapticFeedback.mediumImpact();
+    HapticsController.instance.onMediaCommand();
     final result = await _mediaService.playPause();
     if (!mounted) return;
     if (result.success) {
@@ -126,7 +126,7 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
   }
 
   Future<void> _onPlayPause() async {
-    HapticFeedback.mediumImpact();
+    HapticsController.instance.onMediaCommand();
     final result = await _mediaService.playPause();
     if (!mounted) return;
     if (result.success) {
@@ -137,12 +137,12 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
   }
 
   Future<void> _openSpotify() async {
-    HapticFeedback.selectionClick();
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
     await _mediaService.openSpotify();
   }
 
   void _showMusicPopup() {
-    HapticFeedback.selectionClick();
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -158,11 +158,11 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
           if (mounted) Navigator.pop(context);
         },
         onPrevious: () async {
-          HapticFeedback.selectionClick();
+          HapticsController.instance.onMediaCommand();
           await _mediaService.previous();
         },
         onNext: () async {
-          HapticFeedback.selectionClick();
+          HapticsController.instance.onMediaCommand();
           await _mediaService.next();
         },
       ),

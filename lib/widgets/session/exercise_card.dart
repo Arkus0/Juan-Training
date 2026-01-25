@@ -455,7 +455,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     // Obtener nota existente y añadir la nueva
     final currentNote = await repo.getNote(exerciseName);
-    final newNote = currentNote != null && currentNote.isNotEmpty
+    final newNote = currentNote.isNotEmpty
         ? '$currentNote\n$note'
         : note;
 

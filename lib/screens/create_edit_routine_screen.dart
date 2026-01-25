@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/sesion.dart';
@@ -13,6 +12,7 @@ import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_s
 import 'package:juan_training/services/routine_sharing_service.dart';
 import 'package:juan_training/services/routine_ocr_service.dart';
 import 'package:juan_training/services/voice_input_service.dart';
+import 'package:juan_training/services/haptics_controller.dart';
 import 'package:juan_training/widgets/routine_import_dialog.dart';
 import 'package:juan_training/widgets/voice/voice_input_sheet.dart';
 import 'package:juan_training/widgets/smart_import_sheet.dart';
@@ -67,7 +67,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             backgroundColor: AppColors.neonPrimary,
           ),
         );
-        try { HapticFeedback.vibrate(); } catch (_) {}
+        HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
         return;
       }
 
@@ -83,19 +83,13 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       });
       overlay.insert(entry);
 
-      // Vibrate approximation using HapticFeedback
-      try {
-        HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 50));
-        HapticFeedback.heavyImpact();
-        await Future.delayed(const Duration(milliseconds: 200));
-      } catch (_) {} // best-effort haptic feedback
-
+      // 🎯 RUTINA FORJADA: Vibración fuerte de celebración
+      HapticsController.instance.onRoutineForged();
 
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('RUTINA FORJADA',
+          content: Text('¡RUTINA FORJADA!',
             style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
           backgroundColor: AppColors.neonPrimaryPressed,
         ),
@@ -116,7 +110,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           backgroundColor: AppColors.neonPrimary,
         ),
       );
-      try { HapticFeedback.vibrate(); } catch (_) {}
+      HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
       final logger = Logger();
       logger.e('Unexpected error in _saveRoutine', error: e, stackTrace: s);
       return;
@@ -145,12 +139,13 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           ref
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(
-                dayIndex, 
+                dayIndex,
                 ex,
                 defaultSeries: defaults?.series,
                 defaultRepsRange: defaults?.repsRange,
               );
-          try { HapticFeedback.lightImpact(); } catch (_) {}
+          // 🎯 Vibración suave al añadir ejercicio
+          HapticsController.instance.trigger(HapticEvent.buttonTap);
           // Snackbar is now shown inside BibliotecaBottomSheet
         },
         // 🆕 Callback para obtener PR personal
@@ -254,7 +249,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       return;
     }
 
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
     RoutineSharingService.instance.shareRoutine(rutina);
   }
 
@@ -400,7 +395,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        try { HapticFeedback.heavyImpact(); } catch (_) {}
+        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
@@ -564,13 +559,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        try {
-          HapticFeedback.heavyImpact();
-        } catch (_) {}
+        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
-  
+
   /// 🎯 UX ALTO: Sheet unificado para todas las formas de añadir ejercicios
   void _showUnifiedImportSheet() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
@@ -590,7 +583,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       return;
     }
 
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    HapticsController.instance.trigger(HapticEvent.buttonTap);
 
     showModalBottomSheet(
       context: context,
@@ -872,9 +865,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        try {
-          HapticFeedback.heavyImpact();
-        } catch (_) {}
+        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
@@ -1047,7 +1038,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 heroTag: 'add_day_fab',
                 onPressed: () {
                   notifier.addDay();
-                  try { HapticFeedback.lightImpact(); } catch (_) {}
+                  HapticsController.instance.trigger(HapticEvent.buttonTap);
                 },
                 icon: const Icon(Icons.add, size: 32),
                 label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),

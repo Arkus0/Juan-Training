@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../models/serie_log.dart';
+
 import '../../models/progression_type.dart';
+import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
-import '../../utils/performance_utils.dart';
 import '../../utils/design_system.dart';
+import '../../utils/performance_utils.dart';
 import 'log_input.dart';
 
 // ============================================================================
@@ -164,18 +165,18 @@ class _SessionSetRowState extends State<SessionSetRow> {
 
   }
 
-  void _openPlateCalc() {
+  void _openPlateCalc() async {
     final currentVal = double.tryParse(widget.log.peso.toString()) ?? 0.0;
-    showDialog(
+    final selected = await showDialog<double>(
       context: context,
       builder: (_) => PlateCalculatorDialog(
         currentWeight: currentVal,
-        onWeightSelected: (val) {
-          widget.onPlateCalc(val);
-          widget.onWeightChanged(val.toString()); // Forzar refresco visual
-        },
       ),
     );
+    if (selected != null) {
+      widget.onPlateCalc(selected);
+      widget.onWeightChanged(selected.toString()); // Forzar refresco visual
+    }
   }
 
   void _applySuggestionOrPrev() {
@@ -210,7 +211,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
     // Determinar ghost values
     String? weightGhost;
     String? repsGhost;
-    bool isSuggestion = false;
+    var isSuggestion = false;
 
     if (widget.suggestion != null) {
       weightGhost = widget.suggestion!.suggestedWeight.toString();
@@ -238,7 +239,6 @@ class _SessionSetRowState extends State<SessionSetRow> {
         child: Column(
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Número de serie
                 _SetNumber(
@@ -273,10 +273,8 @@ class _SessionSetRowState extends State<SessionSetRow> {
                         onGhostTap: () => widget.onWeightChanged(weightGhost!),
                         shouldFocus: widget.shouldFocus,
                         focusNode: _weightFocusNode,
-                        isInteger: false,
                         swipeIncrement: 2.5, // 2.5kg por swipe
                         isSuggestion: isSuggestion,
-                        textInputAction: TextInputAction.next,
                         onEditingComplete: () {
                           _repsFocusNode.requestFocus();
                         },
@@ -329,7 +327,6 @@ class _SessionSetRowState extends State<SessionSetRow> {
                     shouldFocus: widget.shouldFocusReps,
                     focusNode: _repsFocusNode,
                     isInteger: true,
-                    swipeIncrement: 1.0, // 1 rep por swipe
                     isSuggestion: isSuggestion,
                     textInputAction: TextInputAction.done,
                     onEditingComplete: () {
@@ -379,8 +376,8 @@ class _SetNumber extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bgColor = Colors.grey[800]!;
-    String label = '${index + 1}';
+    var bgColor = Colors.grey[800]!;
+    var label = '${index + 1}';
 
     if (isWarmup) {
       bgColor = Colors.blue[700]!;

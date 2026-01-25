@@ -6,6 +6,7 @@ import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../providers/session_tolerance_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/session/exercise_card.dart';
 import '../widgets/session/rest_timer_bar.dart';
 import '../widgets/session/session_progress_bar.dart';
@@ -13,7 +14,11 @@ import '../widgets/session/music_launcher_bar.dart';
 import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
 import '../widgets/session/tolerance_feedback_widgets.dart';
 import '../widgets/session/session_modifiers.dart'; // AddExerciseButton
+import '../widgets/session/haptics_observer.dart';
 import '../widgets/voice/voice_training_button.dart';
+import '../services/haptics_controller.dart';
+import '../services/media_session_service.dart';
+import '../services/media_control_service.dart';
 import '../utils/design_system.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
@@ -43,6 +48,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
   @override
   void initState() {
     super.initState();
+
+    // 🎯 HAPTICS: Inicializar controlador de haptics
+    HapticsController.instance.initialize();
+
     // Discovery Tooltip Check (First 3 sessions)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDiscoveryTooltip();
@@ -53,12 +62,45 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
           ref.read(trainingSessionProvider).nextIncompleteSet;
       // 🎯 ERROR TOLERANCE: Evaluar gap desde última sesión
       ref.read(sessionToleranceProvider.notifier).evaluateSessionGap();
+
+      // 🎯 MEDIA SESSION: Iniciar MediaSession para mostrar controles del sistema
+      _initializeMediaSession();
     });
+  }
+
+  /// Inicializa el monitoreo de MediaSession.
+  /// Solo mostrará controles si hay música real (Spotify, etc), no con beeps.
+  Future<void> _initializeMediaSession() async {
+    // Obtener configuración
+    final settings = ref.read(settingsProvider);
+    final rutinaName = ref.read(trainingSessionProvider).activeRutina?.nombre;
+
+    // Inicializar el servicio
+    MediaSessionManagerService.instance.initialize();
+
+    // Iniciar monitoreo (solo mostrará controles si hay música real)
+    MediaSessionManagerService.instance.startMonitoring(
+      trainingName: rutinaName ?? 'Entrenamiento',
+      enabled: settings.mediaControlsEnabled,
+    );
+
+    // Configurar callbacks para los botones de media
+    MediaSessionManagerService.instance.onPlayPause = () {
+      MediaControlService.instance.playPause();
+    };
+    MediaSessionManagerService.instance.onNext = () {
+      MediaControlService.instance.next();
+    };
+    MediaSessionManagerService.instance.onPrevious = () {
+      MediaControlService.instance.previous();
+    };
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    // 🎯 MEDIA SESSION: Detener monitoreo al salir del entrenamiento
+    MediaSessionManagerService.instance.stopMonitoring();
     super.dispose();
   }
 
@@ -323,8 +365,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
     _lastKnownIncompleteSet = currentIncompleteSet;
 
-    return Scaffold(
-      appBar: AppBar(
+    // 🎯 HAPTICS: Observer que escucha eventos de providers y dispara haptics
+    return HapticsObserver(
+      child: Scaffold(
+        appBar: AppBar(
         title: Text(
           (activeRutinaName ?? 'Entrenando').toUpperCase(),
           style:
@@ -496,6 +540,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
 
         ],
       ),
+      ), // End of HapticsObserver
     );
   }
 
