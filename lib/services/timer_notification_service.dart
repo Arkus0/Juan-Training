@@ -167,18 +167,8 @@ class TimerNotificationService {
     _isPaused = isPaused;
     _isActive = true;
 
-    // Show initial notification via flutter_local_notifications (as backup)
-    await _showNotification();
-
-    // Start update timer for local notification updates
-    _updateTimer?.cancel();
-    if (!isPaused) {
-      _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        _showNotification();
-      });
-    }
-
-    // Start Android foreground service (primary)
+    // 🎯 FIX #3: On Android, use ONLY the foreground service (not flutter_local_notifications)
+    // This prevents duplicate notifications (one from Flutter, one from native)
     if (Platform.isAndroid) {
       try {
         await _serviceChannel.invokeMethod('startTimerService', {
@@ -189,7 +179,24 @@ class TimerNotificationService {
         debugPrint('Timer foreground service started');
       } catch (e) {
         debugPrint('Failed to start timer service: $e');
+        // Fallback to Flutter notification only if native service fails
+        await _showNotification();
+        _startUpdateTimer(isPaused);
       }
+    } else {
+      // iOS: Use flutter_local_notifications
+      await _showNotification();
+      _startUpdateTimer(isPaused);
+    }
+  }
+
+  /// Helper to start the update timer (used for iOS or as fallback)
+  void _startUpdateTimer(bool isPaused) {
+    _updateTimer?.cancel();
+    if (!isPaused) {
+      _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        _showNotification();
+      });
     }
   }
 
@@ -205,19 +212,7 @@ class TimerNotificationService {
     if (endTime != null) _endTime = endTime;
     if (isPaused != null) _isPaused = isPaused;
 
-    // Manage update timer based on pause state
-    if (_isPaused) {
-      _updateTimer?.cancel();
-      _updateTimer = null;
-    } else {
-      _updateTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-        _showNotification();
-      });
-    }
-
-    await _showNotification();
-
-    // Update Android foreground service
+    // 🎯 FIX #3: On Android, only update the foreground service
     if (Platform.isAndroid) {
       try {
         await _serviceChannel.invokeMethod('updateTimerService', {
@@ -227,8 +222,27 @@ class TimerNotificationService {
         });
       } catch (e) {
         debugPrint('Failed to update timer service: $e');
+        // Fallback: update Flutter notification
+        _updateFlutterNotification();
       }
+    } else {
+      // iOS: Use flutter_local_notifications
+      _updateFlutterNotification();
     }
+  }
+
+  /// Update Flutter notification (used for iOS or as fallback)
+  void _updateFlutterNotification() {
+    // Manage update timer based on pause state
+    if (_isPaused) {
+      _updateTimer?.cancel();
+      _updateTimer = null;
+    } else {
+      _updateTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        _showNotification();
+      });
+    }
+    _showNotification();
   }
 
   /// Stop the timer notification
