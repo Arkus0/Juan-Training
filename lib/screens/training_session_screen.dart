@@ -564,7 +564,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       totalSets: exercise.logs.length,
       currentWeight: log?.peso,
       currentReps: log?.reps,
-      currentRpe: log?.rpe,
+      currentRpe: log?.rpe?.toDouble(),
     );
   }
 
