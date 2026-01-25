@@ -1,33 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/voice_input_service.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/library_exercise.dart';
-
-/// Acción de voz para historial de undo
-class VoiceAction {
-  final VoiceActionType type;
-  final dynamic previousValue;
-  final dynamic newValue;
-  final String description;
-  final DateTime timestamp;
-
-  const VoiceAction({
-    required this.type,
-    required this.previousValue,
-    required this.newValue,
-    required this.description,
-    required this.timestamp,
-  });
-}
-
-enum VoiceActionType {
-  setWeight,
-  setReps,
-  setRpe,
-  addNote,
-  markDone,
-  addExercise,
-  removeExercise,
-}
+import '../services/voice_input_service.dart';
 
 /// Estado inmutable del input de voz
 class VoiceInputState {
@@ -37,13 +12,11 @@ class VoiceInputState {
   final List<VoiceParsedExercise> parsedExercises;
   final String? errorMessage;
   final bool isAvailable;
+  final bool isContinuousMode;
   final bool audioFeedbackEnabled;
-  final VoiceParsedExercise? lastCorrected;
-
-  // Nuevos campos para Push-To-Talk y Undo
-  final List<VoiceAction> actionHistory; // Historial para undo
-  final VoiceAction? lastAction; // Última acción ejecutada
-  final String? notUnderstoodMessage; // Mensaje cuando no se entiende
+  final VoiceParsedExercise? lastCorrected; // Último ejercicio corregido
+  final bool notUnderstood; // Si la transcripción no fue interpretada
+  final String? notUnderstoodMessage; // Mensaje opcional para mostrar al usuario
 
   const VoiceInputState({
     this.status = VoiceInputStatus.idle,
@@ -52,10 +25,10 @@ class VoiceInputState {
     this.parsedExercises = const [],
     this.errorMessage,
     this.isAvailable = false,
+    this.isContinuousMode = false,
     this.audioFeedbackEnabled = true,
     this.lastCorrected,
-    this.actionHistory = const [],
-    this.lastAction,
+    this.notUnderstood = false,
     this.notUnderstoodMessage,
   });
 
@@ -66,10 +39,10 @@ class VoiceInputState {
     List<VoiceParsedExercise>? parsedExercises,
     String? errorMessage,
     bool? isAvailable,
+    bool? isContinuousMode,
     bool? audioFeedbackEnabled,
     VoiceParsedExercise? lastCorrected,
-    List<VoiceAction>? actionHistory,
-    VoiceAction? lastAction,
+    bool? notUnderstood,
     String? notUnderstoodMessage,
   }) {
     return VoiceInputState(
@@ -79,11 +52,11 @@ class VoiceInputState {
       parsedExercises: parsedExercises ?? this.parsedExercises,
       errorMessage: errorMessage,
       isAvailable: isAvailable ?? this.isAvailable,
+      isContinuousMode: isContinuousMode ?? this.isContinuousMode,
       audioFeedbackEnabled: audioFeedbackEnabled ?? this.audioFeedbackEnabled,
-      lastCorrected: lastCorrected,
-      actionHistory: actionHistory ?? this.actionHistory,
-      lastAction: lastAction,
-      notUnderstoodMessage: notUnderstoodMessage,
+      lastCorrected: lastCorrected ?? this.lastCorrected,
+      notUnderstood: notUnderstood ?? this.notUnderstood,
+      notUnderstoodMessage: notUnderstoodMessage ?? this.notUnderstoodMessage,
     );
   }
 
@@ -91,23 +64,20 @@ class VoiceInputState {
   bool get isProcessing => status == VoiceInputStatus.processing;
   bool get hasError => status == VoiceInputStatus.error;
   bool get hasResults => parsedExercises.isNotEmpty;
-  bool get notUnderstood => status == VoiceInputStatus.notUnderstood;
-  bool get canUndo => actionHistory.isNotEmpty;
-
+  
   /// Ejercicios válidos con match exitoso
-  List<VoiceParsedExercise> get validExercises =>
+  List<VoiceParsedExercise> get validExercises => 
       parsedExercises.where((e) => e.isValid).toList();
 }
 
 /// Estados posibles del input de voz
 enum VoiceInputStatus {
-  idle,           // Esperando - botón en reposo
-  initializing,   // Inicializando motor de voz
-  listening,      // Escuchando activamente (botón pulsado)
+  idle,           // Esperando
+  initializing,   // Inicializando motor
+  listening,      // Escuchando activamente
   processing,     // Procesando transcripción
-  results,        // Mostrando resultados parseados
-  notUnderstood,  // No se entendió el comando - feedback claro
-  error,          // Error técnico
+  results,        // Mostrando resultados
+  error,          // Error
 }
 
 /// Provider principal para voice input
@@ -117,7 +87,6 @@ final voiceInputProvider = StateNotifierProvider.autoDispose<VoiceInputNotifier,
 );
 
 /// Notifier que maneja toda la lógica de voice input
-/// Implementa Push-To-Talk obligatorio (sin modo continuo)
 class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
   VoiceInputNotifier() : super(const VoiceInputState()) {
     _init();
@@ -128,9 +97,9 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
   /// Inicialización async
   Future<void> _init() async {
     state = state.copyWith(status: VoiceInputStatus.initializing);
-
+    
     final available = await _service.initialize();
-
+    
     state = state.copyWith(
       isAvailable: available,
       status: available ? VoiceInputStatus.idle : VoiceInputStatus.error,
@@ -138,9 +107,9 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
     );
   }
 
-  /// Inicia la escucha de voz - PUSH TO TALK
-  /// Solo escucha mientras el botón está pulsado
-  Future<bool> startListening() async {
+  /// Inicia la escucha de voz
+  /// [continuous] activa modo continuo (no se detiene automáticamente)
+  Future<bool> startListening({bool continuous = false}) async {
     if (!state.isAvailable) {
       state = state.copyWith(
         status: VoiceInputStatus.error,
@@ -154,11 +123,9 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
       transcript: '',
       partialTranscript: '',
       parsedExercises: [],
-      errorMessage: null,
-      notUnderstoodMessage: null,
+      isContinuousMode: continuous,
     );
 
-    // SIEMPRE modo single (Push-To-Talk)
     final success = await _service.startListening(
       onPartialResult: (partial) {
         state = state.copyWith(
@@ -166,7 +133,7 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
           status: VoiceInputStatus.listening,
         );
       },
-      mode: VoiceListeningMode.single,
+      mode: continuous ? VoiceListeningMode.continuous : VoiceListeningMode.single,
     );
 
     if (success) {
@@ -182,17 +149,15 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
   }
 
   /// Detiene la escucha y procesa el resultado
-  /// Muestra "No entendido" si el transcript está vacío o no se parsea nada útil
   Future<List<VoiceParsedExercise>> stopListening() async {
     final transcript = await _service.stopListening();
 
     if (transcript.isEmpty) {
-      // No se capturó nada - mostrar "No entendido"
       state = state.copyWith(
-        status: VoiceInputStatus.notUnderstood,
+        status: VoiceInputStatus.idle,
         transcript: '',
         partialTranscript: '',
-        notUnderstoodMessage: 'No se detectó voz. Mantén pulsado el botón mientras hablas.',
+        isContinuousMode: false,
       );
       return [];
     }
@@ -205,11 +170,21 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
 
     // Parsear la transcripción
     final parsed = await _service.parseTranscript(transcript);
+    
+    // Si no se parseó nada y sí había transcript -> marcar como "no entendido"
+    if (parsed.isEmpty) {
+      state = state.copyWith(
+        status: VoiceInputStatus.idle,
+        notUnderstood: true,
+        notUnderstoodMessage: transcript.isNotEmpty ? 'No se entendió: "${transcript.length > 120 ? '${transcript.substring(0, 120)}…' : transcript}"' : 'No se entendió',
+      );
+      return [];
+    }
 
     // Verificar si es una corrección
-    final isCorrection = parsed.length == 1 &&
+    final isCorrection = parsed.length == 1 && 
         parsed.first.rawText.contains('→');
-
+    
     if (isCorrection) {
       // Reemplazar el último ejercicio con la corrección
       final corrected = parsed.first;
@@ -219,17 +194,11 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
       } else {
         updatedList.add(corrected);
       }
-
+      
       state = state.copyWith(
         status: VoiceInputStatus.results,
         parsedExercises: updatedList,
         lastCorrected: corrected,
-      );
-    } else if (parsed.isEmpty) {
-      // Se capturó audio pero no se entendió como ejercicio
-      state = state.copyWith(
-        status: VoiceInputStatus.notUnderstood,
-        notUnderstoodMessage: 'No entendido: "$transcript". Intenta con formato: "Press banca 4x8"',
       );
     } else {
       // Añadir nuevos ejercicios
@@ -249,12 +218,10 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
       status: VoiceInputStatus.idle,
       transcript: '',
       partialTranscript: '',
-      notUnderstoodMessage: null,
     );
   }
 
   /// Toggle: inicia si está idle, detiene si está escuchando
-  /// PUSH TO TALK - simple toggle
   Future<List<VoiceParsedExercise>> toggleListening() async {
     if (state.isListening) {
       return stopListening();
@@ -264,43 +231,10 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
     }
   }
 
-  /// Registra una acción para poder deshacerla
-  void recordAction(VoiceAction action) {
-    final newHistory = [...state.actionHistory, action];
-    // Mantener solo las últimas 10 acciones
-    if (newHistory.length > 10) {
-      newHistory.removeAt(0);
-    }
-    state = state.copyWith(
-      actionHistory: newHistory,
-      lastAction: action,
-    );
-  }
-
-  /// Obtiene la última acción para deshacer
-  VoiceAction? getLastAction() {
-    if (state.actionHistory.isEmpty) return null;
-    return state.actionHistory.last;
-  }
-
-  /// Elimina la última acción del historial (después de deshacer)
-  void removeLastAction() {
-    if (state.actionHistory.isEmpty) return;
-    final newHistory = [...state.actionHistory]..removeLast();
-    state = state.copyWith(
-      actionHistory: newHistory,
-      lastAction: newHistory.isNotEmpty ? newHistory.last : null,
-    );
-  }
-
-  /// Limpia el mensaje de "no entendido"
-  void clearNotUnderstood() {
-    if (state.notUnderstood) {
-      state = state.copyWith(
-        status: VoiceInputStatus.idle,
-        notUnderstoodMessage: null,
-      );
-    }
+  /// Wrapper que expone modo continuo como parámetro posicional/natural
+  /// para callsites que prefieren un API simple.
+  Future<bool> startListeningMode(bool continuous) async {
+    return startListening(continuous: continuous);
   }
 
   /// Actualiza un ejercicio parseado (para edición manual)
@@ -336,7 +270,7 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
 
   /// Busca ejercicios alternativos para sugerencias
   Future<List<LibraryExercise>> searchAlternatives(String query) async {
-    return _service.searchExercises(query, limit: 5);
+    return _service.searchExercises(query);
   }
 
   /// Obtiene ejercicio por ID
@@ -352,35 +286,88 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
       transcript: '',
       partialTranscript: '',
       parsedExercises: [],
-      errorMessage: null,
-      notUnderstoodMessage: null,
+      isContinuousMode: false,
+      notUnderstood: false,
     );
+  }
+
+  /// Limpia el estado de "no entendido"
+  void clearNotUnderstood() {
+    state = state.copyWith(notUnderstood: false);
   }
 
   /// Reinicializa si hubo error
   Future<void> retry() async {
-    state = state.copyWith(
-      status: VoiceInputStatus.idle,
-      errorMessage: null,
-      notUnderstoodMessage: null,
-    );
     await _init();
   }
-
+  
   /// Toggle para el feedback de audio
   void toggleAudioFeedback() {
     final newValue = !state.audioFeedbackEnabled;
     _service.audioFeedbackEnabled = newValue;
     state = state.copyWith(audioFeedbackEnabled: newValue);
   }
-
-  /// Limpia historial de acciones (útil al cambiar de contexto)
-  void clearActionHistory() {
+  
+  /// Activa/desactiva modo continuo
+  Future<void> setContinuousMode(bool enabled) async {
+    if (state.isContinuousMode == enabled) return;
+    
+    if (state.isListening) {
+      await stopListening();
+    }
+    
+    state = state.copyWith(isContinuousMode: enabled);
+    
+    if (enabled) {
+      await startListening(continuous: true);
+    }
+  }
+  
+  /// Procesa transcripción acumulada en modo continuo
+  /// Útil para procesar mientras sigue escuchando
+  Future<List<VoiceParsedExercise>> processCurrentTranscript() async {
+    if (state.partialTranscript.isEmpty) return [];
+    
+    state = state.copyWith(status: VoiceInputStatus.processing);
+    
+    final parsed = await _service.parseTranscript(state.partialTranscript);
+    
+    // Añadir a lista acumulada
     state = state.copyWith(
-      actionHistory: [],
-      lastAction: null,
+      status: state.isContinuousMode ? VoiceInputStatus.listening : VoiceInputStatus.results,
+      parsedExercises: [...state.parsedExercises, ...parsed],
+    );
+    
+    return parsed;
+  }
+
+  /// Registra una acción de voz (historial / undo). Por defecto sólo loguea.
+  void recordAction(VoiceAction action) {
+    debugPrint('Voice action recorded: ${action.description}');
+    // Future: push to history or expose as stream for UI undo.
+  }
+} 
+
+/// Acción de voz registrada (para historial / undo).
+@immutable
+class VoiceAction {
+  final String description;
+  final DateTime timestamp;
+
+  VoiceAction({
+    required this.description,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  VoiceAction copyWith({String? description, DateTime? timestamp}) {
+    return VoiceAction(
+      description: description ?? this.description,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
+
+  @override
+  String toString() => 'VoiceAction(description: $description, timestamp: $timestamp)';
 }
 
 /// Provider para verificar disponibilidad de voz (útil para ocultar/mostrar botón)

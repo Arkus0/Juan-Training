@@ -247,7 +247,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.touch_app, size: 16, color: Colors.white54),
+          const Icon(Icons.touch_app, size: 16, color: Colors.white54),
           const SizedBox(width: 8),
           Text(
             'Mantén pulsado para hablar',
@@ -373,7 +373,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _PulsingDot(color: AppColors.error),
+          const _PulsingDot(color: AppColors.error),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -394,7 +394,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
   _PttStateConfig _getStateConfig() {
     switch (_displayState) {
       case PttState.idle:
-        return _PttStateConfig(
+        return const _PttStateConfig(
           backgroundColor: AppColors.bgElevated,
           borderColor: AppColors.border,
           iconColor: Colors.white70,
@@ -467,7 +467,7 @@ class _PulsingDot extends StatefulWidget {
 
   const _PulsingDot({
     required this.color,
-    this.size = 10,
+    this.size = 8.0,
   });
 
   @override

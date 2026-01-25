@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/voice_input_provider.dart'
-    show voiceInputProvider, VoiceAction, VoiceActionType;
+import '../../providers/voice_input_provider.dart' as vip;
+import '../../models/voice_action.dart';
 import 'voice_training_fab.dart' show VoiceTrainingCommand, VoiceCommandType;
 
 // Re-exportar los tipos del FAB para compatibilidad
@@ -93,8 +93,8 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
   Future<void> _onTap() async {
     if (!widget.enabled) return;
 
-    final notifier = ref.read(voiceInputProvider.notifier);
-    final currentState = ref.read(voiceInputProvider);
+    final notifier = ref.read(vip.voiceInputProvider.notifier);
+    final currentState = ref.read(vip.voiceInputProvider);
 
     if (currentState.isListening) {
       await _onStopListening();
@@ -107,7 +107,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
   }
 
   Future<void> _onStopListening() async {
-    final notifier = ref.read(voiceInputProvider.notifier);
+    final notifier = ref.read(vip.voiceInputProvider.notifier);
 
     _removeOverlay();
     _pulseController.stop();
@@ -116,7 +116,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     await notifier.stopListening();
 
     // Obtener el transcript del estado actualizado
-    final updatedState = ref.read(voiceInputProvider);
+    final updatedState = ref.read(vip.voiceInputProvider);
     final transcript = updatedState.transcript;
 
     // Parsear comando de entrenamiento
@@ -124,9 +124,8 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       final command = _parseTrainingCommand(transcript);
       if (command != null) {
         // Registrar acción para undo
-        notifier.recordAction(VoiceAction(
-          type: _commandTypeToActionType(command.type),
-          previousValue: null, // Se llenará en el handler
+        notifier.recordAction(vip.VoiceAction(
+          actionType: _commandTypeToActionType(command.type),
           newValue: command.value ?? command.note,
           description: _getActionDescription(command),
           timestamp: DateTime.now(),
@@ -288,7 +287,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       return const SizedBox.shrink();
     }
 
-    final voiceState = ref.watch(voiceInputProvider);
+    final voiceState = ref.watch(vip.voiceInputProvider);
     final isListening = voiceState.isListening;
 
     return AnimatedBuilder(
@@ -338,7 +337,7 @@ class _ListeningOverlay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final voiceState = ref.watch(voiceInputProvider);
+    final voiceState = ref.watch(vip.voiceInputProvider);
     final text = voiceState.partialTranscript.isNotEmpty
         ? voiceState.partialTranscript
         : 'Di: "80 kilos", "10 reps", "RPE 8", "hecho"...';
@@ -532,7 +531,7 @@ class _ListeningOverlay extends ConsumerWidget {
 
   /// Lista de comandos disponibles
   Widget _buildAvailableCommands() {
-    return Wrap(
+    return const Wrap(
       spacing: 8,
       runSpacing: 4,
       alignment: WrapAlignment.center,
@@ -718,3 +717,5 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
     );
   }
 }
+
+

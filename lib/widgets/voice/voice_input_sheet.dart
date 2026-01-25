@@ -975,7 +975,7 @@ class _VoiceCapabilitiesBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Wrap(
+          const Wrap(
             spacing: 8,
             runSpacing: 4,
             children: [
@@ -1041,7 +1041,7 @@ class _PulsingDot extends StatefulWidget {
 
   const _PulsingDot({
     required this.color,
-    this.size = 8.0,
+    this.size = 10.0,
   });
 
   @override
