@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/voice_input_provider.dart';
 import '../../utils/design_system.dart';
+import '../../models/voice_action.dart';
 
 /// Muestra un snackbar con opción de deshacer después de una acción por voz
 ///
@@ -161,5 +161,8 @@ class VoiceUndoSnackbar {
       case VoiceActionType.removeExercise:
         return Icons.remove_circle;
     }
+
+    // Fallback seguro (no debería llegar aquí si enum es exhaustivo)
+    return Icons.help_outline;
   }
 }

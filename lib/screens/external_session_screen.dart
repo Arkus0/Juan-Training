@@ -864,7 +864,7 @@ class _ParsedExerciseTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${exercise.series}x${exercise.reps}${exercise.weight != null ? ' • ${exercise.weight}kg' : ''}',
+                  '${exercise.series}x${exercise.repsRange}${exercise.weight != null ? ' • ${exercise.weight}kg' : ''}',
                   style: GoogleFonts.montserrat(
                     color: Colors.white54,
                     fontSize: 12,

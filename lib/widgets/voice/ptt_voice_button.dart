@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/voice_input_provider.dart';
+import 'voice_training_fab.dart';
 import '../../utils/design_system.dart';
 
 /// Estados explícitos del botón Push To Talk
@@ -611,25 +612,5 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
   }
 }
 
-/// Comando de entrenamiento por voz (para compatibilidad)
-class VoiceTrainingCommand {
-  final VoiceCommandType type;
-  final double? value;
-  final String? note;
-
-  const VoiceTrainingCommand({
-    required this.type,
-    this.value,
-    this.note,
-  });
-}
-
-enum VoiceCommandType {
-  markDone,
-  nextSet,
-  setWeight,
-  setReps,
-  setRpe,
-  startRest,
-  addNote,
-}
+// VoiceTrainingCommand definition is provided in `voice_training_fab.dart` to avoid duplicate exports.
+// If you need to reference it here, import it explicitly from that file.

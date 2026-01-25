@@ -1,12 +1,13 @@
-import '../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../providers/voice_input_provider.dart';
 import '../services/routine_ocr_service.dart';
 import '../services/voice_input_service.dart';
-import '../providers/voice_input_provider.dart';
+import '../utils/design_system.dart';
 import 'voice/voice_mic_button.dart';
 
 /// Tipo de import seleccionado
@@ -123,8 +124,6 @@ class SmartImportSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
       builder: (ctx) => SmartImportSheet(
         onConfirm: onConfirm,
         onCancel: () => Navigator.of(ctx).pop(),
@@ -472,7 +471,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
 
   /// Vista de dictado por voz (integra VoiceInputSheet)
   Widget _buildVoiceView() {
-    final voiceState = ref.watch(voiceInputProvider);
+    final VoiceInputState voiceState = ref.watch(voiceInputProvider);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -480,12 +479,12 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         // Botón de micrófono
         VoiceMicButton(
           onTap: () async {
-            final notifier = ref.read(voiceInputProvider.notifier);
+            final VoiceInputNotifier notifier = ref.read(voiceInputProvider.notifier);
             if (voiceState.isListening) {
               final exercises = await notifier.stopListening();
               _onVoiceComplete(exercises);
             } else {
-              await notifier.startListening(continuous: voiceState.isContinuousMode);
+              await notifier.startListening();
             }
           },
           size: 80,
@@ -493,7 +492,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         const SizedBox(height: 16),
 
         // Transcripción
-        const VoiceTranscriptPreview(fontSize: 16),
+        const VoiceTranscriptPreview(),
         const SizedBox(height: 16),
 
         // Lista de ejercicios acumulados

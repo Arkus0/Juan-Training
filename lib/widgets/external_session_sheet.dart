@@ -235,7 +235,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.bgCard,
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -1435,7 +1435,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                     labelText: 'Reps',
                     labelStyle: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
                     hintText: '8-12',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.white20),
+                    hintStyle: GoogleFonts.montserrat(color: Colors.white24),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(

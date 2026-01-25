@@ -5,10 +5,12 @@ import '../providers/settings_provider.dart';
 
 class PlateCalculatorDialog extends ConsumerStatefulWidget {
   final double currentWeight;
+  final ValueChanged<double>? onWeightSelected;
 
   const PlateCalculatorDialog({
     super.key,
     required this.currentWeight,
+    this.onWeightSelected,
   });
 
   @override
@@ -220,7 +222,11 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
                 ElevatedButton(
                   onPressed: () {
                     final w = double.tryParse(_weightController.text);
-                    if (w != null) Navigator.of(context).pop(w);
+                    if (w != null) {
+                      // Llamar el callback opcional y devolver el valor
+                      widget.onWeightSelected?.call(w);
+                      Navigator.of(context).pop(w);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[900],
