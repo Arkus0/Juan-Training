@@ -159,8 +159,6 @@ class VoiceUndoSnackbar {
         return Icons.check_circle;
       case VoiceActionType.nextSet:
         return Icons.skip_next;
-      case VoiceActionType.startRest:
-        return Icons.timer;
       case VoiceActionType.addExercise:
         return Icons.add_circle;
       case VoiceActionType.removeExercise:

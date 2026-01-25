@@ -1037,9 +1037,11 @@ class _CapabilityChip extends StatelessWidget {
 /// Punto pulsante para indicadores de estado
 class _PulsingDot extends StatefulWidget {
   final Color color;
+  final double size;
 
   const _PulsingDot({
     required this.color,
+    this.size = 10.0,
   });
 
   @override
@@ -1075,8 +1077,8 @@ class _PulsingDotState extends State<_PulsingDot>
       animation: _animation,
       builder: (context, child) {
         return Container(
-          width: 10.0,
-          height: 10.0,
+          width: widget.size,
+          height: widget.size,
           decoration: BoxDecoration(
             color: widget.color.withValues(alpha: _animation.value),
             shape: BoxShape.circle,
