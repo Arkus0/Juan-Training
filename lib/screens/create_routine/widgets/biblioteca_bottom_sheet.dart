@@ -384,7 +384,7 @@ class _BibliotecaBottomSheetState extends State<BibliotecaBottomSheet> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.red[900]!.withOpacity(0.3),
+                            color: Colors.red[900]!.withValues(alpha:0.3),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(

@@ -1,13 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import '../providers/settings_provider.dart';
-import '../services/timer_notification_service.dart';
-import '../services/media_control_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../providers/settings_provider.dart';
+import '../services/media_control_service.dart';
+import '../services/timer_notification_service.dart';
 import '../utils/design_system.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -830,29 +830,6 @@ class _MusicControlTileState extends State<_MusicControlTile> {
     } catch (e) {
       if (mounted) {
         setState(() => _isChecking = false);
-      }
-    }
-  }
-
-  Future<void> _openNotificationAccessSettings() async {
-    HapticFeedback.mediumImpact();
-
-    // Intentar abrir la configuración de acceso a notificaciones
-    const url = 'android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS';
-    try {
-      // En Android, usamos Intent directo via MethodChannel o url_launcher
-      final uri = Uri.parse('package:com.example.juan_training');
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      } else {
-        // Fallback: mostrar instrucciones
-        if (mounted) {
-          _showInstructionsDialog();
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        _showInstructionsDialog();
       }
     }
   }

@@ -1,10 +1,9 @@
 import 'package:logger/logger.dart';
-import '../models/raw_input_capture.dart';
 import '../models/input_hypothesis.dart';
 import '../models/library_exercise.dart';
-import 'exercise_matching_service.dart';
-import 'exercise_library_service.dart';
+import '../models/raw_input_capture.dart';
 import 'defensive_metrics_service.dart';
+import 'exercise_matching_service.dart';
 
 /// Servicio de Validación Defensiva de Entrada
 ///
@@ -48,10 +47,7 @@ class DefensiveInputValidationService {
   final _metricsService = DefensiveMetricsService.instance;
 
   // Configuración
-  static const int _maxCandidates = 5;
   static const double _minConfidenceForCandidate = 0.3;
-  static const double _highConfidenceThreshold = 0.85;
-  static const double _ambiguityThreshold = 0.1;
 
   /// Inicializa el servicio
   Future<void> initialize() async {

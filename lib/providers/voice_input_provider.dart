@@ -1,5 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/library_exercise.dart';
 import '../services/voice_input_service.dart';
@@ -231,9 +231,9 @@ class VoiceInputNotifier extends StateNotifier<VoiceInputState> {
     }
   }
 
-  /// Wrapper que expone modo continuo como parámetro posicional/natural
+  /// Wrapper que expone modo continuo como parámetro
   /// para callsites que prefieren un API simple.
-  Future<bool> startListeningMode(bool continuous) async {
+  Future<bool> startListeningMode({required bool continuous}) async {
     return startListening(continuous: continuous);
   }
 

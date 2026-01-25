@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/serie_log.dart';
-import '../providers/training_provider.dart';
 import '../providers/focus_manager_provider.dart';
 import '../providers/session_progress_provider.dart';
-import '../providers/voice_input_provider.dart';
 import '../providers/session_tolerance_provider.dart';
 import '../providers/settings_provider.dart';
-import '../widgets/session/exercise_card.dart';
-import '../widgets/session/rest_timer_bar.dart';
-import '../widgets/session/session_progress_bar.dart';
-import '../widgets/session/music_launcher_bar.dart';
-import '../widgets/session/progression_preview.dart'; // ExerciseSummaryFeedback
-import '../widgets/session/tolerance_feedback_widgets.dart';
-import '../widgets/session/session_modifiers.dart'; // AddExerciseButton
-import '../widgets/session/haptics_observer.dart';
-import '../widgets/voice/voice_training_button.dart';
+import '../providers/training_provider.dart';
+import '../providers/voice_input_provider.dart';
 import '../services/haptics_controller.dart';
-import '../services/media_session_service.dart';
 import '../services/media_control_service.dart';
+import '../services/media_session_service.dart';
 import '../utils/design_system.dart';
+import '../widgets/session/exercise_card.dart';
+import '../widgets/session/haptics_observer.dart';
+import '../widgets/session/music_launcher_bar.dart';
+import '../widgets/session/progression_preview.dart';
+import '../widgets/session/rest_timer_bar.dart';
+import '../widgets/session/session_modifiers.dart';
+import '../widgets/session/session_progress_bar.dart';
+import '../widgets/session/tolerance_feedback_widgets.dart';
+import '../widgets/voice/voice_training_button.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
@@ -782,222 +781,5 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         ),
       );
     }
-  }
-
-  /// 🎯 QUICK ACTIONS: Repetir la serie actual (copiar peso/reps de la anterior)
-  void _repeatCurrentSet(dynamic notifier) {
-    final state = ref.read(trainingSessionProvider);
-    final nextSet = state.nextIncompleteSet;
-
-    if (nextSet == null) return;
-
-    final exercise = state.exercises[nextSet.exerciseIndex];
-
-    // Buscar la serie anterior completada para copiar datos
-    SerieLog? prevLog;
-    if (nextSet.setIndex > 0) {
-      prevLog = exercise.logs[nextSet.setIndex - 1];
-    } else {
-      // Usar historial si es la primera serie
-      final history = state.history[exercise.nombre];
-      if (history != null && history.isNotEmpty) {
-        prevLog = history.first;
-      }
-    }
-
-    if (prevLog != null) {
-      notifier.updateLog(
-        nextSet.exerciseIndex,
-        nextSet.setIndex,
-        peso: prevLog.peso,
-        reps: prevLog.reps,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.repeat_rounded,
-                  color: AppColors.textOnAccent, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
-                style: AppTypography.labelEmphasis
-                    .copyWith(color: AppColors.textOnAccent),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.bloodRed,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  /// 🎯 QUICK ACTIONS: Mantener objetivo actual (mismo peso/reps del historial)
-  void _maintainCurrentGoal() {
-    final state = ref.read(trainingSessionProvider);
-    final nextSet = state.nextIncompleteSet;
-
-    if (nextSet == null) return;
-
-    final exercise = state.exercises[nextSet.exerciseIndex];
-    final history = state.history[exercise.nombre];
-
-    if (history != null && nextSet.setIndex < history.length) {
-      final targetLog = history[nextSet.setIndex];
-
-      ref.read(trainingSessionProvider.notifier).updateLog(
-            nextSet.exerciseIndex,
-            nextSet.setIndex,
-            peso: targetLog.peso,
-            reps: targetLog.reps,
-          );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.sync_rounded,
-                  color: AppColors.bloodRed, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'OBJETIVO: ${targetLog.peso}kg × ${targetLog.reps}',
-                style: AppTypography.labelEmphasis,
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.bgElevated,
-          duration: const Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  /// 🎯 QUICK ACTIONS: Actualizar tiempo de descanso del ejercicio actual
-  void _updateCurrentExerciseRestTime(int seconds) {
-    final state = ref.read(trainingSessionProvider);
-    final nextSet = state.nextIncompleteSet;
-
-    if (nextSet == null) return;
-
-    ref.read(trainingSessionProvider.notifier).updateExerciseRestTime(
-          nextSet.exerciseIndex,
-          seconds,
-        );
-
-    // También actualizar la duración del timer para la próxima vez
-    ref.read(trainingSessionProvider.notifier).setRestDuration(seconds);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.timer_outlined,
-                color: AppColors.restTeal, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              'Descanso: ${seconds >= 60 ? "${seconds ~/ 60}m ${seconds % 60 > 0 ? "${seconds % 60}s" : ""}" : "${seconds}s"}',
-              style: AppTypography.labelEmphasis,
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.bgElevated,
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  /// 🎯 QUICK ACTIONS: Mostrar opciones rápidas adicionales
-  void _showQuickOptionsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgElevated,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        final notifier = ref.read(trainingSessionProvider.notifier);
-        final state = ref.read(trainingSessionProvider);
-        final nextSet = state.nextIncompleteSet;
-
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'ACCIONES RÁPIDAS',
-                  style: AppTypography.sectionTitle.copyWith(
-                    color: AppColors.bloodRed,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Saltar ejercicio
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.skip_next_rounded,
-                        color: AppColors.textSecondary),
-                  ),
-                  title: Text('Saltar al siguiente',
-                      style: TextStyle(color: AppColors.textPrimary)),
-                  subtitle: Text('Ir al próximo ejercicio',
-                      style: TextStyle(
-                          color: AppColors.textTertiary, fontSize: 12)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _navigateToNextSet();
-                  },
-                ),
-
-                // Ver historial
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.restTeal.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.history, color: AppColors.restTeal),
-                  ),
-                  title: Text('Ver historial',
-                      style: TextStyle(color: AppColors.textPrimary)),
-                  subtitle: Text('Revisar sesiones anteriores',
-                      style: TextStyle(
-                          color: AppColors.textTertiary, fontSize: 12)),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    // TODO: Mostrar historial del ejercicio actual
-                  },
-                ),
-
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }

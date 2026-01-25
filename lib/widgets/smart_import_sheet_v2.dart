@@ -81,17 +81,6 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
     );
   }
 
-  void _clearControllers() {
-    for (final c in _seriesControllers.values) {
-      c.dispose();
-    }
-    for (final c in _repsControllers.values) {
-      c.dispose();
-    }
-    _seriesControllers.clear();
-    _repsControllers.clear();
-  }
-
   void _onConfirm() {
     final notifier = ref.read(smartImportProvider.notifier);
     final validDrafts = notifier.getValidDraftsForImport();

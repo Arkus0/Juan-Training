@@ -249,7 +249,7 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red[900]!.withOpacity(0.3),
+                      color: Colors.red[900]!.withValues(alpha:0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -433,7 +433,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
               color: Colors.red[900],
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8),
+                BoxShadow(color: Colors.black.withValues(alpha:0.3), blurRadius: 8),
               ],
             ),
             child: Row(

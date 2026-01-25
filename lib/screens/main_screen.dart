@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/main_provider.dart';
-import '../providers/training_provider.dart';
-import '../widgets/session/active_session_bar.dart';
 import '../utils/design_system.dart';
-import 'rutinas_screen.dart';
-import 'train_selection_screen.dart';
+import '../widgets/session/active_session_bar.dart';
 import 'analysis_screen.dart';
+import 'rutinas_screen.dart';
 import 'settings_screen.dart';
-import 'training_session_screen.dart';
+import 'train_selection_screen.dart';
 
 class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
@@ -24,11 +21,6 @@ class MainScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
-    
-    // 🎯 UX MEDIO: FAB con sugerencia inteligente
-    final suggestionAsync = ref.watch(smartSuggestionProvider);
-    final activeSession = ref.watch(trainingSessionProvider);
-    final hasActiveSession = activeSession.startTime != null;
 
       // Floating timer removed — devolvemos el Scaffold directamente
     return Scaffold(
@@ -87,29 +79,6 @@ class MainScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-  
-  /// Inicia la sesión sugerida directamente desde el FAB
-  void _startSuggestedSession(BuildContext context, WidgetRef ref, SmartWorkoutSuggestion suggestion) {
-    final rutina = suggestion.rutina;
-    final dayIndex = suggestion.dayIndex;
-    
-    if (rutina.dias.isEmpty || dayIndex >= rutina.dias.length) return;
-    
-    final day = rutina.dias[dayIndex];
-    try { HapticFeedback.heavyImpact(); } catch (_) {}
-    
-    ref.read(trainingSessionProvider.notifier).startSession(
-      rutina,
-      day.ejercicios,
-      dayName: day.nombre,
-      dayIndex: dayIndex,
-    );
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),
     );
   }
 }

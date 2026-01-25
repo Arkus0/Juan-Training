@@ -184,7 +184,7 @@ class _MicroToastState extends State<_MicroToast>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 // Verde apagado para completado, sutil
-                color: AppColors.completedGreen.withOpacity(0.9),
+                color: AppColors.completedGreen.withValues(alpha:0.9),
                 borderRadius: BorderRadius.circular(AppRadius.round),
                 boxShadow: AppShadows.elevated,
               ),
@@ -268,7 +268,7 @@ class _CompletionCelebrationDialogState
               borderRadius: BorderRadius.circular(AppRadius.xl),
               // Oro cálido sutil para celebración final
               border: Border.all(
-                color: AppColors.goldAccent.withOpacity(0.4),
+                color: AppColors.goldAccent.withValues(alpha:0.4),
                 width: 2,
               ),
               boxShadow: AppShadows.glow(AppColors.goldAccent),
@@ -339,7 +339,7 @@ class PRCelebration extends StatelessWidget {
         color: AppColors.goldSubtle,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.goldAccent.withOpacity(0.3),
+          color: AppColors.goldAccent.withValues(alpha:0.3),
         ),
       ),
       child: Row(

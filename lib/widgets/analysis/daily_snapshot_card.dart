@@ -45,7 +45,7 @@ class DailySnapshotCard extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.redAccent.withOpacity(0.3),
+          color: Colors.redAccent.withValues(alpha:0.3),
         ),
       ),
       child: Column(
@@ -57,7 +57,7 @@ class DailySnapshotCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.2),
+                  color: Colors.redAccent.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -126,10 +126,10 @@ class DailySnapshotCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.1),
+                color: Colors.amber.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.amber.withOpacity(0.3),
+                  color: Colors.amber.withValues(alpha:0.3),
                 ),
               ),
               child: Row(

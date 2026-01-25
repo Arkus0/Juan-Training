@@ -307,7 +307,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             border: Border.all(
                               // Borde más visible si el input está vacío
                               color: _displayValue.isEmpty
-                                  ? _ModalColors.activeSet.withOpacity(0.5)
+                                  ? _ModalColors.activeSet.withValues(alpha:0.5)
                                   : AppColors.border,
                               width: _displayValue.isEmpty ? 1.5 : 1,
                             ),
@@ -340,7 +340,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _ModalColors.activeSet.withOpacity(0.2),
+                                  color: _ModalColors.activeSet.withValues(alpha:0.2),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(

@@ -216,8 +216,8 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: TrainingColors.completed.withOpacity(
-                        0.3 * (1 - _flashAnimation.value),
+                      color: TrainingColors.completed.withValues(
+                        alpha: 0.3 * (1 - _flashAnimation.value),
                       ),
                     ),
                   ),
@@ -317,7 +317,7 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
           padding: const EdgeInsets.only(right: 20),
           margin: const EdgeInsets.symmetric(vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.bloodRed.withOpacity(0.8),
+            color: AppColors.bloodRed.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -546,7 +546,7 @@ class _TappableValueInput extends StatelessWidget {
           // Borde sutil cyan, NO rojo ni agresivo
           border: isActive
               ? Border.all(
-                  color: TrainingColors.activeSet.withOpacity(0.4),
+                  color: TrainingColors.activeSet.withValues(alpha: 0.4),
                   width: 1.5,
                 )
               : null,

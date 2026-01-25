@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../../services/media_control_service.dart';
+
 import '../../services/haptics_controller.dart';
+import '../../services/media_control_service.dart';
 import '../../utils/design_system.dart';
 
 /// 🎯 NEON IRON: Control de música ultra-compacto para AppBar
@@ -51,15 +53,6 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
   void dispose() {
     _sessionSubscription?.cancel();
     super.dispose();
-  }
-
-  Future<void> _onPlayPause() async {
-    HapticsController.instance.onMediaCommand();
-    final result = await _mediaService.playPause();
-    if (!mounted) return;
-    if (result.success) {
-      setState(() => _isPlaying = !_isPlaying);
-    }
   }
 
   @override

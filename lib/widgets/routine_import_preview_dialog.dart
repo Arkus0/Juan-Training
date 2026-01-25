@@ -279,7 +279,7 @@ class _RoutineImportPreviewDialogState
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.live.withOpacity(0.3),
+                    color: AppColors.live.withValues(alpha:0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -334,7 +334,7 @@ class _RoutineImportPreviewDialogState
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.bgElevated.withOpacity(0.5),
+        color: AppColors.bgElevated.withValues(alpha:0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.bgDeep),
       ),
@@ -346,7 +346,7 @@ class _RoutineImportPreviewDialogState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.live.withOpacity(0.5),
+                  color: AppColors.live.withValues(alpha:0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -605,7 +605,7 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.live.withOpacity(0.3),
+                          color: AppColors.live.withValues(alpha:0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(

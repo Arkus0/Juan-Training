@@ -1,11 +1,13 @@
-import '../../utils/design_system.dart';
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/training_provider.dart';
-import 'package:juan_training/services/rest_timer_controller.dart';
 import '../../screens/training_session_screen.dart';
+import '../../services/rest_timer_controller.dart';
+import '../../utils/design_system.dart';
 
 class ActiveSessionBar extends ConsumerWidget {
   const ActiveSessionBar({super.key});
@@ -36,11 +38,11 @@ class ActiveSessionBar extends ConsumerWidget {
           // Fondo más visible
           color: AppColors.darkRed,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.bloodRed.withOpacity(0.6), width: 1.5),
+          border: Border.all(color: AppColors.bloodRed.withValues(alpha: 0.6), width: 1.5),
           // Sombra sutil para elevación
           boxShadow: [
             BoxShadow(
-              color: AppColors.bloodRed.withOpacity(0.2),
+              color: AppColors.bloodRed.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -144,7 +146,7 @@ class ActiveSessionBar extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.bgInteractive.withOpacity(0.5),
+                color: AppColors.bgInteractive.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close, color: AppColors.textTertiary, size: 16),

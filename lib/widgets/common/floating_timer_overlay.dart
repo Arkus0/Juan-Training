@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/training_provider.dart';
-import 'package:juan_training/services/rest_timer_controller.dart';
+import '../../services/rest_timer_controller.dart';
 import '../../utils/design_system.dart';
 
 /// Widget flotante que muestra el timer de descanso cuando está activo
@@ -29,9 +29,6 @@ class FloatingTimerOverlay extends ConsumerStatefulWidget {
 }
 
 class _FloatingTimerOverlayState extends ConsumerState<FloatingTimerOverlay> {
-  // Posición del widget flotante (offset desde esquina inferior derecha)
-  final Offset _position = const Offset(16, 100);
-
   @override
   Widget build(BuildContext context) {
     // Floating timer removed — passthrough to child only

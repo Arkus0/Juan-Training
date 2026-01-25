@@ -47,12 +47,12 @@ class WelcomeBackBanner extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.success.withOpacity(0.3),
+          color: AppColors.success.withValues(alpha:0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.success.withOpacity(0.1),
+            color: AppColors.success.withValues(alpha:0.1),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -67,7 +67,7 @@ class WelcomeBackBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.2),
+                  color: AppColors.success.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -299,12 +299,12 @@ class _WeightOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: isRecommended 
-              ? AppColors.success.withOpacity(0.15)
+              ? AppColors.success.withValues(alpha:0.15)
               : AppColors.bgInteractive,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isRecommended 
-                ? AppColors.success.withOpacity(0.5)
+                ? AppColors.success.withValues(alpha:0.5)
                 : AppColors.border,
             width: isRecommended ? 2 : 1,
           ),
@@ -364,7 +364,7 @@ class DifficultDayBanner extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.textTertiary.withOpacity(0.2),
+          color: AppColors.textTertiary.withValues(alpha:0.2),
           width: 1,
         ),
       ),

@@ -141,23 +141,6 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     notifier.clearResults();
   }
 
-  VoiceActionType _commandTypeToActionType(VoiceCommandType type) {
-    switch (type) {
-      case VoiceCommandType.setWeight:
-        return VoiceActionType.setWeight;
-      case VoiceCommandType.setReps:
-        return VoiceActionType.setReps;
-      case VoiceCommandType.setRpe:
-        return VoiceActionType.setRpe;
-      case VoiceCommandType.addNote:
-        return VoiceActionType.addNote;
-      case VoiceCommandType.markDone:
-        return VoiceActionType.markDone;
-      default:
-        return VoiceActionType.addNote;
-    }
-  }
-
   String _getActionDescription(VoiceTrainingCommand command) {
     switch (command.type) {
       case VoiceCommandType.setWeight:

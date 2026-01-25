@@ -646,7 +646,7 @@ abstract class AppShadows {
   /// Sombra sutil para cards
   static List<BoxShadow> get card => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.2),
+      color: Colors.black.withValues(alpha:0.2),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -655,7 +655,7 @@ abstract class AppShadows {
   /// Sombra para elementos elevados (modals, FAB)
   static List<BoxShadow> get elevated => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.3),
+      color: Colors.black.withValues(alpha:0.3),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),
@@ -664,7 +664,7 @@ abstract class AppShadows {
   /// Glow sutil para estados activos
   static List<BoxShadow> glow(Color color) => [
     BoxShadow(
-      color: color.withOpacity(0.3),
+      color: color.withValues(alpha:0.3),
       blurRadius: 12,
     ),
   ];
