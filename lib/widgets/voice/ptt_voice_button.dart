@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/voice_input_provider.dart';
-import 'voice_training_fab.dart';
 import '../../utils/design_system.dart';
+import 'voice_training_fab.dart';
 
 /// Estados explícitos del botón Push To Talk
 enum PttState {
@@ -463,11 +463,9 @@ class _PttStateConfig {
 /// Punto pulsante para indicador de escucha
 class _PulsingDot extends StatefulWidget {
   final Color color;
-  final double size;
 
   const _PulsingDot({
     required this.color,
-    this.size = 8.0,
   });
 
   @override
@@ -499,8 +497,8 @@ class _PulsingDotState extends State<_PulsingDot>
       animation: _controller,
       builder: (context, child) {
         return Container(
-          width: widget.size,
-          height: widget.size,
+          width: 8.0,
+          height: 8.0,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: widget.color.withValues(alpha: 0.5 + _controller.value * 0.5),
@@ -529,7 +527,6 @@ class PttCompactButton extends ConsumerStatefulWidget {
 class _PttCompactButtonState extends ConsumerState<PttCompactButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
-  bool _isPressed = false;
 
   @override
   void initState() {

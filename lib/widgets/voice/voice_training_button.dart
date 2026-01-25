@@ -127,7 +127,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
         // Registrar acción para undo
         notifier.recordAction(vip.VoiceAction(
           description: _getActionDescription(command),
-        ));
+        ),);
         widget.onCommand(command);
       } else {
         // No se entendió el comando - mostrar feedback
@@ -139,23 +139,6 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     }
     // Limpiar después de procesar
     notifier.clearResults();
-  }
-
-  VoiceActionType _commandTypeToActionType(VoiceCommandType type) {
-    switch (type) {
-      case VoiceCommandType.setWeight:
-        return VoiceActionType.setWeight;
-      case VoiceCommandType.setReps:
-        return VoiceActionType.setReps;
-      case VoiceCommandType.setRpe:
-        return VoiceActionType.setRpe;
-      case VoiceCommandType.addNote:
-        return VoiceActionType.addNote;
-      case VoiceCommandType.markDone:
-        return VoiceActionType.markDone;
-      default:
-        return VoiceActionType.addNote;
-    }
   }
 
   String _getActionDescription(VoiceTrainingCommand command) {
