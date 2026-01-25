@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_training/screens/plate_calculator_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
@@ -19,7 +19,6 @@ void main() {
           home: Scaffold(
             body: PlateCalculatorDialog(
               currentWeight: 100.0,
-              onWeightSelected: (_) {},
             ),
           ),
         ),
@@ -50,11 +49,11 @@ void main() {
 
     // This expects to fail initially
     if (semanticFinder.evaluate().isEmpty) {
-        print("TEST FAILURE EXPECTED: No semantics found for plate visualization.");
+        print('TEST FAILURE EXPECTED: No semantics found for plate visualization.');
     } else {
-        print("TEST SUCCESS (Unexpected): Semantics found.");
+        print('TEST SUCCESS (Unexpected): Semantics found.');
     }
 
-    expect(semanticFinder, findsOneWidget, reason: "Should have a semantic label describing the plates");
+    expect(semanticFinder, findsOneWidget, reason: 'Should have a semantic label describing the plates');
   });
 }
