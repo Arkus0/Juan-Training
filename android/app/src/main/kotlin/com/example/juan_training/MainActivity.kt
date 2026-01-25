@@ -19,9 +19,22 @@ class MainActivity : FlutterActivity() {
     private val MUSIC_CHANNEL = "juan_training/music_launcher"
     private val TIMER_CHANNEL = "com.juantraining/timer_service"
     private val MEDIA_SESSION_CHANNEL = "com.juantraining/media_session"
+    private val LIFECYCLE_CHANNEL = "com.juantraining/app_lifecycle"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // App lifecycle channel - for cleanup on app close
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LIFECYCLE_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "stopAllServices" -> {
+                        stopAllForegroundServices()
+                        result.success(true)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
 
         // Music launcher channel (existing)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MUSIC_CHANNEL)
@@ -206,6 +219,41 @@ class MainActivity : FlutterActivity() {
         }
         sendBroadcast(down)
         sendBroadcast(up)
+    }
+
+    /**
+     * Stops all foreground services when the app is closing.
+     * This ensures clean shutdown and prevents "force stop" requirement.
+     */
+    private fun stopAllForegroundServices() {
+        try {
+            // Stop Timer Foreground Service
+            val timerIntent = Intent(this, TimerForegroundService::class.java).apply {
+                action = TimerForegroundService.ACTION_STOP
+            }
+            stopService(timerIntent)
+
+            // Stop MediaSession Service
+            val mediaIntent = Intent(this, MediaSessionService::class.java).apply {
+                action = MediaSessionService.ACTION_STOP
+            }
+            stopService(mediaIntent)
+
+            android.util.Log.i("MainActivity", "All foreground services stopped")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error stopping services", e)
+        }
+    }
+
+    override fun onDestroy() {
+        // Clean shutdown: stop all foreground services when Activity is destroyed
+        stopAllForegroundServices()
+
+        // Clear Flutter engine references
+        TimerActionReceiver.flutterEngine = null
+        MediaSessionService.flutterEngine = null
+
+        super.onDestroy()
     }
 }
 

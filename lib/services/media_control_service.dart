@@ -106,18 +106,27 @@ class MediaControlService {
   Timer? _pollTimer;
   static const _pollInterval = Duration(seconds: 3);
 
-  // Streams
-  final _sessionController = StreamController<MediaSessionInfo>.broadcast();
-  Stream<MediaSessionInfo> get sessionStream => _sessionController.stream;
+  // Streams - recreatable for lifecycle management
+  StreamController<MediaSessionInfo>? _sessionController;
+  Stream<MediaSessionInfo> get sessionStream {
+    _sessionController ??= StreamController<MediaSessionInfo>.broadcast();
+    return _sessionController!.stream;
+  }
 
   /// Inicializa el servicio
   Future<bool> initialize() async {
-    if (_isInitialized) return true;
+    // Permitir re-inicialización después de dispose
+    if (_isInitialized && _pollTimer != null) return true;
 
     if (!Platform.isAndroid) {
       _logger.w('MediaControlService solo soporta Android actualmente');
       _isInitialized = true;
       return false;
+    }
+
+    // Recrear el stream controller si fue cerrado
+    if (_sessionController == null || _sessionController!.isClosed) {
+      _sessionController = StreamController<MediaSessionInfo>.broadcast();
     }
 
     // Verificar estado inicial
@@ -274,10 +283,12 @@ class MediaControlService {
   Future<void> _checkMediaState() async {
     final newSession = await getActiveSession();
 
-    // Solo emitir si cambió
+    // Solo emitir si cambió y el controller está activo
     if (_hasSessionChanged(newSession)) {
       _currentSession = newSession;
-      _sessionController.add(_currentSession);
+      if (_sessionController != null && !_sessionController!.isClosed) {
+        _sessionController!.add(_currentSession);
+      }
       _logger.d('Sesión de media actualizada: $_currentSession');
     }
   }
@@ -293,9 +304,19 @@ class MediaControlService {
     await _checkMediaState();
   }
 
-  /// Detiene el servicio
+  /// Detiene el servicio temporalmente (permite re-inicialización)
   void dispose() {
     _stopPolling();
-    _sessionController.close();
+    _isInitialized = false;
+    // No cerramos el StreamController para permitir re-suscripción
+    // Solo lo cerramos en disposeCompletely()
+  }
+
+  /// Detiene el servicio permanentemente
+  void disposeCompletely() {
+    _stopPolling();
+    _isInitialized = false;
+    _sessionController?.close();
+    _sessionController = null;
   }
 }
