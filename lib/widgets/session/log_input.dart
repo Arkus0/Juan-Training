@@ -22,7 +22,7 @@ class _InputStyles {
     fontWeight: FontWeight.w600,
     fontSize: 16,
     decoration: TextDecoration.underline,
-    decorationColor: AppColors.textTertiary.withOpacity(0.3),
+    decorationColor: AppColors.textTertiary.withValues(alpha: 0.3),
     decorationStyle: TextDecorationStyle.dotted,
   );
 

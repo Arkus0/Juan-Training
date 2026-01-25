@@ -612,7 +612,7 @@ class _AlternativesPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         // 🎯 REDISEÑO: Fondo del sistema
-        color: AppColors.bgElevated.withOpacity(0.8),
+        color: AppColors.bgElevated.withValues(alpha:0.8),
         borderRadius: fullScreen
             ? null
             : const BorderRadius.vertical(top: Radius.circular(24)),

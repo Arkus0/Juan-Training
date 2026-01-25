@@ -30,7 +30,7 @@ class SymmetryRadar extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.2),
+                  color: Colors.purple.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -63,7 +63,7 @@ class SymmetryRadar extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.2),
+                          color: Colors.amber.withValues(alpha:0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -143,7 +143,7 @@ class SymmetryRadar extends ConsumerWidget {
           dataSets: [
             RadarDataSet(
               dataEntries: values.map((v) => RadarEntry(value: v * 100)).toList(),
-              fillColor: Colors.redAccent.withOpacity(0.3),
+              fillColor: Colors.redAccent.withValues(alpha:0.3),
               borderColor: Colors.redAccent,
               borderWidth: 2,
               entryRadius: 3,
@@ -194,7 +194,7 @@ class SymmetryRadar extends ConsumerWidget {
       height: 250,
       child: Center(
         child: CircularProgressIndicator(
-          color: Colors.redAccent.withOpacity(0.5),
+          color: Colors.redAccent.withValues(alpha:0.5),
           strokeWidth: 2,
         ),
       ),
@@ -267,7 +267,7 @@ class SymmetryRadarCompact extends ConsumerWidget {
                         dataEntries: kMuscleGroups
                             .map((m) => RadarEntry(value: data.getNormalized(m) * 100))
                             .toList(),
-                        fillColor: Colors.redAccent.withOpacity(0.3),
+                        fillColor: Colors.redAccent.withValues(alpha:0.3),
                         borderColor: Colors.redAccent,
                         borderWidth: 1.5,
                         entryRadius: 2,

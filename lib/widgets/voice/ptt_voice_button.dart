@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../providers/voice_input_provider.dart';
-import 'voice_training_fab.dart';
 import '../../utils/design_system.dart';
+import 'voice_training_fab.dart';
 
 /// Estados explícitos del botón Push To Talk
 enum PttState {
@@ -529,7 +530,6 @@ class PttCompactButton extends ConsumerStatefulWidget {
 class _PttCompactButtonState extends ConsumerState<PttCompactButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -560,17 +560,14 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
 
     return GestureDetector(
       onTapDown: (_) async {
-        setState(() => _isPressed = true);
         try { HapticFeedback.mediumImpact(); } catch (_) {}
         await ref.read(voiceInputProvider.notifier).startListening();
       },
       onTapUp: (_) async {
-        setState(() => _isPressed = false);
         try { HapticFeedback.heavyImpact(); } catch (_) {}
         await ref.read(voiceInputProvider.notifier).stopListening();
       },
       onTapCancel: () {
-        setState(() => _isPressed = false);
         ref.read(voiceInputProvider.notifier).cancelListening();
       },
       child: AnimatedBuilder(

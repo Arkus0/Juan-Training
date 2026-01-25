@@ -1,16 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/training_provider.dart';
+
 import '../../providers/settings_provider.dart';
+import '../../services/haptics_controller.dart';
 import '../../services/rest_timer_controller.dart';
 import '../../services/timer_audio_service.dart';
 import '../../services/timer_notification_service.dart';
 import '../../services/timer_platform_service.dart';
-import '../../services/haptics_controller.dart';
-import '../../utils/performance_utils.dart';
 import '../../utils/design_system.dart';
+import '../../utils/performance_utils.dart';
 
 /// Callback cuando el timer termina, incluye info para auto-focus
 typedef TimerFinishedCallback = void Function({
@@ -29,37 +30,10 @@ class _TimerStyles {
     letterSpacing: 1.0,
   );
 
-  static final countdownLarge = GoogleFonts.montserrat(
-    fontSize: 18,
-    fontWeight: FontWeight.w900,
-  );
-
-  static final countdownNormal = GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w900,
-  );
-
-  static final buttonLabel = GoogleFonts.montserrat(
-    fontSize: 12,
-    fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
-  );
-
   static final durationDisplay = GoogleFonts.montserrat(
     fontSize: 18,
     fontWeight: FontWeight.w900,
     color: AppColors.textPrimary,
-  );
-
-  static final stateLabel = GoogleFonts.montserrat(
-    fontSize: 10,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.2,
-  );
-
-  static final hintLabel = GoogleFonts.montserrat(
-    fontSize: 9,
-    fontWeight: FontWeight.w500,
   );
 }
 
@@ -1076,53 +1050,6 @@ class _CircularTimerProgressState extends State<_CircularTimerProgress>
           ),
         );
       },
-    );
-  }
-}
-
-/// Botones de control del timer (añadir tiempo, saltar)
-class _TimerControlButtons extends StatelessWidget {
-  final bool isPaused;
-  final VoidCallback onAddTime;
-  final VoidCallback onSkip;
-
-  const _TimerControlButtons({
-    required this.isPaused,
-    required this.onAddTime,
-    required this.onSkip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Tooltip(
-          message: '+30 segundos',
-          child: _CircleButton(
-            icon: Icons.add_alarm,
-            size: 36,
-            onTap: () {
-              HapticsController.instance.trigger(HapticEvent.buttonTap);
-              onAddTime();
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        Tooltip(
-          message: 'Saltar descanso',
-          child: _CircleButton(
-            icon: Icons.skip_next_rounded,
-            size: 36,
-            color: AppColors.techCyan, // Cyan consistente para acción
-            onTap: () {
-              HapticsController.instance.trigger(HapticEvent.buttonTap);
-              onSkip();
-            },
-          ),
-        ),
-
-      ],
     );
   }
 }

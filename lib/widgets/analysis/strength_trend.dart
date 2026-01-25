@@ -102,7 +102,7 @@ class StrengthTrend extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
+                  color: Colors.green.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -307,8 +307,8 @@ class StrengthTrend extends ConsumerWidget {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.redAccent.withOpacity(0.3),
-                        Colors.redAccent.withOpacity(0.0),
+                        Colors.redAccent.withValues(alpha:0.3),
+                        Colors.redAccent.withValues(alpha:0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -367,10 +367,10 @@ class StrengthTrend extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isPositive ? Colors.green : Colors.red).withOpacity(0.1),
+        color: (isPositive ? Colors.green : Colors.red).withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: (isPositive ? Colors.green : Colors.red).withOpacity(0.3),
+          color: (isPositive ? Colors.green : Colors.red).withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -435,7 +435,7 @@ class StrengthTrend extends ConsumerWidget {
       height: 200,
       child: Center(
         child: CircularProgressIndicator(
-          color: Colors.redAccent.withOpacity(0.5),
+          color: Colors.redAccent.withValues(alpha:0.5),
           strokeWidth: 2,
         ),
       ),

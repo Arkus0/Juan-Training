@@ -258,7 +258,7 @@ class _SessionTileState extends State<SessionTile> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.live.withOpacity(0.3),
+                                  color: AppColors.live.withValues(alpha:0.3),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(

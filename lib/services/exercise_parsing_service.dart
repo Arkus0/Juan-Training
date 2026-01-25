@@ -1,4 +1,3 @@
-import 'package:logger/logger.dart';
 import 'exercise_matching_service.dart';
 import 'exercise_validation_service.dart';
 
@@ -138,7 +137,6 @@ class ExerciseParsingService {
   static final ExerciseParsingService instance = ExerciseParsingService._();
   ExerciseParsingService._();
 
-  final _logger = Logger();
   final _matchingService = ExerciseMatchingService.instance;
   final _validationService = ExerciseValidationService.instance;
 

@@ -26,7 +26,7 @@ class RecoveryMonitor extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.blue.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -169,7 +169,7 @@ class _RecoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              status.color.withOpacity(0.15),
+              status.color.withValues(alpha:0.15),
               const Color(0xFF1A1A1A),
             ],
             begin: Alignment.topCenter,
@@ -177,7 +177,7 @@ class _RecoveryCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: status.color.withOpacity(0.3),
+            color: status.color.withValues(alpha:0.3),
           ),
         ),
         child: Column(
@@ -199,7 +199,7 @@ class _RecoveryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: status.color.withOpacity(0.5),
+                        color: status.color.withValues(alpha:0.5),
                         blurRadius: 6,
                       ),
                     ],
@@ -233,7 +233,7 @@ class _RecoveryCard extends StatelessWidget {
               backgroundColor: AppColors.bgDeep,
               linearGradient: LinearGradient(
                 colors: [
-                  status.color.withOpacity(0.7),
+                  status.color.withValues(alpha:0.7),
                   status.color,
                 ],
               ),
@@ -376,10 +376,10 @@ class _RecoveryCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: status.color.withOpacity(0.1),
+                  color: status.color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: status.color.withOpacity(0.3),
+                    color: status.color.withValues(alpha:0.3),
                   ),
                 ),
                 child: Row(

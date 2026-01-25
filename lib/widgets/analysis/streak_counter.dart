@@ -29,8 +29,8 @@ class StreakCounter extends ConsumerWidget {
         gradient: hasStreak
             ? LinearGradient(
                 colors: [
-                  AppColors.fireRed.withOpacity(0.2),   // #FF3333
-                  AppColors.bloodRed.withOpacity(0.1),  // #C41E3A
+                  AppColors.fireRed.withValues(alpha:0.2),   // #FF3333
+                  AppColors.bloodRed.withValues(alpha:0.1),  // #C41E3A
                   Colors.transparent,
                 ],
                 begin: Alignment.centerLeft,
@@ -41,7 +41,7 @@ class StreakCounter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasStreak
-              ? AppColors.fireRed.withOpacity(0.4)  // Glow rojo
+              ? AppColors.fireRed.withValues(alpha:0.4)  // Glow rojo
               : AppColors.bgDeep,
           width: 1,
         ),
@@ -193,8 +193,8 @@ class StreakBadge extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.orange.withOpacity(0.3),
-                Colors.red.withOpacity(0.3),
+                Colors.orange.withValues(alpha:0.3),
+                Colors.red.withValues(alpha:0.3),
               ],
             ),
             borderRadius: BorderRadius.circular(16),

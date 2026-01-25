@@ -7,8 +7,8 @@ import 'package:intl/intl.dart';
 import '../models/external_session.dart';
 import '../models/library_exercise.dart';
 import '../providers/voice_input_provider.dart';
-import '../services/voice_input_service.dart';
 import '../services/exercise_matching_service.dart';
+import '../services/voice_input_service.dart';
 import '../utils/design_system.dart';
 import 'voice/ptt_voice_button.dart';
 
@@ -52,13 +52,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   ExternalSessionSource? _selectedSource;
   final List<ExternalExercise> _exercises = [];
   bool _includeInProgression = false;
-  String? _sessionNotes;
 
   // Para entrada de texto
   final _textController = TextEditingController();
-
-  // Para edición
-  int? _editingIndex;
 
   // Undo stack
   final List<List<ExternalExercise>> _undoStack = [];
@@ -227,7 +223,6 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final voiceState = ref.watch(voiceInputProvider);
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
@@ -476,8 +471,6 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   }
 
   Widget _buildVoiceInput() {
-    final voiceState = ref.watch(voiceInputProvider);
-
     return Column(
       children: [
         // Botón de cambiar método

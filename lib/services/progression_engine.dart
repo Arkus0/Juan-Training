@@ -1,5 +1,5 @@
-import '../models/progression_type.dart';
 import '../models/progression_engine_models.dart';
+import '../models/progression_type.dart';
 import '../models/serie_log.dart';
 
 /// Motor de progresión determinista v2
@@ -400,14 +400,6 @@ class ProgressionEngine {
     );
   }
 
-  /// Verifica si la sesión anterior también estaba en max reps
-  /// NOTA: Método legacy - preferir context.lastSessionAllSetsAtMaxReps
-  bool _previousWasAtMaxReps(ExerciseProgressionContext context, int maxReps) {
-    if (context.recentSessions.length < 2) return false;
-    final prevSession = context.recentSessions[1];
-    return prevSession.averageReps >= maxReps;
-  }
-
   /// Formatea peso para display (sin decimales innecesarios)
   String _formatWeight(double weight) {
     if (weight == weight.roundToDouble()) {
@@ -438,15 +430,6 @@ class ProgressionEngine {
     // El deload debe ser al menos 1 incremento, pero típicamente 10%
     // Esto asegura que siempre haya un cambio significativo
     return percentDeload > minDeload ? percentDeload : minDeload;
-  }
-
-  /// Redondea el peso al incremento más cercano disponible
-  ///
-  /// Los gimnasios típicamente tienen discos de 1.25kg, 2.5kg, 5kg, etc.
-  /// Redondeamos al múltiplo de 1.25kg más cercano.
-  double _roundToAvailableWeight(double weight) {
-    const smallestPlate = 1.25; // Disco más pequeño común
-    return (weight / smallestPlate).round() * smallestPlate;
   }
 
   // ════════════════════════════════════════════════════════════════════════

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:logger/logger.dart';
+import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/models/sesion.dart';
-import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/providers/training_provider.dart';
-import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
-import 'package:juan_training/services/routine_sharing_service.dart';
-import 'package:juan_training/services/routine_ocr_service.dart';
-import 'package:juan_training/services/voice_input_service.dart';
+import 'package:juan_training/screens/create_routine/widgets/dia_expansion_tile.dart';
 import 'package:juan_training/services/haptics_controller.dart';
-import 'package:juan_training/widgets/routine_import_dialog.dart';
-import 'package:juan_training/widgets/voice/voice_input_sheet.dart';
-import 'package:juan_training/widgets/smart_import_sheet.dart';
+import 'package:juan_training/services/routine_ocr_service.dart';
+import 'package:juan_training/services/routine_sharing_service.dart';
+import 'package:juan_training/services/voice_input_service.dart';
 import 'package:juan_training/utils/design_system.dart';
+import 'package:juan_training/widgets/routine_import_dialog.dart';
+import 'package:juan_training/widgets/smart_import_sheet.dart';
+import 'package:juan_training/widgets/voice/voice_input_sheet.dart';
+import 'package:logger/logger.dart';
 
 class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   final Rutina? rutina; // Null for Create, existing for Edit

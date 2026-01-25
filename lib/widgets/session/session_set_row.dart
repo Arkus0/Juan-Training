@@ -225,7 +225,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
     // Colores según estado - 🎯 REDISEÑO: Verde para completado
     final isCompleted = widget.log.completed;
     final rowColor = isCompleted
-        ? AppColors.success.withOpacity(0.12)
+        ? AppColors.success.withValues(alpha: 0.12)
         : Colors.transparent;
 
     return GestureDetector(
@@ -400,7 +400,7 @@ class _SetNumber extends StatelessWidget {
         boxShadow: isCompleted && PerformanceMode.instance.showShadows
             ? [
                 BoxShadow(
-                  color: AppColors.success.withOpacity(0.4),
+                  color: AppColors.success.withValues(alpha: 0.4),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),

@@ -2,10 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/detected_exercise_draft.dart';
 import '../models/library_exercise.dart';
+import '../services/exercise_matching_service.dart';
 import '../services/routine_ocr_service.dart';
 import '../services/voice_input_service.dart';
-import '../services/exercise_matching_service.dart';
-import '../services/exercise_parsing_service.dart';
 
 /// Estado del proceso de importación inteligente
 enum SmartImportStatus {

@@ -372,7 +372,6 @@ class ErrorToleranceRules {
     required int targetReps,
     required List<List<int>> previousSessionsReps,
   }) {
-    final todayAvg = _averageReps(todayReps);
     final targetTotal = targetReps * todayReps.length;
     final actualTotal = todayReps.fold(0, (a, b) => a + b);
     final completionRate = actualTotal / targetTotal;
