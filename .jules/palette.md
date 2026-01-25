@@ -19,3 +19,7 @@
 ## 2026-05-25 - Micro-Interactions in Inputs
 **Learning:** Icon buttons inside input fields (like calculators) often lack touch targets and semantics when implemented with raw `GestureDetector`.
 **Action:** Use composed `Tooltip` + `Material` + `InkWell` patterns even for small secondary actions to maintain accessibility and consistency.
+
+## 2026-05-25 - Toggle Semantics
+**Learning:** Custom toggle widgets (like completion checks) often lack the semantic clarity of native switches/checkboxes.
+**Action:** Ensure custom toggles have tooltips that describe the action ("Mark as complete") rather than just the state.

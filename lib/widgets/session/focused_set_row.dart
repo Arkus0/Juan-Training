@@ -536,44 +536,53 @@ class _TappableValueInput extends StatelessWidget {
     // Touch target mínimo 64dp (activo 72dp) para dedos sudados
     final height = isActive ? 72.0 : 56.0;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: isActive ? TrainingColors.bgInput : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          // Borde sutil cyan, NO rojo ni agresivo
-          border: isActive
-              ? Border.all(
+    return Tooltip(
+      message: onTap != null ? 'Modificar $label' : '$label (Solo lectura)',
+      child: Material(
+        color: isActive ? TrainingColors.bgInput : Colors.transparent,
+        shape: isActive
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
                   color: TrainingColors.activeSet.withOpacity(0.4),
                   width: 1.5,
-                )
-              : null,
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                _displayValue,
-                // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
-                style: (isActive ? _SetRowStyles.valueActiveText : _SetRowStyles.valueNormalText)
-                    .copyWith(
+                ),
+              )
+            : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: SizedBox(
+            height: height,
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    _displayValue,
+                    // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
+                    style: (isActive
+                            ? _SetRowStyles.valueActiveText
+                            : _SetRowStyles.valueNormalText)
+                        .copyWith(
                       color: value == null || value == 0
                           ? TrainingColors.textDisabled
                           : textColor,
                     ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    // Labels muy sutiles para no competir con datos
+                    style: isActive
+                        ? _SetRowStyles.labelActiveText
+                        : _SetRowStyles.labelNormalText,
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                // Labels muy sutiles para no competir con datos
-                style: isActive ? _SetRowStyles.labelActiveText : _SetRowStyles.labelNormalText,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -595,22 +604,25 @@ class _CompletionCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 64,
-      height: 64,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            onChanged(!isCompleted);
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Center(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 40,
-              height: 40,
+    return Tooltip(
+      message:
+          isCompleted ? 'Marcar como incompleta' : 'Marcar como completada',
+      child: SizedBox(
+        width: 64,
+        height: 64,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              onChanged(!isCompleted);
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 40,
+                height: 40,
               decoration: BoxDecoration(
                 color: isCompleted
                     ? TrainingColors.completed // Verde apagado
@@ -626,7 +638,7 @@ class _CompletionCheckbox extends StatelessWidget {
                 ),
               ),
               child: isCompleted
-                  ? Icon(
+                  ? const Icon(
                       Icons.check_rounded,
                       color: AppColors.textOnAccent,
                       size: 28,
@@ -636,6 +648,6 @@ class _CompletionCheckbox extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),);
   }
 }
