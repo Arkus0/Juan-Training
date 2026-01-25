@@ -38,13 +38,31 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // AndroidX Media for MediaStyle notifications and MediaSession compat
     implementation("androidx.media:media:1.7.0")
+
+    // Play Core (SplitInstall / SplitCompat) — ensure classes referenced by Flutter's
+    // deferred components are available to R8. Update version if needed.
+    implementation("com.google.android.play:core:1.10.3")
 }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // TODO: Añadir tu propia signing config para release.
+            // Por ahora firmamos con debug para que `flutter run --release` funcione.
             signingConfig = signingConfigs.getByName("debug")
+
+            // -----------------------------------------------------------------
+            // Reactivando minificación (temporal) para validar si las reglas
+            // ProGuard mitigaron los errores de R8. Si falla, revertir y
+            // seguir la "solución completa" (añadir módulos ML Kit).
+            // -----------------------------------------------------------------
+            isMinifyEnabled = true
+            isShrinkResources = true
+
+            // Reglas ProGuard específicas para mitigar referencias faltantes.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

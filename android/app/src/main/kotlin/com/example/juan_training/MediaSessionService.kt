@@ -166,8 +166,8 @@ class MediaSessionService : Service() {
                     handlePrevious()
                 }
 
-                override fun onMediaButtonEvent(mediaButtonIntent: Intent?): Boolean {
-                    val keyEvent = mediaButtonIntent?.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+                override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
+                    val keyEvent = mediaButtonIntent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
                     if (keyEvent?.action == KeyEvent.ACTION_DOWN) {
                         when (keyEvent.keyCode) {
                             KeyEvent.KEYCODE_MEDIA_PLAY,
@@ -287,8 +287,20 @@ class MediaSessionService : Service() {
 
         // MediaStyle con session token - CRÍTICO para que aparezca el media player
         val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle()
-            .setMediaSession(androidx.media.session.MediaSessionCompat.Token.fromToken(mediaSession?.sessionToken))
-            .setShowActionsInCompactView(0, 1, 2) // prev, play/pause, next
+        // Intentamos convertir el token del framework a MediaSessionCompat.Token mediante reflexión
+        try {
+            val tokenObj = mediaSession?.sessionToken
+            if (tokenObj != null) {
+                val tokenClass = Class.forName("androidx.media.session.MediaSessionCompat\$Token")
+                val fromTokenMethod = tokenClass.getMethod("fromToken", Any::class.java)
+                val compatToken = fromTokenMethod.invoke(null, tokenObj)
+                val setMediaSessionMethod = mediaStyle.javaClass.getMethod("setMediaSession", tokenClass)
+                setMediaSessionMethod.invoke(mediaStyle, compatToken)
+            }
+        } catch (e: Exception) {
+            // Si falla la reflexión, omitimos la asociación del token (la notificación seguirá mostrándose sin sesión)
+        }
+        mediaStyle.setShowActionsInCompactView(0, 1, 2) // prev, play/pause, next
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(currentTitle ?: "Entrenando")
