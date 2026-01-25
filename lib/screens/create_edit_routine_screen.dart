@@ -30,12 +30,91 @@ class CreateEditRoutineScreen extends ConsumerStatefulWidget {
 class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScreen> {
   late TextEditingController _nameController;
 
+  /// Flag para saber si ya se guardó la rutina (evitar diálogo al salir después de guardar)
+  bool _savedSuccessfully = false;
+
   @override
   void initState() {
     super.initState();
     // 🎯 P2: Nombre por defecto para nuevas rutinas
     final defaultName = widget.rutina?.nombre ?? _generateDefaultName();
     _nameController = TextEditingController(text: defaultName);
+  }
+
+  /// Verifica si hay cambios sin guardar
+  bool _hasUnsavedChanges() {
+    if (_savedSuccessfully) return false;
+
+    final currentState = ref.read(createRoutineProvider(widget.rutina));
+
+    // Si es nueva rutina, verificar si tiene contenido
+    if (widget.rutina == null) {
+      // Tiene cambios si: nombre no está vacío Y no es el default, O tiene ejercicios
+      final hasExercises = currentState.dias.any((d) => d.ejercicios.isNotEmpty);
+      final nameChanged = currentState.nombre.isNotEmpty &&
+                          currentState.nombre != _generateDefaultName();
+      return hasExercises || nameChanged;
+    }
+
+    // Si es edición, comparar con el original
+    final original = widget.rutina!;
+
+    // Comparación simple: nombre o número de días/ejercicios
+    if (currentState.nombre != original.nombre) return true;
+    if (currentState.dias.length != original.dias.length) return true;
+
+    for (int i = 0; i < currentState.dias.length; i++) {
+      final currentDay = currentState.dias[i];
+      final originalDay = original.dias[i];
+      if (currentDay.nombre != originalDay.nombre) return true;
+      if (currentDay.ejercicios.length != originalDay.ejercicios.length) return true;
+    }
+
+    return false;
+  }
+
+  /// Muestra diálogo de confirmación antes de salir
+  Future<bool> _confirmExit() async {
+    if (!_hasUnsavedChanges()) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          '¿Salir sin guardar?',
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Tienes cambios sin guardar. Si sales ahora, se perderán.',
+          style: GoogleFonts.montserrat(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'SEGUIR EDITANDO',
+              style: GoogleFonts.montserrat(color: AppColors.neonPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red[400],
+            ),
+            child: Text(
+              'SALIR',
+              style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 
   /// Genera un nombre por defecto basado en la fecha
@@ -73,6 +152,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
 
       // Success Feedback
       if (!mounted) return;
+
+      // Marcar como guardado para evitar diálogo de confirmación al salir
+      _savedSuccessfully = true;
 
       // Flash
       final overlay = Overlay.of(context);
@@ -875,7 +957,16 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     final routineState = ref.watch(createRoutineProvider(widget.rutina));
     final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _confirmExit();
+        if (shouldPop && mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
@@ -1069,6 +1160,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           ),
         ),
       ),
+    ),  // Close PopScope
     );
   }
 }
