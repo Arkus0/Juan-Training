@@ -81,19 +81,18 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     final notifier = ref.read(voiceInputProvider.notifier);
     final state = ref.read(voiceInputProvider);
 
+    // Limpiar estado "no entendido" si existe
+    if (state.notUnderstood) {
+      notifier.clearNotUnderstood();
+    }
+
     if (state.isListening) {
-      // Parar y procesar
+      // Parar y procesar - PUSH TO TALK
       await notifier.stopListening();
     } else {
-      // Empezar a escuchar (respetar modo continuo si está activo)
-      await notifier.startListening(continuous: state.isContinuousMode);
+      // Empezar a escuchar - PUSH TO TALK (siempre modo single)
+      await notifier.startListening();
     }
-  }
-  
-  Future<void> _onMicLongPress() async {
-    // Long press activa modo continuo
-    final notifier = ref.read(voiceInputProvider.notifier);
-    await notifier.startListening(continuous: true);
   }
 
   void _onConfirm() {
@@ -214,57 +213,20 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              voiceState.isContinuousMode 
-                  ? 'Modo continuo activo - Habla sin parar'
-                  : 'Di los ejercicios con series y repeticiones',
-              style: GoogleFonts.montserrat(
-                fontSize: 14,
-                color: voiceState.isContinuousMode ? AppColors.neonCyan : Colors.white54,
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // Controles de modo
-            _buildModeControls(voiceState),
+
+            // Banner de capacidades - SIEMPRE VISIBLE
+            const _VoiceCapabilitiesBanner(),
             const SizedBox(height: 16),
 
-            // Botón de micrófono
-            GestureDetector(
-              onLongPress: _onMicLongPress,
-              child: VoiceMicButton(
-                onTap: _onMicTap,
-                size: 80,
-              ),
+            // Botón de micrófono - PUSH TO TALK
+            VoiceMicButton(
+              onTap: _onMicTap,
+              size: 80,
             ),
-            
-            // Indicador de modo continuo
-            if (voiceState.isContinuousMode && voiceState.isListening) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.neonCyanSubtle.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.success.withValues(alpha: 0.5)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const _PulsingDot(color: Colors.green),
-                    const SizedBox(width: 8),
-                    Text(
-                      'ESCUCHA CONTINUA',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.neonCyan,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+
+            // Indicador de estado bajo el botón
+            const SizedBox(height: 12),
+            _buildStatusIndicator(voiceState),
             const SizedBox(height: 16),
 
             // Preview de transcripción
@@ -273,42 +235,15 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Estado de error
+            // Estado de error técnico
             if (voiceState.hasError) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.live.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.error),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        voiceState.errorMessage ?? 'Error desconocido',
-                        style: GoogleFonts.montserrat(
-                          color: AppColors.neonPrimary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => ref.read(voiceInputProvider.notifier).retry(),
-                      child: Text(
-                        'REINTENTAR',
-                        style: GoogleFonts.montserrat(
-                          color: AppColors.neonPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildErrorState(voiceState.errorMessage ?? 'Error desconocido'),
+              const SizedBox(height: 16),
+            ],
+
+            // Estado "No entendido" - feedback claro
+            if (voiceState.notUnderstood) ...[
+              _buildNotUnderstoodState(voiceState.notUnderstoodMessage ?? 'No entendido'),
               const SizedBox(height: 16),
             ],
 
@@ -404,36 +339,139 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     );
   }
   
-  /// Controles de modo continuo y audio feedback
-  Widget _buildModeControls(VoiceInputState voiceState) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Toggle modo continuo
-        _ModeToggleChip(
-          icon: Icons.all_inclusive,
-          label: 'Continuo',
-          isActive: voiceState.isContinuousMode,
-          onTap: () {
-            final notifier = ref.read(voiceInputProvider.notifier);
-            if (voiceState.isListening) {
-              notifier.stopListening();
-            }
-            // El próximo tap en mic usará modo continuo
-            ref.read(voiceInputProvider.notifier).setContinuousMode(!voiceState.isContinuousMode);
-          },
-          activeColor: Colors.green,
+  /// Indicador de estado actual de la voz
+  Widget _buildStatusIndicator(VoiceInputState voiceState) {
+    if (voiceState.isListening) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const _PulsingDot(color: Colors.red),
+          const SizedBox(width: 8),
+          Text(
+            'ESCUCHANDO...',
+            style: GoogleFonts.montserrat(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.neonPrimary,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (voiceState.isProcessing) {
+      return Text(
+        'Procesando...',
+        style: GoogleFonts.montserrat(
+          fontSize: 14,
+          color: Colors.white54,
         ),
-        const SizedBox(width: 12),
-        // Toggle audio feedback
-        _ModeToggleChip(
-          icon: voiceState.audioFeedbackEnabled ? Icons.volume_up : Icons.volume_off,
-          label: 'Sonido',
-          isActive: voiceState.audioFeedbackEnabled,
-          onTap: () => ref.read(voiceInputProvider.notifier).toggleAudioFeedback(),
-          activeColor: Colors.blue,
-        ),
-      ],
+      );
+    }
+
+    // Estado idle - instrucciones
+    return Text(
+      'Mantén pulsado para hablar',
+      style: GoogleFonts.montserrat(
+        fontSize: 13,
+        color: Colors.white38,
+      ),
+    );
+  }
+
+  /// Estado de error técnico
+  Widget _buildErrorState(String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.live.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.error),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.montserrat(
+                color: AppColors.neonPrimary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => ref.read(voiceInputProvider.notifier).retry(),
+            child: Text(
+              'REINTENTAR',
+              style: GoogleFonts.montserrat(
+                color: AppColors.neonPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Estado "No entendido" - feedback claro y accionable
+  Widget _buildNotUnderstoodState(String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'NO ENTENDIDO',
+                style: GoogleFonts.montserrat(
+                  color: Colors.orange,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: GoogleFonts.montserrat(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    ref.read(voiceInputProvider.notifier).clearNotUnderstood();
+                    _onMicTap();
+                  },
+                  icon: const Icon(Icons.mic, size: 18),
+                  label: const Text('REINTENTAR'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    side: const BorderSide(color: Colors.orange),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -901,59 +939,96 @@ class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
   }
 }
 
-/// Chip toggle para modos de voz
-class _ModeToggleChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  final Color activeColor;
-
-  const _ModeToggleChip({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    required this.activeColor,
-  });
+/// Banner informativo sobre capacidades de voz
+/// Siempre visible para que el usuario sepa qué puede dictar
+class _VoiceCapabilitiesBanner extends StatelessWidget {
+  const _VoiceCapabilitiesBanner();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive 
-              ? activeColor.withValues(alpha: 0.2) 
-              : AppColors.bgDeep,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isActive 
-                ? activeColor.withValues(alpha: 0.6) 
-                : AppColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isActive ? activeColor : AppColors.textTertiary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.montserrat(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isActive ? activeColor : AppColors.textTertiary,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.neonCyan.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppColors.neonCyan.withValues(alpha: 0.8),
               ),
+              const SizedBox(width: 8),
+              Text(
+                'La voz captura:',
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.neonCyan,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              _CapabilityChip(label: 'Ejercicio', icon: Icons.fitness_center),
+              _CapabilityChip(label: 'Series', icon: Icons.repeat),
+              _CapabilityChip(label: 'Reps', icon: Icons.tag),
+              _CapabilityChip(label: 'Peso', icon: Icons.scale),
+              _CapabilityChip(label: 'Notas', icon: Icons.note),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Detalles avanzados se ajustan después.',
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              color: Colors.white38,
+              fontStyle: FontStyle.italic,
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Chip pequeño para mostrar una capacidad
+class _CapabilityChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _CapabilityChip({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.bgDeep,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white54),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.montserrat(
+              fontSize: 11,
+              color: Colors.white70,
+            ),
+          ),
+        ],
       ),
     );
   }
