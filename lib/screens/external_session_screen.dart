@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../models/external_session.dart';
+import '../providers/training_provider.dart';
 import '../providers/voice_input_provider.dart';
 import '../services/voice_input_service.dart';
 import '../utils/design_system.dart';
@@ -651,7 +653,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     HapticFeedback.lightImpact();
   }
 
-  void _onSaveSession() {
+  /// 🎯 FIX #5: Implementación completa del guardado de sesiones externas
+  Future<void> _onSaveSession() async {
     if (_exercises.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -662,78 +665,127 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       return;
     }
 
-    // TODO: Implementar guardado real en base de datos
-    // Por ahora muestra confirmación
+    // Convertir ejercicios locales a ExternalExercise
+    final externalExercises = _exercises.map((e) => ExternalExercise(
+      name: e.name,
+      libraryId: null, // No tenemos el ID de biblioteca en este punto
+      series: e.sets,
+      repsRange: e.reps,
+      weight: e.weight,
+      notes: e.notes,
+      confidence: 1.0, // Usuario lo añadió manualmente
+      rawInput: '${e.name} ${e.sets}x${e.reps}${e.weight != null ? ' ${e.weight}kg' : ''}',
+    )).toList();
 
-    HapticFeedback.heavyImpact();
+    // Crear la sesión externa
+    final externalSession = ExternalSession.create(
+      sessionDate: _selectedDate,
+      exercises: externalExercises,
+      notes: _sessionNotes,
+      includeInProgression: _includeInStats,
+      source: _inputMode == _InputMode.voice
+          ? ExternalSessionSource.voice
+          : ExternalSessionSource.manual,
+    );
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgElevated,
-        title: Text(
-          'Sesión guardada',
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Fecha: ${_formatDate(_selectedDate)}',
-              style: GoogleFonts.montserrat(color: Colors.white70),
-            ),
-            Text(
-              'Ejercicios: ${_exercises.length}',
-              style: GoogleFonts.montserrat(color: Colors.white70),
-            ),
-            Text(
-              'En estadísticas: ${_includeInStats ? "Sí" : "No"}',
-              style: GoogleFonts.montserrat(color: Colors.white70),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.bgDeep,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.upload_file, color: AppColors.neonCyan, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Marcada como sesión externa',
-                    style: GoogleFonts.montserrat(
-                      color: AppColors.neonCyan,
-                      fontSize: 12,
-                    ),
+    // Convertir a Sesion y guardar en el repositorio
+    final sesion = externalSession.toSesion();
+
+    try {
+      final repository = ref.read(trainingRepositoryProvider);
+      await repository.saveSesion(sesion);
+
+      HapticFeedback.heavyImpact();
+
+      if (!mounted) return;
+
+      // Mostrar confirmación de éxito
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.bgElevated,
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '¡Sesión guardada!',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                ],
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Fecha: ${_formatDate(_selectedDate)}',
+                style: GoogleFonts.montserrat(color: Colors.white70),
+              ),
+              Text(
+                'Ejercicios: ${_exercises.length}',
+                style: GoogleFonts.montserrat(color: Colors.white70),
+              ),
+              Text(
+                'En estadísticas: ${_includeInStats ? "Sí" : "No"}',
+                style: GoogleFonts.montserrat(color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.bgDeep,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.upload_file, color: AppColors.neonCyan, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Guardada en tu historial como sesión externa',
+                        style: GoogleFonts.montserrat(
+                          color: AppColors.neonCyan,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'ACEPTAR',
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.success,
+                ),
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop();
-            },
-            child: Text(
-              'ACEPTAR',
-              style: GoogleFonts.montserrat(
-                fontWeight: FontWeight.bold,
-                color: AppColors.success,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al guardar: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   String _formatDate(DateTime date) {

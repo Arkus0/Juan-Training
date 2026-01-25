@@ -1,4 +1,7 @@
 import 'package:uuid/uuid.dart';
+import 'ejercicio.dart';
+import 'serie_log.dart';
+import 'sesion.dart';
 
 /// Modelo de sesión de entrenamiento externa (no realizada en la app).
 ///
@@ -109,6 +112,63 @@ class ExternalSession {
       addedAt: DateTime.parse(json['addedAt'] as String),
       source: ExternalSessionSource.values.byName(json['source'] as String),
     );
+  }
+
+  /// 🎯 FIX #5: Convierte esta sesión externa a un modelo Sesion para guardarlo
+  /// en el historial regular de la app.
+  ///
+  /// Usa 'external' como rutinaId y marca la sesión como "externa" en el dayName.
+  Sesion toSesion() {
+    final ejerciciosCompletados = exercises.map((ex) {
+      // Parsear reps del formato "8" o "8-12" -> usar el promedio
+      final reps = _parseRepsValue(ex.repsRange);
+
+      // Crear logs de series (todas completadas)
+      final logs = List.generate(
+        ex.series,
+        (i) => SerieLog(
+          peso: ex.weight ?? 0.0,
+          reps: reps,
+          completed: true,
+        ),
+      );
+
+      return Ejercicio(
+        id: const Uuid().v4(),
+        libraryId: ex.libraryId?.toString() ?? ex.name,
+        nombre: ex.name,
+        musculosPrincipales: const [],
+        musculosSecundarios: const [],
+        series: ex.series,
+        reps: reps,
+        peso: ex.weight ?? 0.0,
+        notas: ex.notes,
+        logs: logs,
+      );
+    }).toList();
+
+    return Sesion(
+      id: id,
+      rutinaId: 'external', // Marca como sesión externa
+      dayName: 'Sesión Externa (${source.displayName})',
+      dayIndex: null,
+      fecha: sessionDate,
+      ejerciciosCompletados: ejerciciosCompletados,
+      ejerciciosObjetivo: [], // Las sesiones externas no tienen objetivos predefinidos
+      durationSeconds: null,
+      isBadDay: !includeInProgression, // Si no incluye en progresión, es como un "día malo"
+    );
+  }
+
+  /// Parsea el valor de reps de un rango como "8-12" -> 10 (promedio)
+  int _parseRepsValue(String repsRange) {
+    if (repsRange.contains('-')) {
+      final parts = repsRange.split('-');
+      final min = int.tryParse(parts[0]) ?? 8;
+      final max = int.tryParse(parts[1]) ?? 12;
+      return ((min + max) / 2).round();
+    }
+    return int.tryParse(repsRange) ?? 10;
   }
 }
 

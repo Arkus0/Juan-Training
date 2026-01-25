@@ -42,6 +42,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   }
 
   /// Verifica si hay cambios sin guardar
+  /// 🎯 FIX #4: Comparación PROFUNDA para detectar cambios en ejercicios individuales
   bool _hasUnsavedChanges() {
     if (_savedSuccessfully) return false;
 
@@ -56,18 +57,46 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       return hasExercises || nameChanged;
     }
 
-    // Si es edición, comparar con el original
+    // Si es edición, comparar con el original usando comparación PROFUNDA
     final original = widget.rutina!;
 
-    // Comparación simple: nombre o número de días/ejercicios
+    // Comparar nombre de rutina
     if (currentState.nombre != original.nombre) return true;
+
+    // Comparar número de días
     if (currentState.dias.length != original.dias.length) return true;
 
+    // Comparar cada día en detalle
     for (int i = 0; i < currentState.dias.length; i++) {
       final currentDay = currentState.dias[i];
       final originalDay = original.dias[i];
+
+      // Comparar nombre del día
       if (currentDay.nombre != originalDay.nombre) return true;
+
+      // Comparar tipo de progresión del día
+      if (currentDay.progressionType != originalDay.progressionType) return true;
+
+      // Comparar número de ejercicios
       if (currentDay.ejercicios.length != originalDay.ejercicios.length) return true;
+
+      // 🎯 FIX #4: Comparación PROFUNDA de cada ejercicio
+      for (int j = 0; j < currentDay.ejercicios.length; j++) {
+        final currentEx = currentDay.ejercicios[j];
+        final originalEx = originalDay.ejercicios[j];
+
+        // Comparar propiedades del ejercicio
+        if (currentEx.id != originalEx.id) return true;
+        if (currentEx.nombre != originalEx.nombre) return true;
+        if (currentEx.series != originalEx.series) return true;
+        if (currentEx.repsRange != originalEx.repsRange) return true;
+        if (currentEx.notas != originalEx.notas) return true;
+        if (currentEx.descansoSugerido != originalEx.descansoSugerido) return true;
+        if (currentEx.supersetId != originalEx.supersetId) return true;
+        if (currentEx.progressionType != originalEx.progressionType) return true;
+        if (currentEx.weightIncrement != originalEx.weightIncrement) return true;
+        if (currentEx.targetRpe != originalEx.targetRpe) return true;
+      }
     }
 
     return false;
