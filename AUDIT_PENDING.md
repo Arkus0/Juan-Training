@@ -180,7 +180,7 @@
 | `fl_chart` | 0.69.2 | 1.1.1 | **ALTO** | Major version. Revisar changelog antes de migrar. |
 | `flutter_local_notifications` | 18.0.1 | 19.5.0 | MEDIO | Cambios en API de permisos Android. |
 | `permission_handler` | 11.3.1 | 12.0.1 | MEDIO | Breaking changes en API. |
-| `just_audio` | 0.9.42 | 0.10.5 | MEDIO | Cambios en API de reproducción. |
+| ~~`just_audio`~~ | ~~0.9.42~~ | ~~0.10.5~~ | ~~MEDIO~~ | ✅ **ELIMINADO** - Reemplazado por ToneGenerator nativo (fix audio focus). |
 | `connectivity_plus` | 6.1.1 | 7.0.0 | BAJO | Minor API changes. |
 | `flutter_slidable` | 3.1.1 | 4.0.3 | BAJO | Cambios en configuración de acciones. |
 | `google_fonts` | 6.2.1 | 7.1.0 | BAJO | Posibles cambios en carga de fuentes. |
@@ -198,7 +198,7 @@
 
 1. **Primero:** `flutter_local_notifications` + `permission_handler` (juntos, relacionados)
 2. **Segundo:** `fl_chart` (revisar breaking changes en gráficas)
-3. **Tercero:** `just_audio` (solo afecta beeps del timer)
+3. ~~**Tercero:** `just_audio` (solo afecta beeps del timer)~~ ✅ **ELIMINADO** - Ya no se usa
 4. **Último:** `flutter_riverpod` 3.x (requiere migración masiva, hacer al final)
 
 ---

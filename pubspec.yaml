@@ -43,9 +43,6 @@ dependencies:
   image_picker: ^1.1.2
   image: ^4.0.17
 
-  # Audio (para beeps del timer - ligero, offline-first)
-  just_audio: ^0.9.42
-
   # Speech Recognition (on-device, offline-first para dictado de rutinas)
   speech_to_text: ^7.0.0
 
