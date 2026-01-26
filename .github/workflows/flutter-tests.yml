@@ -3,9 +3,9 @@
 
    on:
      push:
-       branches: [ main ]
+       branches: [main]
      pull_request:
-       branches: [ main ]
+       branches: [main]
 
    jobs:
      build:
@@ -17,7 +17,7 @@
          - name: Set up Flutter
            uses: subosito/flutter-action@v2
            with:
-             flutter-version: 'stable'
+             flutter-version: stable
 
          - name: Install dependencies
            run: flutter pub get
