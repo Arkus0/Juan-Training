@@ -897,8 +897,9 @@ class ExerciseCard extends StatelessWidget {
               onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
               onCompleted: (val) => onUpdateCompleted(setIndex, val),
               onLongPress: () => onSetLongPress(setIndex),
-              // 🆕 SWIPE-TO-DELETE: Solo si hay más de 1 serie
-              canDelete: exercise.logs.length > 1,
+              // 🎯 FIX #2: Siempre permite eliminar - si el ejercicio se queda sin series,
+              // se elimina de la sesión (pero NO de la rutina base)
+              canDelete: true,
               onDelete: () => onDeleteSet?.call(setIndex),
             );
           }

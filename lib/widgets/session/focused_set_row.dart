@@ -254,13 +254,15 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
                 const SizedBox(width: 12),
 
                 // Input KG (táctil grande)
+                // 🎯 FIX #3: Muestra peso incluso si es 0 o negativo (máquinas asistidas)
                 Expanded(
                   child: _TappableValueInput(
-                    value: widget.log.peso > 0 ? widget.log.peso : null,
+                    value: widget.log.peso,
                     label: 'KG',
                     isActive: widget.isActive,
                     isCompleted: isCompleted,
                     textColor: style.textColor,
+                    allowZeroAndNegative: true, // 🎯 FIX #3
                     onTap: isCompleted
                         ? null
                         : () => _openWeightInput(context),
@@ -270,14 +272,16 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
                 const SizedBox(width: 12),
 
                 // Input REPS (táctil grande)
+                // 🎯 FIX #3: Muestra reps incluso si es 0 (isométricos, holds)
                 Expanded(
                   child: _TappableValueInput(
-                    value: widget.log.reps > 0 ? widget.log.reps.toDouble() : null,
+                    value: widget.log.reps.toDouble(),
                     label: 'REPS',
                     isActive: widget.isActive,
                     isCompleted: isCompleted,
                     textColor: style.textColor,
                     isInteger: true,
+                    allowZeroAndNegative: true, // 🎯 FIX #3: permite 0 para isométricos
                     onTap: isCompleted
                         ? null
                         : () => _openRepsInput(context),
@@ -510,6 +514,7 @@ class _TappableValueInput extends StatelessWidget {
   final Color textColor;
   final bool isInteger;
   final VoidCallback? onTap;
+  final bool allowZeroAndNegative; // 🎯 FIX #3
 
   const _TappableValueInput({
     this.value,
@@ -519,10 +524,13 @@ class _TappableValueInput extends StatelessWidget {
     required this.textColor,
     this.isInteger = false,
     this.onTap,
+    this.allowZeroAndNegative = false, // 🎯 FIX #3
   });
 
   String get _displayValue {
-    if (value == null || value == 0) return '—';
+    if (value == null) return '—';
+    // 🎯 FIX #3: Solo mostrar "—" si no permite cero/negativo Y el valor es 0
+    if (!allowZeroAndNegative && value == 0) return '—';
     if (isInteger) return value!.toInt().toString();
     // Quitar .0 si es entero
     if (value == value!.truncateToDouble()) {

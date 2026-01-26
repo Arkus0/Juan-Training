@@ -127,8 +127,9 @@ class ErrorToleranceRules {
   /// Protege contra errores de entrada que arruinen gráficas
   static const double absoluteMaxWeight = 600.0;
 
-  /// Peso mínimo permitido (negativo es claramente error)
-  static const double absoluteMinWeight = 0.0;
+  /// 🎯 FIX #3: Peso mínimo permitido - permite negativos para máquinas asistidas
+  /// Ejemplo: -50kg en máquina de dominadas asistidas
+  static const double absoluteMinWeight = -200.0;
 
   /// Reps máximas razonables por serie (más es probablemente error)
   static const int absoluteMaxReps = 100;
@@ -249,16 +250,20 @@ class ErrorToleranceRules {
   }) {
     // Límites por categoría (valores razonables máximos)
     final maxReasonable = _getMaxReasonableWeight(category);
-    const minReasonable = 0.0;
-    
+
+    // 🎯 FIX #3: Permite pesos negativos (máquinas asistidas) y peso 0 (bodyweight)
+    // Solo aplicamos límite inferior absoluto para proteger contra errores extremos
+    const minReasonable = absoluteMinWeight;
+
     // Cambio máximo permitido entre sesiones (%)
     const maxChangePercent = 0.30; // 30%
-    
-    // Peso negativo - claramente error
+
+    // 🎯 FIX #3: Solo corregir si el peso es MENOR que el mínimo absoluto (-200kg)
+    // Los pesos negativos son válidos (máquinas asistidas), el peso 0 también
     if (enteredWeight < minReasonable) {
       return ToleranceResult.corrected(
-        correctedValue: lastKnownWeight,
-        message: 'Peso ajustado a ${_fmt(lastKnownWeight)}kg',
+        correctedValue: lastKnownWeight > minReasonable ? lastKnownWeight : 0.0,
+        message: 'Peso ajustado a ${_fmt(lastKnownWeight > minReasonable ? lastKnownWeight : 0.0)}kg',
       );
     }
     

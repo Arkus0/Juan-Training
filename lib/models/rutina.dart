@@ -16,13 +16,16 @@ class Rutina {
 
   /// Creates a DEEP copy of this routine including all days and exercises.
   /// This ensures modifications don't affect the original object.
-  /// 🎯 FIX CRÍTICO: Usado para evitar que la edición de rutinas guarde cambios
+  /// 🎯 FIX #4 CRÍTICO: Usado para evitar que la edición de rutinas guarde cambios
   /// cuando el usuario hace "Back" en lugar de "Guardar".
+  ///
+  /// IMPORTANTE: Usa Dia.deepCopy() en lugar de Dia.fromJson(d.toJson()) para
+  /// preservar los IDs originales y evitar inconsistencias.
   Rutina deepCopy() {
     return Rutina(
       id: id,
       nombre: nombre,
-      dias: dias.map((d) => Dia.fromJson(d.toJson())).toList(),
+      dias: dias.map((d) => d.deepCopy()).toList(),
       creada: creada,
     );
   }
