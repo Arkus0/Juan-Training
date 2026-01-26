@@ -23,6 +23,10 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        // Register BeepSoundService for timer beeps WITHOUT audio focus
+        // This allows timer beeps to play without pausing Spotify/music
+        BeepSoundService.registerWith(flutterEngine, this)
+
         // Music launcher channel (existing)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MUSIC_CHANNEL)
             .setMethodCallHandler { call, result ->
