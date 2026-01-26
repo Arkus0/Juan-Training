@@ -150,6 +150,20 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
     }
   }
 
+  // Placeholder methods for OCR actions; implement actual camera/gallery OCR
+  // integration here when ready.
+  Future<void> _startOcrFromCamera() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OCR disponible pronto')),
+    );
+  }
+
+  Future<void> _startOcrFromGallery() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OCR disponible pronto')),
+    );
+  }
+
   void _removeExercise(int index) {
     _saveToUndoStack();
     setState(() => _exercises.removeAt(index));
@@ -234,8 +248,8 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.bgCard,
+      decoration: BoxDecoration(
+        color: AppColors.bgElevated,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -626,24 +640,14 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementar OCR con cámara
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OCR disponible pronto')),
-                      );
-                    },
+                    onPressed: _startOcrFromCamera,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Cámara'),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.blue),
                   ),
                   const SizedBox(width: 12),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementar OCR con galería
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OCR disponible pronto')),
-                      );
-                    },
+                    onPressed: _startOcrFromGallery,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Galería'),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.blue),
@@ -1435,7 +1439,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
                     labelText: 'Reps',
                     labelStyle: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
                     hintText: '8-12',
-                    hintStyle: GoogleFonts.montserrat(color: Colors.white20),
+                    hintStyle: GoogleFonts.montserrat(color: Colors.white.withOpacity(0.2)),
                     filled: true,
                     fillColor: AppColors.bgDeep,
                     border: OutlineInputBorder(

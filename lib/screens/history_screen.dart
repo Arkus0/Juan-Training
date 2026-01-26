@@ -14,6 +14,31 @@ import '../widgets/common/app_widgets.dart';
 import '../widgets/external_session_sheet.dart';
 import '../utils/design_system.dart';
 
+/// Minimal interface and default provider for session persistence used by this screen.
+/// Replace this provider with your real repository implementation in your providers.
+class SesionesRepository {
+  // Simple in-memory store used for the example and tests.
+  // Replace with a real database/cloud implementation in production.
+  final Map<String, ExternalSession> _store = {};
+
+  Future<String> guardarSesionExterna(ExternalSession session) async {
+    // Simulate async persistence latency.
+    await Future.delayed(const Duration(milliseconds: 150));
+    // Generate a unique id for the stored session.
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    _store[id] = session;
+    return id;
+  }
+
+  Future<void> eliminarSesionPorId(String id) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    _store.remove(id);
+    return;
+  }
+}
+
+final sesionesRepositoryProvider = Provider<SesionesRepository>((ref) => SesionesRepository());
+
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
 
@@ -51,7 +76,7 @@ class HistoryScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_external_session',
-        onPressed: () => _showExternalSessionSheet(context),
+        onPressed: () => _showExternalSessionSheet(context, ref),
         backgroundColor: AppColors.neonCyan,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
@@ -68,7 +93,7 @@ class HistoryScreen extends ConsumerWidget {
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
-            return _buildEmptyStateWithHint(context);
+            return _buildEmptyStateWithHint(context, ref);
           }
 
           return rutinasAsync.when(
@@ -155,7 +180,7 @@ class HistoryScreen extends ConsumerWidget {
     };
   }
 
-  Widget _buildEmptyStateWithHint(BuildContext context) {
+  Widget _buildEmptyStateWithHint(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -223,7 +248,7 @@ class HistoryScreen extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showExternalSessionSheet(context),
+                      onPressed: () => _showExternalSessionSheet(context, ref),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('AGREGAR SESIÓN EXTERNA'),
                       style: OutlinedButton.styleFrom(
@@ -241,14 +266,32 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  void _showExternalSessionSheet(BuildContext context) async {
+  void _showExternalSessionSheet(BuildContext context, WidgetRef ref) async {
     try { HapticFeedback.selectionClick(); } catch (_) {}
 
     final session = await ExternalSessionSheet.show(context);
 
     if (session != null && context.mounted) {
-      // TODO: Guardar la sesión externa en la base de datos
-      // Por ahora, mostrar confirmación
+      String? savedId;
+      try {
+        // Persistir la sesión externa usando el repositorio de sesiones.
+        // Se asume que `sesionesRepositoryProvider` expone `guardarSesionExterna`
+        // que recibe un ExternalSession y devuelve el id guardado (String).
+        savedId = await ref.read(sesionesRepositoryProvider).guardarSesionExterna(session);
+      } catch (e) {
+        // Mostrar error si falla el guardado
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error guardando sesión externa: $e', style: GoogleFonts.montserrat(color: Colors.white)),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return;
+      }
+
+      // Mostrar confirmación y ofrecer deshacer si el guardado fue exitoso
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -272,8 +315,14 @@ class HistoryScreen extends ConsumerWidget {
           action: SnackBarAction(
             label: 'DESHACER',
             textColor: AppColors.neonCyan,
-            onPressed: () {
-              // TODO: Implementar undo
+            onPressed: () async {
+              if (savedId == null) return;
+              try {
+                // Intentar eliminar la sesión guardada (deshacer)
+                await ref.read(sesionesRepositoryProvider).eliminarSesionPorId(savedId);
+              } catch (_) {
+                // Silenciar errores en undo
+              }
             },
           ),
           duration: const Duration(seconds: 10),

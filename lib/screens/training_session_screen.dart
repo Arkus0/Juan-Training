@@ -917,7 +917,113 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
                           color: AppColors.textTertiary, fontSize: 12)),
                   onTap: () {
                     Navigator.pop(ctx);
-                    // TODO: Mostrar historial del ejercicio actual
+
+                    // Mostrar historial del ejercicio actual en un modal
+                    if (nextSet == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'No hay un ejercicio seleccionado.',
+                            style: AppTypography.labelEmphasis,
+                          ),
+                          backgroundColor: AppColors.info,
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final exercise = state.exercises[nextSet.exerciseIndex];
+                    final history = state.history[exercise.nombre] ?? [];
+
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: AppColors.bgElevated,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (ctx2) {
+                        return SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Handle
+                                Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.border,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Historial: ${exercise.nombre}',
+                                  style: AppTypography.sectionTitle,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                if (history.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: Text(
+                                      'No hay historial para este ejercicio.',
+                                      style: AppTypography.body
+                                          .copyWith(
+                                              color: AppColors.textTertiary),
+                                    ),
+                                  )
+                                else
+                                  SizedBox(
+                                    height: 220,
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      itemCount: history.length,
+                                      separatorBuilder: (_, __) =>
+                                          const Divider(height: 1),
+                                      itemBuilder: (context, i) {
+                                        final log = history[i];
+                                        return ListTile(
+                                          dense: true,
+                                          title: Text(
+                                            '${log.peso?.toStringAsFixed(1) ?? '-'} kg × ${log.reps ?? '-'} reps',
+                                            style: AppTypography.labelEmphasis,
+                                          ),
+                                          subtitle: (log.notas != null &&
+                                                  log.notas!.isNotEmpty)
+                                              ? Text(
+                                                  log.notas!,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                )
+                                              : null,
+                                          trailing: log.rpe != null
+                                              ? Text(
+                                                  'RPE ${log.rpe!.toStringAsFixed(1)}',
+                                                  style: AppTypography.body
+                                                      .copyWith(
+                                                          color: AppColors
+                                                              .textTertiary),
+                                                )
+                                              : null,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
 
