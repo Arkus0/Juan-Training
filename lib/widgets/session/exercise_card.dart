@@ -503,6 +503,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     HapticFeedback.mediumImpact();
     if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -747,9 +748,9 @@ class ExerciseCard extends StatelessWidget {
                                   border: Border.all(color: AppColors.border),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
+                                  children: [
                                     Icon(Icons.flash_on, color: AppColors.bloodRed, size: 18),
                                     SizedBox(width: 4),
                                     Text(

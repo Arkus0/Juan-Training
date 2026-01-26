@@ -100,6 +100,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     final validExercises = state.validExercises;
 
     if (validExercises.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

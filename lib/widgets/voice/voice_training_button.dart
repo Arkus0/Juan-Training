@@ -127,7 +127,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
         // Registrar acción para undo
         notifier.recordAction(vip.VoiceAction(
           description: _getActionDescription(command),
-        ));
+        ),);
         widget.onCommand(command);
       } else {
         // No se entendió el comando - mostrar feedback
@@ -162,6 +162,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
 
   void _showNotUnderstoodSnackbar(String? transcript) {
     if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

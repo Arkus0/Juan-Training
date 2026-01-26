@@ -293,6 +293,7 @@ class VoiceUndoSnackbar {
     required VoidCallback onUndo,
     Duration duration = const Duration(seconds: 10),
   }) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
