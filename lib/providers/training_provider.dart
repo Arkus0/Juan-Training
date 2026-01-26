@@ -390,6 +390,9 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   /// Elimina una serie de un ejercicio durante la sesión activa
   ///
+  /// 🎯 FIX #2: Ahora permite eliminar TODAS las series de un ejercicio.
+  /// Si el ejercicio se queda sin series, se elimina de la sesión.
+  ///
   /// IMPORTANTE: Solo afecta a la sesión actual, NO modifica:
   /// - La rutina base (targets permanecen intactos)
   /// - Futuros entrenamientos
@@ -400,13 +403,21 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
 
-    // Protección: no eliminar si solo queda una serie
-    if (exercise.logs.length <= 1) return;
-
     // Protección: índice válido
     if (setIndex < 0 || setIndex >= exercise.logs.length) return;
 
     final newLogs = [...exercise.logs]..removeAt(setIndex);
+
+    // 🎯 FIX #2: Si el ejercicio se queda sin series, eliminarlo de la sesión
+    // pero NO de targets (la rutina original permanece intacta para futuros entrenamientos)
+    if (newLogs.isEmpty) {
+      exercises.removeAt(exerciseIndex);
+      // targets NO se modifica - la rutina base permanece intacta
+      state = state.copyWith(exercises: exercises);
+      _saveState();
+      return;
+    }
+
     final newExercise = exercise.copyWith(
       logs: newLogs,
       series: newLogs.length,

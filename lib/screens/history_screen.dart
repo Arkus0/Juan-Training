@@ -51,7 +51,8 @@ class HistoryScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'add_external_session',
-        onPressed: () => _showExternalSessionSheet(context),
+        // 🎯 FIX #5: Pasar ref para poder guardar la sesión en la base de datos
+        onPressed: () => _showExternalSessionSheet(context, ref),
         backgroundColor: AppColors.neonCyan,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
@@ -241,44 +242,69 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  void _showExternalSessionSheet(BuildContext context) async {
+  /// 🎯 FIX #5: Muestra el sheet para agregar sesión externa y la guarda en la BD
+  void _showExternalSessionSheet(BuildContext context, WidgetRef ref) async {
     try { HapticFeedback.selectionClick(); } catch (_) {}
 
-    final session = await ExternalSessionSheet.show(context);
+    final externalSession = await ExternalSessionSheet.show(context);
 
-    if (session != null && context.mounted) {
-      // TODO: Guardar la sesión externa en la base de datos
-      // Por ahora, mostrar confirmación
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sesión externa guardada (${session.exercises.length} ejercicios)',
-                  style: GoogleFonts.montserrat(color: Colors.white),
-                ),
+    if (externalSession != null && context.mounted) {
+      try {
+        // 🎯 FIX #5: Convertir ExternalSession a Sesion y guardar en la base de datos
+        final sesion = externalSession.toSesion();
+        final repository = ref.read(trainingRepositoryProvider);
+        await repository.saveSesion(sesion);
+
+        // Invalidar el stream para que se refresque la lista
+        ref.invalidate(sesionesHistoryStreamProvider);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Sesión externa guardada (${externalSession.exercises.length} ejercicios)',
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          backgroundColor: AppColors.bgElevated,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: AppColors.border),
-          ),
-          action: SnackBarAction(
-            label: 'DESHACER',
-            textColor: AppColors.neonCyan,
-            onPressed: () {
-              // TODO: Implementar undo
-            },
-          ),
-          duration: const Duration(seconds: 10),
-        ),
-      );
+              backgroundColor: AppColors.bgElevated,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: AppColors.border),
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Error al guardar: $e',
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.bgElevated,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 }

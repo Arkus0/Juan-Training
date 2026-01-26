@@ -55,8 +55,10 @@ class TimerForegroundService : Service() {
                 if (remaining > 0) {
                     handler.postDelayed(this, 1000)
                 } else {
-                    // Timer finished
-                    showTimerFinishedNotification()
+                    // 🎯 FIX #1: Timer finished - just cancel notification and stop
+                    // NO separate "finished" notification - the countdown disappears silently
+                    // This prevents duplicate notifications (countdown + finished)
+                    cancelNotification()
                     stopSelf()
                 }
             }
@@ -98,6 +100,8 @@ class TimerForegroundService : Service() {
                 }
             }
             ACTION_STOP -> {
+                // 🎯 FIX #1: Explicitly cancel notification before stopping
+                cancelNotification()
                 stopSelf()
             }
         }
@@ -233,25 +237,14 @@ class TimerForegroundService : Service() {
         manager.notify(NOTIFICATION_ID, createNotification())
     }
 
-    private fun showTimerFinishedNotification() {
-        val openAppIntent = packageManager.getLaunchIntentForPackage(packageName)
-        val openAppPendingIntent = PendingIntent.getActivity(
-            this, 0, openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("🏋️ ¡Descanso terminado!")
-            .setContentText("Es hora de continuar con tu entrenamiento")
-            .setContentIntent(openAppPendingIntent)
-            .setAutoCancel(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
+    /**
+     * 🎯 FIX #1: Cancel timer notification when rest is complete.
+     * No separate "finished" notification - prevents duplicate notifications.
+     */
+    private fun cancelNotification() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID + 1, notification)
+        manager.cancel(NOTIFICATION_ID)
+        Log.i(TAG, "Timer notification cancelled - rest completed")
     }
 
     private fun acquireWakeLock() {
