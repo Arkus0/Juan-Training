@@ -53,6 +53,9 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
   final List<ExternalExercise> _exercises = [];
   bool _includeInProgression = false;
 
+  // Notas opcionales de la sesión
+  String? _sessionNotes;
+
   // Para entrada de texto
   final _textController = TextEditingController();
 

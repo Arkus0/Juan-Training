@@ -22,7 +22,7 @@ class Rutina {
     return Rutina(
       id: id,
       nombre: nombre,
-      dias: dias.map((d) => d.deepCopy()).toList(),
+      dias: dias.map((d) => Dia.fromJson(d.toJson())).toList(),
       creada: creada,
     );
   }

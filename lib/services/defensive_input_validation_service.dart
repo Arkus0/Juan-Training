@@ -48,6 +48,7 @@ class DefensiveInputValidationService {
 
   // Configuración
   static const double _minConfidenceForCandidate = 0.3;
+  static const int _maxCandidates = 5;
 
   /// Inicializa el servicio
   Future<void> initialize() async {
