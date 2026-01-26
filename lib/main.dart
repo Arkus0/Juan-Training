@@ -10,7 +10,6 @@ import 'services/timer_notification_service.dart';
 import 'services/haptics_controller.dart';
 import 'services/media_control_service.dart';
 import 'services/media_session_service.dart';
-import 'services/app_lifecycle_manager.dart';
 import 'providers/training_provider.dart';
 
 import 'database/database.dart';
@@ -39,20 +38,16 @@ void main() async {
   // Initialize Timer Notification Service (for lock screen timer)
   await TimerNotificationService.instance.initialize();
 
-  // Initialize HapticsController globally for vibration to work everywhere
+  // 🎯 FIX #2: Initialize HapticsController globally for vibration to work everywhere
   // This registers the lifecycle observer so haptics work on buttons, timers, etc.
   HapticsController.instance.initialize();
 
-  // Initialize MediaControlService for Spotify detection
+  // 🎯 FIX #1: Initialize MediaControlService for Spotify detection
   // This starts polling for active media sessions
   await MediaControlService.instance.initialize();
 
   // Initialize MediaSessionManagerService for media controls
   MediaSessionManagerService.instance.initialize();
-
-  // 🎯 CRITICAL: Initialize AppLifecycleManager LAST
-  // This manages cleanup of all services when app closes
-  AppLifecycleManager.instance.initialize();
 
   await initializeDateFormatting('es_ES', null);
 

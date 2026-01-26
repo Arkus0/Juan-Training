@@ -32,28 +32,6 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
-
-        // Excluir recursos de debug y optimizar
-        ndk {
-            // Solo incluir ABIs necesarios para dispositivos modernos
-            // arm64-v8a: dispositivos ARM 64-bit (mayoría de dispositivos modernos)
-            // armeabi-v7a: dispositivos ARM 32-bit (dispositivos más antiguos)
-            // x86_64: emuladores (opcional, se puede omitir para release)
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-        }
-    }
-
-    // 🎯 ABI Splits: Genera APKs separados por arquitectura
-    // Reduce el tamaño de ~400MB (fat APK) a ~80-120MB por arquitectura
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            // Incluir solo arquitecturas ARM (la mayoría de dispositivos reales)
-            include("arm64-v8a", "armeabi-v7a")
-            // Excluir x86/x86_64 (solo emuladores) - reduce ~50MB
-            isUniversalApk = false // No generar APK universal (usa AAB para distribución)
-        }
     }
 
 dependencies {
