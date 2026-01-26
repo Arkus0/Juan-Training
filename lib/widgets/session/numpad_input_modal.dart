@@ -103,15 +103,17 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   // ═══════════════════════════════════════════════════════════════════════════
   // Estos límites previenen errores de usuario (ej: 2000 kg por accidente)
   // y protegen la integridad de los datos.
+  // 🎯 FIX #3: Permitir pesos negativos para máquinas asistidas (ej: -50kg)
   // ═══════════════════════════════════════════════════════════════════════════
   static const double _maxWeight = 999.9; // kg - Eddie Hall deadlifted 500kg
+  static const double _minWeight = -200.0; // kg - máquinas asistidas
   static const int _maxReps = 999; // reps - más que suficiente para cualquier set
 
   @override
   void initState() {
     super.initState();
-    // Inicializar con valor actual o vacío
-    if (widget.currentValue != null && widget.currentValue! > 0) {
+    // 🎯 FIX #3: Inicializar con valor actual incluyendo 0 y negativos
+    if (widget.currentValue != null && widget.currentValue != 0) {
       _displayValue = widget.isInteger
           ? widget.currentValue!.toInt().toString()
           : _formatNumber(widget.currentValue!);
@@ -129,14 +131,17 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   }
 
   /// Verifica si el valor está dentro de los límites permitidos
+  /// 🎯 FIX #3: Ahora soporta pesos negativos para KG (máquinas asistidas)
   bool _isWithinLimits(String valueStr) {
     final value = double.tryParse(valueStr);
     if (value == null) return true; // Strings inválidos se manejan en _canConfirm
 
     if (widget.isInteger) {
-      return value <= _maxReps;
+      // REPS: 0 a _maxReps (no negativos)
+      return value >= 0 && value <= _maxReps;
     } else {
-      return value <= _maxWeight;
+      // KG: _minWeight a _maxWeight (permite negativos para asistidas)
+      return value >= _minWeight && value <= _maxWeight;
     }
   }
 
@@ -190,16 +195,38 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     });
   }
 
+  /// 🎯 FIX #3: Cambia el signo del valor (positivo ↔ negativo)
+  /// Solo disponible para KG, no para REPS
+  void _onToggleSign() {
+    if (widget.isInteger) return; // REPS no puede ser negativo
+
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (_displayValue.isEmpty) {
+        _displayValue = '-';
+      } else if (_displayValue == '-') {
+        _displayValue = '';
+      } else if (_displayValue.startsWith('-')) {
+        _displayValue = _displayValue.substring(1);
+      } else {
+        _displayValue = '-$_displayValue';
+      }
+    });
+  }
+
   void _onConfirm() {
     final value = double.tryParse(_displayValue);
-    if (value != null && value > 0) {
+    // 🎯 FIX #3: Permitir 0 y negativos para KG, solo >= 0 para REPS
+    final isValid = value != null && (widget.isInteger ? value >= 0 : true);
+    if (isValid) {
       HapticFeedback.mediumImpact();
-      widget.onConfirm(value);
+      widget.onConfirm(value!);
     }
   }
 
   void _onUsePrevious() {
-    if (widget.previousValue != null && widget.previousValue! > 0) {
+    // 🎯 FIX #3: Permitir usar valores anteriores incluyendo 0 y negativos
+    if (widget.previousValue != null) {
       HapticFeedback.selectionClick();
       setState(() {
         _displayValue = widget.isInteger
@@ -231,7 +258,14 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
   bool get _canConfirm {
     final value = double.tryParse(_displayValue);
-    return value != null && value > 0;
+    if (value == null) return false;
+    // 🎯 FIX #3: Permitir 0 y negativos para KG, solo >= 0 para REPS
+    // Para KG: cualquier valor dentro de límites está permitido
+    // Para REPS: solo >= 0 (no tiene sentido reps negativas)
+    if (widget.isInteger) {
+      return value >= 0;
+    }
+    return true; // KG permite cualquier valor (incluyendo 0 y negativos)
   }
 
   @override
@@ -289,8 +323,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                       letterSpacing: 0.5,
                     ),
                   ),
-                  // Valor anterior (si existe) - con indicación visual mejorada
-                  if (widget.previousValue != null && widget.previousValue! > 0) ...[
+                  // 🎯 FIX #3: Valor anterior (si existe) - ahora muestra 0 y negativos
+                  if (widget.previousValue != null) ...[
                     const SizedBox(height: 8),
                     Tooltip(
                       message: 'Toca para usar el valor de tu sesión anterior',
@@ -456,6 +490,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
             ),
 
             // Numpad - Botones que se ajustan al espacio disponible
+            // 🎯 FIX #3: Añadido botón ± para pesos negativos (máquinas asistidas)
             Expanded(
               flex: 5,
               child: Padding(
@@ -468,7 +503,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                     const SizedBox(height: 8),
                     Expanded(child: _buildNumpadRow(['7', '8', '9'])),
                     const SizedBox(height: 8),
-                    Expanded(child: _buildNumpadRow(['.', '0', '←'])),
+                    // Última fila: ± (solo para KG), punto decimal, 0, backspace
+                    Expanded(child: _buildNumpadRow(['±', '.', '0', '←'])),
                   ],
                 ),
               ),
@@ -563,31 +599,43 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   Widget _buildNumpadButton(String label) {
     final isBackspace = label == '←';
     final isDecimal = label == '.';
-    final isDisabled = isDecimal && widget.isInteger;
+    final isToggleSign = label == '±';
+    // 🎯 FIX #3: ± deshabilitado para REPS (solo válido para KG)
+    final isDisabled = (isDecimal && widget.isInteger) || (isToggleSign && widget.isInteger);
+
+    // Determinar la acción del botón
+    VoidCallback? onTap;
+    if (!isDisabled) {
+      if (isBackspace) {
+        onTap = _onBackspace;
+      } else if (isToggleSign) {
+        onTap = _onToggleSign;
+      } else {
+        onTap = () => _onDigit(label);
+      }
+    }
 
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4), // Reducido para 4 botones
         child: Material(
           color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16), // Ligeramente más pequeño
           child: InkWell(
-            onTap: isDisabled
-                ? null
-                : (isBackspace ? _onBackspace : () => _onDigit(label)),
+            onTap: onTap,
             onLongPress: isBackspace ? _onClear : null,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             child: Center(
               child: isBackspace
                   ? const Icon(
                       Icons.backspace_outlined,
                       color: _ModalColors.textPrimary,
-                      size: 32,
+                      size: 28, // Ligeramente más pequeño
                     )
                   : Text(
                       label,
                       style: GoogleFonts.montserrat(
-                        fontSize: 36,
+                        fontSize: 28, // Ligeramente más pequeño para 4 botones
                         fontWeight: FontWeight.w700,
                         color: isDisabled
                             ? _ModalColors.textDisabled
