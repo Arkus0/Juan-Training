@@ -162,7 +162,7 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
 
   void _showNotUnderstoodSnackbar(String? transcript) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

@@ -16,7 +16,7 @@ class VoiceUndoSnackbar {
     required VoidCallback onUndo,
     Duration duration = const Duration(seconds: 5),
   }) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -74,7 +74,7 @@ class VoiceUndoSnackbar {
     required String message,
     IconData icon = Icons.check_circle_outline,
   }) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -109,7 +109,7 @@ class VoiceUndoSnackbar {
     required String message,
     VoidCallback? onRetry,
   }) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(

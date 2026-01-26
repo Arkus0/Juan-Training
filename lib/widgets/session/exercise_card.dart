@@ -503,7 +503,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     HapticFeedback.mediumImpact();
     if (mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
