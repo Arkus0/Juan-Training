@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:fuzzy/fuzzy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/library_exercise.dart';
-import '../services/exercise_library_service.dart';
+import '../providers/exercise_search_providers.dart';
 
-class SearchExerciseScreen extends StatefulWidget {
+class SearchExerciseScreen extends ConsumerStatefulWidget {
   const SearchExerciseScreen({super.key});
 
   @override
-  State<SearchExerciseScreen> createState() => _SearchExerciseScreenState();
+  ConsumerState<SearchExerciseScreen> createState() =>
+      _SearchExerciseScreenState();
 }
 
-class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
+class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  // Cache for Fuzzy instance to avoid rebuilding index on every keystroke
-  List<LibraryExercise>? _cachedExercises;
-  Fuzzy<LibraryExercise>? _cachedFuzzy;
 
   @override
   void initState() {
@@ -23,6 +20,8 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
     _searchController.addListener(() {
       setState(() {});
     });
+    ref.read(exerciseSearchQueryProvider.notifier).state =
+        _searchController.text;
   }
 
   @override
@@ -31,28 +30,12 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
     super.dispose();
   }
 
-  Fuzzy<LibraryExercise> _getFuzzy(List<LibraryExercise> exercises) {
-    // Only rebuild Fuzzy index if the exercises list reference has changed
-    if (_cachedExercises != exercises || _cachedFuzzy == null) {
-      _cachedExercises = exercises;
-      _cachedFuzzy = Fuzzy(
-        exercises,
-        options: FuzzyOptions(
-          keys: [
-            WeightedKey(
-              name: 'name',
-              getter: (LibraryExercise x) => x.name,
-              weight: 1,
-            ),
-          ],
-        ),
-      );
-    }
-    return _cachedFuzzy!;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final resultsAsync = ref.watch(exerciseSearchResultsProvider);
+    final suggestionsAsync = ref.watch(exerciseSearchSuggestionsProvider);
+    final query = ref.watch(exerciseSearchQueryProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('BUSCAR EJERCICIO'),
@@ -64,6 +47,9 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
             child: TextField(
               controller: _searchController,
               style: const TextStyle(fontWeight: FontWeight.bold),
+              onChanged: (value) {
+                ref.read(exerciseSearchQueryProvider.notifier).state = value;
+              },
               decoration: InputDecoration(
                 hintText: 'Buscar ejercicio...',
                 prefixIcon: Icon(Icons.search, color: Colors.redAccent[700]),
@@ -79,21 +65,10 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
             ),
           ),
           Expanded(
-            child: ValueListenableBuilder<List<LibraryExercise>>(
-              valueListenable: ExerciseLibraryService.instance.exercisesNotifier,
-              builder: (context, exercises, child) {
-                List<LibraryExercise> displayedExercises;
-                final query = _searchController.text;
-
-                if (query.isEmpty) {
-                  displayedExercises = exercises;
-                } else {
-                  // Use cached Fuzzy instance
-                  final fuse = _getFuzzy(exercises);
-                  displayedExercises = fuse.search(query).map((r) => r.item).toList();
-                }
-
+            child: resultsAsync.when(
+              data: (displayedExercises) {
                 if (displayedExercises.isEmpty) {
+                  final suggestions = suggestionsAsync.value ?? const <LibraryExercise>[];
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -102,46 +77,121 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                         const SizedBox(height: 16),
                         const Text(
                           'NO SE ENCONTRÓ EL EJERCICIO',
-                          style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
+                        if (suggestions.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Text(
+                            '¿Quisiste decir...?',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8),
+                          ...suggestions.map(
+                            (exercise) => Text(
+                              exercise.name,
+                              style: TextStyle(
+                                color: Colors.redAccent[100],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   );
                 }
 
+                final topMatches =
+                    query.trim().isEmpty ? const <LibraryExercise>[] : displayedExercises.take(5).toList();
+                final remaining =
+                    query.trim().isEmpty ? displayedExercises : displayedExercises.skip(5).toList();
+
+                final rows = <_SearchRow>[];
+                if (topMatches.isNotEmpty) {
+                  rows.add(const _SearchRow.header('TOP MATCHES'));
+                  rows.addAll(topMatches.map(_SearchRow.exercise));
+                }
+                if (remaining.isNotEmpty) {
+                  if (query.trim().isNotEmpty) {
+                    rows.add(const _SearchRow.header('RESULTADOS'));
+                  }
+                  rows.addAll(remaining.map(_SearchRow.exercise));
+                }
+
                 return ListView.separated(
-                  itemCount: displayedExercises.length,
-                  separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[800]),
+                  itemCount: rows.length,
+                  separatorBuilder: (context, index) =>
+                      Divider(height: 1, color: Colors.grey[800]),
                   itemBuilder: (context, index) {
-                    final exercise = displayedExercises[index];
+                    final row = rows[index];
+                    if (row.isHeader) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Text(
+                          row.header!,
+                          style: TextStyle(
+                            color: Colors.redAccent[100],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }
+
+                    final exercise = row.exercise!;
                     return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       title: Text(
                         exercise.name.toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       subtitle: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.red[900]?.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.red[900]!.withValues(alpha: 0.5)),
+                              border: Border.all(
+                                color: Colors.red[900]!.withValues(alpha: 0.5),
+                              ),
                             ),
                             child: Text(
                               exercise.muscleGroup.toUpperCase(),
-                              style: TextStyle(fontSize: 10, color: Colors.redAccent[100]),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.redAccent[100],
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             exercise.equipment,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
                           ),
                         ],
                       ),
-                      trailing: Icon(Icons.add_circle_outline, color: Colors.redAccent[700]),
+                      trailing: Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.redAccent[700],
+                      ),
                       onTap: () {
                         Navigator.of(context).pop(exercise);
                       },
@@ -149,10 +199,33 @@ class _SearchExerciseScreenState extends State<SearchExerciseScreen> {
                   },
                 );
               },
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              error: (error, _) => Center(
+                child: Text(
+                  'Error al buscar ejercicios: $error',
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _SearchRow {
+  final String? header;
+  final LibraryExercise? exercise;
+
+  const _SearchRow._({this.header, this.exercise});
+
+  const _SearchRow.header(String header) : this._(header: header);
+
+  const _SearchRow.exercise(LibraryExercise exercise)
+      : this._(exercise: exercise);
+
+  bool get isHeader => header != null;
 }
