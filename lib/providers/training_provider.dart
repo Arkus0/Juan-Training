@@ -49,7 +49,7 @@ class TrainingState {
   final RestTimerState restTimer; // Nuevo estado avanzado del timer
 
   // New State Fields
-  final Map<String, List<SerieLog>> history; // Key: Exercise Name, Value: Last Session Logs
+  final Map<String, List<SerieLog>> history; // Key: Ejercicio.historyKey, Value: Last Session Logs
   final bool showAdvancedOptions;
   final bool showTimerBar; // Mostrar/ocultar barra inactiva del timer
 
@@ -215,7 +215,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
          final lastSession = historyList.first;
          try {
            final match = lastSession.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);
-           historyMap[ex.nombre] = match.logs;
+           historyMap[ex.historyKey] = match.logs;
          } catch (e) {
            // Should not happen if filtered correctly, but safety first
          }
@@ -272,7 +272,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // 🎯 FIX: Skip validation if user already accepted a correction (prevents infinite loop)
     if (peso != null && peso > 0 && !skipToleranceCheck) {
       final category = ExerciseCategory.inferFromName(exercise.nombre);
-      final lastKnownWeight = log.peso > 0 ? log.peso : _getLastKnownWeight(exercise.nombre);
+      final lastKnownWeight = log.peso > 0 ? log.peso : _getLastKnownWeight(exercise);
       
       toleranceResult = ErrorToleranceRules.evaluateDataEntry(
         enteredWeight: peso,
@@ -335,8 +335,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
   
   /// Obtiene el último peso conocido para un ejercicio (del historial)
-  double _getLastKnownWeight(String exerciseName) {
-    final historyLogs = state.history[exerciseName];
+  double _getLastKnownWeight(Ejercicio exercise) {
+    final historyLogs = state.history[exercise.historyKey];
     if (historyLogs != null && historyLogs.isNotEmpty) {
       // Buscar el primer log con peso > 0
       for (final log in historyLogs) {
@@ -439,7 +439,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 
   /// Añade un ejercicio a la sesión activa desde la biblioteca
-  void addExerciseToSession(LibraryExercise libExercise, {int series = 3, int reps = 10}) {
+  Future<void> addExerciseToSession(LibraryExercise libExercise, {int series = 3, int reps = 10}) async {
     final newExercise = Ejercicio(
       id: const Uuid().v4(),
       libraryId: libExercise.id.toString(),
@@ -458,7 +458,19 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final exercises = [...state.exercises, newExercise];
     final targets = [...state.targets, newExercise.copyWith()];
 
-    state = state.copyWith(exercises: exercises, targets: targets);
+    final historyMap = Map<String, List<SerieLog>>.from(state.history);
+    final historyList = await _repository.getHistoryForExercise(newExercise.nombre);
+    if (historyList.isNotEmpty) {
+      final lastSession = historyList.first;
+      final match = lastSession.ejerciciosCompletados.firstWhereOrNull(
+        (e) => e.nombre == newExercise.nombre,
+      );
+      if (match != null) {
+        historyMap[newExercise.historyKey] = match.logs;
+      }
+    }
+
+    state = state.copyWith(exercises: exercises, targets: targets, history: historyMap);
     _saveState();
   }
 

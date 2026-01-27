@@ -455,7 +455,7 @@ class SessionRepository {
         final match = lastSession.ejerciciosCompletados
             .firstWhereOrNull((e) => e.nombre == ex.nombre);
         if (match != null) {
-          historyMap[ex.nombre] = match.logs;
+          historyMap[ex.historyKey] = match.logs;
         }
       }
     }

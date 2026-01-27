@@ -69,6 +69,15 @@ class Ejercicio {
   /// Verifica si este ejercicio pertenece a un superset
   bool get isInSuperset => supersetId != null && supersetId!.isNotEmpty;
 
+  /// Key estable para historial/ghost values (evita mismatches por índice)
+  String get historyKey {
+    final trimmed = libraryId.trim();
+    if (trimmed.isNotEmpty && trimmed != 'unknown') {
+      return 'lib:$trimmed';
+    }
+    return 'name:${nombre.toLowerCase()}';
+  }
+
   /// Número de series completadas (optimización: evita recalcular en cada build)
   int get completedSetsCount => logs.where((l) => l.completed).length;
 
