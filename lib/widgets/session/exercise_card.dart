@@ -50,7 +50,11 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   }
 
   void _toggleCollapse() {
-    final exercise = ref.read(trainingSessionProvider).exercises[widget.exerciseIndex];
+    final exercises = ref.read(trainingSessionProvider).exercises;
+    if (widget.exerciseIndex < 0 || widget.exerciseIndex >= exercises.length) {
+      return;
+    }
+    final exercise = exercises[widget.exerciseIndex];
     final allCompleted = exercise.logs.every((log) => log.completed);
     
     setState(() {
@@ -319,13 +323,18 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onUpdateCompleted: (setIndex, val) {
         notifier.updateLog(widget.exerciseIndex, setIndex, completed: val);
         if (val == true) {
-             final log = exercise.logs[setIndex];
-             final prevLog = (historyLogs != null && setIndex < historyLogs.length) ? historyLogs[setIndex] : null;
-             _triggerCompletionFeedback(log, prevLog);
-             // 🎯 P1: Timer SIEMPRE auto-inicia al completar serie
-             if (!isRestActive) {
-               notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
-             }
+          if (setIndex < 0 || setIndex >= exercise.logs.length) {
+            return;
+          }
+          final log = exercise.logs[setIndex];
+          final prevLog = (historyLogs != null && setIndex < historyLogs.length)
+              ? historyLogs[setIndex]
+              : null;
+          _triggerCompletionFeedback(log, prevLog);
+          // 🎯 P1: Timer SIEMPRE auto-inicia al completar serie
+          if (!isRestActive) {
+            notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
+          }
         }
       },
       onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
@@ -483,7 +492,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
             ],
           ),
           backgroundColor: AppColors.techCyan,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(milliseconds: 1500),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -520,7 +529,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
             ],
           ),
           backgroundColor: AppColors.bloodRed,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(milliseconds: 1500),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
             label: 'DESHACER',
