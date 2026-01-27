@@ -52,8 +52,9 @@ class BeepSoundService private constructor() {
                             val frequency = call.argument<Int>("frequency") ?: 880
                             val durationMs = call.argument<Int>("durationMs") ?: 150
                             val volume = call.argument<Double>("volume") ?: 0.5
+                            val useMusicStream = call.argument<Boolean>("useMusicStream") ?: false
 
-                            service.playBeep(frequency, durationMs, volume.toFloat())
+                            service.playBeep(frequency, durationMs, volume.toFloat(), useMusicStream)
                             result.success(true)
                         }
                         "playDoubleBeep" -> {
@@ -61,8 +62,9 @@ class BeepSoundService private constructor() {
                             val durationMs = call.argument<Int>("durationMs") ?: 250
                             val gapMs = call.argument<Int>("gapMs") ?: 150
                             val volume = call.argument<Double>("volume") ?: 0.5
+                            val useMusicStream = call.argument<Boolean>("useMusicStream") ?: false
 
-                            service.playDoubleBeep(frequency, durationMs, gapMs, volume.toFloat())
+                            service.playDoubleBeep(frequency, durationMs, gapMs, volume.toFloat(), useMusicStream)
                             result.success(true)
                         }
                         "playSequence" -> {
@@ -70,8 +72,9 @@ class BeepSoundService private constructor() {
                             val durations = call.argument<List<Int>>("durations") ?: listOf(100)
                             val gaps = call.argument<List<Int>>("gaps") ?: listOf(50)
                             val volume = call.argument<Double>("volume") ?: 0.5
+                            val useMusicStream = call.argument<Boolean>("useMusicStream") ?: false
 
-                            service.playSequence(frequencies, durations, gaps, volume.toFloat())
+                            service.playSequence(frequencies, durations, gaps, volume.toFloat(), useMusicStream)
                             result.success(true)
                         }
                         "dispose" -> {
@@ -98,7 +101,7 @@ class BeepSoundService private constructor() {
      * @param durationMs Duración en milisegundos
      * @param volume Volumen de 0.0 a 1.0
      */
-    fun playBeep(frequency: Int, durationMs: Int, volume: Float) {
+    fun playBeep(frequency: Int, durationMs: Int, volume: Float, useMusicStream: Boolean) {
         mainHandler.post {
             try {
                 // Mapear frecuencia a tono de ToneGenerator
@@ -107,8 +110,14 @@ class BeepSoundService private constructor() {
                 // Calcular volumen (ToneGenerator usa 0-100)
                 val volumeInt = (volume * 100).roundToInt().coerceIn(0, 100)
 
-                // Crear ToneGenerator con STREAM_NOTIFICATION (NO solicita audio focus)
-                val generator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, volumeInt)
+                val streamType = if (useMusicStream) {
+                    AudioManager.STREAM_MUSIC
+                } else {
+                    AudioManager.STREAM_NOTIFICATION
+                }
+
+                // Crear ToneGenerator con stream configurable (sin solicitar audio focus)
+                val generator = ToneGenerator(streamType, volumeInt)
 
                 // Reproducir tono
                 generator.startTone(toneType, durationMs)
@@ -131,17 +140,29 @@ class BeepSoundService private constructor() {
     /**
      * Reproduce un beep doble (para señal de "timer terminado").
      */
-    fun playDoubleBeep(frequency: Int, durationMs: Int, gapMs: Int, volume: Float) {
-        playBeep(frequency, durationMs, volume)
+    fun playDoubleBeep(
+        frequency: Int,
+        durationMs: Int,
+        gapMs: Int,
+        volume: Float,
+        useMusicStream: Boolean,
+    ) {
+        playBeep(frequency, durationMs, volume, useMusicStream)
         mainHandler.postDelayed({
-            playBeep(frequency, durationMs, volume)
+            playBeep(frequency, durationMs, volume, useMusicStream)
         }, (durationMs + gapMs).toLong())
     }
 
     /**
      * Reproduce una secuencia de tonos (para feedback complejo de voz).
      */
-    fun playSequence(frequencies: List<Int>, durations: List<Int>, gaps: List<Int>, volume: Float) {
+    fun playSequence(
+        frequencies: List<Int>,
+        durations: List<Int>,
+        gaps: List<Int>,
+        volume: Float,
+        useMusicStream: Boolean,
+    ) {
         if (frequencies.isEmpty()) return
 
         var delay = 0L
@@ -151,7 +172,7 @@ class BeepSoundService private constructor() {
             val gap = gaps.getOrElse(i) { gaps.lastOrNull() ?: 50 }
 
             mainHandler.postDelayed({
-                playBeep(freq, dur, volume)
+                playBeep(freq, dur, volume, useMusicStream)
             }, delay)
 
             delay += dur + gap

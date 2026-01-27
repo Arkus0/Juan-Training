@@ -2,9 +2,9 @@ import 'package:flutter/services.dart';
 
 /// Servicio para reproducir beeps usando el sistema nativo de Android.
 ///
-/// Este servicio usa ToneGenerator con STREAM_NOTIFICATION que NO solicita
-/// Audio Focus, permitiendo que los beeps del timer suenen sin pausar
-/// la música del usuario (Spotify, YouTube Music, etc.).
+/// Este servicio usa ToneGenerator con un stream configurable para evitar
+/// solicitar Audio Focus, permitiendo que los beeps del timer suenen sin
+/// pausar la música del usuario (Spotify, YouTube Music, etc.).
 ///
 /// Beneficios:
 /// - NO interfiere con aplicaciones de música
@@ -45,12 +45,14 @@ class NativeBeepService {
     required int frequency,
     int durationMs = 150,
     double volume = defaultVolume,
+    bool useMusicStream = false,
   }) async {
     try {
       await _channel.invokeMethod('playBeep', {
         'frequency': frequency,
         'durationMs': durationMs,
         'volume': volume,
+        'useMusicStream': useMusicStream,
       });
     } catch (e) {
       // Silenciar errores de audio para no interrumpir UX
@@ -63,6 +65,7 @@ class NativeBeepService {
     int durationMs = 250,
     int gapMs = 150,
     double volume = defaultVolume,
+    bool useMusicStream = false,
   }) async {
     try {
       await _channel.invokeMethod('playDoubleBeep', {
@@ -70,6 +73,7 @@ class NativeBeepService {
         'durationMs': durationMs,
         'gapMs': gapMs,
         'volume': volume,
+        'useMusicStream': useMusicStream,
       });
     } catch (e) {
       // Silenciar errores de audio
@@ -84,6 +88,7 @@ class NativeBeepService {
     required List<int> durations,
     List<int>? gaps,
     double volume = defaultVolume,
+    bool useMusicStream = false,
   }) async {
     try {
       await _channel.invokeMethod('playSequence', {
@@ -91,6 +96,7 @@ class NativeBeepService {
         'durations': durations,
         'gaps': gaps ?? List.filled(frequencies.length, 50),
         'volume': volume,
+        'useMusicStream': useMusicStream,
       });
     } catch (e) {
       // Silenciar errores de audio
@@ -117,8 +123,15 @@ class NativeBeepService {
   }
 
   /// Beep final doble (timer terminado)
-  Future<void> playFinalBeep() async {
-    await playDoubleBeep(frequency: freqFinal, durationMs: 250, gapMs: 150);
+  /// [useMusicStream] permite mezclar en STREAM_MUSIC si el stream de
+  /// notificaciones causa cortes en reproductores externos.
+  Future<void> playFinalBeep({bool useMusicStream = false}) async {
+    await playDoubleBeep(
+      frequency: freqFinal,
+      durationMs: 250,
+      gapMs: 150,
+      useMusicStream: useMusicStream,
+    );
   }
 
   // ============================================================================

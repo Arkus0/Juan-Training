@@ -249,8 +249,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     bool? isWarmup,
     bool skipToleranceCheck = false, // 🎯 Skip validation when user accepted a correction
   }) {
+    if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) {
+      Logger().w('updateLog: invalid exerciseIndex $exerciseIndex');
+      return;
+    }
+
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
+    if (setIndex < 0 || setIndex >= exercise.logs.length) {
+      Logger().w('updateLog: invalid setIndex $setIndex for exercise ${exercise.nombre}');
+      return;
+    }
     final logs = [...exercise.logs];
     final log = logs[setIndex];
 
@@ -620,7 +629,12 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   Future<void> finishSession() async {
     if (state.startTime == null) return;
-    if (state.exercises.isEmpty) return;
+    if (state.exercises.isEmpty) {
+      await _persistenceService.clearActiveSession();
+      await _timerController.clearPrefs();
+      state = TrainingState();
+      return;
+    }
 
     await flushPendingSave();
 

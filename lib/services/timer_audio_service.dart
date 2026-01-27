@@ -50,7 +50,7 @@ class TimerAudioService {
 
   /// Reproduce el beep final (doble tono)
   Future<void> playFinalBeep() async {
-    await _nativeBeep.playFinalBeep();
+    await _nativeBeep.playFinalBeep(useMusicStream: true);
   }
 
   /// Libera recursos
