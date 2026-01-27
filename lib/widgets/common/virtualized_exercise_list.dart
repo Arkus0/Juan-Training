@@ -2,7 +2,7 @@ import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/library_exercise.dart';
-import '../../providers/paginated_exercises_provider.dart';
+import '../../providers/exercise_search_providers.dart';
 import 'optimized_exercise_image.dart';
 
 /// Lista virtualizada de ejercicios para la biblioteca (700+ items)
@@ -53,14 +53,12 @@ class VirtualizedExerciseList extends ConsumerStatefulWidget {
 
 class _VirtualizedExerciseListState
     extends ConsumerState<VirtualizedExerciseList> {
-  final ScrollController _scrollController = ScrollController();
   Set<int> _localSelectedIds = {};
 
   @override
   void initState() {
     super.initState();
     _localSelectedIds = widget.selectedIds?.toSet() ?? {};
-    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -73,17 +71,7 @@ class _VirtualizedExerciseListState
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    // Cargar más cuando estamos cerca del final
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      ref.read(paginatedExercisesProvider.notifier).loadMore();
-    }
   }
 
   void _handleTap(LibraryExercise exercise) {
@@ -103,9 +91,10 @@ class _VirtualizedExerciseListState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(paginatedExercisesProvider);
+    final resultsAsync = ref.watch(exerciseSearchResultsProvider);
+    final exercises = resultsAsync.value ?? const <LibraryExercise>[];
 
-    if (state.visibleExercises.isEmpty && !state.isLoading) {
+    if (exercises.isEmpty && !resultsAsync.isLoading) {
       return const _EmptyState();
     }
 
@@ -113,27 +102,25 @@ class _VirtualizedExerciseListState
       children: [
         // Header con conteo
         _ListHeader(
-          total: state.totalCount,
-          loaded: state.loadedCount,
-          hasMore: state.hasMore,
+          total: exercises.length,
         ),
 
         // Lista virtualizada
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
             physics: const BouncingScrollPhysics(
               decelerationRate: ScrollDecelerationRate.fast,
             ),
             cacheExtent: 250, // Pre-renderizar items fuera de vista
-            itemCount: state.visibleExercises.length + (state.hasMore ? 1 : 0),
+            itemCount: exercises.length +
+                (resultsAsync.isLoading && exercises.isNotEmpty ? 1 : 0),
             itemBuilder: (context, index) {
               // Item de carga al final
-              if (index >= state.visibleExercises.length) {
+              if (index >= exercises.length) {
                 return const _LoadingIndicator();
               }
 
-              final exercise = state.visibleExercises[index];
+              final exercise = exercises[index];
               final isSelected = _localSelectedIds.contains(exercise.id);
 
               return RepaintBoundary(
@@ -160,13 +147,9 @@ class _VirtualizedExerciseListState
 /// Header de la lista con conteo
 class _ListHeader extends StatelessWidget {
   final int total;
-  final int loaded;
-  final bool hasMore;
 
   const _ListHeader({
     required this.total,
-    required this.loaded,
-    required this.hasMore,
   });
 
   @override
@@ -177,24 +160,13 @@ class _ListHeader extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            '$loaded de $total ejercicios',
+            '$total ejercicios',
             style: const TextStyle(
               color: AppColors.textTertiary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),
-          if (hasMore) ...[
-            const SizedBox(width: 8),
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -422,7 +394,13 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialQuery);
+    final initialQuery =
+        widget.initialQuery ?? ref.read(exerciseSearchQueryProvider);
+    _controller = TextEditingController(text: initialQuery);
+    ref.read(exerciseSearchQueryProvider.notifier).state = initialQuery;
+    _controller.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -439,7 +417,7 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
       child: TextField(
         controller: _controller,
         onChanged: (value) {
-          ref.read(paginatedExercisesProvider.notifier).search(value);
+          ref.read(exerciseSearchQueryProvider.notifier).state = value;
         },
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
@@ -451,7 +429,7 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
                   icon: const Icon(Icons.clear, color: AppColors.textTertiary),
                   onPressed: () {
                     _controller.clear();
-                    ref.read(paginatedExercisesProvider.notifier).search('');
+                    ref.read(exerciseSearchQueryProvider.notifier).state = '';
                   },
                 )
               : null,
@@ -474,8 +452,9 @@ class ExerciseFilterChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(paginatedExercisesProvider);
-    final notifier = ref.read(paginatedExercisesProvider.notifier);
+    final state = ref.watch(exerciseSearchFiltersProvider);
+    final notifier = ref.read(exerciseSearchFiltersProvider.notifier);
+    final muscleGroups = ref.watch(availableMuscleGroupsProvider);
 
     return SizedBox(
       height: 40,
@@ -492,15 +471,15 @@ class ExerciseFilterChips extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           // Grupos musculares
-          ...notifier.availableMuscleGroups.take(5).map((muscle) {
-            final isSelected = state.muscleFilter == muscle;
+          ...muscleGroups.take(5).map((muscle) {
+            final isSelected = state.muscleGroup == muscle;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: _FilterChip(
                 label: muscle,
                 isSelected: isSelected,
                 onTap: () =>
-                    notifier.setMuscleFilter(isSelected ? null : muscle),
+                    notifier.setMuscleGroup(isSelected ? null : muscle),
               ),
             );
           }),
