@@ -11,7 +11,7 @@ import '../../utils/design_system.dart';
 ///
 /// Acciones:
 /// - REPITE: Copiar peso/reps de la serie anterior
-/// - HECHO: Marcar la serie actual como completada
+/// - HISTORIAL: Ver últimas sesiones del ejercicio
 /// - DESCANSO: Ajustar tiempo de descanso (inline)
 /// - NOTA: Añadir nota rápida al ejercicio
 ///
@@ -25,7 +25,7 @@ import '../../utils/design_system.dart';
 /// Tipos de acciones rápidas disponibles
 enum QuickActionType {
   repeat,    // Copiar peso/reps de serie anterior
-  markDone,  // Marcar serie actual como completada
+  history,   // Ver historial del ejercicio
   restTimer, // Ajustar tiempo de descanso
   quickNote, // Añadir nota rápida
 }
@@ -34,8 +34,8 @@ class QuickActionsMenu extends StatefulWidget {
   /// Callback cuando se presiona "REPITE"
   final VoidCallback? onRepeat;
 
-  /// Callback cuando se presiona "HECHO"
-  final VoidCallback? onMarkDone;
+  /// Callback cuando se presiona "HISTORIAL"
+  final VoidCallback? onHistory;
 
   /// Callback cuando se selecciona un tiempo de descanso
   final Function(int seconds)? onRestTimeSelected;
@@ -46,9 +46,6 @@ class QuickActionsMenu extends StatefulWidget {
   /// Tiempo de descanso actual en segundos (para mostrar)
   final int currentRestSeconds;
 
-  /// Si la serie actual ya está completada (para cambiar estado de HECHO)
-  final bool isCurrentSetDone;
-
   /// Si true, el menú se abre inicialmente expandido
   final bool startExpanded;
 
@@ -58,11 +55,10 @@ class QuickActionsMenu extends StatefulWidget {
   const QuickActionsMenu({
     super.key,
     this.onRepeat,
-    this.onMarkDone,
+    this.onHistory,
     this.onRestTimeSelected,
     this.onQuickNote,
     this.currentRestSeconds = 90,
-    this.isCurrentSetDone = false,
     this.startExpanded = false,
     this.showToggle = true,
   });
@@ -226,7 +222,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Fila 1: REPITE + HECHO
+          // Fila 1: REPITE + HISTORIAL
           Row(
             children: [
               Expanded(
@@ -244,17 +240,12 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               const SizedBox(width: 8),
               Expanded(
                 child: _QuickActionTile(
-                  icon: widget.isCurrentSetDone
-                      ? Icons.check_circle
-                      : Icons.check_circle_outline,
-                  label: widget.isCurrentSetDone ? 'HECHA' : 'HECHO',
-                  sublabel: 'Marcar serie',
-                  color: widget.isCurrentSetDone
-                      ? AppColors.completedGreen
-                      : AppColors.textPrimary,
-                  filled: widget.isCurrentSetDone,
+                  icon: Icons.history,
+                  label: 'HISTORIAL',
+                  sublabel: 'Últimas sesiones',
+                  color: AppColors.textPrimary,
                   onTap: () {
-                    _handleAction(widget.onMarkDone);
+                    _handleAction(widget.onHistory);
                     _closeMenu();
                   },
                 ),

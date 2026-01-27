@@ -23,7 +23,7 @@ final exerciseProgressionProvider = Provider.family<ProgressionDecision?, int>(
     if (exerciseIndex >= state.exercises.length) return null;
     
     final exercise = state.exercises[exerciseIndex];
-    final historyLogs = state.history[exercise.nombre];
+    final historyLogs = state.history[exercise.historyKey];
     
     // Sin historial, no hay sugerencia
     if (historyLogs == null || historyLogs.isEmpty) return null;

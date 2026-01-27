@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/ejercicio.dart';
 import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
+import '../../models/sesion.dart';
 import '../../models/serie_log.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
@@ -116,7 +117,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       backgroundColor: AppColors.bgElevated,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) {
-        final historyLogs = ref.read(trainingSessionProvider).history[exercise.nombre];
+        final historyLogs = ref.read(trainingSessionProvider).history[exercise.historyKey];
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -270,7 +271,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises.length > widget.exerciseIndex ? s.exercises[widget.exerciseIndex] : null));
     if (exercise == null) return const SizedBox.shrink();
 
-    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.nombre]));
+    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.historyKey]));
     final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
     final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
 
@@ -300,10 +301,6 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     // 🆕 Calcular estado de colapso
     final allSetsCompleted = exercise.logs.every((log) => log.completed);
     final isCollapsed = _isCollapsed(allSetsCompleted);
-
-    // 🆕 Calcular estado de la serie actual para QuickActions
-    final firstIncompleteSetIndex = exercise.logs.indexWhere((log) => !log.completed);
-    final isCurrentSetDone = firstIncompleteSetIndex == -1; // Todas completadas
 
     return ExerciseCard(
       exerciseIndex: widget.exerciseIndex,
@@ -343,9 +340,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       onUpdateWeightDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onUpdateRepsDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
       // 🆕 Quick Actions
-      isCurrentSetDone: isCurrentSetDone,
       onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
-      onMarkDone: () => _markCurrentSetDone(exercise, historyLogs),
+      onHistory: () => _showExpandedHistorySheet(context, exercise),
       onQuickNote: (note) => _addQuickNote(exercise.nombre, note),
       // 🆕 ELIMINAR SERIE: Solo afecta sesión activa, no la rutina
       onDeleteSet: (setIndex) => _deleteSet(setIndex),
@@ -408,54 +404,112 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     }
   }
 
-  /// 🆕 QUICK ACTION: Marcar la serie actual como completada
-  void _markCurrentSetDone(Ejercicio exercise, List<SerieLog>? historyLogs) {
-    final notifier = ref.read(trainingSessionProvider.notifier);
-    final isRestActive = ref.read(trainingSessionProvider).restTimer.isActive;
+  void _showExpandedHistorySheet(BuildContext context, Ejercicio exercise) {
+    final repo = ref.read(trainingRepositoryProvider);
 
-    // Encontrar la primera serie incompleta
-    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
-    if (firstIncompleteIndex == -1) return; // Todas completadas
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgElevated,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: FutureBuilder<List<Sesion>>(
+              future: repo.getExpandedHistoryForExercise(exercise.nombre, limit: 3),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-    final log = exercise.logs[firstIncompleteIndex];
-    final prevLog = (historyLogs != null && firstIncompleteIndex < historyLogs.length)
-        ? historyLogs[firstIncompleteIndex]
-        : null;
+                final sessions = snapshot.data ?? [];
+                if (sessions.isEmpty) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('HISTORIAL', style: AppTypography.sectionTitle),
+                      const SizedBox(height: 12),
+                      const Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary)),
+                    ],
+                  );
+                }
 
-    // Marcar como completada
-    notifier.updateLog(widget.exerciseIndex, firstIncompleteIndex, completed: true);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(exercise.nombre.toUpperCase(), style: AppTypography.sectionTitle),
+                    const SizedBox(height: 4),
+                    const Text('ÚLTIMAS 3 SESIONES', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                    const SizedBox(height: 12),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: sessions.length,
+                        separatorBuilder: (_, __) => const Divider(color: AppColors.border),
+                        itemBuilder: (context, index) {
+                          final session = sessions[index];
+                          final sessionExercise = session.ejerciciosCompletados.firstWhere(
+                            (e) => e.nombre == exercise.nombre,
+                            orElse: () => Ejercicio(
+                              id: '',
+                              libraryId: 'unknown',
+                              nombre: exercise.nombre,
+                              series: 0,
+                              reps: 0,
+                              logs: const [],
+                            ),
+                          );
 
-    // Trigger feedback de PR
-    _triggerCompletionFeedback(log, prevLog);
+                          final dateLabel =
+                              '${session.fecha.day.toString().padLeft(2, '0')}/'
+                              '${session.fecha.month.toString().padLeft(2, '0')}/'
+                              '${session.fecha.year}';
 
-    // Auto-iniciar timer
-    if (!isRestActive) {
-      notifier.startRestForExercise(widget.exerciseIndex, setIndex: firstIncompleteIndex);
-    }
-
-    HapticFeedback.mediumImpact();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                '¡Serie ${firstIncompleteIndex + 1} completada!',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-            ],
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  dateLabel,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                ...sessionExercise.logs.map((log) {
+                                  final weight = log.peso.truncateToDouble() == log.peso
+                                      ? log.peso.toInt().toString()
+                                      : log.peso.toStringAsFixed(1);
+                                  return Text(
+                                    '• $weight kg × ${log.reps}',
+                                    style: const TextStyle(color: AppColors.textPrimary),
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-          backgroundColor: AppColors.completedGreen,
-          duration: const Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+        );
+      },
+    );
   }
 
   /// 🆕 QUICK ACTION: Añadir nota rápida al ejercicio
@@ -568,9 +622,8 @@ class ExerciseCard extends StatelessWidget {
   final Function(int, int)? onUpdateRepsDirect; // Para FocusedSetRow
   // 🆕 Quick Actions callbacks
   final VoidCallback? onRepeat; // Copiar peso/reps de serie anterior
-  final VoidCallback? onMarkDone; // Marcar serie actual como completada
+  final VoidCallback? onHistory; // Ver historial de 3 últimas sesiones
   final Function(String)? onQuickNote; // Añadir nota rápida
-  final bool isCurrentSetDone; // Estado de la serie actual
   // 🆕 Callback para eliminar serie (solo sesión activa)
   final Function(int)? onDeleteSet;
 
@@ -597,9 +650,8 @@ class ExerciseCard extends StatelessWidget {
     this.onUpdateWeightDirect,
     this.onUpdateRepsDirect,
     this.onRepeat,
-    this.onMarkDone,
+    this.onHistory,
     this.onQuickNote,
-    this.isCurrentSetDone = false,
     this.onDeleteSet,
   });
 
@@ -728,14 +780,13 @@ class ExerciseCard extends StatelessWidget {
                                           currentRestSeconds: restSeconds,
                                           startExpanded: true,
                                           showToggle: false,
-                                          isCurrentSetDone: isCurrentSetDone,
                                           onRepeat: () {
                                             Navigator.pop(sheetContext);
                                             onRepeat?.call();
                                           },
-                                          onMarkDone: () {
+                                          onHistory: () {
                                             Navigator.pop(sheetContext);
-                                            onMarkDone?.call();
+                                            onHistory?.call();
                                           },
                                           onRestTimeSelected: (s) {
                                             Navigator.pop(sheetContext);
@@ -894,7 +945,7 @@ class ExerciseCard extends StatelessWidget {
 
           if (useFocusedInputMode) {
             return FocusedSetRow(
-              key: ValueKey('ex${exerciseIndex}_focused_set$setIndex'),
+              key: ValueKey('ex${exercise.id}_focused_set$setIndex'),
               index: setIndex,
               log: log,
               prevLog: prevLog,
@@ -914,7 +965,7 @@ class ExerciseCard extends StatelessWidget {
           }
 
           return SessionSetRow(
-            key: ValueKey('ex${exerciseIndex}_set$setIndex'),
+            key: ValueKey('ex${exercise.id}_set$setIndex'),
             index: setIndex,
             log: log,
             prevLog: prevLog,
