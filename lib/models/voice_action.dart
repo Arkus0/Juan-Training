@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Representa una acción realizada vía voz que puede deshacerse.
 class VoiceAction {
   final VoiceActionType type;

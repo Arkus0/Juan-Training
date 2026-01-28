@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_recognition_error.dart';
+
 import 'package:logger/logger.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+
 import '../models/library_exercise.dart';
 import 'exercise_matching_service.dart';
 import 'exercise_parsing_service.dart';
-import 'voice_audio_feedback_service.dart';
 import 'haptics_controller.dart';
+import 'voice_audio_feedback_service.dart';
 
 /// Estado del reconocimiento de voz (usado internamente por el servicio)
 enum VoiceServiceState {
@@ -141,7 +143,8 @@ class VoiceInputService {
 
   // Historial para correcciones
   final List<VoiceParsedExercise> _exerciseHistory = [];
-  List<VoiceParsedExercise> get exerciseHistory => List.unmodifiable(_exerciseHistory);
+  List<VoiceParsedExercise> get exerciseHistory =>
+      List.unmodifiable(_exerciseHistory);
 
   // Audio feedback
   bool _audioFeedbackEnabled = true;
@@ -175,7 +178,6 @@ class VoiceInputService {
       _isInitialized = await _speech.initialize(
         onStatus: _onStatus,
         onError: _onError,
-        debugLogging: false,
       );
 
       if (_isInitialized) {
@@ -239,10 +241,6 @@ class VoiceInputService {
             : const Duration(seconds: 3),
         localeId: 'es_ES',
         // ignore: deprecated_member_use
-        cancelOnError: false,
-        // ignore: deprecated_member_use
-        partialResults: true,
-        // ignore: deprecated_member_use
         listenMode: ListenMode.dictation,
       );
 
@@ -288,7 +286,8 @@ class VoiceInputService {
   }
 
   /// Reinicia la escucha (para modo continuo después de procesar).
-  Future<void> _restartListeningIfContinuous(Function(String)? onPartialResult) async {
+  Future<void> _restartListeningIfContinuous(
+      Function(String)? onPartialResult,) async {
     if (_continuousActive && _listeningMode == VoiceListeningMode.continuous) {
       await Future.delayed(const Duration(milliseconds: 200));
       if (_continuousActive) {
@@ -395,7 +394,6 @@ class VoiceInputService {
       final parsedExercises = await _parsingService.parseText(
         transcript,
         source: ParseSource.voice,
-        validateResults: true,
       );
 
       final exercises = <VoiceParsedExercise>[];
@@ -430,7 +428,8 @@ class VoiceInputService {
 
   /// Detecta si el texto es una corrección ("No, quise decir...", "Corrección:...")
   /// Si es corrección, actualiza el último ejercicio del historial.
-  Future<List<VoiceParsedExercise>?> _detectCorrection(String normalized) async {
+  Future<List<VoiceParsedExercise>?> _detectCorrection(
+      String normalized,) async {
     // Patrones de corrección
     final correctionPatterns = [
       RegExp(r'^(?:no[,.]?\s+)?quise\s+decir\s+(.+)$', caseSensitive: false),
@@ -438,7 +437,9 @@ class VoiceInputService {
       RegExp(r'^correcci[oó]n[:\s]+(.+)$', caseSensitive: false),
       RegExp(r'^(?:no[,.]?\s+)?era\s+(.+)$', caseSensitive: false),
       RegExp(r'^cambiar?\s+(?:a|por)\s+(.+)$', caseSensitive: false),
-      RegExp(r'^(?:no[,.]?\s+)?me\s+equivoqu[eé][,.]?\s*(?:era|es|quise\s+decir)?\s*(.+)$', caseSensitive: false),
+      RegExp(
+          r'^(?:no[,.]?\s+)?me\s+equivoqu[eé][,.]?\s*(?:era|es|quise\s+decir)?\s*(.+)$',
+          caseSensitive: false,),
     ];
 
     for (final pattern in correctionPatterns) {
@@ -456,11 +457,12 @@ class VoiceInputService {
   }
 
   /// Aplica una corrección al último ejercicio.
-  Future<List<VoiceParsedExercise>?> _applyCorrection(String correctedName) async {
+  Future<List<VoiceParsedExercise>?> _applyCorrection(
+      String correctedName,) async {
     if (_exerciseHistory.isEmpty) return null;
 
     // Buscar el ejercicio corregido usando el servicio unificado
-    final matchResult = await _matchingService.match(correctedName, boostSynonyms: true);
+    final matchResult = await _matchingService.match(correctedName);
 
     if (matchResult.isValid) {
       // Actualizar el último ejercicio en historial
@@ -481,7 +483,8 @@ class VoiceInputService {
         _audioFeedback.playCorrectionAccepted();
       }
 
-      _logger.i('Ejercicio corregido: ${lastExercise.matchedName} → ${matchResult.exercise!.name}');
+      _logger.i(
+          'Ejercicio corregido: ${lastExercise.matchedName} → ${matchResult.exercise!.name}',);
 
       return [corrected];
     }
@@ -500,9 +503,13 @@ class VoiceInputService {
   }
 
   /// Busca ejercicios por nombre (para sugerencias alternativas).
-  Future<List<LibraryExercise>> searchExercises(String query, {int limit = 5}) async {
+  Future<List<LibraryExercise>> searchExercises(String query,
+      {int limit = 5,}) async {
     final results = await _matchingService.matchMultiple(query, limit: limit);
-    return results.where((r) => r.exercise != null).map((r) => r.exercise!).toList();
+    return results
+        .where((r) => r.exercise != null)
+        .map((r) => r.exercise!)
+        .toList();
   }
 
   /// Libera recursos.

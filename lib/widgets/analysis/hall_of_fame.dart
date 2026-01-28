@@ -1,11 +1,12 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Grid display of personal records for big lifts
 class HallOfFame extends ConsumerWidget {
@@ -31,7 +32,7 @@ class HallOfFame extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha:0.2),
+                  color: Colors.amber.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -197,8 +198,7 @@ class _PRCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: isTop3
               ? Border.all(
-                  color: gradientColors.first.withValues(alpha:0.5),
-                  width: 1,
+                  color: gradientColors.first.withValues(alpha: 0.5),
                 )
               : null,
         ),
@@ -273,9 +273,10 @@ class _PRCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withValues(alpha:0.2),
+                    color: Colors.redAccent.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -366,8 +367,8 @@ class _PRCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.amber.withValues(alpha:0.3),
-                          Colors.orange.withValues(alpha:0.1),
+                          Colors.amber.withValues(alpha: 0.3),
+                          Colors.orange.withValues(alpha: 0.1),
                         ],
                       ),
                       shape: BoxShape.circle,

@@ -1,12 +1,13 @@
-import '../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../../services/routine_ocr_service.dart';
+import '../utils/design_system.dart';
 
 /// Widget para importar rutinas desde imagen (OCR)
-/// 
+///
 /// Flujo:
 /// 1. Muestra BottomSheet para elegir Cámara o Galería
 /// 2. Escanea la imagen con OCR
@@ -41,7 +42,7 @@ class RoutineImportDialog extends StatefulWidget {
 
     // Mostrar el diálogo de procesamiento y preview
     if (!context.mounted) return;
-    
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -58,11 +59,11 @@ class RoutineImportDialog extends StatefulWidget {
 
 class _RoutineImportDialogState extends State<RoutineImportDialog> {
   final _ocrService = RoutineOcrService.instance;
-  
+
   bool _isLoading = true;
   String? _error;
   List<ParsedExerciseCandidate> _candidates = [];
-  
+
   // Controllers para edición
   final Map<int, TextEditingController> _seriesControllers = {};
   final Map<int, TextEditingController> _repsControllers = {};
@@ -96,25 +97,27 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
     try {
       // 1. Escanear imagen
       final lines = await _ocrService.scanImage(widget.source);
-      
+
       if (lines.isEmpty) {
         setState(() {
           _isLoading = false;
-          _error = 'No se detectó texto en la imagen.\nIntenta con mejor iluminación o una imagen más nítida.';
+          _error =
+              'No se detectó texto en la imagen.\nIntenta con mejor iluminación o una imagen más nítida.';
         });
         return;
       }
 
       // 2. Parsear líneas
       final candidates = await _ocrService.parseLines(lines);
-      
+
       // Filtrar solo los válidos (con ejercicio detectado)
       final validCandidates = candidates.where((c) => c.isValid).toList();
 
       if (validCandidates.isEmpty) {
         setState(() {
           _isLoading = false;
-          _error = 'No se detectaron ejercicios válidos.\n\nTexto encontrado:\n${lines.take(5).join('\n')}${lines.length > 5 ? '\n...' : ''}';
+          _error =
+              'No se detectaron ejercicios válidos.\n\nTexto encontrado:\n${lines.take(5).join('\n')}${lines.length > 5 ? '\n...' : ''}';
         });
         return;
       }
@@ -134,8 +137,9 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         _isLoading = false;
       });
 
-      try { HapticFeedback.mediumImpact(); } catch (_) {}
-
+      try {
+        HapticFeedback.mediumImpact();
+      } catch (_) {}
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -151,33 +155,41 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
       _seriesControllers.remove(index);
       _repsControllers.remove(index);
     });
-    try { HapticFeedback.lightImpact(); } catch (_) {}
+    try {
+      HapticFeedback.lightImpact();
+    } catch (_) {}
   }
 
   void _confirmImport() {
     // Actualizar los valores editados
     final updatedCandidates = <ParsedExerciseCandidate>[];
-    
+
     for (var i = 0; i < _candidates.length; i++) {
       final candidate = _candidates[i];
-      final series = int.tryParse(_seriesControllers[i]?.text ?? '') ?? candidate.series;
-      final reps = int.tryParse(_repsControllers[i]?.text ?? '') ?? candidate.reps;
-      
-      updatedCandidates.add(candidate.copyWith(
-        series: series,
-        reps: reps,
-      ));
+      final series =
+          int.tryParse(_seriesControllers[i]?.text ?? '') ?? candidate.series;
+      final reps =
+          int.tryParse(_repsControllers[i]?.text ?? '') ?? candidate.reps;
+
+      updatedCandidates.add(
+        candidate.copyWith(
+          series: series,
+          reps: reps,
+        ),
+      );
     }
 
     widget.onConfirm(updatedCandidates);
     Navigator.pop(context);
-    try { HapticFeedback.heavyImpact(); } catch (_) {}
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
@@ -199,13 +211,14 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           // Header
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.document_scanner, color: AppColors.neonPrimary, size: 28),
+                const Icon(Icons.document_scanner,
+                    color: AppColors.neonPrimary, size: 28,),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -277,7 +290,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 48),
+            const Icon(Icons.error_outline,
+                color: AppColors.neonPrimary, size: 48,),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -339,7 +353,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 18),
+              const Icon(Icons.check_circle,
+                  color: AppColors.neonCyan, size: 18,),
               const SizedBox(width: 8),
               Text(
                 '${_candidates.length} ejercicio${_candidates.length == 1 ? '' : 's'} detectado${_candidates.length == 1 ? '' : 's'}',
@@ -414,7 +429,7 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
   Widget _buildCandidateRow(int index) {
     final candidate = _candidates[index];
     final confidence = (candidate.confidence * 100).toInt();
-    
+
     return Card(
       color: AppColors.bgElevated,
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -460,11 +475,12 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2,),
                             decoration: BoxDecoration(
-                              color: confidence >= 70 
+                              color: confidence >= 70
                                   ? Colors.green.withValues(alpha: 0.2)
-                                  : confidence >= 50 
+                                  : confidence >= 50
                                       ? Colors.orange.withValues(alpha: 0.2)
                                       : Colors.red.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
@@ -474,9 +490,9 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                               style: GoogleFonts.montserrat(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: confidence >= 70 
+                                color: confidence >= 70
                                     ? AppColors.neonCyan
-                                    : confidence >= 50 
+                                    : confidence >= 50
                                         ? AppColors.warning
                                         : AppColors.neonPrimary,
                               ),
@@ -491,7 +507,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                   icon: Icon(Icons.close, color: Colors.red[300], size: 20),
                   onPressed: () => _removeCandidate(index),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints:
+                      const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
               ],
             ),
@@ -528,7 +545,8 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
                 // Peso (si existe)
                 if (candidate.weight != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
@@ -556,7 +574,6 @@ class _RoutineImportDialogState extends State<RoutineImportDialog> {
     required double width,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: width,
@@ -623,7 +640,7 @@ class _SourceSelectorSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           Text(
             'IMPORTAR RUTINA',
             style: GoogleFonts.montserrat(
@@ -651,7 +668,9 @@ class _SourceSelectorSheet extends StatelessWidget {
                   label: 'CÁMARA',
                   subtitle: 'Foto a papel',
                   onTap: () {
-                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                    try {
+                      HapticFeedback.selectionClick();
+                    } catch (_) {}
                     Navigator.pop(context, ImageSource.camera);
                   },
                 ),
@@ -663,7 +682,9 @@ class _SourceSelectorSheet extends StatelessWidget {
                   label: 'GALERÍA',
                   subtitle: 'Captura guardada',
                   onTap: () {
-                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                    try {
+                      HapticFeedback.selectionClick();
+                    } catch (_) {}
                     Navigator.pop(context, ImageSource.gallery);
                   },
                 ),

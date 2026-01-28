@@ -1,10 +1,11 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Shows summary of training for selected date
 class DailySnapshotCard extends ConsumerWidget {
@@ -45,7 +46,7 @@ class DailySnapshotCard extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.redAccent.withValues(alpha:0.3),
+          color: Colors.redAccent.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -57,7 +58,7 @@ class DailySnapshotCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha:0.2),
+                  color: Colors.redAccent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -72,7 +73,9 @@ class DailySnapshotCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      DateFormat('EEEE, d MMMM', 'es_ES').format(snapshot.date).toUpperCase(),
+                      DateFormat('EEEE, d MMMM', 'es_ES')
+                          .format(snapshot.date)
+                          .toUpperCase(),
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -126,10 +129,10 @@ class DailySnapshotCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha:0.1),
+                color: Colors.amber.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.amber.withValues(alpha:0.3),
+                  color: Colors.amber.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -177,7 +180,8 @@ class DailySnapshotCard extends ConsumerWidget {
               runSpacing: 6,
               children: snapshot.exerciseNames.take(5).map((name) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.bgElevated,
                     borderRadius: BorderRadius.circular(4),

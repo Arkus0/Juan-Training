@@ -1,9 +1,10 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Displays current training streak with fire emoji
 class StreakCounter extends ConsumerWidget {
@@ -29,21 +30,18 @@ class StreakCounter extends ConsumerWidget {
         gradient: hasStreak
             ? LinearGradient(
                 colors: [
-                  AppColors.fireRed.withValues(alpha:0.2),   // #FF3333
-                  AppColors.bloodRed.withValues(alpha:0.1),  // #C41E3A
+                  AppColors.fireRed.withValues(alpha: 0.2), // #FF3333
+                  AppColors.bloodRed.withValues(alpha: 0.1), // #C41E3A
                   Colors.transparent,
                 ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
               )
             : null,
         color: hasStreak ? null : const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasStreak
-              ? AppColors.fireRed.withValues(alpha:0.4)  // Glow rojo
+              ? AppColors.fireRed.withValues(alpha: 0.4) // Glow rojo
               : AppColors.bgDeep,
-          width: 1,
         ),
       ),
       child: Row(
@@ -52,11 +50,11 @@ class StreakCounter extends ConsumerWidget {
           if (hasStreak) ...[
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.fireRedGlow,  // Glow rojo intenso
+                    color: AppColors.fireRedGlow, // Glow rojo intenso
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -84,7 +82,9 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        color: hasStreak ? AppColors.textPrimary : AppColors.textTertiary,
+                        color: hasStreak
+                            ? AppColors.textPrimary
+                            : AppColors.textTertiary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -93,7 +93,9 @@ class StreakCounter extends ConsumerWidget {
                       style: GoogleFonts.montserrat(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: hasStreak ? AppColors.textSecondary : AppColors.textTertiary,
+                        color: hasStreak
+                            ? AppColors.textSecondary
+                            : AppColors.textTertiary,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -134,7 +136,7 @@ class StreakCounter extends ConsumerWidget {
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: streak.currentStreak >= streak.longestStreak
-                          ? AppColors.fireRed  // Highlight cuando iguala récord
+                          ? AppColors.fireRed // Highlight cuando iguala récord
                           : AppColors.textSecondary,
                     ),
                   ),
@@ -193,8 +195,8 @@ class StreakBadge extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.orange.withValues(alpha:0.3),
-                Colors.red.withValues(alpha:0.3),
+                Colors.orange.withValues(alpha: 0.3),
+                Colors.red.withValues(alpha: 0.3),
               ],
             ),
             borderRadius: BorderRadius.circular(16),

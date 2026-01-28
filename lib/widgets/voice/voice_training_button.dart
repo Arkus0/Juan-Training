@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../models/voice_action.dart';
 import '../../providers/voice_input_provider.dart' as vip;
 import '../../utils/design_system.dart';
 import 'voice_training_fab.dart' show VoiceTrainingCommand, VoiceCommandType;
@@ -49,7 +48,8 @@ class VoiceTrainingButton extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<VoiceTrainingButton> createState() => _VoiceTrainingButtonState();
+  ConsumerState<VoiceTrainingButton> createState() =>
+      _VoiceTrainingButtonState();
 }
 
 class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
@@ -125,9 +125,11 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       final command = _parseTrainingCommand(transcript);
       if (command != null) {
         // Registrar acción para undo
-        notifier.recordAction(vip.VoiceAction(
-          description: _getActionDescription(command),
-        ),);
+        notifier.recordAction(
+          vip.VoiceAction(
+            description: _getActionDescription(command),
+          ),
+        );
         widget.onCommand(command);
       } else {
         // No se entendió el comando - mostrar feedback
@@ -167,7 +169,8 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+            const Icon(Icons.warning_amber_rounded,
+                color: Colors.orange, size: 20,),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -195,22 +198,31 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     final normalized = transcript.toLowerCase().trim();
 
     // Comando: "Hecho" / "Listo" / "Serie completada"
-    if (RegExp(r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))').hasMatch(normalized)) {
-      try { HapticFeedback.heavyImpact(); } catch (_) {}
+    if (RegExp(
+            r'^(hecho|listo|completado|terminado|serie\s+(?:hecha|completada))',)
+        .hasMatch(normalized)) {
+      try {
+        HapticFeedback.heavyImpact();
+      } catch (_) {}
       return const VoiceTrainingCommand(type: VoiceCommandType.markDone);
     }
 
     // Comando: "Siguiente" / "Next" / "Próxima serie"
     if (RegExp(r'^(siguiente|next|proxim|adelante)').hasMatch(normalized)) {
-      try { HapticFeedback.mediumImpact(); } catch (_) {}
+      try {
+        HapticFeedback.mediumImpact();
+      } catch (_) {}
       return const VoiceTrainingCommand(type: VoiceCommandType.nextSet);
     }
 
     // Comando: "Descanso" / "Timer" / "Descansar X segundos"
-    final restMatch = RegExp(r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?').firstMatch(normalized);
+    final restMatch = RegExp(r'(?:descanso|timer|descansar)\s*(?:de\s*)?(\d+)?')
+        .firstMatch(normalized);
     if (restMatch != null) {
       final seconds = restMatch.group(1);
-      try { HapticFeedback.lightImpact(); } catch (_) {}
+      try {
+        HapticFeedback.lightImpact();
+      } catch (_) {}
       return VoiceTrainingCommand(
         type: VoiceCommandType.startRest,
         value: seconds != null ? int.tryParse(seconds)?.toDouble() : null,
@@ -218,44 +230,60 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
     }
 
     // Comando: "Peso X kilos" / "X kilos" / "X kg"
-    final weightMatch = RegExp(r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)').firstMatch(normalized);
+    final weightMatch = RegExp(r'(?:peso\s*)?(\d+(?:[.,]\d+)?)\s*(?:kilos?|kg)')
+        .firstMatch(normalized);
     if (weightMatch != null) {
       final weightStr = weightMatch.group(1)!.replaceAll(',', '.');
       final weight = double.tryParse(weightStr);
       if (weight != null) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
-        return VoiceTrainingCommand(type: VoiceCommandType.setWeight, value: weight);
+        try {
+          HapticFeedback.selectionClick();
+        } catch (_) {}
+        return VoiceTrainingCommand(
+            type: VoiceCommandType.setWeight, value: weight,);
       }
     }
 
     // Comando: "X repeticiones" / "X reps"
-    final repsMatch = RegExp(r'(\d+)\s*(?:reps?|repeticiones?)').firstMatch(normalized);
+    final repsMatch =
+        RegExp(r'(\d+)\s*(?:reps?|repeticiones?)').firstMatch(normalized);
     if (repsMatch != null) {
       final reps = int.tryParse(repsMatch.group(1)!);
       if (reps != null) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
-        return VoiceTrainingCommand(type: VoiceCommandType.setReps, value: reps.toDouble());
+        try {
+          HapticFeedback.selectionClick();
+        } catch (_) {}
+        return VoiceTrainingCommand(
+            type: VoiceCommandType.setReps, value: reps.toDouble(),);
       }
     }
 
     // Comando: "RPE X" / "Esfuerzo X"
-    final rpeMatch = RegExp(r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)').firstMatch(normalized);
+    final rpeMatch =
+        RegExp(r'(?:rpe|esfuerzo)\s*(\d+(?:[.,]\d+)?)').firstMatch(normalized);
     if (rpeMatch != null) {
       final rpeStr = rpeMatch.group(1)!.replaceAll(',', '.');
       final rpe = double.tryParse(rpeStr);
       if (rpe != null && rpe >= 1 && rpe <= 10) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
+        try {
+          HapticFeedback.selectionClick();
+        } catch (_) {}
         return VoiceTrainingCommand(type: VoiceCommandType.setRpe, value: rpe);
       }
     }
 
     // Comando: "Nota: texto" / "Anotar: texto" / "Apuntar: texto"
-    final noteMatch = RegExp(r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)', caseSensitive: false).firstMatch(normalized);
+    final noteMatch = RegExp(r'^(?:nota|anotar|apuntar|apunta|anota)[:\s]+(.+)',
+            caseSensitive: false,)
+        .firstMatch(normalized);
     if (noteMatch != null) {
       final noteText = noteMatch.group(1)!.trim();
       if (noteText.isNotEmpty) {
-        try { HapticFeedback.selectionClick(); } catch (_) {}
-        return VoiceTrainingCommand(type: VoiceCommandType.addNote, note: noteText);
+        try {
+          HapticFeedback.selectionClick();
+        } catch (_) {}
+        return VoiceTrainingCommand(
+            type: VoiceCommandType.addNote, note: noteText,);
       }
     }
 
@@ -277,25 +305,30 @@ class _VoiceTrainingButtonState extends ConsumerState<VoiceTrainingButton>
       builder: (context, child) {
         return Container(
           margin: const EdgeInsets.only(right: 4),
-          decoration: isListening ? BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.red.withValues(alpha: 0.3 + _pulseController.value * 0.3),
-                blurRadius: 8 + _pulseController.value * 4,
-                spreadRadius: _pulseController.value * 2,
-              ),
-            ],
-          ) : null,
+          decoration: isListening
+              ? BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withValues(
+                          alpha: 0.3 + _pulseController.value * 0.3,),
+                      blurRadius: 8 + _pulseController.value * 4,
+                      spreadRadius: _pulseController.value * 2,
+                    ),
+                  ],
+                )
+              : null,
           child: IconButton(
             onPressed: _onTap,
             icon: Icon(
               isListening ? Icons.mic : Icons.mic_none,
               color: isListening ? AppColors.neonPrimary : Colors.white70,
             ),
-            tooltip: isListening ? 'Escuchando...' : 'Dictar series (ej: 80kg, 10 reps)',
+            tooltip: isListening
+                ? 'Escuchando...'
+                : 'Dictar series (ej: 80kg, 10 reps)',
             style: IconButton.styleFrom(
-              backgroundColor: isListening 
+              backgroundColor: isListening
                   ? AppColors.live.withValues(alpha: 0.3)
                   : Colors.transparent,
             ),
@@ -343,7 +376,8 @@ class _ListeningOverlay extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.bgElevated,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
+                border:
+                    Border.all(color: AppColors.error.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.live.withValues(alpha: 0.3),
@@ -545,9 +579,8 @@ class _FieldChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isSet
-            ? AppColors.success.withValues(alpha: 0.2)
-            : AppColors.bgDeep,
+        color:
+            isSet ? AppColors.success.withValues(alpha: 0.2) : AppColors.bgDeep,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSet
@@ -650,7 +683,8 @@ class _PulsingDotState extends State<_PulsingDot>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: widget.color.withValues(alpha: 0.5 + _controller.value * 0.5),
+            color:
+                widget.color.withValues(alpha: 0.5 + _controller.value * 0.5),
             shape: BoxShape.circle,
           ),
         );
@@ -693,11 +727,10 @@ class _PulsingMicIconState extends State<_PulsingMicIcon>
         return Icon(
           Icons.mic,
           size: 28,
-          color: AppColors.neonPrimary.withValues(alpha: 0.6 + _controller.value * 0.4),
+          color: AppColors.neonPrimary
+              .withValues(alpha: 0.6 + _controller.value * 0.4),
         );
       },
     );
   }
 }
-
-

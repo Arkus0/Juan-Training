@@ -100,14 +100,14 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
     final groups = <List<int>>[];
     final processedIndices = <int>{};
 
-    for (int i = 0; i < exercises.length; i++) {
+    for (var i = 0; i < exercises.length; i++) {
       if (processedIndices.contains(i)) continue;
 
       final ex = exercises[i];
       if (ex.supersetId != null) {
         // Find all exercises with same supersetId
         final group = <int>[];
-        for (int j = 0; j < exercises.length; j++) {
+        for (var j = 0; j < exercises.length; j++) {
           if (exercises[j].supersetId == ex.supersetId) {
             group.add(j);
             processedIndices.add(j);
@@ -135,25 +135,42 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
               Text(
                 'OPCIONES PRO 💀',
                 style: GoogleFonts.montserrat(
-                  fontSize: 20, fontWeight: FontWeight.w900, color: Colors.red[900]),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.red[900],
+                ),
               ),
               const SizedBox(height: 24),
               ListTile(
-                title: const Text('Progresión Automática', style: TextStyle(color: Colors.white)),
+                title: const Text('Progresión Automática',
+                    style: TextStyle(color: Colors.white),),
                 subtitle: Text(
                   widget.dia.progressionType.toUpperCase(),
                   style: TextStyle(color: Colors.redAccent[700]),
                 ),
                 trailing: DropdownButton<String>(
                   dropdownColor: Colors.grey[850],
-                  value: ['none', 'lineal', 'double', 'percentage1RM'].contains(widget.dia.progressionType)
+                  value: ['none', 'lineal', 'double', 'percentage1RM']
+                          .contains(widget.dia.progressionType)
                       ? widget.dia.progressionType
                       : 'none',
                   items: const [
-                    DropdownMenuItem(value: 'none', child: Text('Ninguna', style: TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'lineal', child: Text('Lineal', style: TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'double', child: Text('Doble Progresión', style: TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'percentage1RM', child: Text('% 1RM', style: TextStyle(color: Colors.white))),
+                    DropdownMenuItem(
+                        value: 'none',
+                        child: Text('Ninguna',
+                            style: TextStyle(color: Colors.white),),),
+                    DropdownMenuItem(
+                        value: 'lineal',
+                        child: Text('Lineal',
+                            style: TextStyle(color: Colors.white),),),
+                    DropdownMenuItem(
+                        value: 'double',
+                        child: Text('Doble Progresión',
+                            style: TextStyle(color: Colors.white),),),
+                    DropdownMenuItem(
+                        value: 'percentage1RM',
+                        child: Text('% 1RM',
+                            style: TextStyle(color: Colors.white),),),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -165,7 +182,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
               ),
               ListTile(
                 leading: const Icon(Icons.copy, color: Colors.white),
-                title: const Text('DUPLICAR DÍA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                title: const Text('DUPLICAR DÍA',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold,),),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onDuplicateDay();
@@ -173,7 +192,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('ELIMINAR DÍA', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                title: const Text('ELIMINAR DÍA',
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold,),),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onRemoveDay();
@@ -188,13 +209,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.black,
-        border: Border.all(color: Colors.red[900]!, width: 1),
+        border: Border.all(color: Colors.red[900]!),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -231,7 +250,10 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                   child: TextField(
                     controller: _nameController,
                     style: GoogleFonts.montserrat(
-                      fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -246,10 +268,11 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 // 🆕 Contador de ejercicios
                 if (widget.dia.ejercicios.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
-                      color: Colors.red[900]!.withValues(alpha:0.3),
+                      color: Colors.red[900]!.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -264,14 +287,16 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 if (widget.dia.progressionType != 'none')
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.auto_graph, color: Colors.redAccent[700], size: 20),
+                    child: Icon(Icons.auto_graph,
+                        color: Colors.redAccent[700], size: 20,),
                   ),
                 // PRO options menu button
                 GestureDetector(
                   onTap: _showProOptions,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+                    child: Icon(Icons.more_vert,
+                        color: Colors.grey[600], size: 20,),
                   ),
                 ),
                 GestureDetector(
@@ -299,7 +324,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     child: Text(
                       'VACÍO. AÑADE DOLOR.',
                       style: GoogleFonts.montserrat(
-                        color: Colors.white38, fontStyle: FontStyle.italic),
+                        color: Colors.white38,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
 
@@ -307,7 +334,8 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                 if (widget.dia.ejercicios.isNotEmpty)
                   Builder(
                     builder: (context) {
-                      final visualGroups = _computeVisualGroups(widget.dia.ejercicios);
+                      final visualGroups =
+                          _computeVisualGroups(widget.dia.ejercicios);
                       return ReorderableListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -318,11 +346,15 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                           final groupIndices = visualGroups[visualIndex];
                           final isSuperset = groupIndices.length > 1 ||
                               (groupIndices.isNotEmpty &&
-                               widget.dia.ejercicios[groupIndices.first].supersetId != null);
+                                  widget.dia.ejercicios[groupIndices.first]
+                                          .supersetId !=
+                                      null);
 
                           // Identify key for the group
-                          final firstEx = widget.dia.ejercicios[groupIndices.first];
-                          final Key groupKey = Key('group_${firstEx.supersetId ?? firstEx.instanceId}');
+                          final firstEx =
+                              widget.dia.ejercicios[groupIndices.first];
+                          final groupKey = Key(
+                              'group_${firstEx.supersetId ?? firstEx.instanceId}',);
 
                           return ReorderableDragStartListener(
                             index: visualIndex,
@@ -332,7 +364,8 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                               exercises: widget.dia.ejercicios,
                               isSuperset: isSuperset,
                               onRemoveExercise: widget.onRemoveExercise,
-                              onDuplicateExercise: widget.onDuplicateExercise, // 🆕
+                              onDuplicateExercise:
+                                  widget.onDuplicateExercise, // 🆕
                               onUpdateExercise: widget.onUpdateExercise,
                               onReplaceExercise: widget.onReplaceExercise,
                               onCreateSuperset: widget.onCreateSuperset,
@@ -353,7 +386,9 @@ class _DiaExpansionTileState extends State<DiaExpansionTile> {
                     label: Text(
                       'AÑADIR EJERCICIO',
                       style: GoogleFonts.montserrat(
-                        color: Colors.redAccent, fontWeight: FontWeight.w800),
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -412,13 +447,14 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
 
   OverlayEntry? _currentToast;
 
-  void _showDeleteToast(BuildContext context, int idx, EjercicioEnRutina removedItem) {
+  void _showDeleteToast(
+      BuildContext context, int idx, EjercicioEnRutina removedItem,) {
     // Remove previous toast if any
     _currentToast?.remove();
     _currentToast = null;
 
     final overlay = Overlay.of(context);
-    bool undoPressed = false;
+    var undoPressed = false;
 
     final entry = OverlayEntry(
       builder: (ctx) => Positioned(
@@ -433,7 +469,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
               color: Colors.red[900],
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha:0.3), blurRadius: 8),
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3), blurRadius: 8,),
               ],
             ),
             child: Row(
@@ -441,7 +478,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                 Expanded(
                   child: Text(
                     '${removedItem.nombre} eliminado',
-                    style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.montserrat(
+                        color: Colors.white, fontWeight: FontWeight.w500,),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -454,7 +492,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
                       widget.onUndoRemove(idx, removedItem);
                     }
                   },
-                  child: Text('DESHACER', style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text('DESHACER',
+                      style: GoogleFonts.montserrat(
+                          color: Colors.white, fontWeight: FontWeight.bold,),),
                 ),
               ],
             ),
@@ -475,7 +515,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
     });
   }
 
-  Widget _buildExerciseCard(BuildContext context, int idx, EjercicioEnRutina ex, {bool inSuperset = false}) {
+  Widget _buildExerciseCard(BuildContext context, int idx, EjercicioEnRutina ex,
+      {bool inSuperset = false,}) {
     final card = EjercicioCard(
       key: Key('exercise_${ex.instanceId}'),
       ejercicio: ex,
@@ -485,9 +526,11 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         _showDeleteToast(context, idx, removedItem);
       },
       onUpdate: (updated) => widget.onUpdateExercise(idx, updated),
-      onReplace: (alternativaNombre) => widget.onReplaceExercise(idx, alternativaNombre),
+      onReplace: (alternativaNombre) =>
+          widget.onReplaceExercise(idx, alternativaNombre),
       onUnlink: inSuperset ? () => widget.onRemoveFromSuperset(idx) : null,
-      onDuplicate: () => widget.onDuplicateExercise(idx), // 🆕 Swipe para duplicar
+      onDuplicate: () =>
+          widget.onDuplicateExercise(idx), // 🆕 Swipe para duplicar
     );
 
     // Wrap with LongPressDraggable for superset creation/breaking
@@ -507,7 +550,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(inSuperset ? Icons.link_off : Icons.link, color: Colors.redAccent),
+              Icon(inSuperset ? Icons.link_off : Icons.link,
+                  color: Colors.redAccent,),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
@@ -577,7 +621,6 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
     // Swipe bidireccional: → Duplicar, ← Eliminar
     return Dismissible(
       key: Key('dismissible_${ex.instanceId}'),
-      direction: DismissDirection.horizontal, // 🆕 Bidireccional
       // Fondo verde para duplicar (swipe derecha)
       background: Container(
         alignment: Alignment.centerLeft,
@@ -588,7 +631,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
           children: [
             Icon(Icons.copy, color: Colors.white),
             SizedBox(width: 8),
-            Text('DUPLICAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text('DUPLICAR',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold,),),
           ],
         ),
       ),
@@ -600,7 +645,9 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('ELIMINAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text('ELIMINAR',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold,),),
             SizedBox(width: 8),
             Icon(Icons.delete, color: Colors.white),
           ],
@@ -639,7 +686,8 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         decoration: BoxDecoration(
-          border: const Border(left: BorderSide(color: Colors.redAccent, width: 4)),
+          border:
+              const Border(left: BorderSide(color: Colors.redAccent, width: 4)),
           color: Colors.grey[900]!.withValues(alpha: 0.5),
         ),
         child: Column(
@@ -656,7 +704,7 @@ class _ExerciseGroupWidgetState extends State<_ExerciseGroupWidget> {
       final ex = widget.exercises[idx];
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        child: _buildExerciseCard(context, idx, ex, inSuperset: false),
+        child: _buildExerciseCard(context, idx, ex),
       );
     }
   }

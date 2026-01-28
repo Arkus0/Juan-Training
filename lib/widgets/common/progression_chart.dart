@@ -1,7 +1,8 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/serie_log.dart';
+import '../../utils/design_system.dart';
 
 /// Widget que muestra un gráfico simple de progresión con los últimos logs.
 /// Usa CustomPaint para dibujar líneas sin dependencias externas.
@@ -59,7 +60,9 @@ class ProgressionChart extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         // Lista compacta de sesiones
-        ...displayHistory.reversed.take(5).map((entry) => _HistoryRow(entry: entry)),
+        ...displayHistory.reversed
+            .take(5)
+            .map((entry) => _HistoryRow(entry: entry)),
       ],
     );
   }
@@ -176,9 +179,9 @@ class _ChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     // Encontrar min/max para normalizar
-    double minWeight = double.infinity;
+    var minWeight = double.infinity;
     double maxWeight = 0;
-    double minVolume = double.infinity;
+    var minVolume = double.infinity;
     double maxVolume = 0;
 
     for (final entry in data) {
@@ -198,15 +201,18 @@ class _ChartPainter extends CustomPainter {
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
 
-    for (int i = 0; i < data.length; i++) {
-      final x = padding + (i / (data.length - 1).clamp(1, double.infinity)) * chartWidth;
+    for (var i = 0; i < data.length; i++) {
+      final x = padding +
+          (i / (data.length - 1).clamp(1, double.infinity)) * chartWidth;
 
       // Normalizar peso a [0, 1] -> [chartHeight, 0]
-      final normalizedWeight = (data[i].maxWeight - minWeight) / (maxWeight - minWeight);
+      final normalizedWeight =
+          (data[i].maxWeight - minWeight) / (maxWeight - minWeight);
       final yWeight = padding + chartHeight * (1 - normalizedWeight);
 
       // Normalizar volumen
-      final normalizedVolume = (data[i].volume - minVolume) / (maxVolume - minVolume);
+      final normalizedVolume =
+          (data[i].volume - minVolume) / (maxVolume - minVolume);
       final yVolume = padding + chartHeight * (1 - normalizedVolume);
 
       if (i == 0) {
@@ -246,7 +252,7 @@ class SetHistoryData {
   /// Crea desde una lista de SerieLog.
   factory SetHistoryData.fromLogs(DateTime date, List<SerieLog> logs) {
     double maxWeight = 0;
-    int bestReps = 0;
+    var bestReps = 0;
     double volume = 0;
 
     for (final log in logs) {

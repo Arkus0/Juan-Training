@@ -186,7 +186,6 @@ void main() {
         matchedId: 1,
         matchedName: 'Test',
         series: 4,
-        repsRange: '10',
         confidence: 0.9,
       );
 
@@ -201,7 +200,6 @@ void main() {
         rawText: 'test',
         matchedId: 1,
         series: 50, // Demasiadas series
-        repsRange: '10',
       );
 
       final result = service.validate(exercise);
@@ -228,7 +226,6 @@ void main() {
         rawText: 'test',
         matchedId: 1,
         series: 4,
-        repsRange: '10',
         weight: 1000.0, // Peso absurdo
       );
 
@@ -240,9 +237,7 @@ void main() {
     test('Debe advertir cuando no hay match de ejercicio', () {
       const exercise = ParsedExercise(
         rawText: 'test',
-        matchedId: null, // Sin match
         series: 4,
-        repsRange: '10',
       );
 
       final result = service.validate(exercise);
@@ -254,7 +249,6 @@ void main() {
       const exercise = ParsedExercise(
         rawText: 'test',
         series: 100, // Extremo
-        repsRange: '10',
       );
 
       final corrected = service.autoCorrect(exercise);

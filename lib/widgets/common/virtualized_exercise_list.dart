@@ -1,8 +1,9 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/library_exercise.dart';
 import '../../providers/exercise_search_providers.dart';
+import '../../utils/design_system.dart';
 import 'optimized_exercise_image.dart';
 
 /// Lista virtualizada de ejercicios para la biblioteca (700+ items)
@@ -267,8 +268,9 @@ class _ExerciseListItem extends StatelessWidget {
                     exercise.isFavorite
                         ? Icons.favorite
                         : Icons.favorite_border,
-                    color:
-                        exercise.isFavorite ? AppColors.neonPrimary : AppColors.textTertiary,
+                    color: exercise.isFavorite
+                        ? AppColors.neonPrimary
+                        : AppColors.textTertiary,
                     size: 22,
                   ),
                   padding: EdgeInsets.zero,
@@ -396,8 +398,9 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
     super.initState();
     final initialQuery =
         widget.initialQuery ?? ref.read(exerciseSearchQueryProvider);
-    _controller = TextEditingController(text: initialQuery);
-    ref.read(exerciseSearchQueryProvider.notifier).state = initialQuery;
+    final resolvedQuery = initialQuery ?? '';
+    _controller = TextEditingController(text: resolvedQuery);
+    ref.read(exerciseSearchQueryProvider.notifier).setQuery(resolvedQuery);
     _controller.addListener(() {
       setState(() {});
     });
@@ -417,7 +420,7 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
       child: TextField(
         controller: _controller,
         onChanged: (value) {
-          ref.read(exerciseSearchQueryProvider.notifier).state = value;
+          ref.read(exerciseSearchQueryProvider.notifier).setQuery(value);
         },
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
@@ -429,7 +432,7 @@ class _ExerciseSearchBarState extends ConsumerState<ExerciseSearchBar> {
                   icon: const Icon(Icons.clear, color: AppColors.textTertiary),
                   onPressed: () {
                     _controller.clear();
-                    ref.read(exerciseSearchQueryProvider.notifier).state = '';
+                    ref.read(exerciseSearchQueryProvider.notifier).setQuery('');
                   },
                 )
               : null,
@@ -467,7 +470,7 @@ class ExerciseFilterChips extends ConsumerWidget {
             label: 'Favoritos',
             icon: Icons.favorite,
             isSelected: state.favoritesOnly,
-            onTap: () => notifier.setFavoritesOnly(!state.favoritesOnly),
+            onTap: () => notifier.setFavoritesOnly(value: !state.favoritesOnly),
           ),
           const SizedBox(width: 8),
           // Grupos musculares

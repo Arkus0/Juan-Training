@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:juan_training/models/progression_type.dart';
 import 'package:juan_training/models/progression_engine_models.dart';
+import 'package:juan_training/models/progression_type.dart';
 import 'package:juan_training/services/progression_engine.dart';
 
 void main() {
@@ -21,9 +21,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 10, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 10, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 10, completed: true,),
             ],
             targetReps: 10,
             weight: 80,
@@ -56,9 +59,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -67,9 +73,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 80, reps: 9, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 9, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 9, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 9, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 9, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 9, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -105,9 +114,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -116,9 +128,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -138,13 +153,17 @@ void main() {
       );
 
       expect(decision.action, ProgressionAction.increaseWeight);
-      expect(decision.suggestedWeight, 82.5); // +2.5kg para heavy compound >60kg
+      expect(
+          decision.suggestedWeight, 82.5,); // +2.5kg para heavy compound >60kg
       expect(decision.suggestedReps, 8); // Vuelve al mínimo
       expect(decision.isImprovement, true);
-      expect(decision.reason, contains('Todas las series')); // Verifica criterio Lyle
+      expect(decision.reason,
+          contains('Todas las series'),); // Verifica criterio Lyle
     });
 
-    test('Promedio en max pero UNA serie falla: NO subir (criterio Lyle estricto)', () {
+    test(
+        'Promedio en max pero UNA serie falla: NO subir (criterio Lyle estricto)',
+        () {
       // DIFERENCIA CRÍTICA: El promedio es 12, pero Serie 3 solo hizo 11
       // Según Lyle, NO todas están en max, así que NO debe subir peso
       final context = ExerciseProgressionContext(
@@ -155,9 +174,15 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 13, targetReps: 8, completed: true), // +1
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true), // max
-              const SetSummary(weight: 80, reps: 11, targetReps: 8, completed: true), // -1 (FALLA max)
+              const SetSummary(
+                  weight: 80, reps: 13, targetReps: 8, completed: true,), // +1
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,), // max
+              const SetSummary(
+                  weight: 80,
+                  reps: 11,
+                  targetReps: 8,
+                  completed: true,), // -1 (FALLA max)
             ],
             targetReps: 8,
             weight: 80,
@@ -165,9 +190,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -193,7 +221,7 @@ void main() {
       expect(decision.suggestedReps, 12); // Mantener objetivo max
     });
 
-    test('1 sesión a max reps: espera confirmación', () {
+    test('1 sesión a max reps: sube peso sin confirmación', () {
       final context = ExerciseProgressionContext(
         exerciseId: 'test-1',
         exerciseName: 'Press Banca',
@@ -203,9 +231,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 12, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 12, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -214,9 +245,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
-              const SetSummary(weight: 80, reps: 10, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 10, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 80,
@@ -235,9 +269,11 @@ void main() {
         model: ProgressionType.dobleRepsFirst,
       );
 
-      expect(decision.action, ProgressionAction.maintain);
-      expect(decision.reason, contains('Confirmando'));
-      expect(decision.suggestedWeight, 80); // No sube todavía
+      expect(decision.action, ProgressionAction.increaseWeight);
+      expect(
+          decision.suggestedWeight, 82.5,); // +2.5kg para heavy compound >60kg
+      expect(decision.suggestedReps, 8); // Vuelve al mínimo
+      expect(decision.reason, contains('Todas las series'));
     });
 
     test('Día malo único: no castiga, mantiene', () {
@@ -250,10 +286,14 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 100, reps: 8, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 6, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 5, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 4, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 100, reps: 8, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 6, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 5, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 4, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 100,
@@ -262,10 +302,14 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 100, reps: 8, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 8, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 8, targetReps: 8, completed: true),
-              const SetSummary(weight: 100, reps: 8, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 100, reps: 8, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 8, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 8, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 8, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 100,
@@ -299,9 +343,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 140, reps: 5, targetReps: 8, completed: true),
-              const SetSummary(weight: 140, reps: 4, targetReps: 8, completed: true),
-              const SetSummary(weight: 140, reps: 3, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 140, reps: 5, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 140, reps: 4, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 140, reps: 3, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 140,
@@ -310,9 +357,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 140, reps: 6, targetReps: 8, completed: true),
-              const SetSummary(weight: 140, reps: 5, targetReps: 8, completed: true),
-              const SetSummary(weight: 140, reps: 4, targetReps: 8, completed: true),
+              const SetSummary(
+                  weight: 140, reps: 6, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 140, reps: 5, targetReps: 8, completed: true,),
+              const SetSummary(
+                  weight: 140, reps: 4, targetReps: 8, completed: true,),
             ],
             targetReps: 8,
             weight: 140,
@@ -351,9 +401,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 100, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 100, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 100, reps: 5, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 100, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 100, reps: 5, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 100,
@@ -362,9 +415,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 14)),
             sets: [
-              const SetSummary(weight: 97.5, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 97.5, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 97.5, reps: 5, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 97.5, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 97.5, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 97.5, reps: 5, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 97.5,
@@ -402,9 +458,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 3)),
             sets: [
-              const SetSummary(weight: 80, reps: 4, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 3, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 3, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 4, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 3, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 3, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 80,
@@ -413,9 +472,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 5)),
             sets: [
-              const SetSummary(weight: 80, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 4, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 3, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 4, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 3, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 80,
@@ -424,9 +486,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 7)),
             sets: [
-              const SetSummary(weight: 80, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 80, reps: 4, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 80, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 80, reps: 4, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 80,
@@ -462,9 +527,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 3)),
             sets: [
-              const SetSummary(weight: 50, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 50, reps: 4, targetReps: 5, completed: true),
-              const SetSummary(weight: 50, reps: 3, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 50, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 50, reps: 4, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 50, reps: 3, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 50,
@@ -473,9 +541,12 @@ void main() {
           SessionSummary(
             date: DateTime.now().subtract(const Duration(days: 5)),
             sets: [
-              const SetSummary(weight: 47.5, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 47.5, reps: 5, targetReps: 5, completed: true),
-              const SetSummary(weight: 47.5, reps: 5, targetReps: 5, completed: true),
+              const SetSummary(
+                  weight: 47.5, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 47.5, reps: 5, targetReps: 5, completed: true,),
+              const SetSummary(
+                  weight: 47.5, reps: 5, targetReps: 5, completed: true,),
             ],
             targetReps: 5,
             weight: 47.5,
@@ -497,36 +568,52 @@ void main() {
       // Solo 1 fallo: NO deload, reintentar
       expect(decision.action, ProgressionAction.maintain);
       expect(decision.suggestedWeight, 50); // Mismo peso
-      expect(decision.userMessage, contains('1/3')); // Indica progreso hacia stall
+      expect(
+          decision.userMessage, contains('1/3'),); // Indica progreso hacia stall
     });
   });
 
   group('ExerciseCategory - Inferencia automática', () {
     test('Detecta compuestos pesados', () {
-      expect(ExerciseCategory.inferFromName('Sentadilla'), ExerciseCategory.heavyCompound);
-      expect(ExerciseCategory.inferFromName('Press Banca'), ExerciseCategory.heavyCompound);
-      expect(ExerciseCategory.inferFromName('Peso Muerto'), ExerciseCategory.heavyCompound);
-      expect(ExerciseCategory.inferFromName('Bench Press'), ExerciseCategory.heavyCompound);
-      expect(ExerciseCategory.inferFromName('Squat'), ExerciseCategory.heavyCompound);
+      expect(ExerciseCategory.inferFromName('Sentadilla'),
+          ExerciseCategory.heavyCompound,);
+      expect(ExerciseCategory.inferFromName('Press Banca'),
+          ExerciseCategory.heavyCompound,);
+      expect(ExerciseCategory.inferFromName('Peso Muerto'),
+          ExerciseCategory.heavyCompound,);
+      expect(ExerciseCategory.inferFromName('Bench Press'),
+          ExerciseCategory.heavyCompound,);
+      expect(ExerciseCategory.inferFromName('Squat'),
+          ExerciseCategory.heavyCompound,);
     });
 
     test('Detecta compuestos ligeros', () {
-      expect(ExerciseCategory.inferFromName('Remo con Barra'), ExerciseCategory.lightCompound);
-      expect(ExerciseCategory.inferFromName('Press Militar'), ExerciseCategory.lightCompound);
-      expect(ExerciseCategory.inferFromName('Dominadas'), ExerciseCategory.lightCompound);
-      expect(ExerciseCategory.inferFromName('Fondos'), ExerciseCategory.lightCompound);
+      expect(ExerciseCategory.inferFromName('Remo con Barra'),
+          ExerciseCategory.lightCompound,);
+      expect(ExerciseCategory.inferFromName('Press Militar'),
+          ExerciseCategory.lightCompound,);
+      expect(ExerciseCategory.inferFromName('Dominadas'),
+          ExerciseCategory.lightCompound,);
+      expect(ExerciseCategory.inferFromName('Fondos'),
+          ExerciseCategory.lightCompound,);
     });
 
     test('Detecta máquinas', () {
-      expect(ExerciseCategory.inferFromName('Prensa de Piernas'), ExerciseCategory.machine);
-      expect(ExerciseCategory.inferFromName('Polea Alta'), ExerciseCategory.machine);
-      expect(ExerciseCategory.inferFromName('Cable Crossover'), ExerciseCategory.machine);
+      expect(ExerciseCategory.inferFromName('Prensa de Piernas'),
+          ExerciseCategory.machine,);
+      expect(ExerciseCategory.inferFromName('Polea Alta'),
+          ExerciseCategory.machine,);
+      expect(ExerciseCategory.inferFromName('Cable Crossover'),
+          ExerciseCategory.machine,);
     });
 
     test('Default: aislamiento', () {
-      expect(ExerciseCategory.inferFromName('Curl de Bíceps'), ExerciseCategory.isolation);
-      expect(ExerciseCategory.inferFromName('Extensión de Tríceps'), ExerciseCategory.isolation);
-      expect(ExerciseCategory.inferFromName('Elevaciones Laterales'), ExerciseCategory.isolation);
+      expect(ExerciseCategory.inferFromName('Curl de Bíceps'),
+          ExerciseCategory.isolation,);
+      expect(ExerciseCategory.inferFromName('Extensión de Tríceps'),
+          ExerciseCategory.isolation,);
+      expect(ExerciseCategory.inferFromName('Elevaciones Laterales'),
+          ExerciseCategory.isolation,);
     });
   });
 
@@ -558,14 +645,17 @@ void main() {
       final session = SessionSummary(
         date: DateTime.now(),
         sets: [
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
         ],
         targetReps: 10,
         weight: 80,
       );
-      
+
       expect(session.evaluate(), SessionResult.complete);
       expect(session.successRate, 1.0);
     });
@@ -574,16 +664,21 @@ void main() {
       final session = SessionSummary(
         date: DateTime.now(),
         sets: [
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 8, targetReps: 10, completed: true), // Fallo
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 8, targetReps: 10, completed: true,), // Fallo
         ],
         targetReps: 10,
         weight: 80,
       );
-      
+
       expect(session.evaluate(), SessionResult.acceptable);
     });
 
@@ -591,15 +686,19 @@ void main() {
       final session = SessionSummary(
         date: DateTime.now(),
         sets: [
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 8, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 7, targetReps: 10, completed: true),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 8, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 7, targetReps: 10, completed: true,),
         ],
         targetReps: 10,
         weight: 80,
       );
-      
+
       expect(session.evaluate(), SessionResult.partial);
     });
 
@@ -607,15 +706,19 @@ void main() {
       final session = SessionSummary(
         date: DateTime.now(),
         sets: [
-          const SetSummary(weight: 80, reps: 10, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 6, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 5, targetReps: 10, completed: true),
-          const SetSummary(weight: 80, reps: 4, targetReps: 10, completed: true),
+          const SetSummary(
+              weight: 80, reps: 10, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 6, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 5, targetReps: 10, completed: true,),
+          const SetSummary(
+              weight: 80, reps: 4, targetReps: 10, completed: true,),
         ],
         targetReps: 10,
         weight: 80,
       );
-      
+
       expect(session.evaluate(), SessionResult.failed);
     });
   });

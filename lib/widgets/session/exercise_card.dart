@@ -6,8 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/ejercicio.dart';
 import '../../models/library_exercise.dart';
 import '../../models/progression_engine_models.dart';
-import '../../models/sesion.dart';
 import '../../models/serie_log.dart';
+import '../../models/sesion.dart';
 import '../../providers/focus_manager_provider.dart';
 import '../../providers/progression_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -24,6 +24,9 @@ import 'quick_actions_menu.dart'; // QuickActionsMenu for the FAB-style actions
 import 'session_modifiers.dart'; // AddSetButton
 import 'session_set_row.dart';
 
+typedef IndexedCompletionChanged = void Function(int setIndex,
+    {required bool? value,});
+
 class ExerciseCardContainer extends ConsumerStatefulWidget {
   final int exerciseIndex;
 
@@ -33,7 +36,8 @@ class ExerciseCardContainer extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ExerciseCardContainer> createState() => _ExerciseCardContainerState();
+  ConsumerState<ExerciseCardContainer> createState() =>
+      _ExerciseCardContainerState();
 }
 
 class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
@@ -57,7 +61,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     }
     final exercise = exercises[widget.exerciseIndex];
     final allCompleted = exercise.logs.every((log) => log.completed);
-    
+
     setState(() {
       // Toggle basado en el estado actual
       final currentCollapsed = _isCollapsed(allCompleted);
@@ -77,29 +81,36 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgElevated,
-        title: Text('NOTAS: ${exerciseName.toUpperCase()}', style: AppTypography.sectionTitle),
+        title: Text('NOTAS: ${exerciseName.toUpperCase()}',
+            style: AppTypography.sectionTitle,),
         content: TextField(
           controller: controller,
           maxLines: 5,
           style: const TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(
-            hintText: 'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
+            hintText:
+                'Escribe notas importantes para este ejercicio (ej. altura del asiento, agarre...)',
             hintStyle: TextStyle(color: AppColors.textTertiary),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.techCyan)),
+            enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.border),),
+            focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.techCyan),),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('CANCELAR', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('CANCELAR',
+                style: TextStyle(color: AppColors.textSecondary),),
           ),
           TextButton(
             onPressed: () async {
               await repo.saveNote(exerciseName, controller.text);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('GUARDAR', style: TextStyle(color: AppColors.techCyan, fontWeight: FontWeight.bold)),
+            child: const Text('GUARDAR',
+                style: TextStyle(
+                    color: AppColors.techCyan, fontWeight: FontWeight.bold,),),
           ),
         ],
       ),
@@ -110,25 +121,31 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     // Convert string ID to int safely
     final libId = int.tryParse(exercise.libraryId);
 
-    final hasAlternativas = libId != null && AlternativasService.instance.hasAlternativas(libId);
+    final hasAlternativas =
+        libId != null && AlternativasService.instance.hasAlternativas(libId);
 
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgElevated,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),),
       builder: (sheetContext) {
-        final historyLogs = ref.read(trainingSessionProvider).history[exercise.historyKey];
+        final historyLogs =
+            ref.read(trainingSessionProvider).history[exercise.historyKey];
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(exercise.nombre.toUpperCase(), style: AppTypography.sectionTitle),
+                Text(exercise.nombre.toUpperCase(),
+                    style: AppTypography.sectionTitle,),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.history, color: AppColors.textSecondary),
-                  title: const Text('Ver Historial', style: TextStyle(color: AppColors.textPrimary)),
+                  leading:
+                      const Icon(Icons.history, color: AppColors.textSecondary),
+                  title: const Text('Ver Historial',
+                      style: TextStyle(color: AppColors.textPrimary),),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     _showHistoryDialog(context, exercise.nombre, historyLogs);
@@ -137,17 +154,24 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                 ListTile(
                   leading: Icon(
                     Icons.swap_horiz,
-                    color: hasAlternativas ? AppColors.techCyan : AppColors.textDisabled,
+                    color: hasAlternativas
+                        ? AppColors.techCyan
+                        : AppColors.textDisabled,
                   ),
                   title: Text(
                     'Ver Alternativas',
                     style: TextStyle(
-                      color: hasAlternativas ? AppColors.textPrimary : AppColors.textDisabled,
+                      color: hasAlternativas
+                          ? AppColors.textPrimary
+                          : AppColors.textDisabled,
                     ),
                   ),
                   subtitle: Text(
-                    hasAlternativas ? 'Ejercicios similares disponibles' : 'Sin alternativas registradas',
-                    style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                    hasAlternativas
+                        ? 'Ejercicios similares disponibles'
+                        : 'Sin alternativas registradas',
+                    style: const TextStyle(
+                        color: AppColors.textTertiary, fontSize: 12,),
                   ),
                   onTap: () {
                     if (!hasAlternativas) return;
@@ -155,30 +179,38 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     Navigator.pop(sheetContext);
 
                     // Resolve LibraryExercise object
-                    final libraryExercise = ExerciseLibraryService.instance.getExerciseById(libId);
+                    final libraryExercise =
+                        ExerciseLibraryService.instance.getExerciseById(libId);
 
                     if (libraryExercise == null) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Error: No se encontró información del ejercicio en la biblioteca')),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Error: No se encontró información del ejercicio en la biblioteca',),),
                       );
                       return;
                     }
 
                     // Get full list for service
-                    final allExercises = ExerciseLibraryService.instance.exercises.cast<LibraryExercise>();
+                    final allExercises = ExerciseLibraryService
+                        .instance.exercises
+                        .cast<LibraryExercise>();
 
                     showAlternativasDialog(
                       context: context,
                       ejercicioOriginal: libraryExercise,
                       allExercises: allExercises,
                       onReplace: (alternativa) {
-                        try { HapticFeedback.selectionClick(); } catch (_) {}
+                        try {
+                          HapticFeedback.selectionClick();
+                        } catch (_) {}
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               'Alternativa: ${alternativa.name} (edita la rutina para cambiar permanentemente)',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             backgroundColor: Colors.grey[800],
                             behavior: SnackBarBehavior.floating,
@@ -189,11 +221,13 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.note_alt_outlined, color: AppColors.textSecondary),
-                  title: const Text('Notas del Ejercicio', style: TextStyle(color: AppColors.textPrimary)),
+                  leading: const Icon(Icons.note_alt_outlined,
+                      color: AppColors.textSecondary,),
+                  title: const Text('Notas del Ejercicio',
+                      style: TextStyle(color: AppColors.textPrimary),),
                   onTap: () {
-                     Navigator.pop(sheetContext);
-                     _showNotesDialog(context, exercise.nombre);
+                    Navigator.pop(sheetContext);
+                    _showNotesDialog(context, exercise.nombre);
                   },
                 ),
               ],
@@ -204,25 +238,34 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     );
   }
 
-  void _showHistoryDialog(BuildContext context, String name, List<SerieLog>? logs) {
+  void _showHistoryDialog(
+      BuildContext context, String name, List<SerieLog>? logs,) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.bgElevated,
         title: Text('HISTORIAL: $name', style: AppTypography.sectionTitle),
         content: logs == null || logs.isEmpty
-            ? const Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary))
+            ? const Text('No hay datos previos.',
+                style: TextStyle(color: AppColors.textSecondary),)
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ÚLTIMA SESIÓN:', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                  const Text('ÚLTIMA SESIÓN:',
+                      style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.bold,),),
                   const SizedBox(height: 8),
-                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}', style: const TextStyle(color: AppColors.textPrimary))),
+                  ...logs.map((l) => Text('• ${l.peso}kg x ${l.reps}',
+                      style: const TextStyle(color: AppColors.textPrimary),),),
                 ],
               ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR', style: TextStyle(color: AppColors.techCyan))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CERRAR',
+                  style: TextStyle(color: AppColors.techCyan),),),
         ],
       ),
     );
@@ -233,11 +276,14 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       context: context,
       backgroundColor: AppColors.bgElevated,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: AdvancedOptionsModal(exerciseIndex: widget.exerciseIndex, setIndex: setIndex),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: AdvancedOptionsModal(
+              exerciseIndex: widget.exerciseIndex, setIndex: setIndex,),
         );
       },
     );
@@ -248,18 +294,23 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     if (previous != null) {
       var improved = false;
       if (current.peso > previous.peso) improved = true;
-      if (current.peso == previous.peso && current.reps > previous.reps) improved = true;
+      if (current.peso == previous.peso && current.reps > previous.reps) {
+        improved = true;
+      }
 
       if (improved) {
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(
-               content: Text('¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥', 
-                 style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textOnAccent),),
-               backgroundColor: AppColors.goldAccent, // Oro para PR
-               behavior: SnackBarBehavior.floating,
-             ),
-           );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '¡HAS SUPERADO LA SESIÓN ANTERIOR! 🔥',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: AppColors.textOnAccent,),
+              ),
+              backgroundColor: AppColors.goldAccent, // Oro para PR
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         }
       }
     }
@@ -268,22 +319,32 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
   @override
   Widget build(BuildContext context) {
     // ⚡ Bolt Optimization: Only rebuild this specific card when this exercise changes
-    final exercise = ref.watch(trainingSessionProvider.select((s) => s.exercises.length > widget.exerciseIndex ? s.exercises[widget.exerciseIndex] : null));
+    final exercise = ref.watch(trainingSessionProvider.select((s) =>
+        s.exercises.length > widget.exerciseIndex
+            ? s.exercises[widget.exerciseIndex]
+            : null,),);
     if (exercise == null) return const SizedBox.shrink();
 
-    final historyLogs = ref.watch(trainingSessionProvider.select((s) => s.history[exercise.historyKey]));
-    final showAdvanced = ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
-    final isRestActive = ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
+    final historyLogs = ref.watch(
+        trainingSessionProvider.select((s) => s.history[exercise.historyKey]),);
+    final showAdvanced =
+        ref.watch(trainingSessionProvider.select((s) => s.showAdvancedOptions));
+    final isRestActive =
+        ref.watch(trainingSessionProvider.select((s) => s.restTimer.isActive));
 
     // Settings
-    final showSupersetIndicator = ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
-    final useFocusedInputMode = ref.watch(settingsProvider.select((s) => s.useFocusedInputMode));
+    final showSupersetIndicator =
+        ref.watch(settingsProvider.select((s) => s.showSupersetIndicator));
+    final useFocusedInputMode =
+        ref.watch(settingsProvider.select((s) => s.useFocusedInputMode));
 
     // Progression v2: Obtener decisión de progresión para este ejercicio
-    final progressionDecision = ref.watch(exerciseProgressionProvider(widget.exerciseIndex));
-    
+    final progressionDecision =
+        ref.watch(exerciseProgressionProvider(widget.exerciseIndex));
+
     // Empathetic feedback: mensajes de apoyo para días difíciles
-    final empatheticBannerMessage = ref.watch(exerciseEmpatheticBannerProvider(widget.exerciseIndex));
+    final empatheticBannerMessage =
+        ref.watch(exerciseEmpatheticBannerProvider(widget.exerciseIndex));
 
     // Auto-focus: detectar si este ejercicio/set debe recibir focus
     // Usa el provider legacy y el nuevo FocusManager
@@ -292,7 +353,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     // Determinar si este ejercicio debe recibir focus (de cualquiera de los dos sistemas)
     int? focusSetIndexFromManager;
-    if (focusManagerTarget != null && focusManagerTarget.exerciseIndex == widget.exerciseIndex) {
+    if (focusManagerTarget != null &&
+        focusManagerTarget.exerciseIndex == widget.exerciseIndex) {
       focusSetIndexFromManager = focusManagerTarget.setIndex;
     }
 
@@ -310,16 +372,22 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       showSupersetBadge: showSupersetIndicator && exercise.isInSuperset,
       progressionDecision: progressionDecision,
       empatheticBannerMessage: empatheticBannerMessage,
-      focusSetIndex: focusSetIndexFromManager ?? (focusTarget?.exerciseIndex == widget.exerciseIndex ? focusTarget?.setIndex : null),
+      focusSetIndex: focusSetIndexFromManager ??
+          (focusTarget?.exerciseIndex == widget.exerciseIndex
+              ? focusTarget?.setIndex
+              : null),
       useFocusedInputMode: useFocusedInputMode,
       isCollapsed: isCollapsed,
       onToggleCollapse: _toggleCollapse,
       onShowOptions: () => _showExerciseOptions(context, exercise),
-      onUpdateWeight: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: double.tryParse(val)),
-      onUpdateReps: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
-      onUpdateCompleted: (setIndex, val) {
-        notifier.updateLog(widget.exerciseIndex, setIndex, completed: val);
-        if (val == true) {
+      onUpdateWeight: (setIndex, val) => notifier.updateLog(
+          widget.exerciseIndex, setIndex,
+          peso: double.tryParse(val),),
+      onUpdateReps: (setIndex, val) => notifier
+          .updateLog(widget.exerciseIndex, setIndex, reps: int.tryParse(val)),
+      onUpdateCompleted: (setIndex, {required bool? value}) {
+        notifier.updateLog(widget.exerciseIndex, setIndex, completed: value);
+        if (value == true) {
           if (setIndex < 0 || setIndex >= exercise.logs.length) {
             return;
           }
@@ -330,15 +398,19 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
           _triggerCompletionFeedback(log, prevLog);
           // 🎯 P1: Timer SIEMPRE auto-inicia al completar serie
           if (!isRestActive) {
-            notifier.startRestForExercise(widget.exerciseIndex, setIndex: setIndex);
+            notifier.startRestForExercise(widget.exerciseIndex,
+                setIndex: setIndex,);
           }
         }
       },
-      onPlateCalc: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+      onPlateCalc: (setIndex, val) =>
+          notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
       onSetLongPress: (setIndex) => _showAdvancedOptions(context, setIndex),
       onRestTimeChange: (seconds) => _updateExerciseRestTime(seconds),
-      onUpdateWeightDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
-      onUpdateRepsDirect: (setIndex, val) => notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
+      onUpdateWeightDirect: (setIndex, val) =>
+          notifier.updateLog(widget.exerciseIndex, setIndex, peso: val),
+      onUpdateRepsDirect: (setIndex, val) =>
+          notifier.updateLog(widget.exerciseIndex, setIndex, reps: val),
       // 🆕 Quick Actions
       onRepeat: () => _repeatCurrentSet(exercise, historyLogs),
       onHistory: () => _showExpandedHistorySheet(context, exercise),
@@ -358,7 +430,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
     final notifier = ref.read(trainingSessionProvider.notifier);
 
     // Encontrar la primera serie incompleta
-    final firstIncompleteIndex = exercise.logs.indexWhere((log) => !log.completed);
+    final firstIncompleteIndex =
+        exercise.logs.indexWhere((log) => !log.completed);
     if (firstIncompleteIndex == -1) return; // Todas completadas
 
     // Buscar la serie anterior completada para copiar datos
@@ -384,7 +457,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.repeat_rounded, color: AppColors.textOnAccent, size: 18),
+                const Icon(Icons.repeat_rounded,
+                    color: AppColors.textOnAccent, size: 18,),
                 const SizedBox(width: 8),
                 Text(
                   'REPITE: ${prevLog.peso}kg × ${prevLog.reps}',
@@ -411,13 +485,15 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
       context: context,
       backgroundColor: AppColors.bgElevated,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),),
       builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: FutureBuilder<List<Sesion>>(
-              future: repo.getExpandedHistoryForExercise(exercise.nombre, limit: 3),
+              future:
+                  repo.getExpandedHistoryForExercise(exercise.nombre, limit: 3),
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return const Padding(
@@ -433,7 +509,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                     children: [
                       Text('HISTORIAL', style: AppTypography.sectionTitle),
                       const SizedBox(height: 12),
-                      const Text('No hay datos previos.', style: TextStyle(color: AppColors.textSecondary)),
+                      const Text('No hay datos previos.',
+                          style: TextStyle(color: AppColors.textSecondary),),
                     ],
                   );
                 }
@@ -442,9 +519,12 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(exercise.nombre.toUpperCase(), style: AppTypography.sectionTitle),
+                    Text(exercise.nombre.toUpperCase(),
+                        style: AppTypography.sectionTitle,),
                     const SizedBox(height: 4),
-                    const Text('ÚLTIMAS 3 SESIONES', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                    const Text('ÚLTIMAS 3 SESIONES',
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 11,),),
                     const SizedBox(height: 12),
                     ConstrainedBox(
                       constraints: BoxConstraints(
@@ -453,10 +533,12 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: sessions.length,
-                        separatorBuilder: (_, __) => const Divider(color: AppColors.border),
+                        separatorBuilder: (_, __) =>
+                            const Divider(color: AppColors.border),
                         itemBuilder: (context, index) {
                           final session = sessions[index];
-                          final sessionExercise = session.ejerciciosCompletados.firstWhere(
+                          final sessionExercise =
+                              session.ejerciciosCompletados.firstWhere(
                             (e) => e.nombre == exercise.nombre,
                             orElse: () => Ejercicio(
                               id: '',
@@ -488,12 +570,14 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
                                 ),
                                 const SizedBox(height: 6),
                                 ...sessionExercise.logs.map((log) {
-                                  final weight = log.peso.truncateToDouble() == log.peso
-                                      ? log.peso.toInt().toString()
-                                      : log.peso.toStringAsFixed(1);
+                                  final weight =
+                                      log.peso.truncateToDouble() == log.peso
+                                          ? log.peso.toInt().toString()
+                                          : log.peso.toStringAsFixed(1);
                                   return Text(
                                     '• $weight kg × ${log.reps}',
-                                    style: const TextStyle(color: AppColors.textPrimary),
+                                    style: const TextStyle(
+                                        color: AppColors.textPrimary,),
                                   );
                                 }),
                               ],
@@ -518,9 +602,7 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
 
     // Obtener nota existente y añadir la nueva
     final currentNote = await repo.getNote(exerciseName);
-    final newNote = currentNote.isNotEmpty
-        ? '$currentNote\n$note'
-        : note;
+    final newNote = currentNote.isNotEmpty ? '$currentNote\n$note' : note;
 
     await repo.saveNote(exerciseName, newNote);
 
@@ -530,7 +612,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.edit_note_rounded, color: AppColors.textOnAccent, size: 18),
+              const Icon(Icons.edit_note_rounded,
+                  color: AppColors.textOnAccent, size: 18,),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -571,7 +654,8 @@ class _ExerciseCardContainerState extends ConsumerState<ExerciseCardContainer> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.delete_outline, color: AppColors.textOnAccent, size: 18),
+              const Icon(Icons.delete_outline,
+                  color: AppColors.textOnAccent, size: 18,),
               const SizedBox(width: 8),
               Text(
                 'Serie ${setIndex + 1} eliminada (solo esta sesión)',
@@ -614,7 +698,7 @@ class ExerciseCard extends StatelessWidget {
   final VoidCallback onShowOptions;
   final Function(int, String) onUpdateWeight;
   final Function(int, String) onUpdateReps;
-  final Function(int, bool?) onUpdateCompleted;
+  final IndexedCompletionChanged onUpdateCompleted;
   final Function(int, double) onPlateCalc;
   final Function(int) onSetLongPress;
   final Function(int)? onRestTimeChange;
@@ -666,11 +750,13 @@ class ExerciseCard extends StatelessWidget {
 
     // 🎯 NUEVO: Índice de la serie actual (primera incompleta)
     final currentSetIndex = exercise.logs.indexWhere((log) => !log.completed);
-    final currentSetNumber = currentSetIndex == -1 ? totalSets : currentSetIndex + 1;
+    final currentSetNumber =
+        currentSetIndex == -1 ? totalSets : currentSetIndex + 1;
     final isLastSet = currentSetNumber == totalSets && !allSetsCompleted;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16), // 🆕 Más separación entre ejercicios
+      margin: const EdgeInsets.only(
+          bottom: 16,), // 🆕 Más separación entre ejercicios
       // 🆕 Color diferente si está colapsado/completado
       color: isCollapsed
           ? (allSetsCompleted ? const Color(0xFF1A2A1A) : AppColors.bgElevated)
@@ -686,176 +772,182 @@ class ExerciseCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header siempre visible - diseño en 2 líneas para mejor legibilidad
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Fila 1: Nombre del ejercicio (nunca cortado)
-                    GestureDetector(
-                      onTap: onToggleCollapse,
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(
-                        children: [
-                          // Icono de expansión/colapso
-                          AnimatedRotation(
-                            turns: isCollapsed ? -0.25 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.expand_more,
-                              size: 22,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fila 1: Nombre del ejercicio (nunca cortado)
+                  GestureDetector(
+                    onTap: onToggleCollapse,
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      children: [
+                        // Icono de expansión/colapso
+                        AnimatedRotation(
+                          turns: isCollapsed ? -0.25 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.expand_more,
+                            size: 22,
+                            color: allSetsCompleted
+                                ? AppColors.completedGreen
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        // Nombre con wrap permitido (2 líneas max)
+                        Expanded(
+                          child: Text(
+                            exercise.nombre.toUpperCase(),
+                            style: AppTypography.sectionTitle.copyWith(
+                              fontSize: isCollapsed ? 16 : 17,
+                              fontWeight: FontWeight.w700,
                               color: allSetsCompleted
                                   ? AppColors.completedGreen
-                                  : AppColors.textSecondary,
+                                  : AppColors.textPrimary,
+                              height: 1.2,
                             ),
+                            maxLines: 2, // 🆕 Permitir 2 líneas
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        // Check si completado
+                        if (allSetsCompleted) ...[
                           const SizedBox(width: 10),
-                          // Nombre con wrap permitido (2 líneas max)
-                          Expanded(
-                            child: Text(
-                              exercise.nombre.toUpperCase(),
-                              style: AppTypography.sectionTitle.copyWith(
-                                fontSize: isCollapsed ? 16 : 17,
-                                fontWeight: FontWeight.w700,
-                                color: allSetsCompleted
-                                    ? AppColors.completedGreen
-                                    : AppColors.textPrimary,
-                                height: 1.2,
-                              ),
-                              maxLines: 2, // 🆕 Permitir 2 líneas
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          const Icon(
+                            Icons.check_circle,
+                            size: 20,
+                            color: AppColors.completedGreen,
                           ),
-                          // Check si completado
-                          if (allSetsCompleted) ...[
-                            const SizedBox(width: 10),
-                            const Icon(
-                              Icons.check_circle,
-                              size: 20,
-                              color: AppColors.completedGreen,
-                            ),
-                          ],
                         ],
-                      ),
+                      ],
                     ),
+                  ),
 
-                    // Fila 2: Indicador de serie + botón acciones (solo si expandido)
-                    if (!isCollapsed) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const SizedBox(width: 32), // Alineado con el nombre
-                          // Indicador de serie prominente
-                          if (!allSetsCompleted)
-                            _SeriesIndicator(
-                              currentSet: currentSetNumber,
-                              totalSets: totalSets,
-                              completedSets: completedSets,
-                              isCollapsed: false,
-                              isLastSet: isLastSet,
-                            ),
-                          const Spacer(),
-                          // Botón acciones rápidas - touch target grande
-                          Material(
-                            color: AppColors.bgInteractive,
-                            borderRadius: BorderRadius.circular(10),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(10),
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  backgroundColor: AppColors.bgElevated,
-                                  isScrollControlled: true,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                                  ),
-                                  builder: (sheetContext) {
-                                    return SafeArea(
-                                      child: Padding(
-                                        padding: EdgeInsets.only(
-                                          left: 16,
-                                          right: 16,
-                                          top: 16,
-                                          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-                                        ),
-                                        child: QuickActionsMenu(
-                                          currentRestSeconds: restSeconds,
-                                          startExpanded: true,
-                                          showToggle: false,
-                                          onRepeat: () {
-                                            Navigator.pop(sheetContext);
-                                            onRepeat?.call();
-                                          },
-                                          onHistory: () {
-                                            Navigator.pop(sheetContext);
-                                            onHistory?.call();
-                                          },
-                                          onRestTimeSelected: (s) {
-                                            Navigator.pop(sheetContext);
-                                            onRestTimeChange?.call(s);
-                                          },
-                                          onQuickNote: (note) {
-                                            Navigator.pop(sheetContext);
-                                            onQuickNote?.call(note);
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: AppColors.border),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.flash_on, color: AppColors.bloodRed, size: 18),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'ACCIONES',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-
-                    // Indicador compacto cuando colapsado
-                    if (isCollapsed && !allSetsCompleted) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const SizedBox(width: 32),
+                  // Fila 2: Indicador de serie + botón acciones (solo si expandido)
+                  if (!isCollapsed) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const SizedBox(width: 32), // Alineado con el nombre
+                        // Indicador de serie prominente
+                        if (!allSetsCompleted)
                           _SeriesIndicator(
                             currentSet: currentSetNumber,
                             totalSets: totalSets,
                             completedSets: completedSets,
-                            isCollapsed: true,
+                            isCollapsed: false,
                             isLastSet: isLastSet,
                           ),
-                        ],
-                      ),
-                    ],
+                        const Spacer(),
+                        // Botón acciones rápidas - touch target grande
+                        Material(
+                          color: AppColors.bgInteractive,
+                          borderRadius: BorderRadius.circular(10),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: AppColors.bgElevated,
+                                isScrollControlled: true,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),),
+                                ),
+                                builder: (sheetContext) {
+                                  return SafeArea(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        left: 16,
+                                        right: 16,
+                                        top: 16,
+                                        bottom: MediaQuery.of(sheetContext)
+                                                .viewInsets
+                                                .bottom +
+                                            16,
+                                      ),
+                                      child: QuickActionsMenu(
+                                        currentRestSeconds: restSeconds,
+                                        startExpanded: true,
+                                        showToggle: false,
+                                        onRepeat: () {
+                                          Navigator.pop(sheetContext);
+                                          onRepeat?.call();
+                                        },
+                                        onHistory: () {
+                                          Navigator.pop(sheetContext);
+                                          onHistory?.call();
+                                        },
+                                        onRestTimeSelected: (s) {
+                                          Navigator.pop(sheetContext);
+                                          onRestTimeChange?.call(s);
+                                        },
+                                        onQuickNote: (note) {
+                                          Navigator.pop(sheetContext);
+                                          onQuickNote?.call(note);
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8,),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.border),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.flash_on,
+                                      color: AppColors.bloodRed, size: 18,),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'ACCIONES',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
-                ),
+
+                  // Indicador compacto cuando colapsado
+                  if (isCollapsed && !allSetsCompleted) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const SizedBox(width: 32),
+                        _SeriesIndicator(
+                          currentSet: currentSetNumber,
+                          totalSets: totalSets,
+                          completedSets: completedSets,
+                          isCollapsed: true,
+                          isLastSet: isLastSet,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
 
               // 🆕 Contenido colapsable con animación
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
                 secondChild: _buildExpandedContent(restSeconds),
-                crossFadeState: isCollapsed 
-                    ? CrossFadeState.showFirst 
+                crossFadeState: isCollapsed
+                    ? CrossFadeState.showFirst
                     : CrossFadeState.showSecond,
                 duration: const Duration(milliseconds: 200),
               ),
@@ -921,25 +1013,49 @@ class ExerciseCard extends StatelessWidget {
         if (!useFocusedInputMode)
           const Row(
             children: [
-              SizedBox(width: 30, child: Center(child: Text('#', style: TextStyle(color: AppColors.textTertiary)))),
-              SizedBox(width: 50, child: Center(child: Text('PREV', style: TextStyle(color: AppColors.textTertiary, fontSize: 10)))),
-              Expanded(child: Center(child: Text('KG', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
-              Expanded(child: Center(child: Text('REPS', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)))),
-              SizedBox(width: 40, child: Center(child: Icon(Icons.check, size: 16, color: AppColors.textTertiary))),
+              SizedBox(
+                  width: 30,
+                  child: Center(
+                      child: Text('#',
+                          style: TextStyle(color: AppColors.textTertiary),),),),
+              SizedBox(
+                  width: 50,
+                  child: Center(
+                      child: Text('PREV',
+                          style: TextStyle(
+                              color: AppColors.textTertiary, fontSize: 10,),),),),
+              Expanded(
+                  child: Center(
+                      child: Text('KG',
+                          style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,),),),),
+              Expanded(
+                  child: Center(
+                      child: Text('REPS',
+                          style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,),),),),
+              SizedBox(
+                  width: 40,
+                  child: Center(
+                      child: Icon(Icons.check,
+                          size: 16, color: AppColors.textTertiary,),),),
             ],
           ),
-        if (!useFocusedInputMode)
-          const SizedBox(height: 8),
+        if (!useFocusedInputMode) const SizedBox(height: 8),
 
         // 🎯 REDISEÑO: Usar FocusedSetRow en modo focalizado
         ...List.generate(exercise.logs.length, (setIndex) {
           final log = exercise.logs[setIndex];
-          final prevLog = (historyLogs != null && setIndex < historyLogs!.length) ? historyLogs![setIndex] : null;
+          final prevLog =
+              (historyLogs != null && setIndex < historyLogs!.length)
+                  ? historyLogs![setIndex]
+                  : null;
 
           // Determinar si esta serie es la activa (primera incompleta)
-          final isFirstIncomplete = exercise.logs
-              .take(setIndex)
-              .every((l) => l.completed);
+          final isFirstIncomplete =
+              exercise.logs.take(setIndex).every((l) => l.completed);
           final isActive = !log.completed && isFirstIncomplete;
           final isFuture = !log.completed && !isActive;
 
@@ -953,9 +1069,11 @@ class ExerciseCard extends StatelessWidget {
               isFuture: isFuture,
               exerciseName: exercise.nombre,
               totalSets: exercise.logs.length,
-              onWeightChanged: (val) => onUpdateWeightDirect?.call(setIndex, val),
+              onWeightChanged: (val) =>
+                  onUpdateWeightDirect?.call(setIndex, val),
               onRepsChanged: (val) => onUpdateRepsDirect?.call(setIndex, val),
-              onCompleted: (val) => onUpdateCompleted(setIndex, val),
+              onCompleted: ({required bool? value}) =>
+                  onUpdateCompleted(setIndex, value: value),
               onLongPress: () => onSetLongPress(setIndex),
               // 🎯 FIX #2: Siempre permite eliminar - si el ejercicio se queda sin series,
               // se elimina de la sesión (pero NO de la rutina base)
@@ -971,14 +1089,15 @@ class ExerciseCard extends StatelessWidget {
             prevLog: prevLog,
             onWeightChanged: (val) => onUpdateWeight(setIndex, val),
             onRepsChanged: (val) => onUpdateReps(setIndex, val),
-            onCompleted: (val) => onUpdateCompleted(setIndex, val),
+            onCompleted: ({required bool? value}) =>
+                onUpdateCompleted(setIndex, value: value),
             onPlateCalc: (val) => onPlateCalc(setIndex, val),
             onLongPress: () => onSetLongPress(setIndex),
             showAdvanced: showAdvanced,
             shouldFocus: focusSetIndex == setIndex,
           );
         }),
-        
+
         // 🆕 Botón para añadir series adicionales
         AddSetButton(exerciseIndex: exerciseIndex),
       ],

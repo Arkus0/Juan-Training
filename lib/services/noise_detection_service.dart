@@ -1,12 +1,11 @@
-import 'dart:async';
 import 'package:logger/logger.dart';
 
 /// Niveles de calidad de audio para el ambiente
 enum AudioQuality {
   excellent, // SNR > 20dB - Procesar normal
-  good,      // SNR 15-20dB - Procesar con warning
-  fair,      // SNR 10-15dB - Sugerir acercarse
-  poor,      // SNR < 10dB - Forzar fallback
+  good, // SNR 15-20dB - Procesar con warning
+  fair, // SNR 10-15dB - Sugerir acercarse
+  poor, // SNR < 10dB - Forzar fallback
 }
 
 /// Servicio de detección de ruido de fondo.
@@ -68,7 +67,8 @@ class NoiseDetectionService {
 
     if (confidence < 0.6 && confidence > 0) {
       _lowConfidenceCount++;
-      _logger.d('NoiseDetection: Confianza baja #$_lowConfidenceCount ($confidence)');
+      _logger.d(
+          'NoiseDetection: Confianza baja #$_lowConfidenceCount ($confidence)',);
     } else if (confidence >= 0.8) {
       _lowConfidenceCount = (_lowConfidenceCount - 1).clamp(0, 10);
     }
@@ -92,7 +92,8 @@ class NoiseDetectionService {
       _recentQuality.removeAt(0);
     }
 
-    _logger.d('NoiseDetection: Calidad registrada $quality, ambiente actual: ${analyzeEnvironment()}');
+    _logger.d(
+        'NoiseDetection: Calidad registrada $quality, ambiente actual: ${analyzeEnvironment()}',);
   }
 
   /// Obtiene sugerencia para el usuario basada en la calidad actual.

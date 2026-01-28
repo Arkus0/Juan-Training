@@ -1,10 +1,10 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:juan_training/models/library_exercise.dart';
 import 'package:juan_training/providers/create_routine_provider.dart';
 import 'package:juan_training/providers/training_provider.dart';
-import '../mocks.dart';
 
+import '../mocks.dart';
 
 void main() {
   late ProviderContainer container;
@@ -85,7 +85,7 @@ void main() {
       final state = container.read(createRoutineProvider(null));
       final instanceId1 = state.dias[0].ejercicios[0].instanceId;
       final instanceId2 = state.dias[0].ejercicios[1].instanceId;
-      
+
       expect(instanceId1, isNot(equals(instanceId2)));
       expect(instanceId1, isNotEmpty);
       expect(instanceId2, isNotEmpty);
@@ -95,8 +95,10 @@ void main() {
   group('CreateRoutineNotifier - createSuperset', () {
     test('creates superset with unique ID for two exercises', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      final exercise1 = LibraryExercise(id: 1, name: 'Ex1', muscleGroup: 'Chest', equipment: 'None');
-      final exercise2 = LibraryExercise(id: 2, name: 'Ex2', muscleGroup: 'Chest', equipment: 'None');
+      final exercise1 = LibraryExercise(
+          id: 1, name: 'Ex1', muscleGroup: 'Chest', equipment: 'None',);
+      final exercise2 = LibraryExercise(
+          id: 2, name: 'Ex2', muscleGroup: 'Chest', equipment: 'None',);
 
       notifier.addExerciseToDay(0, exercise1);
       notifier.addExerciseToDay(0, exercise2);
@@ -105,7 +107,7 @@ void main() {
       final state = container.read(createRoutineProvider(null));
       final ex1 = state.dias[0].ejercicios[0];
       final ex2 = state.dias[0].ejercicios[1];
-      
+
       expect(ex1.supersetId, isNotNull);
       expect(ex2.supersetId, isNotNull);
       expect(ex1.supersetId, equals(ex2.supersetId));
@@ -113,15 +115,18 @@ void main() {
 
     test('makes superset exercises contiguous', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 4 exercises
-      for (int i = 1; i <= 4; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 4; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       // Create superset with exercise at index 0 and 2 (non-contiguous)
@@ -129,19 +134,19 @@ void main() {
 
       final state = container.read(createRoutineProvider(null));
       final exercises = state.dias[0].ejercicios;
-      
+
       // Find exercises with superset ID
       final supersetId = exercises[0].supersetId;
       expect(supersetId, isNotNull);
-      
+
       // Count exercises with this superset ID and verify they're contiguous
       final supersetIndices = <int>[];
-      for (int i = 0; i < exercises.length; i++) {
+      for (var i = 0; i < exercises.length; i++) {
         if (exercises[i].supersetId == supersetId) {
           supersetIndices.add(i);
         }
       }
-      
+
       expect(supersetIndices.length, 2);
       // Verify they are contiguous (difference of 1)
       expect(supersetIndices[1] - supersetIndices[0], 1);
@@ -149,20 +154,23 @@ void main() {
 
     test('extends existing superset when adding third exercise', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 3 exercises
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       // Create superset with first two
       notifier.createSuperset(0, 0, 1);
-      
+
       final stateBefore = container.read(createRoutineProvider(null));
       final supersetId = stateBefore.dias[0].ejercicios[0].supersetId;
 
@@ -171,7 +179,7 @@ void main() {
 
       final stateAfter = container.read(createRoutineProvider(null));
       final exercises = stateAfter.dias[0].ejercicios;
-      
+
       // All three should have the same original superset ID
       expect(exercises[0].supersetId, equals(supersetId));
       expect(exercises[1].supersetId, equals(supersetId));
@@ -182,10 +190,16 @@ void main() {
   group('CreateRoutineNotifier - removeFromSuperset', () {
     test('removes exercise from superset', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Create superset with 2 exercises
-      notifier.addExerciseToDay(0, LibraryExercise(id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None'));
-      notifier.addExerciseToDay(0, LibraryExercise(id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None'));
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None',),);
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None',),);
       notifier.createSuperset(0, 0, 1);
 
       // Remove first exercise from superset
@@ -194,17 +208,21 @@ void main() {
       final state = container.read(createRoutineProvider(null));
       final ex1 = state.dias[0].ejercicios[0];
       final ex2 = state.dias[0].ejercicios[1];
-      
+
       expect(ex1.supersetId, isNull);
-      expect(ex2.supersetId, isNull); // Should also be null since only 1 remains
+      expect(
+          ex2.supersetId, isNull,); // Should also be null since only 1 remains
     });
 
     test('clears supersetId from remaining exercise when only one left', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Create superset with 3 exercises
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(id: i, name: 'Ex$i', muscleGroup: 'Test', equipment: 'None'));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+            0,
+            LibraryExercise(
+                id: i, name: 'Ex$i', muscleGroup: 'Test', equipment: 'None',),);
       }
       notifier.createSuperset(0, 0, 1);
       notifier.createSuperset(0, 1, 2);
@@ -215,29 +233,40 @@ void main() {
 
       final state = container.read(createRoutineProvider(null));
       // The remaining exercise should have no supersetId
-      expect(state.dias[0].ejercicios.every((e) => e.supersetId == null), isTrue);
+      expect(
+          state.dias[0].ejercicios.every((e) => e.supersetId == null), isTrue,);
     });
 
-    test('maintains superset for 2 remaining exercises when removing from 3-exercise superset', () {
+    test(
+        'maintains superset for 2 remaining exercises when removing from 3-exercise superset',
+        () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Create superset with 3 exercises
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(id: i, name: 'Ex$i', muscleGroup: 'Test', equipment: 'None'));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+            0,
+            LibraryExercise(
+                id: i, name: 'Ex$i', muscleGroup: 'Test', equipment: 'None',),);
       }
       notifier.createSuperset(0, 0, 1);
       notifier.createSuperset(0, 1, 2);
 
-      final supersetId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].supersetId;
+      final supersetId = container
+          .read(createRoutineProvider(null))
+          .dias[0]
+          .ejercicios[0]
+          .supersetId;
 
       // Remove one exercise
       notifier.removeFromSuperset(0, 0);
 
       final state = container.read(createRoutineProvider(null));
       final exercises = state.dias[0].ejercicios;
-      
+
       // Two exercises should still have the supersetId
-      final withSuperset = exercises.where((e) => e.supersetId == supersetId).length;
+      final withSuperset =
+          exercises.where((e) => e.supersetId == supersetId).length;
       expect(withSuperset, 2);
     });
   });
@@ -245,66 +274,76 @@ void main() {
   group('CreateRoutineNotifier - reorderVisualExercises', () {
     test('reorders single exercises correctly', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 3 exercises
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       final stateBefore = container.read(createRoutineProvider(null));
       final exercise1Name = stateBefore.dias[0].ejercicios[0].nombre;
 
-      // Move first exercise to position 2 (after exercise 2 and 3)
-      notifier.reorderVisualExercises(0, 0, 2);
+      // Move first exercise to the end (after exercise 2 and 3)
+      notifier.reorderVisualExercises(0, 0, 3);
 
       final stateAfter = container.read(createRoutineProvider(null));
       final exercises = stateAfter.dias[0].ejercicios;
-      
-      // Exercise 1 should now be at index 1 (accounting for the off-by-one in reordering)
-      expect(exercises[1].nombre, exercise1Name);
+
+      // Exercise 1 should now be at index 2 (end)
+      expect(exercises[2].nombre, exercise1Name);
     });
 
     test('moves superset as a unit when reordering', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 4 exercises: Ex1, Ex2 (superset), Ex3, Ex4
-      for (int i = 1; i <= 4; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 4; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       // Create superset with Ex1 and Ex2
       notifier.createSuperset(0, 0, 1);
 
-      final supersetId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].supersetId;
+      final supersetId = container
+          .read(createRoutineProvider(null))
+          .dias[0]
+          .ejercicios[0]
+          .supersetId;
 
-      // Move the superset to position 2 (after Ex3 and Ex4)
+      // Move the superset to the end
       // Visual groups: [SupersetBlock(Ex1,Ex2)], [Ex3], [Ex4]
-      notifier.reorderVisualExercises(0, 0, 2);
+      notifier.reorderVisualExercises(0, 0, 3);
 
       final state = container.read(createRoutineProvider(null));
       final exercises = state.dias[0].ejercicios;
-      
+
       // The two superset exercises should still be adjacent
       final supersetIndices = <int>[];
-      for (int i = 0; i < exercises.length; i++) {
+      for (var i = 0; i < exercises.length; i++) {
         if (exercises[i].supersetId == supersetId) {
           supersetIndices.add(i);
         }
       }
-      
+
       expect(supersetIndices.length, 2);
       expect(supersetIndices[1] - supersetIndices[0], 1); // Contiguous
-      
+
       // And they should be at the end (indices 2 and 3)
       expect(supersetIndices[0], 2);
       expect(supersetIndices[1], 3);
@@ -312,21 +351,28 @@ void main() {
 
     test('preserves superset integrity during complex reordering', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 6 exercises: Ex1, Ex2, Ex3 (superset), Ex4 (superset), Ex5, Ex6
-      for (int i = 1; i <= 6; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 6; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       // Create superset with Ex3 and Ex4
       notifier.createSuperset(0, 2, 3);
 
-      final supersetId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].supersetId;
+      final supersetId = container
+          .read(createRoutineProvider(null))
+          .dias[0]
+          .ejercicios[2]
+          .supersetId;
 
       // Move superset to the beginning
       // Visual indices: [Ex1], [Ex2], [Superset(Ex3,Ex4)], [Ex5], [Ex6]
@@ -334,11 +380,12 @@ void main() {
 
       final state = container.read(createRoutineProvider(null));
       final exercises = state.dias[0].ejercicios;
-      
+
       // Find the superset exercises
-      final supersetExercises = exercises.where((e) => e.supersetId == supersetId).toList();
+      final supersetExercises =
+          exercises.where((e) => e.supersetId == supersetId).toList();
       expect(supersetExercises.length, 2);
-      
+
       // They should be at indices 0 and 1
       expect(exercises[0].supersetId, equals(supersetId));
       expect(exercises[1].supersetId, equals(supersetId));
@@ -348,15 +395,18 @@ void main() {
   group('CreateRoutineNotifier - duplicateDay', () {
     test('duplicates day with exercises', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add exercises to day
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
 
       notifier.duplicateDay(0);
@@ -370,75 +420,95 @@ void main() {
 
     test('preserves superset mapping when duplicating day', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 3 exercises and create a superset
-      for (int i = 1; i <= 3; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 3; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
       notifier.createSuperset(0, 0, 1);
 
-      final originalSupersetId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].supersetId;
+      final originalSupersetId = container
+          .read(createRoutineProvider(null))
+          .dias[0]
+          .ejercicios[0]
+          .supersetId;
 
       notifier.duplicateDay(0);
 
       final state = container.read(createRoutineProvider(null));
-      
+
       // Check original day superset is unchanged
-      expect(state.dias[0].ejercicios[0].supersetId, equals(originalSupersetId));
-      expect(state.dias[0].ejercicios[1].supersetId, equals(originalSupersetId));
+      expect(
+          state.dias[0].ejercicios[0].supersetId, equals(originalSupersetId),);
+      expect(
+          state.dias[0].ejercicios[1].supersetId, equals(originalSupersetId),);
       expect(state.dias[0].ejercicios[2].supersetId, isNull);
-      
+
       // Check duplicated day has new superset IDs
       final newEx1 = state.dias[1].ejercicios[0];
       final newEx2 = state.dias[1].ejercicios[1];
       final newEx3 = state.dias[1].ejercicios[2];
-      
+
       expect(newEx1.supersetId, isNotNull);
       expect(newEx2.supersetId, isNotNull);
       expect(newEx1.supersetId, equals(newEx2.supersetId));
-      expect(newEx1.supersetId, isNot(equals(originalSupersetId))); // Different from original
+      expect(newEx1.supersetId,
+          isNot(equals(originalSupersetId)),); // Different from original
       expect(newEx3.supersetId, isNull);
     });
 
     test('generates unique instanceIds when duplicating', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
-      notifier.addExerciseToDay(0, LibraryExercise(
-        id: 1,
-        name: 'Exercise 1',
-        muscleGroup: 'Test',
-        equipment: 'None',
-      ));
 
-      final originalInstanceId = container.read(createRoutineProvider(null)).dias[0].ejercicios[0].instanceId;
+      notifier.addExerciseToDay(
+        0,
+        LibraryExercise(
+          id: 1,
+          name: 'Exercise 1',
+          muscleGroup: 'Test',
+          equipment: 'None',
+        ),
+      );
+
+      final originalInstanceId = container
+          .read(createRoutineProvider(null))
+          .dias[0]
+          .ejercicios[0]
+          .instanceId;
 
       notifier.duplicateDay(0);
 
       final state = container.read(createRoutineProvider(null));
       final newInstanceId = state.dias[1].ejercicios[0].instanceId;
-      
+
       expect(newInstanceId, isNot(equals(originalInstanceId)));
       expect(newInstanceId, isNotEmpty);
     });
 
     test('handles multiple supersets when duplicating day', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
+
       // Add 6 exercises
-      for (int i = 1; i <= 6; i++) {
-        notifier.addExerciseToDay(0, LibraryExercise(
-          id: i,
-          name: 'Exercise $i',
-          muscleGroup: 'Test',
-          equipment: 'None',
-        ));
+      for (var i = 1; i <= 6; i++) {
+        notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+            id: i,
+            name: 'Exercise $i',
+            muscleGroup: 'Test',
+            equipment: 'None',
+          ),
+        );
       }
-      
+
       // Create two separate supersets
       notifier.createSuperset(0, 0, 1);
       notifier.createSuperset(0, 3, 4);
@@ -450,17 +520,17 @@ void main() {
       notifier.duplicateDay(0);
 
       final state = container.read(createRoutineProvider(null));
-      
+
       // Check duplicated day
       final newSuperset1Id = state.dias[1].ejercicios[0].supersetId;
       final newSuperset2Id = state.dias[1].ejercicios[3].supersetId;
-      
+
       // New supersets should exist and be different from originals
       expect(newSuperset1Id, isNotNull);
       expect(newSuperset2Id, isNotNull);
       expect(newSuperset1Id, isNot(equals(superset1Id)));
       expect(newSuperset2Id, isNot(equals(superset2Id)));
-      
+
       // But each new superset should be consistent within itself
       expect(state.dias[1].ejercicios[0].supersetId, equals(newSuperset1Id));
       expect(state.dias[1].ejercicios[1].supersetId, equals(newSuperset1Id));
@@ -472,9 +542,15 @@ void main() {
   group('CreateRoutineNotifier - removeExercise', () {
     test('removes exercise from day', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
-      notifier.addExerciseToDay(0, LibraryExercise(id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None'));
-      notifier.addExerciseToDay(0, LibraryExercise(id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None'));
+
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None',),);
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None',),);
 
       notifier.removeExercise(0, 0);
 
@@ -485,9 +561,15 @@ void main() {
 
     test('cleans up superset when removing leaves only one exercise', () {
       final notifier = container.read(createRoutineProvider(null).notifier);
-      
-      notifier.addExerciseToDay(0, LibraryExercise(id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None'));
-      notifier.addExerciseToDay(0, LibraryExercise(id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None'));
+
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 1, name: 'Ex1', muscleGroup: 'Test', equipment: 'None',),);
+      notifier.addExerciseToDay(
+          0,
+          LibraryExercise(
+              id: 2, name: 'Ex2', muscleGroup: 'Test', equipment: 'None',),);
       notifier.createSuperset(0, 0, 1);
 
       notifier.removeExercise(0, 0);

@@ -156,7 +156,8 @@ class MethodProfiler {
   /// Print summary of all recorded methods
   static void printSummary() {
     debugPrint('\n📊 MethodProfiler Summary:');
-    debugPrint('${'Name'.padRight(30)} ${'Count'.padLeft(8)} ${'Avg(ms)'.padLeft(10)} ${'Max(ms)'.padLeft(10)}');
+    debugPrint(
+        '${'Name'.padRight(30)} ${'Count'.padLeft(8)} ${'Avg(ms)'.padLeft(10)} ${'Max(ms)'.padLeft(10)}',);
     debugPrint('-' * 60);
 
     final entries = _stats.entries.toList()
@@ -250,7 +251,9 @@ class TimelineProfiler {
 
   /// Run an async operation with timeline tracking
   static Future<T> trackAsync<T>(
-      String name, Future<T> Function() operation) async {
+    String name,
+    Future<T> Function() operation,
+  ) async {
     developer.Timeline.startSync(name);
     try {
       return await operation();
@@ -272,12 +275,14 @@ class MemoryProfiler {
   static void snapshot(String label) {
     // Note: Actual memory values require platform-specific implementation
     // This is a placeholder for structure
-    _snapshots.add(_MemorySnapshot(
-      label: label,
-      timestamp: DateTime.now(),
-      // In real implementation, get memory from platform channels
-      usedHeapSize: 0,
-    ));
+    _snapshots.add(
+      _MemorySnapshot(
+        label: label,
+        timestamp: DateTime.now(),
+        // In real implementation, get memory from platform channels
+        usedHeapSize: 0,
+      ),
+    );
 
     if (kDebugMode) {
       debugPrint('📸 Memory snapshot: $label');
@@ -321,7 +326,8 @@ class PerformanceOverlayHelper {
   static void toggle() {
     _showOverlay = !_showOverlay;
     debugPrint(
-        '${_showOverlay ? '✅' : '❌'} Performance Overlay: $_showOverlay');
+      '${_showOverlay ? '✅' : '❌'} Performance Overlay: $_showOverlay',
+    );
   }
 
   static void enable() => _showOverlay = true;
@@ -362,13 +368,13 @@ Future<PerformanceTestResult> runPerformanceTest({
   int warmupIterations = 2,
 }) async {
   // Warmup
-  for (int i = 0; i < warmupIterations; i++) {
+  for (var i = 0; i < warmupIterations; i++) {
     await test();
   }
 
   // Test iterations
   final times = <double>[];
-  for (int i = 0; i < iterations; i++) {
+  for (var i = 0; i < iterations; i++) {
     final stopwatch = Stopwatch()..start();
     await test();
     stopwatch.stop();

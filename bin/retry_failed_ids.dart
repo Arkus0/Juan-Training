@@ -11,7 +11,8 @@ bool _isPlaceholder(String? name) {
   return false;
 }
 
-Future<String?> _fetchWithRetries(int id, {int retries = 3, Duration timeout = const Duration(seconds: 15)}) async {
+Future<String?> _fetchWithRetries(int id,
+    {int retries = 3, Duration timeout = const Duration(seconds: 15),}) async {
   for (var attempt = 1; attempt <= retries; attempt++) {
     try {
       final url = 'https://wger.de/api/v2/exerciseinfo/$id/';
@@ -39,7 +40,9 @@ Future<String?> _fetchWithRetries(int id, {int retries = 3, Duration timeout = c
       }
 
       // try /exercise/{id}/ as last resort
-      final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(timeout);
+      final exResp2 = await http
+          .get(Uri.parse('https://wger.de/api/v2/exercise/$id/'))
+          .timeout(timeout);
       if (exResp2.statusCode == 200) {
         final exJson2 = jsonDecode(exResp2.body) as Map<String, dynamic>;
         final exName2 = (exJson2['name'] as String?)?.trim();
@@ -49,7 +52,9 @@ Future<String?> _fetchWithRetries(int id, {int retries = 3, Duration timeout = c
       return null;
     } catch (e) {
       stderr.writeln('Attempt $attempt failed for $id: $e');
-      if (attempt < retries) await Future.delayed(Duration(seconds: 1 * attempt));
+      if (attempt < retries) {
+        await Future.delayed(Duration(seconds: 1 * attempt));
+      }
     }
   }
   return null;
@@ -57,7 +62,8 @@ Future<String?> _fetchWithRetries(int id, {int retries = 3, Duration timeout = c
 
 Future<void> main(List<String> args) async {
   if (args.isEmpty) {
-    stderr.writeln('Usage: dart run bin/retry_failed_ids.dart <id> [id2 id3 ...]');
+    stderr.writeln(
+        'Usage: dart run bin/retry_failed_ids.dart <id> [id2 id3 ...]',);
     return;
   }
 
@@ -73,32 +79,36 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final list = (jsonDecode(await jsonFile.readAsString()) as List<dynamic>).cast<Map<String, dynamic>>();
+  final list = (jsonDecode(await jsonFile.readAsString()) as List<dynamic>)
+      .cast<Map<String, dynamic>>();
   var updated = 0;
   for (final id in ids) {
-    final entry = list.firstWhere((e) => (e['id'] as int) == id, orElse: () => {} as Map<String, dynamic>);
+    final entry = list.firstWhere((e) => (e['id'] as int) == id,
+        orElse: () => {} as Map<String, dynamic>,);
     if (entry.isEmpty) {
-      print('ID $id not found in JSON');
+      stdout.writeln('ID $id not found in JSON');
       continue;
     }
     final currentName = entry['name'] as String?;
     if (!_isPlaceholder(currentName)) {
-      print('ID $id already has name: $currentName');
+      stdout.writeln('ID $id already has name: $currentName');
       continue;
     }
 
-    print('Retrying $id...');
-    final found = await _fetchWithRetries(id, retries: 4, timeout: const Duration(seconds: 20));
+    stdout.writeln('Retrying $id...');
+    final found = await _fetchWithRetries(id,
+        retries: 4, timeout: const Duration(seconds: 20),);
     if (found != null && found.isNotEmpty) {
       entry['name'] = found;
       updated++;
-      print('Updated $id -> $found');
-      await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
+      stdout.writeln('Updated $id -> $found');
+      await jsonFile
+          .writeAsString(const JsonEncoder.withIndent('  ').convert(list));
     } else {
-      print('Still no name for $id');
+      stdout.writeln('Still no name for $id');
     }
     await Future.delayed(const Duration(milliseconds: 200));
   }
 
-  print('\nRetry run finished. Updated: $updated');
+  stdout.writeln('\nRetry run finished. Updated: $updated');
 }

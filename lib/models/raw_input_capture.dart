@@ -46,17 +46,19 @@ class RawInputCapture {
     required double imageQuality,
   }) {
     final tokens = <RawToken>[];
-    int position = 0;
+    var position = 0;
 
     for (final line in lines) {
       for (final word in line.words) {
-        tokens.add(RawToken(
-          text: word.text,
-          confidence: word.confidence,
-          position: position++,
-          boundingBox: word.boundingBox,
-          tokenType: _classifyToken(word.text),
-        ));
+        tokens.add(
+          RawToken(
+            text: word.text,
+            confidence: word.confidence,
+            position: position++,
+            boundingBox: word.boundingBox,
+            tokenType: _classifyToken(word.text),
+          ),
+        );
       }
     }
 
@@ -84,17 +86,18 @@ class RawInputCapture {
     final words = transcript.split(RegExp(r'\s+'));
     final tokens = <RawToken>[];
 
-    for (int i = 0; i < words.length; i++) {
+    for (var i = 0; i < words.length; i++) {
       final word = words[i].trim();
       if (word.isEmpty) continue;
 
-      tokens.add(RawToken(
-        text: word,
-        confidence: confidence,
-        position: i,
-        boundingBox: null,
-        tokenType: _classifyToken(word),
-      ));
+      tokens.add(
+        RawToken(
+          text: word,
+          confidence: confidence,
+          position: i,
+          tokenType: _classifyToken(word),
+        ),
+      );
     }
 
     return RawInputCapture(

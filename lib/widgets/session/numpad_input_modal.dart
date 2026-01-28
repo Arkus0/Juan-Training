@@ -1,7 +1,8 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../utils/design_system.dart';
 
 /// ============================================================================
 /// NUMPAD INPUT MODAL — Intensidad Roja (Underground Gym)
@@ -21,15 +22,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Colores específicos para el modal — Aggressive Red
 class _ModalColors {
-  static const activeAccent = AppColors.bloodRed;  // #C41E3A
-  static const activeSet = AppColors.bloodRed;     // Alias for compatibility
+  static const activeSet = AppColors.bloodRed; // Alias for compatibility
   static const textPrimary = AppColors.textPrimary; // #EAEAEA
   static const textSecondary = AppColors.textSecondary;
   static const textDisabled = AppColors.textDisabled;
-  static const bgCard = AppColors.bgElevated;       // #1C1C1C
-  static const bgInput = AppColors.bgInteractive;   // #252525
-  static const confirmButton = AppColors.bloodRed;  // #C41E3A
-  static const borderFocus = AppColors.bloodRed;    // Para inputs en foco
+  static const bgCard = AppColors.bgElevated; // #1C1C1C
+  static const bgInput = AppColors.bgInteractive; // #252525
+  static const confirmButton = AppColors.bloodRed; // #C41E3A
 }
 
 class NumpadInputModal extends StatefulWidget {
@@ -41,6 +40,7 @@ class NumpadInputModal extends StatefulWidget {
   final double? currentValue;
   final bool isInteger;
   final ValueChanged<double> onConfirm;
+
   /// Callback para plate calculator
   /// Parámetros: (pesoActual, callbackParaActualizar, callbackParaAplicarYCerrar)
   final Function(double, Function(double), Function(double))? onOpenPlateCalc;
@@ -74,7 +74,6 @@ class NumpadInputModal extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: true,
       enableDrag: false,
       builder: (ctx) => NumpadInputModal(
         exerciseName: exerciseName,
@@ -107,7 +106,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   // ═══════════════════════════════════════════════════════════════════════════
   static const double _maxWeight = 999.9; // kg - Eddie Hall deadlifted 500kg
   static const double _minWeight = -200.0; // kg - máquinas asistidas
-  static const int _maxReps = 999; // reps - más que suficiente para cualquier set
+  static const int _maxReps =
+      999; // reps - más que suficiente para cualquier set
 
   @override
   void initState() {
@@ -134,7 +134,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
   /// 🎯 FIX #3: Ahora soporta pesos negativos para KG (máquinas asistidas)
   bool _isWithinLimits(String valueStr) {
     final value = double.tryParse(valueStr);
-    if (value == null) return true; // Strings inválidos se manejan en _canConfirm
+    if (value == null) {
+      return true; // Strings inválidos se manejan en _canConfirm
+    }
 
     if (widget.isInteger) {
       // REPS: 0 a _maxReps (no negativos)
@@ -220,7 +222,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final isValid = value != null && (widget.isInteger ? value >= 0 : true);
     if (isValid) {
       HapticFeedback.mediumImpact();
-      widget.onConfirm(value!);
+      widget.onConfirm(value);
     }
   }
 
@@ -341,7 +343,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             border: Border.all(
                               // Borde más visible si el input está vacío
                               color: _displayValue.isEmpty
-                                  ? _ModalColors.activeSet.withValues(alpha:0.5)
+                                  ? _ModalColors.activeSet
+                                      .withValues(alpha: 0.5)
                                   : AppColors.border,
                               width: _displayValue.isEmpty ? 1.5 : 1,
                             ),
@@ -374,7 +377,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _ModalColors.activeSet.withValues(alpha:0.2),
+                                  color: _ModalColors.activeSet
+                                      .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -393,7 +397,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                     ),
                   ],
                   // Botón plate calculator (solo para KG)
-                  if (widget.fieldLabel == 'KG' && widget.onOpenPlateCalc != null) ...[
+                  if (widget.fieldLabel == 'KG' &&
+                      widget.onOpenPlateCalc != null) ...[
                     const SizedBox(height: 16),
                     GestureDetector(
                       onTap: () => _openPlateCalculator(),
@@ -412,7 +417,7 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.fitness_center,
                               size: 14,
                               color: _ModalColors.activeSet,
@@ -564,7 +569,9 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
                             Icon(
                               Icons.check_rounded,
                               size: 24,
-                              color: _canConfirm ? AppColors.textOnAccent : AppColors.textDisabled,
+                              color: _canConfirm
+                                  ? AppColors.textOnAccent
+                                  : AppColors.textDisabled,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -601,7 +608,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
     final isDecimal = label == '.';
     final isToggleSign = label == '±';
     // 🎯 FIX #3: ± deshabilitado para REPS (solo válido para KG)
-    final isDisabled = (isDecimal && widget.isInteger) || (isToggleSign && widget.isInteger);
+    final isDisabled =
+        (isDecimal && widget.isInteger) || (isToggleSign && widget.isInteger);
 
     // Determinar la acción del botón
     VoidCallback? onTap;
@@ -617,7 +625,8 @@ class _NumpadInputModalState extends State<NumpadInputModal> {
 
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4), // Reducido para 4 botones
+        padding: const EdgeInsets.symmetric(
+            horizontal: 4,), // Reducido para 4 botones
         child: Material(
           color: isDisabled ? AppColors.bgElevated : _ModalColors.bgInput,
           borderRadius: BorderRadius.circular(16), // Ligeramente más pequeño

@@ -55,7 +55,8 @@ class RestTimerController {
       _initialized = true;
 
       // Escuchar eventos del servicio de plataforma (botones de notificación)
-      _eventSubscription = _platformService.eventStream.listen(_handlePlatformEvent);
+      _eventSubscription =
+          _platformService.eventStream.listen(_handlePlatformEvent);
 
       _logger.d('RestTimerController inicializado');
     } catch (e) {
@@ -73,13 +74,13 @@ class RestTimerController {
         _handleResumeFromPlatform();
         break;
       case TimerPlatformEvent.skip:
-        stop(saveRestTime: true);
+        stop();
         break;
       case TimerPlatformEvent.add30:
         addTime(30);
         break;
       case TimerPlatformEvent.finished:
-        stop(saveRestTime: true);
+        stop();
         break;
     }
   }
@@ -87,21 +88,26 @@ class RestTimerController {
   void _handlePauseFromPlatform() {
     if (_state.isActive && !_state.isPaused) {
       final remaining = _state.remainingSeconds.ceil();
-      _updateState(_state.copyWith(
-        isPaused: true,
-        totalSeconds: remaining,
-        clearEndTime: true,
-      ));
+      _updateState(
+        _state.copyWith(
+          isPaused: true,
+          totalSeconds: remaining,
+          clearEndTime: true,
+        ),
+      );
     }
   }
 
   void _handleResumeFromPlatform() {
     if (_state.isActive && _state.isPaused) {
-      final endTime = DateTime.now().add(Duration(seconds: _state.totalSeconds));
-      _updateState(_state.copyWith(
-        isPaused: false,
-        endTime: endTime,
-      ));
+      final endTime =
+          DateTime.now().add(Duration(seconds: _state.totalSeconds));
+      _updateState(
+        _state.copyWith(
+          isPaused: false,
+          endTime: endTime,
+        ),
+      );
     }
   }
 
@@ -123,7 +129,7 @@ class RestTimerController {
 
     // Encontrar todos los ejercicios del mismo superset
     final supersetExercises = <int>[];
-    for (int i = 0; i < exercises.length; i++) {
+    for (var i = 0; i < exercises.length; i++) {
       if (exercises[i].supersetId == supersetId) {
         supersetExercises.add(i);
       }
@@ -134,7 +140,8 @@ class RestTimerController {
 
     // Verificar si el ejercicio actual es el último del superset en orden
     final currentPositionInSuperset = supersetExercises.indexOf(exerciseIndex);
-    final isLastInSuperset = currentPositionInSuperset == supersetExercises.length - 1;
+    final isLastInSuperset =
+        currentPositionInSuperset == supersetExercises.length - 1;
 
     // Si es el último del superset, iniciar timer
     if (isLastInSuperset) return true;
@@ -144,7 +151,8 @@ class RestTimerController {
     final nextInSuperset = supersetExercises[currentPositionInSuperset + 1];
     final nextExercise = exercises[nextInSuperset];
 
-    if (setIndex < nextExercise.logs.length && nextExercise.logs[setIndex].completed) {
+    if (setIndex < nextExercise.logs.length &&
+        nextExercise.logs[setIndex].completed) {
       // La ronda ya fue completada, verificar si hay más rondas
       final allRoundsComplete = supersetExercises.every((idx) {
         final ex = exercises[idx];
@@ -177,7 +185,7 @@ class RestTimerController {
 
     // Buscar el último ejercicio del superset para usar su descanso
     int? lastSupersetRestTime;
-    for (int i = exercises.length - 1; i >= 0; i--) {
+    for (var i = exercises.length - 1; i >= 0; i--) {
       if (exercises[i].supersetId == supersetId) {
         lastSupersetRestTime = exercises[i].descansoSugeridoSeconds;
         break;
@@ -195,14 +203,15 @@ class RestTimerController {
   }) {
     final endTime = DateTime.now().add(Duration(seconds: seconds));
 
-    _updateState(RestTimerState(
-      isActive: true,
-      isPaused: false,
-      totalSeconds: seconds,
-      endTime: endTime,
-      lastCompletedExerciseIndex: exerciseIndex,
-      lastCompletedSetIndex: setIndex,
-    ));
+    _updateState(
+      RestTimerState(
+        isActive: true,
+        totalSeconds: seconds,
+        endTime: endTime,
+        lastCompletedExerciseIndex: exerciseIndex,
+        lastCompletedSetIndex: setIndex,
+      ),
+    );
 
     // Iniciar timer en servicio de plataforma (notificación Android)
     _platformService.start(
@@ -226,7 +235,7 @@ class RestTimerController {
       if (actualRestTime <= 0) actualRestTime = null;
     }
 
-    _updateState(const RestTimerState(isActive: false));
+    _updateState(const RestTimerState());
     _platformService.stop();
 
     return actualRestTime;
@@ -237,11 +246,13 @@ class RestTimerController {
     if (!_state.isActive || _state.isPaused) return;
 
     final remaining = _state.remainingSeconds.ceil();
-    _updateState(_state.copyWith(
-      isPaused: true,
-      totalSeconds: remaining,
-      clearEndTime: true,
-    ));
+    _updateState(
+      _state.copyWith(
+        isPaused: true,
+        totalSeconds: remaining,
+        clearEndTime: true,
+      ),
+    );
 
     _platformService.pause();
   }
@@ -251,10 +262,12 @@ class RestTimerController {
     if (!_state.isActive || !_state.isPaused) return;
 
     final endTime = DateTime.now().add(Duration(seconds: _state.totalSeconds));
-    _updateState(_state.copyWith(
-      isPaused: false,
-      endTime: endTime,
-    ));
+    _updateState(
+      _state.copyWith(
+        isPaused: false,
+        endTime: endTime,
+      ),
+    );
 
     _platformService.resume();
   }
@@ -268,10 +281,12 @@ class RestTimerController {
       _updateState(_state.copyWith(totalSeconds: newTotal));
     } else {
       final newEndTime = _state.endTime?.add(Duration(seconds: seconds));
-      _updateState(_state.copyWith(
-        totalSeconds: newTotal,
-        endTime: newEndTime,
-      ));
+      _updateState(
+        _state.copyWith(
+          totalSeconds: newTotal,
+          endTime: newEndTime,
+        ),
+      );
     }
 
     _platformService.addTime(seconds);
@@ -281,12 +296,14 @@ class RestTimerController {
   void restart(int seconds) {
     final endTime = DateTime.now().add(Duration(seconds: seconds));
 
-    _updateState(_state.copyWith(
-      isActive: true,
-      isPaused: false,
-      totalSeconds: seconds,
-      endTime: endTime,
-    ));
+    _updateState(
+      _state.copyWith(
+        isActive: true,
+        isPaused: false,
+        totalSeconds: seconds,
+        endTime: endTime,
+      ),
+    );
 
     _platformService.start(
       seconds: seconds,
@@ -328,15 +345,17 @@ class RestTimerController {
 
       final Map<String, dynamic> m = json.decode(s);
 
-      final bool isActive = m['isActive'] == true;
-      final bool isPaused = m['isPaused'] == true;
-      final int totalSeconds = (m['totalSeconds'] as num?)?.toInt() ?? 90;
-      final int? endTimeMs = (m['endTimeMs'] as num?)?.toInt();
-      final int? lastExerciseIndex = (m['lastExerciseIndex'] as num?)?.toInt();
-      final int? lastSetIndex = (m['lastSetIndex'] as num?)?.toInt();
+      final isActive = m['isActive'] == true;
+      final isPaused = m['isPaused'] == true;
+      final totalSeconds = (m['totalSeconds'] as num?)?.toInt() ?? 90;
+      final endTimeMs = (m['endTimeMs'] as num?)?.toInt();
+      final lastExerciseIndex = (m['lastExerciseIndex'] as num?)?.toInt();
+      final lastSetIndex = (m['lastSetIndex'] as num?)?.toInt();
 
       DateTime? endTime;
-      if (endTimeMs != null) endTime = DateTime.fromMillisecondsSinceEpoch(endTimeMs);
+      if (endTimeMs != null) {
+        endTime = DateTime.fromMillisecondsSinceEpoch(endTimeMs);
+      }
 
       if (isActive) {
         var rt = RestTimerState(
@@ -351,7 +370,7 @@ class RestTimerController {
         // If not paused and endTime in past, treat as finished
         if (!rt.isPaused && rt.endTime != null && rt.remainingSeconds <= 0) {
           _timerFinishedWhileAway = true;
-          rt = const RestTimerState(isActive: false);
+          rt = const RestTimerState();
           onTimerFinishedWhileAway?.call();
           _logger.d('Timer había terminado mientras app cerrada - notificando');
         }
@@ -415,8 +434,10 @@ class RestTimerState {
       isPaused: isPaused ?? this.isPaused,
       totalSeconds: totalSeconds ?? this.totalSeconds,
       endTime: clearEndTime ? null : (endTime ?? this.endTime),
-      lastCompletedExerciseIndex: lastCompletedExerciseIndex ?? this.lastCompletedExerciseIndex,
-      lastCompletedSetIndex: lastCompletedSetIndex ?? this.lastCompletedSetIndex,
+      lastCompletedExerciseIndex:
+          lastCompletedExerciseIndex ?? this.lastCompletedExerciseIndex,
+      lastCompletedSetIndex:
+          lastCompletedSetIndex ?? this.lastCompletedSetIndex,
     );
   }
 
@@ -424,7 +445,8 @@ class RestTimerState {
   double get remainingSeconds {
     if (!isActive || endTime == null) return totalSeconds.toDouble();
     if (isPaused) return totalSeconds.toDouble();
-    final remaining = endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
+    final remaining =
+        endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
     return remaining > 0 ? remaining : 0;
   }
 

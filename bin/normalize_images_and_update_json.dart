@@ -17,15 +17,12 @@ Future<void> main() async {
 
   final jsonText = await jsonFile.readAsString();
   final data = jsonDecode(jsonText) as List<dynamic>;
-  final Map<int, Map<String, dynamic>> byId = {
+  final byId = <int, Map<String, dynamic>>{
     for (final e in data)
-      (e['id'] as int): Map<String, dynamic>.from(e as Map<String, dynamic>)
+      (e['id'] as int): Map<String, dynamic>.from(e as Map<String, dynamic>),
   };
 
-  final files = imagesDir
-      .listSync()
-      .whereType<File>()
-      .toList(growable: false);
+  final files = imagesDir.listSync().whereType<File>().toList(growable: false);
 
   for (final f in files) {
     try {
@@ -48,7 +45,9 @@ Future<void> main() async {
         }
         // set localImagePath
         final entry = byId[id];
-        if (entry != null) entry['localImagePath'] = outPath.replaceAll('\\', '/');
+        if (entry != null) {
+          entry['localImagePath'] = outPath.replaceAll('\\', '/');
+        }
         continue;
       }
 
@@ -64,8 +63,10 @@ Future<void> main() async {
         // remove original if different
         if (f.path != outFile.path) await f.delete();
         final entry = byId[id];
-        if (entry != null) entry['localImagePath'] = outFile.path.replaceAll('\\', '/');
-        print('Normalized $id -> ${outFile.path}');
+        if (entry != null) {
+          entry['localImagePath'] = outFile.path.replaceAll('\\', '/');
+        }
+        stdout.writeln('Normalized $id -> ${outFile.path}');
       }
     } catch (e) {
       stderr.writeln('Error processing ${f.path}: $e');
@@ -89,6 +90,7 @@ Future<void> main() async {
   }
 
   outList.sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
-  await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(outList));
-  print('Updated JSON with ${outList.length} entries');
+  await jsonFile
+      .writeAsString(const JsonEncoder.withIndent('  ').convert(outList));
+  stdout.writeln('Updated JSON with ${outList.length} entries');
 }

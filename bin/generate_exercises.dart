@@ -13,15 +13,16 @@ Future<void> main() async {
   final imagesDir = Directory('assets/img/ejercicios');
   if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
 
-  final List<int> languages = [4, 2]; // Spanish then English
+  final languages = <int>[4, 2]; // Spanish then English
 
   // Use a map to merge entries by id, preferring Spanish values when available
-  final Map<int, Map<String, dynamic>> byId = {};
+  final byId = <int, Map<String, dynamic>>{};
 
   for (final lang in languages) {
-    String? url = 'https://wger.de/api/v2/exerciseinfo/?language=$lang&limit=100';
+    String? url =
+        'https://wger.de/api/v2/exerciseinfo/?language=$lang&limit=100';
     while (url != null && url.isNotEmpty) {
-      print('Fetching $url');
+      stdout.writeln('Fetching $url');
       final resp = await http.get(Uri.parse(url));
       if (resp.statusCode != 200) {
         stderr.writeln('Failed to fetch $url: ${resp.statusCode}');
@@ -62,8 +63,9 @@ Future<void> main() async {
             'imageUrls': imageUrls,
             'localImagePath': null,
             'muscles': item['muscles'] is List ? item['muscles'] : [],
-            'secondaryMuscles':
-                item['muscles_secondary'] is List ? item['muscles_secondary'] : [],
+            'secondaryMuscles': item['muscles_secondary'] is List
+                ? item['muscles_secondary']
+                : [],
           };
         } else {
           if (((existing['name'] as String?)?.trim() ?? '').isEmpty &&
@@ -104,7 +106,7 @@ Future<void> main() async {
             final encoded = img.encodePng(decoded);
             await outFile.writeAsBytes(encoded);
             entry['localImagePath'] = outPath.replaceAll('\\', '/');
-            print('Downloaded & re-encoded image for $id -> $outPath');
+            stdout.writeln('Downloaded & re-encoded image for $id -> $outPath');
           } else {
             stderr.writeln('Could not decode image for $id from $imgUrl');
           }
@@ -122,6 +124,7 @@ Future<void> main() async {
   if (!await outFile.parent.exists()) {
     await outFile.parent.create(recursive: true);
   }
-  await outFile.writeAsString(const JsonEncoder.withIndent('  ').convert(outJson));
-  print('Wrote ${outJson.length} exercises to ${outFile.path}');
+  await outFile
+      .writeAsString(const JsonEncoder.withIndent('  ').convert(outJson));
+  stdout.writeln('Wrote ${outJson.length} exercises to ${outFile.path}');
 }

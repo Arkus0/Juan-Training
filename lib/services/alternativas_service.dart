@@ -17,15 +17,15 @@ class AlternativasService {
     if (_initialized) return;
 
     try {
-      final String jsonString = await rootBundle.loadString(
-        'assets/data/alternativas.json'
+      final jsonString = await rootBundle.loadString(
+        'assets/data/alternativas.json',
       );
       final Map<String, dynamic> data = json.decode(jsonString);
 
       // Convertimos el JSON a un mapa tipado correctamente
       _alternativasIds = data.map((key, value) {
         // Aseguramos que la lista sea de enteros
-        final List<int> ids = (value as List).map((e) => e as int).toList();
+        final ids = (value as List).map((e) => e as int).toList();
         return MapEntry(key, ids);
       });
 
@@ -41,17 +41,17 @@ class AlternativasService {
   /// Requiere [allExercises] (el catálogo completo) para buscar los objetos por ID.
   List<LibraryExercise> getAlternativas({
     required int exerciseId,
-    required List<LibraryExercise> allExercises
+    required List<LibraryExercise> allExercises,
   }) {
     if (!_initialized || _alternativasIds.isEmpty) return [];
 
     // 1. Buscamos si el ID tiene alternativas registradas.
     // Convertimos el ID de entrada (int) a String porque las claves JSON son strings.
-    final String key = exerciseId.toString();
+    final key = exerciseId.toString();
 
     if (!_alternativasIds.containsKey(key)) return [];
 
-    final List<int> idsAlternativos = _alternativasIds[key]!;
+    final idsAlternativos = _alternativasIds[key]!;
 
     // 2. Filtramos el catálogo maestro para encontrar los ejercicios correspondientes
     return allExercises

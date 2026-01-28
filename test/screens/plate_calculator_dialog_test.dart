@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,12 +11,13 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('PlateCalculatorDialog shows semantics for plates', (WidgetTester tester) async {
+  testWidgets('PlateCalculatorDialog shows semantics for plates',
+      (WidgetTester tester) async {
     // Override settings to ensure stable environment
     // actually default SettingsNotifier behavior with mocked SP is enough
 
     await tester.pumpWidget(
-      ProviderScope(
+      const ProviderScope(
         child: MaterialApp(
           home: Scaffold(
             body: PlateCalculatorDialog(
@@ -45,15 +48,18 @@ void main() {
     // The label should be something like "Placas por lado: 20kg, 20kg" or similar.
     // For now, let's look for ANY semantic label containing "Placas" or "20kg, 20kg".
 
-    final semanticFinder = find.bySemanticsLabel(RegExp(r'Placas por lado|Barra cargada'));
+    final semanticFinder =
+        find.bySemanticsLabel(RegExp(r'Placas por lado|Barra cargada'));
 
     // This expects to fail initially
     if (semanticFinder.evaluate().isEmpty) {
-        print('TEST FAILURE EXPECTED: No semantics found for plate visualization.');
+      stdout.writeln(
+          'TEST FAILURE EXPECTED: No semantics found for plate visualization.',);
     } else {
-        print('TEST SUCCESS (Unexpected): Semantics found.');
+      stdout.writeln('TEST SUCCESS (Unexpected): Semantics found.');
     }
 
-    expect(semanticFinder, findsOneWidget, reason: 'Should have a semantic label describing the plates');
+    expect(semanticFinder, findsOneWidget,
+        reason: 'Should have a semantic label describing the plates',);
   });
 }

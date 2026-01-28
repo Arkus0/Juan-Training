@@ -89,7 +89,6 @@ class _HapticsObserverState extends ConsumerState<HapticsObserver> {
     // FocusManager ya realiza su propia vibración cuando solicita focus
     // (requestFocus()): no necesitamos escuchar aquí para evitar duplicados.
 
-
     return widget.child;
   }
 }

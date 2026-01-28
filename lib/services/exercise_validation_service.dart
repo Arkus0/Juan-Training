@@ -14,11 +14,13 @@ class ValidationResult {
 
   factory ValidationResult.valid() => const ValidationResult(isValid: true);
 
-  factory ValidationResult.invalid(List<String> errors, [List<String> warnings = const []]) =>
+  factory ValidationResult.invalid(List<String> errors,
+          [List<String> warnings = const [],]) =>
       ValidationResult(isValid: false, errors: errors, warnings: warnings);
 
   @override
-  String toString() => 'ValidationResult(valid: $isValid, errors: $errors, warnings: $warnings)';
+  String toString() =>
+      'ValidationResult(valid: $isValid, errors: $errors, warnings: $warnings)';
 }
 
 /// Configuración de límites de validación
@@ -66,7 +68,8 @@ class ValidationConfig {
 /// }
 /// ```
 class ExerciseValidationService {
-  static final ExerciseValidationService instance = ExerciseValidationService._();
+  static final ExerciseValidationService instance =
+      ExerciseValidationService._();
   ExerciseValidationService._();
 
   ValidationConfig _config = ValidationConfig.normal;
@@ -83,9 +86,11 @@ class ExerciseValidationService {
 
     // Validar series
     if (exercise.series < _config.minSeries) {
-      errors.add('Series debe ser al menos ${_config.minSeries} (recibido: ${exercise.series})');
+      errors.add(
+          'Series debe ser al menos ${_config.minSeries} (recibido: ${exercise.series})',);
     } else if (exercise.series > _config.maxSeries) {
-      errors.add('Series no puede ser mayor a ${_config.maxSeries} (recibido: ${exercise.series})');
+      errors.add(
+          'Series no puede ser mayor a ${_config.maxSeries} (recibido: ${exercise.series})',);
     }
 
     // Validar reps
@@ -93,25 +98,31 @@ class ExerciseValidationService {
     final maxReps = exercise.maxReps;
 
     if (minReps < _config.minReps) {
-      errors.add('Reps debe ser al menos ${_config.minReps} (recibido: $minReps)');
+      errors.add(
+          'Reps debe ser al menos ${_config.minReps} (recibido: $minReps)',);
     }
     if (maxReps > _config.maxReps) {
-      errors.add('Reps no puede ser mayor a ${_config.maxReps} (recibido: $maxReps)');
+      errors.add(
+          'Reps no puede ser mayor a ${_config.maxReps} (recibido: $maxReps)',);
     }
     if (maxReps < minReps) {
-      errors.add('Rango de reps inválido: $minReps-$maxReps (máximo menor que mínimo)');
+      errors.add(
+          'Rango de reps inválido: $minReps-$maxReps (máximo menor que mínimo)',);
     }
     if (maxReps - minReps > _config.maxRepsRange) {
-      warnings.add('Rango de reps muy amplio: $minReps-$maxReps (diferencia > ${_config.maxRepsRange})');
+      warnings.add(
+          'Rango de reps muy amplio: $minReps-$maxReps (diferencia > ${_config.maxRepsRange})',);
     }
 
     // Validar peso
     if (exercise.weight != null) {
       if (exercise.weight! < _config.minWeight) {
-        errors.add('Peso no puede ser negativo (recibido: ${exercise.weight}kg)');
+        errors
+            .add('Peso no puede ser negativo (recibido: ${exercise.weight}kg)');
       }
       if (exercise.weight! > _config.maxWeight) {
-        errors.add('Peso excede el máximo permitido de ${_config.maxWeight}kg (recibido: ${exercise.weight}kg)');
+        errors.add(
+            'Peso excede el máximo permitido de ${_config.maxWeight}kg (recibido: ${exercise.weight}kg)',);
       }
     }
 
@@ -122,7 +133,8 @@ class ExerciseValidationService {
 
     // Validar confianza del match
     if (exercise.matchedId != null && exercise.confidence < 0.5) {
-      warnings.add('Confianza del match baja (${(exercise.confidence * 100).toInt()}%)');
+      warnings.add(
+          'Confianza del match baja (${(exercise.confidence * 100).toInt()}%)',);
     }
 
     return ValidationResult(
@@ -139,7 +151,9 @@ class ExerciseValidationService {
 
   /// Valida y filtra solo los ejercicios válidos
   List<ParsedExercise> filterValid(List<ParsedExercise> exercises) {
-    return exercises.where((e) => validate(e).isValid && e.matchedId != null).toList();
+    return exercises
+        .where((e) => validate(e).isValid && e.matchedId != null)
+        .toList();
   }
 
   /// Intenta corregir valores fuera de rango a valores razonables
@@ -166,7 +180,7 @@ class ExerciseValidationService {
     // Corregir peso absurdo
     if (exercise.weight != null && exercise.weight! > _config.maxWeight) {
       // Probablemente error de parseo, remover peso
-      corrected = corrected.copyWith(weight: null);
+      corrected = corrected.copyWith();
     }
 
     return corrected;
@@ -183,13 +197,16 @@ class ExerciseValidationService {
     }
 
     // Si peso es menor a 10 y no es decimal, podría ser reps
-    if (exercise.weight != null && exercise.weight! < 10 && exercise.weight! == exercise.weight!.roundToDouble()) {
+    if (exercise.weight != null &&
+        exercise.weight! < 10 &&
+        exercise.weight! == exercise.weight!.roundToDouble()) {
       issues.add('El peso (${exercise.weight}kg) podría ser número de reps');
     }
 
     // Si series es mayor a 10, probablemente es reps
     if (exercise.series > 10) {
-      issues.add('Las series (${exercise.series}) parecen ser un número de reps');
+      issues
+          .add('Las series (${exercise.series}) parecen ser un número de reps');
     }
 
     return issues;

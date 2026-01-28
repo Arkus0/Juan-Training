@@ -7,7 +7,7 @@ import '../../utils/design_system.dart';
 // ════════════════════════════════════════════════════════════════════════════
 // PROGRESSION UX WIDGETS
 // ════════════════════════════════════════════════════════════════════════════
-// 
+//
 // Widgets diseñados desde la experiencia del usuario:
 // - Mínima información
 // - Máxima claridad
@@ -22,7 +22,7 @@ class ExerciseTargetCard extends StatelessWidget {
   final String? consequenceText;
   final VoidCallback? onStart;
   final VoidCallback? onAdjustWeight;
-  
+
   const ExerciseTargetCard({
     super.key,
     required this.weight,
@@ -32,11 +32,11 @@ class ExerciseTargetCard extends StatelessWidget {
     this.onStart,
     this.onAdjustWeight,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.all(16),
@@ -49,7 +49,8 @@ class ExerciseTargetCard extends StatelessWidget {
             GestureDetector(
               onTap: onAdjustWeight,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(16),
@@ -67,7 +68,8 @@ class ExerciseTargetCard extends StatelessWidget {
                     Text(
                       '× $reps reps',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                        color: theme.colorScheme.onPrimaryContainer
+                            .withValues(alpha: 0.8),
                       ),
                     ),
                     if (sets > 1) ...[
@@ -75,7 +77,8 @@ class ExerciseTargetCard extends StatelessWidget {
                       Text(
                         '$sets series',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -83,13 +86,13 @@ class ExerciseTargetCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Consecuencia (si existe)
             if (consequenceText != null) ...[
               const SizedBox(height: 16),
               ConsequenceChip(text: consequenceText!),
             ],
-            
+
             // Botón empezar
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -105,9 +108,11 @@ class ExerciseTargetCard extends StatelessWidget {
       ),
     );
   }
-  
+
   String _formatWeight(double w) {
-    return w == w.roundToDouble() ? '${w.toInt()} kg' : '${w.toStringAsFixed(1)} kg';
+    return w == w.roundToDouble()
+        ? '${w.toInt()} kg'
+        : '${w.toStringAsFixed(1)} kg';
   }
 }
 
@@ -115,27 +120,27 @@ class ExerciseTargetCard extends StatelessWidget {
 class ConsequenceChip extends StatelessWidget {
   final String text;
   final bool isPositive;
-  
+
   const ConsequenceChip({
     super.key,
     required this.text,
     this.isPositive = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         // 🎯 NEON IRON: Usar cyan para feedback positivo
-        color: isPositive 
+        color: isPositive
             ? AppColors.success.withValues(alpha: 0.1)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isPositive 
+          color: isPositive
               ? AppColors.success.withValues(alpha: 0.3)
               : theme.colorScheme.outline.withValues(alpha: 0.3),
         ),
@@ -146,13 +151,17 @@ class ConsequenceChip extends StatelessWidget {
           Icon(
             isPositive ? Icons.check_circle_outline : Icons.info_outline,
             size: 18,
-            color: isPositive ? AppColors.success : theme.colorScheme.onSurfaceVariant,
+            color: isPositive
+                ? AppColors.success
+                : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
           Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isPositive ? AppColors.neonCyanDark : theme.colorScheme.onSurfaceVariant,
+              color: isPositive
+                  ? AppColors.neonCyanDark
+                  : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -168,7 +177,7 @@ class ActiveSetWidget extends StatelessWidget {
   final double weight;
   final int targetReps;
   final ValueChanged<int> onRepsCompleted;
-  
+
   const ActiveSetWidget({
     super.key,
     required this.currentSet,
@@ -177,11 +186,11 @@ class ActiveSetWidget extends StatelessWidget {
     required this.targetReps,
     required this.onRepsCompleted,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -197,9 +206,9 @@ class ActiveSetWidget extends StatelessWidget {
                 letterSpacing: 1.2,
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Peso y reps objetivo
             Text(
               _formatWeight(weight),
@@ -213,9 +222,9 @@ class ActiveSetWidget extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Selector de reps completadas
             _RepsSelector(
               targetReps: targetReps,
@@ -226,9 +235,11 @@ class ActiveSetWidget extends StatelessWidget {
       ),
     );
   }
-  
+
   String _formatWeight(double w) {
-    return w == w.roundToDouble() ? '${w.toInt()} kg' : '${w.toStringAsFixed(1)} kg';
+    return w == w.roundToDouble()
+        ? '${w.toInt()} kg'
+        : '${w.toStringAsFixed(1)} kg';
   }
 }
 
@@ -236,28 +247,29 @@ class ActiveSetWidget extends StatelessWidget {
 class _RepsSelector extends StatefulWidget {
   final int targetReps;
   final ValueChanged<int> onSelected;
-  
+
   const _RepsSelector({
     required this.targetReps,
     required this.onSelected,
   });
-  
+
   @override
   State<_RepsSelector> createState() => _RepsSelectorState();
 }
 
 class _RepsSelectorState extends State<_RepsSelector> {
   int? _selectedReps;
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Mostrar reps desde target-3 hasta target+2
     final minReps = (widget.targetReps - 3).clamp(0, widget.targetReps);
     final maxReps = widget.targetReps + 2;
-    final repsOptions = List.generate(maxReps - minReps + 1, (i) => minReps + i);
-    
+    final repsOptions =
+        List.generate(maxReps - minReps + 1, (i) => minReps + i);
+
     return Column(
       children: [
         Text(
@@ -275,7 +287,7 @@ class _RepsSelectorState extends State<_RepsSelector> {
             final isTarget = reps == widget.targetReps;
             final isSelected = _selectedReps == reps;
             final isBelowTarget = reps < widget.targetReps;
-            
+
             return _RepButton(
               reps: reps,
               isTarget: isTarget,
@@ -288,15 +300,15 @@ class _RepsSelectorState extends State<_RepsSelector> {
             );
           }).toList(),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Botón confirmar
         AnimatedOpacity(
           opacity: _selectedReps != null ? 1.0 : 0.3,
           duration: const Duration(milliseconds: 200),
           child: FilledButton.icon(
-            onPressed: _selectedReps != null 
+            onPressed: _selectedReps != null
                 ? () => widget.onSelected(_selectedReps!)
                 : null,
             icon: const Icon(Icons.check),
@@ -317,7 +329,7 @@ class _RepButton extends StatelessWidget {
   final bool isSelected;
   final bool isBelowTarget;
   final VoidCallback onTap;
-  
+
   const _RepButton({
     required this.reps,
     required this.isTarget,
@@ -325,14 +337,14 @@ class _RepButton extends StatelessWidget {
     required this.isBelowTarget,
     required this.onTap,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     Color backgroundColor;
     Color textColor;
-    
+
     if (isSelected) {
       backgroundColor = theme.colorScheme.primary;
       textColor = theme.colorScheme.onPrimary;
@@ -343,7 +355,7 @@ class _RepButton extends StatelessWidget {
       backgroundColor = theme.colorScheme.surfaceContainerHighest;
       textColor = theme.colorScheme.onSurfaceVariant;
     }
-    
+
     return Material(
       color: backgroundColor,
       borderRadius: BorderRadius.circular(12),
@@ -358,7 +370,8 @@ class _RepButton extends StatelessWidget {
             reps.toString(),
             style: theme.textTheme.titleLarge?.copyWith(
               color: textColor,
-              fontWeight: isSelected || isTarget ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  isSelected || isTarget ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
@@ -373,7 +386,7 @@ class SetFeedbackWidget extends StatelessWidget {
   final int repsCompleted;
   final int targetReps;
   final VoidCallback? onContinue;
-  
+
   const SetFeedbackWidget({
     super.key,
     required this.setNumber,
@@ -381,12 +394,12 @@ class SetFeedbackWidget extends StatelessWidget {
     required this.targetReps,
     this.onContinue,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final metTarget = repsCompleted >= targetReps;
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -401,7 +414,9 @@ class SetFeedbackWidget extends StatelessWidget {
                 Icon(
                   metTarget ? Icons.check_circle : Icons.check_circle_outline,
                   // 🎯 NEON IRON: Cyan para éxito
-                  color: metTarget ? AppColors.success : theme.colorScheme.onSurfaceVariant,
+                  color: metTarget
+                      ? AppColors.success
+                      : theme.colorScheme.onSurfaceVariant,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -411,7 +426,7 @@ class SetFeedbackWidget extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Mensaje solo si no alcanzó objetivo
             if (!metTarget) ...[
               const SizedBox(height: 12),
@@ -422,9 +437,9 @@ class SetFeedbackWidget extends StatelessWidget {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 16),
-            
+
             TextButton(
               onPressed: onContinue,
               child: const Text('Continuar'),
@@ -443,7 +458,7 @@ class ExerciseSummaryWidget extends StatelessWidget {
   final ProgressionDecision decision;
   final VoidCallback? onNext;
   final VoidCallback? onRejectDeload;
-  
+
   const ExerciseSummaryWidget({
     super.key,
     required this.weight,
@@ -452,24 +467,24 @@ class ExerciseSummaryWidget extends StatelessWidget {
     this.onNext,
     this.onRejectDeload,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return _buildSummary(context, decision);
   }
-  
+
   Widget _buildSummary(BuildContext context, ProgressionDecision decision) {
     final theme = Theme.of(context);
-    
+
     // Determinar tipo de resumen
     final isSuccess = decision.isImprovement;
     final isDeload = decision.action == ProgressionAction.decreaseWeight;
     final isConfirmation = decision.reason.contains('Confirm');
-    
+
     IconData icon;
     Color iconColor;
     String title;
-    
+
     if (isSuccess && isConfirmation) {
       icon = Icons.celebration;
       // 🎯 NEON IRON: Oro Venice para celebraciones
@@ -488,7 +503,7 @@ class ExerciseSummaryWidget extends StatelessWidget {
       iconColor = theme.colorScheme.primary;
       title = 'Completado';
     }
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -506,20 +521,20 @@ class ExerciseSummaryWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Series completadas
             Text(
               '${_formatWeight(weight)} × ${repsPerSet.join(', ')}',
               style: theme.textTheme.titleMedium,
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Próximo paso
             _NextStepCard(decision: decision),
-            
+
             // Mensaje deload si aplica
             if (isDeload) ...[
               const SizedBox(height: 12),
@@ -531,9 +546,9 @@ class ExerciseSummaryWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            
+
             const SizedBox(height: 24),
-            
+
             // Botones
             if (isDeload) ...[
               Row(
@@ -565,29 +580,31 @@ class ExerciseSummaryWidget extends StatelessWidget {
       ),
     );
   }
-  
+
   String _formatWeight(double w) {
-    return w == w.roundToDouble() ? '${w.toInt()} kg' : '${w.toStringAsFixed(1)} kg';
+    return w == w.roundToDouble()
+        ? '${w.toInt()} kg'
+        : '${w.toStringAsFixed(1)} kg';
   }
 }
 
 /// Card con el próximo paso
 class _NextStepCard extends StatelessWidget {
   final ProgressionDecision decision;
-  
+
   const _NextStepCard({required this.decision});
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     final isIncrease = decision.action == ProgressionAction.increaseWeight;
     final isDecrease = decision.action == ProgressionAction.decreaseWeight;
-    
+
     IconData icon;
     Color bgColor;
     Color iconColor;
-    
+
     if (isIncrease) {
       icon = Icons.trending_up;
       // 🎯 NEON IRON: Cyan para progreso
@@ -602,11 +619,12 @@ class _NextStepCard extends StatelessWidget {
       bgColor = theme.colorScheme.surfaceContainerHighest;
       iconColor = theme.colorScheme.primary;
     }
-    
-    final weightStr = decision.suggestedWeight == decision.suggestedWeight.roundToDouble()
-        ? '${decision.suggestedWeight.toInt()} kg'
-        : '${decision.suggestedWeight.toStringAsFixed(1)} kg';
-    
+
+    final weightStr =
+        decision.suggestedWeight == decision.suggestedWeight.roundToDouble()
+            ? '${decision.suggestedWeight.toInt()} kg'
+            : '${decision.suggestedWeight.toStringAsFixed(1)} kg';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -651,7 +669,7 @@ class WeightAdjuster extends StatelessWidget {
   final double increment;
   final ValueChanged<double> onWeightChanged;
   final VoidCallback? onDismiss;
-  
+
   const WeightAdjuster({
     super.key,
     required this.currentWeight,
@@ -659,11 +677,11 @@ class WeightAdjuster extends StatelessWidget {
     required this.onWeightChanged,
     this.onDismiss,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -685,18 +703,14 @@ class WeightAdjuster extends StatelessWidget {
                   ),
               ],
             ),
-            
             const SizedBox(height: 16),
-            
             Text(
               'Sugerido: ${_formatWeight(currentWeight)}',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            
             const SizedBox(height: 16),
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -711,7 +725,7 @@ class WeightAdjuster extends StatelessWidget {
                   ),
                   child: Text('-${increment.toStringAsFixed(1)}'),
                 ),
-                
+
                 // Peso actual
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -722,7 +736,7 @@ class WeightAdjuster extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 // Botón más
                 FilledButton.tonal(
                   onPressed: () {
@@ -736,9 +750,7 @@ class WeightAdjuster extends StatelessWidget {
                 ),
               ],
             ),
-            
             const SizedBox(height: 12),
-            
             Text(
               'ℹ️ El sistema recordará tu ajuste',
               style: theme.textTheme.bodySmall?.copyWith(
@@ -750,9 +762,11 @@ class WeightAdjuster extends StatelessWidget {
       ),
     );
   }
-  
+
   String _formatWeight(double w) {
-    return w == w.roundToDouble() ? '${w.toInt()} kg' : '${w.toStringAsFixed(1)} kg';
+    return w == w.roundToDouble()
+        ? '${w.toInt()} kg'
+        : '${w.toStringAsFixed(1)} kg';
   }
 }
 
@@ -760,17 +774,17 @@ class WeightAdjuster extends StatelessWidget {
 class SeriesProgressIndicator extends StatelessWidget {
   final List<int?> completedReps; // null = no completada aún
   final int targetReps;
-  
+
   const SeriesProgressIndicator({
     super.key,
     required this.completedReps,
     required this.targetReps,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: completedReps.asMap().entries.map((entry) {
@@ -778,10 +792,10 @@ class SeriesProgressIndicator extends StatelessWidget {
         final reps = entry.value;
         final isCompleted = reps != null;
         final metTarget = reps != null && reps >= targetReps;
-        
+
         Color color;
         IconData icon;
-        
+
         if (!isCompleted) {
           color = theme.colorScheme.surfaceContainerHighest;
           icon = Icons.circle_outlined;
@@ -793,7 +807,7 @@ class SeriesProgressIndicator extends StatelessWidget {
           color = AppColors.warning;
           icon = Icons.check_circle;
         }
-        
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Column(

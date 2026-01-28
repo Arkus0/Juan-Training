@@ -77,32 +77,36 @@ class PaginatedExercisesState {
 /// - Búsqueda con debounce
 /// - Filtros en memoria (no queries DB)
 /// - Memoization de resultados filtrados
-class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> {
+class PaginatedExercisesNotifier extends Notifier<PaginatedExercisesState> {
   static const int _pageSize = 20;
   static const int _initialLoad = 20;
 
   List<LibraryExercise> _allExercises = [];
   List<LibraryExercise> _filteredExercises = [];
-  final Debouncer _searchDebouncer = Debouncer(
-    delay: const Duration(milliseconds: 300),
-  );
+  final Debouncer _searchDebouncer = Debouncer();
 
   // Cache de resultados de filtrado
   final MemoCache<String, List<LibraryExercise>> _filterCache = MemoCache(
     expiration: const Duration(minutes: 5),
   );
 
-  PaginatedExercisesNotifier() : super(const PaginatedExercisesState()) {
+  @override
+  PaginatedExercisesState build() {
     _initialize();
+    ref.onDispose(() {
+      _searchDebouncer.dispose();
+      ExerciseLibraryService.instance.exercisesNotifier
+          .removeListener(_onLibraryUpdate);
+    });
+    return _buildInitialState();
   }
 
   void _initialize() {
     _allExercises = ExerciseLibraryService.instance.exercises;
     _filteredExercises = _allExercises;
-    _loadInitial();
-
     // Escuchar cambios en la biblioteca
-    ExerciseLibraryService.instance.exercisesNotifier.addListener(_onLibraryUpdate);
+    ExerciseLibraryService.instance.exercisesNotifier
+        .addListener(_onLibraryUpdate);
   }
 
   void _onLibraryUpdate() {
@@ -110,15 +114,25 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
     _applyFilters();
   }
 
-  void _loadInitial() {
+  PaginatedExercisesState _buildInitialState({
+    PaginatedExercisesState? base,
+  }) {
+    final source = base ?? const PaginatedExercisesState();
     final initialItems = _filteredExercises.take(_initialLoad).toList();
-    state = state.copyWith(
+    return PaginatedExercisesState(
       visibleExercises: initialItems,
       totalCount: _filteredExercises.length,
       loadedCount: initialItems.length,
       hasMore: _filteredExercises.length > _initialLoad,
-      isLoading: false,
+      searchQuery: source.searchQuery,
+      muscleFilter: source.muscleFilter,
+      equipmentFilter: source.equipmentFilter,
+      favoritesOnly: source.favoritesOnly,
     );
+  }
+
+  void _loadInitial() {
+    state = _buildInitialState(base: state);
   }
 
   /// Cargar más ejercicios (lazy loading)
@@ -130,10 +144,8 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
     // Simular carga async para no bloquear UI
     Future.microtask(() {
       final currentCount = state.loadedCount;
-      final nextBatch = _filteredExercises
-          .skip(currentCount)
-          .take(_pageSize)
-          .toList();
+      final nextBatch =
+          _filteredExercises.skip(currentCount).take(_pageSize).toList();
 
       final newList = [...state.visibleExercises, ...nextBatch];
 
@@ -173,7 +185,7 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
   }
 
   /// Mostrar solo favoritos
-  void setFavoritesOnly(bool value) {
+  void setFavoritesOnly({required bool value}) {
     state = state.copyWith(favoritesOnly: value);
     _applyFilters();
   }
@@ -205,16 +217,24 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
 
       // Filtrar por grupo muscular
       if (state.muscleFilter != null && state.muscleFilter!.isNotEmpty) {
-        result = result.where((e) =>
-            e.muscleGroup.toLowerCase() == state.muscleFilter!.toLowerCase()
-        ).toList();
+        result = result
+            .where(
+              (e) =>
+                  e.muscleGroup.toLowerCase() ==
+                  state.muscleFilter!.toLowerCase(),
+            )
+            .toList();
       }
 
       // Filtrar por equipamiento
       if (state.equipmentFilter != null && state.equipmentFilter!.isNotEmpty) {
-        result = result.where((e) =>
-            e.equipment.toLowerCase() == state.equipmentFilter!.toLowerCase()
-        ).toList();
+        result = result
+            .where(
+              (e) =>
+                  e.equipment.toLowerCase() ==
+                  state.equipmentFilter!.toLowerCase(),
+            )
+            .toList();
       }
 
       // Filtrar favoritos
@@ -241,19 +261,12 @@ class PaginatedExercisesNotifier extends StateNotifier<PaginatedExercisesState> 
     equipment.sort();
     return equipment;
   }
-
-  @override
-  void dispose() {
-    _searchDebouncer.dispose();
-    ExerciseLibraryService.instance.exercisesNotifier.removeListener(_onLibraryUpdate);
-    super.dispose();
-  }
 }
 
 /// Provider principal para ejercicios paginados
-final paginatedExercisesProvider = StateNotifierProvider<
-    PaginatedExercisesNotifier, PaginatedExercisesState>(
-  (ref) => PaginatedExercisesNotifier(),
+final paginatedExercisesProvider =
+    NotifierProvider<PaginatedExercisesNotifier, PaginatedExercisesState>(
+  PaginatedExercisesNotifier.new,
 );
 
 /// Provider de conveniencia para el total de ejercicios

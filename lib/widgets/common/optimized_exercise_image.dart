@@ -1,7 +1,9 @@
-import '../../utils/design_system.dart';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+
 import '../../models/library_exercise.dart';
+import '../../utils/design_system.dart';
 import '../../utils/performance_utils.dart';
 
 /// Widget optimizado para mostrar imágenes de ejercicios
@@ -135,15 +137,13 @@ class _OptimizedExerciseImageState extends State<OptimizedExerciseImage>
     }
 
     // Luego intentar con la imagen del asset
-    final assetPath =
-        'assets/img/ejercicios/${widget.exercise.id}.png';
+    final assetPath = 'assets/img/ejercicios/${widget.exercise.id}.png';
     return AssetImage(assetPath);
   }
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius =
-        widget.borderRadius ?? BorderRadius.circular(8);
+    final borderRadius = widget.borderRadius ?? BorderRadius.circular(8);
     final placeholderColor = widget.placeholderColor ?? AppColors.bgElevated;
 
     return RepaintBoundary(

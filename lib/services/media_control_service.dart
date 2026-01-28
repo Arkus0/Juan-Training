@@ -92,8 +92,52 @@ class MediaControlService {
   // Channel para comandos
   static const _channel = MethodChannel('juan_training/music_launcher');
 
-  // Channel para eventos (futuro: EventChannel para streaming)
-  // static const _eventChannel = EventChannel('juan_training/music_events');
+  // Channel para eventos (EventChannel para streaming)
+  static const _eventChannel = EventChannel('juan_training/music_events');
+
+  StreamSubscription<dynamic>? _eventSubscription;
+
+  void _startEventListening() {
+    if (!Platform.isAndroid) return;
+    _eventSubscription?.cancel();
+    try {
+      _eventSubscription = _eventChannel.receiveBroadcastStream().listen(
+        _handleEvent,
+        onError: (error) => _logger.w('Error en EventChannel de media', error: error),
+      );
+    } catch (e) {
+      _logger.w('No se pudo iniciar EventChannel de media', error: e);
+    }
+  }
+
+  void _stopEventListening() {
+    _eventSubscription?.cancel();
+    _eventSubscription = null;
+  }
+
+  void _handleEvent(dynamic event) {
+    try {
+      if (event is Map) {
+        final map = Map<String, dynamic>.from(event);
+        final session = MediaSessionInfo(
+          packageName: map['packageName'] as String?,
+          title: map['title'] as String?,
+          artist: map['artist'] as String?,
+          album: map['album'] as String?,
+          playbackState: _parsePlaybackState(map['playbackState'] as int?),
+        );
+        if (_hasSessionChanged(session)) {
+          _currentSession = session;
+          _sessionController.add(_currentSession);
+          _logger.d('Sesión de media actualizada (event): $_currentSession');
+        }
+      } else {
+        _logger.d('Evento de media recibido (no map): $event');
+      }
+    } catch (e) {
+      _logger.w('Error manejando evento de media', error: e);
+    }
+  }
 
   // Estado
   MediaSessionInfo _currentSession = MediaSessionInfo.none;
@@ -123,8 +167,8 @@ class MediaControlService {
     // Verificar estado inicial
     await _checkMediaState();
 
-    // Iniciar polling (temporal)
-    // TODO: Reemplazar con EventChannel + MediaSessionManager callbacks
+    // Iniciar escuchador de eventos (EventChannel) y polling de fallback
+    _startEventListening();
     _startPolling();
 
     _isInitialized = true;
@@ -242,8 +286,8 @@ class MediaControlService {
   }
 
   Future<bool> _openSpotifyFallback() async {
-    final Uri spotifyAppUri = Uri.parse('spotify:');
-    final Uri spotifyWebUri = Uri.parse('https://open.spotify.com');
+    final spotifyAppUri = Uri.parse('spotify:');
+    final spotifyWebUri = Uri.parse('https://open.spotify.com');
 
     try {
       if (await canLaunchUrl(spotifyAppUri)) {
@@ -296,6 +340,7 @@ class MediaControlService {
   /// Detiene el servicio
   void dispose() {
     _stopPolling();
+    _stopEventListening();
     _sessionController.close();
   }
 }

@@ -19,11 +19,14 @@ class TimerNotificationService {
   static final TimerNotificationService instance = TimerNotificationService._();
   TimerNotificationService._();
 
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
 
   // Platform channels for Android foreground service
-  static const MethodChannel _serviceChannel = MethodChannel('com.juantraining/timer_service');
-  static const MethodChannel _eventsChannel = MethodChannel('com.juantraining/timer_events');
+  static const MethodChannel _serviceChannel =
+      MethodChannel('com.juantraining/timer_service');
+  static const MethodChannel _eventsChannel =
+      MethodChannel('com.juantraining/timer_events');
 
   bool _isInitialized = false;
   Timer? _updateTimer;
@@ -42,7 +45,8 @@ class TimerNotificationService {
   static const int _timerNotificationId = 1001;
   static const String _channelId = 'rest_timer_channel';
   static const String _channelName = 'Temporizador de Descanso';
-  static const String _channelDescription = 'Notificaciones del temporizador de descanso';
+  static const String _channelDescription =
+      'Notificaciones del temporizador de descanso';
 
   /// Initialize the notification service
   Future<void> initialize() async {
@@ -52,13 +56,11 @@ class TimerNotificationService {
     _eventsChannel.setMethodCallHandler(_handleMethodCall);
 
     // Android settings
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // iOS settings (for future use)
     final darwinSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
       notificationCategories: [
         DarwinNotificationCategory(
           'timer_category',
@@ -77,15 +79,17 @@ class TimerNotificationService {
     );
 
     await _notifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _handleNotificationResponse,
-      onDidReceiveBackgroundNotificationResponse: _handleBackgroundNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          _handleBackgroundNotificationResponse,
     );
 
     // Create notification channel for Android
     if (Platform.isAndroid) {
-      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
       await androidPlugin?.createNotificationChannel(
         const AndroidNotificationChannel(
@@ -131,7 +135,8 @@ class TimerNotificationService {
 
   /// Handle background notification action
   @pragma('vm:entry-point')
-  static void _handleBackgroundNotificationResponse(NotificationResponse response) {
+  static void _handleBackgroundNotificationResponse(
+      NotificationResponse response,) {
     debugPrint('Background notification action: ${response.actionId}');
   }
 
@@ -252,7 +257,7 @@ class TimerNotificationService {
     _endTime = null;
     _isActive = false;
 
-    await _notifications.cancel(_timerNotificationId);
+    await _notifications.cancel(id: _timerNotificationId);
 
     // Stop Android foreground service
     if (Platform.isAndroid) {
@@ -365,12 +370,12 @@ class TimerNotificationService {
     );
 
     await _notifications.show(
-      _timerNotificationId,
-      '🏋️ Descanso: $timeString',
-      _isPaused
+      id: _timerNotificationId,
+      title: '🏋️ Descanso: $timeString',
+      body: _isPaused
           ? 'Timer pausado - Toca para continuar'
           : 'Prepárate para la siguiente serie',
-      details,
+      notificationDetails: details,
       payload: 'timer',
     );
   }
@@ -378,8 +383,9 @@ class TimerNotificationService {
   /// Request notification permissions
   Future<bool> requestPermissions() async {
     if (Platform.isAndroid) {
-      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
       final granted = await androidPlugin?.requestNotificationsPermission();
       return granted ?? false;
     } else if (Platform.isIOS) {
@@ -398,8 +404,9 @@ class TimerNotificationService {
   /// Check if notifications are enabled
   Future<bool> areNotificationsEnabled() async {
     if (Platform.isAndroid) {
-      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin =
+          _notifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
       return await androidPlugin?.areNotificationsEnabled() ?? false;
     }
     return true;

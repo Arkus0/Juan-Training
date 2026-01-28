@@ -22,7 +22,7 @@ class MainScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
-      // Floating timer removed — devolvemos el Scaffold directamente
+    // Floating timer removed — devolvemos el Scaffold directamente
     return Scaffold(
       // Usamos Column para poder insertar la ActiveSessionBar en la parte inferior
       body: Column(
@@ -38,26 +38,19 @@ class MainScreen extends ConsumerWidget {
           const ActiveSessionBar(),
         ],
       ),
-      // 🎯 UX MEDIO: FAB flotante para acceso rápido a entrenar
-      // NO mostrar si:
-      // 1. Ya hay sesión activa (ActiveSessionBar la maneja)
-      // 2. Estamos en tab RUTINAS (tiene su propio FAB)
-      floatingActionButton: null,
-      floatingActionButtonLocation: null,
-      bottomNavigationBar: Container(
+      bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
           border: Border(
             top: BorderSide(
               // 🎯 REDISEÑO: Borde sutil
               color: AppColors.border,
-              width: 1,
             ),
           ),
         ),
         child: BottomNavigationBar(
           currentIndex: currentIndex,
           onTap: (index) {
-            ref.read(bottomNavIndexProvider.notifier).state = index;
+            ref.read(bottomNavIndexProvider.notifier).setIndex(index);
           },
           items: const [
             BottomNavigationBarItem(

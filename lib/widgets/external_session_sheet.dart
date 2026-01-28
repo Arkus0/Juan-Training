@@ -128,7 +128,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           notes: p.notes,
           confidence: p.confidence,
           rawInput: p.rawText,
-        ));
+        ),);
       }
     });
   }
@@ -147,6 +147,23 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
       _addExercisesFromVoice(parsed);
       _textController.clear();
     }
+  }
+
+  Future<void> _startOcrFromCamera() async {
+    // Implementación pendiente: usar image_picker + google_mlkit_text_recognition.
+    // De momento mostramos un snackbar informativo y dejamos la función lista para extender.
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OCR disponible pronto')),
+    );
+  }
+
+  Future<void> _startOcrFromGallery() async {
+    // Implementación pendiente: seleccionar imagen de galería y procesar OCR.
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('OCR disponible pronto')),
+    );
   }
 
   void _removeExercise(int index) {
@@ -508,7 +525,6 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
         // Botón PTT
         PttVoiceButton(
           size: 100,
-          showHint: true,
           onListeningEnd: (_) {
             final state = ref.read(voiceInputProvider);
             if (state.parsedExercises.isNotEmpty) {
@@ -595,7 +611,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
           decoration: BoxDecoration(
             color: AppColors.bgElevated,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, style: BorderStyle.solid),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             children: [
@@ -622,24 +638,14 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementar OCR con cámara
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OCR disponible pronto')),
-                      );
-                    },
+                    onPressed: _startOcrFromCamera,
                     icon: const Icon(Icons.camera_alt),
                     label: const Text('Cámara'),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.blue),
                   ),
                   const SizedBox(width: 12),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Implementar OCR con galería
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('OCR disponible pronto')),
-                      );
-                    },
+                    onPressed: _startOcrFromGallery,
                     icon: const Icon(Icons.photo_library),
                     label: const Text('Galería'),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.blue),
@@ -849,7 +855,7 @@ class _ExternalSessionSheetState extends ConsumerState<ExternalSessionSheet> {
               Switch(
                 value: _includeInProgression,
                 onChanged: (v) => setState(() => _includeInProgression = v),
-                activeColor: AppColors.neonCyan,
+                activeThumbColor: AppColors.neonCyan,
               ),
             ],
           ),
@@ -1317,7 +1323,7 @@ class _ManualExerciseFormState extends State<_ManualExerciseForm> {
       weight: weight,
       confidence: _selectedExercise != null ? 1.0 : 0.5,
       rawInput: name,
-    ));
+    ),);
 
     // Limpiar formulario
     _nameController.clear();

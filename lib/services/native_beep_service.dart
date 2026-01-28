@@ -21,17 +21,17 @@ class NativeBeepService {
   static const _channel = MethodChannel('com.juantraining/beep_sound');
 
   /// Frecuencias de beep para el timer (Hz)
-  static const int freqLow = 440;      // A4 - suave
-  static const int freqMedium = 660;   // E5 - medio
-  static const int freqHigh = 880;     // A5 - intenso
-  static const int freqFinal = 1047;   // C6 - final
+  static const int freqLow = 440; // A4 - suave
+  static const int freqMedium = 660; // E5 - medio
+  static const int freqHigh = 880; // A5 - intenso
+  static const int freqFinal = 1047; // C6 - final
 
   /// Frecuencias para feedback de voz (Hz)
-  static const int freqVoiceStart = 523;     // C5 - inicio
-  static const int freqVoiceSuccess = 659;   // E5 - éxito
-  static const int freqVoiceHighConf = 784;  // G5 - alta confianza
-  static const int freqVoiceError = 349;     // F4 - error
-  static const int freqVoiceCommand = 880;   // A5 - comando válido
+  static const int freqVoiceStart = 523; // C5 - inicio
+  static const int freqVoiceSuccess = 659; // E5 - éxito
+  static const int freqVoiceHighConf = 784; // G5 - alta confianza
+  static const int freqVoiceError = 349; // F4 - error
+  static const int freqVoiceCommand = 880; // A5 - comando válido
 
   /// Volumen por defecto (0.0 - 1.0)
   static const double defaultVolume = 0.5;
@@ -114,7 +114,7 @@ class NativeBeepService {
 
   /// Beep de media intensidad (últimos 5-3 segundos del timer)
   Future<void> playMediumBeep() async {
-    await playBeep(frequency: freqMedium, durationMs: 150);
+    await playBeep(frequency: freqMedium);
   }
 
   /// Beep de alta intensidad (últimos 2-1 segundos del timer)
@@ -128,8 +128,6 @@ class NativeBeepService {
   Future<void> playFinalBeep({bool useMusicStream = false}) async {
     await playDoubleBeep(
       frequency: freqFinal,
-      durationMs: 250,
-      gapMs: 150,
       useMusicStream: useMusicStream,
     );
   }
@@ -177,7 +175,7 @@ class NativeBeepService {
 
   /// Beep de no match / error
   Future<void> playNoMatch() async {
-    await playBeep(frequency: freqVoiceError, durationMs: 150);
+    await playBeep(frequency: freqVoiceError);
   }
 
   /// Beep de error general

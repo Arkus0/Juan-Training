@@ -97,14 +97,16 @@ class SmartImportState {
 
 /// Provider para gestionar el flujo completo de importación inteligente
 final smartImportProvider =
-    StateNotifierProvider.autoDispose<SmartImportNotifier, SmartImportState>(
-  (ref) => SmartImportNotifier(),
+    NotifierProvider.autoDispose<SmartImportNotifier, SmartImportState>(
+  SmartImportNotifier.new,
 );
 
 /// Notifier que maneja toda la lógica de importación inteligente
-class SmartImportNotifier extends StateNotifier<SmartImportState> {
-  SmartImportNotifier() : super(const SmartImportState()) {
+class SmartImportNotifier extends Notifier<SmartImportState> {
+  @override
+  SmartImportState build() {
     _init();
+    return const SmartImportState();
   }
 
   final _ocrService = RoutineOcrService.instance;
@@ -132,7 +134,6 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       processingMessage: source == ImageSource.camera
           ? 'Escaneando imagen...'
           : 'Procesando imagen...',
-      errorMessage: null,
     );
 
     try {
@@ -142,7 +143,6 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       if (lines.isEmpty) {
         state = state.copyWith(
           status: SmartImportStatus.idle,
-          processingMessage: null,
         );
         return;
       }
@@ -157,22 +157,23 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       // 3. Convertir a drafts
       final drafts = <DetectedExerciseDraft>[];
       for (var i = 0; i < candidates.length; i++) {
-        drafts.add(DetectedExerciseDraft.fromOcrCandidate(
-          candidates[i],
-          orderIndex: i,
-        ));
+        drafts.add(
+          DetectedExerciseDraft.fromOcrCandidate(
+            candidates[i],
+            orderIndex: i,
+          ),
+        );
       }
 
       state = state.copyWith(
-        status: drafts.isEmpty ? SmartImportStatus.idle : SmartImportStatus.editing,
+        status:
+            drafts.isEmpty ? SmartImportStatus.idle : SmartImportStatus.editing,
         drafts: drafts,
-        processingMessage: null,
       );
     } catch (e) {
       state = state.copyWith(
         status: SmartImportStatus.error,
         errorMessage: 'Error procesando imagen: ${e.toString()}',
-        processingMessage: null,
       );
     }
   }
@@ -195,7 +196,6 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       status: SmartImportStatus.listening,
       isContinuousMode: continuous,
       partialTranscript: '',
-      errorMessage: null,
     );
 
     final success = await _voiceService.startListening(
@@ -204,7 +204,9 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
           partialTranscript: partial,
         );
       },
-      mode: continuous ? VoiceListeningMode.continuous : VoiceListeningMode.single,
+      mode: continuous
+          ? VoiceListeningMode.continuous
+          : VoiceListeningMode.single,
     );
 
     if (!success) {
@@ -245,10 +247,12 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
     final currentCount = state.drafts.length;
 
     for (var i = 0; i < parsed.length; i++) {
-      newDrafts.add(DetectedExerciseDraft.fromVoiceParsed(
-        parsed[i],
-        orderIndex: currentCount + i,
-      ));
+      newDrafts.add(
+        DetectedExerciseDraft.fromVoiceParsed(
+          parsed[i],
+          orderIndex: currentCount + i,
+        ),
+      );
     }
 
     // Agregar a lista existente
@@ -256,7 +260,6 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       status: SmartImportStatus.editing,
       drafts: [...state.drafts, ...newDrafts],
       partialTranscript: '',
-      processingMessage: null,
     );
 
     return newDrafts;
@@ -287,7 +290,10 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
 
   /// Guarda estado actual para undo
   void _saveForUndo() {
-    final newStack = [...state.undoStack, List<DetectedExerciseDraft>.from(state.drafts)];
+    final newStack = [
+      ...state.undoStack,
+      List<DetectedExerciseDraft>.from(state.drafts),
+    ];
     // Limitar historial a 10 estados
     if (newStack.length > 10) {
       newStack.removeAt(0);
@@ -309,7 +315,8 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
   }
 
   /// Actualiza el ejercicio matcheado de un draft
-  Future<void> changeDraftExercise(int index, LibraryExercise newExercise) async {
+  Future<void> changeDraftExercise(
+      int index, LibraryExercise newExercise,) async {
     if (index < 0 || index >= state.drafts.length) return;
 
     _saveForUndo();
@@ -375,7 +382,9 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
 
     state = state.copyWith(
       drafts: newDrafts,
-      status: newDrafts.isEmpty ? SmartImportStatus.idle : SmartImportStatus.editing,
+      status: newDrafts.isEmpty
+          ? SmartImportStatus.idle
+          : SmartImportStatus.editing,
     );
   }
 
@@ -478,8 +487,6 @@ class SmartImportNotifier extends StateNotifier<SmartImportState> {
       status: state.drafts.isEmpty
           ? SmartImportStatus.idle
           : SmartImportStatus.editing,
-      errorMessage: null,
-      processingMessage: null,
     );
   }
 }

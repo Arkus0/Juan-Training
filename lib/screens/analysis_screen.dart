@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/design_system.dart';
+
 import '../models/sesion.dart';
-import '../providers/training_provider.dart';
 import '../providers/analysis_provider.dart';
+import '../providers/training_provider.dart';
+import '../utils/design_system.dart';
 import '../widgets/analysis/activity_heatmap.dart';
-import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/calendar_view.dart';
-import '../widgets/analysis/session_list_view.dart';
-import '../widgets/analysis/recovery_monitor.dart';
-import '../widgets/analysis/symmetry_radar.dart';
 import '../widgets/analysis/hall_of_fame.dart';
+import '../widgets/analysis/recovery_monitor.dart';
+import '../widgets/analysis/session_list_view.dart';
+import '../widgets/analysis/streak_counter.dart';
 import '../widgets/analysis/strength_trend.dart';
+import '../widgets/analysis/symmetry_radar.dart';
 
 /// Centro de Comando Anabólico - Analysis Screen
 /// Replaces HistoryScreen with advanced analytics
@@ -34,7 +35,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        ref.read(analysisTabIndexProvider.notifier).state = _tabController.index;
+        ref
+            .read(analysisTabIndexProvider.notifier)
+            .setIndex(_tabController.index);
       }
     });
   }
@@ -67,7 +70,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
             color: const Color(0xFF1E1E1E),
             onSelected: (value) {
               if (value == 'export_all') {
-                final sessions = sessionsAsync.valueOrNull ?? [];
+                final sessions = sessionsAsync.asData?.value ?? [];
                 _exportAllSessions(context, sessions);
               }
             },
@@ -76,7 +79,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen>
                 value: 'export_all',
                 child: Row(
                   children: [
-                    const Icon(Icons.file_download, size: 20, color: Colors.white70),
+                    const Icon(Icons.file_download,
+                        size: 20, color: Colors.white70,),
                     const SizedBox(width: 8),
                     Text(
                       'Exportar Todo',
@@ -157,8 +161,10 @@ class _BitacoraTab extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: ActivityHeatmap(
               onDayTap: (date) {
-                ref.read(selectedCalendarDateProvider.notifier).state = date;
-                ref.read(bitacoraViewModeProvider.notifier).state = BitacoraViewMode.calendar;
+                ref.read(selectedCalendarDateProvider.notifier).setDate(date);
+                ref
+                    .read(bitacoraViewModeProvider.notifier)
+                    .setMode(BitacoraViewMode.calendar);
               },
             ),
           ),
@@ -172,7 +178,7 @@ class _BitacoraTab extends ConsumerWidget {
               currentMode: viewMode,
               onModeChanged: (mode) {
                 HapticFeedback.selectionClick();
-                ref.read(bitacoraViewModeProvider.notifier).state = mode;
+                ref.read(bitacoraViewModeProvider.notifier).setMode(mode);
               },
             ),
           ),
@@ -288,10 +294,12 @@ class _ViewModeSelector extends StatelessWidget {
           duration: AppDurations.fast,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.neonPrimarySubtle : Colors.transparent,
+            color:
+                isSelected ? AppColors.neonPrimarySubtle : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.sm),
             border: isSelected
-                ? Border.all(color: AppColors.neonPrimary.withValues(alpha: 0.5))
+                ? Border.all(
+                    color: AppColors.neonPrimary.withValues(alpha: 0.5),)
                 : null,
           ),
           child: Row(
@@ -300,7 +308,8 @@ class _ViewModeSelector extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: isSelected ? AppColors.neonPrimary : AppColors.textTertiary,
+                color:
+                    isSelected ? AppColors.neonPrimary : AppColors.textTertiary,
               ),
               const SizedBox(width: 6),
               Text(

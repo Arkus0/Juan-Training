@@ -93,7 +93,8 @@ class ExerciseMatchingService {
       _normalizedNameMap![normalized] = ex;
 
       // También indexar por palabras clave significativas
-      final words = normalized.split(' ').where((w) => w.length >= _minKeywordLength);
+      final words =
+          normalized.split(' ').where((w) => w.length >= _minKeywordLength);
       for (final word in words) {
         _normalizedNameMap!.putIfAbsent(word, () => ex);
       }
@@ -112,11 +113,11 @@ class ExerciseMatchingService {
         ],
         threshold: _fuzzyThreshold,
         findAllMatches: true,
-        isCaseSensitive: false,
       ),
     );
 
-    _logger.i('ExerciseMatchingService inicializado con ${_exercisesCache!.length} ejercicios');
+    _logger.i(
+        'ExerciseMatchingService inicializado con ${_exercisesCache!.length} ejercicios',);
   }
 
   /// Invalida el cache (llamar si la biblioteca de ejercicios cambia)
@@ -133,7 +134,8 @@ class ExerciseMatchingService {
   /// [boostSynonyms] Si true, aumenta confianza cuando se resuelve via sinónimo
   ///
   /// Retorna [ExerciseMatchResult] con el ejercicio encontrado (o null) y metadatos.
-  Future<ExerciseMatchResult> match(String query, {bool boostSynonyms = true}) async {
+  Future<ExerciseMatchResult> match(String query,
+      {bool boostSynonyms = true,}) async {
     await initialize();
 
     final normalizedQuery = normalizeText(query);
@@ -167,7 +169,8 @@ class ExerciseMatchingService {
       // Buscar el sinónimo resuelto en el mapa
       if (_normalizedNameMap!.containsKey(normalizedSynonym)) {
         final exercise = _normalizedNameMap![normalizedSynonym]!;
-        _logger.d('Match por sinónimo: "$query" → "$resolvedSynonym" → "${exercise.name}"');
+        _logger.d(
+            'Match por sinónimo: "$query" → "$resolvedSynonym" → "${exercise.name}"',);
         return ExerciseMatchResult(
           exercise: exercise,
           confidence: 0.95,
@@ -180,8 +183,9 @@ class ExerciseMatchingService {
       // Si el sinónimo no matchea exacto, hacer fuzzy con el sinónimo resuelto
       final fuzzyResult = await _fuzzyMatch(normalizedSynonym);
       if (fuzzyResult.isValid) {
-        final boostedConfidence =
-            boostSynonyms ? (fuzzyResult.confidence + 0.15).clamp(0.0, 1.0) : fuzzyResult.confidence;
+        final boostedConfidence = boostSynonyms
+            ? (fuzzyResult.confidence + 0.15).clamp(0.0, 1.0)
+            : fuzzyResult.confidence;
         return ExerciseMatchResult(
           exercise: fuzzyResult.exercise,
           confidence: boostedConfidence,
@@ -195,7 +199,8 @@ class ExerciseMatchingService {
     // NIVEL 3: Match por palabras clave
     final keywordResult = _findByKeywords(normalizedQuery);
     if (keywordResult != null) {
-      _logger.d('Match por keywords: "$normalizedQuery" → "${keywordResult.exercise.name}" (${(keywordResult.confidence * 100).toInt()}%)');
+      _logger.d(
+          'Match por keywords: "$normalizedQuery" → "${keywordResult.exercise.name}" (${(keywordResult.confidence * 100).toInt()}%)',);
       return ExerciseMatchResult(
         exercise: keywordResult.exercise,
         confidence: keywordResult.confidence,
@@ -208,20 +213,24 @@ class ExerciseMatchingService {
     // NIVEL 4: Fuzzy matching
     final fuzzyResult = await _fuzzyMatch(normalizedQuery);
     if (fuzzyResult.exercise != null) {
-      _logger.d('Match fuzzy: "$normalizedQuery" → "${fuzzyResult.exercise!.name}" (${(fuzzyResult.confidence * 100).toInt()}%)');
+      _logger.d(
+          'Match fuzzy: "$normalizedQuery" → "${fuzzyResult.exercise!.name}" (${(fuzzyResult.confidence * 100).toInt()}%)',);
     }
 
     return ExerciseMatchResult(
       exercise: fuzzyResult.exercise,
       confidence: fuzzyResult.confidence,
-      source: fuzzyResult.exercise != null ? MatchSource.fuzzy : MatchSource.noMatch,
+      source: fuzzyResult.exercise != null
+          ? MatchSource.fuzzy
+          : MatchSource.noMatch,
       normalizedQuery: normalizedQuery,
       resolvedSynonym: resolvedSynonym,
     );
   }
 
   /// Busca múltiples candidatos para una query (útil para mostrar alternativas)
-  Future<List<ExerciseMatchResult>> matchMultiple(String query, {int limit = 5}) async {
+  Future<List<ExerciseMatchResult>> matchMultiple(String query,
+      {int limit = 5,}) async {
     await initialize();
 
     final normalizedQuery = normalizeText(query);
@@ -274,7 +283,9 @@ class ExerciseMatchingService {
     final confidence = 1.0 - best.score;
 
     return ExerciseMatchResult(
-      exercise: confidence >= 0.3 ? best.item : null, // Umbral mínimo para retornar algo
+      exercise: confidence >= 0.3
+          ? best.item
+          : null, // Umbral mínimo para retornar algo
       confidence: confidence,
       source: MatchSource.fuzzy,
       normalizedQuery: normalizedQuery,
@@ -284,17 +295,20 @@ class ExerciseMatchingService {
   _KeywordMatchResult? _findByKeywords(String normalizedQuery) {
     if (_exercisesCache == null) return null;
 
-    final searchWords = normalizedQuery.split(' ').where((w) => w.length >= _minKeywordLength).toList();
+    final searchWords = normalizedQuery
+        .split(' ')
+        .where((w) => w.length >= _minKeywordLength)
+        .toList();
     if (searchWords.isEmpty) return null;
 
     LibraryExercise? bestMatch;
-    int bestScore = 0;
+    var bestScore = 0;
 
     for (final ex in _exercisesCache!) {
       final exName = normalizeText(ex.name);
       final exWords = exName.split(' ');
 
-      int matchCount = 0;
+      var matchCount = 0;
       for (final searchWord in searchWords) {
         for (final exWord in exWords) {
           if (exWord.contains(searchWord) || searchWord.contains(exWord)) {
@@ -305,7 +319,8 @@ class ExerciseMatchingService {
       }
 
       // Bonus si el nombre completo está contenido
-      if (exName.contains(normalizedQuery) || normalizedQuery.contains(exName)) {
+      if (exName.contains(normalizedQuery) ||
+          normalizedQuery.contains(exName)) {
         matchCount += 2;
       }
 
@@ -316,7 +331,8 @@ class ExerciseMatchingService {
     }
 
     if (bestMatch != null && bestScore >= 1) {
-      final confidence = (bestScore / (searchWords.length + 1)).clamp(0.5, 0.85);
+      final confidence =
+          (bestScore / (searchWords.length + 1)).clamp(0.5, 0.85);
       return _KeywordMatchResult(bestMatch, confidence);
     }
 

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+
+import 'database/database.dart';
+import 'providers/training_provider.dart';
+import 'repositories/drift_training_repository.dart';
 import 'screens/main_screen.dart';
-import 'utils/design_system.dart';
-import 'services/exercise_library_service.dart';
 import 'services/alternativas_service.dart';
-import 'services/timer_audio_service.dart';
-import 'services/timer_notification_service.dart';
+import 'services/exercise_library_service.dart';
 import 'services/haptics_controller.dart';
 import 'services/media_control_service.dart';
 import 'services/media_session_service.dart';
-import 'providers/training_provider.dart';
-
-import 'database/database.dart';
-import 'repositories/drift_training_repository.dart';
+import 'services/timer_audio_service.dart';
+import 'services/timer_notification_service.dart';
+import 'utils/design_system.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,14 +49,16 @@ void main() async {
   // Initialize MediaSessionManagerService for media controls
   MediaSessionManagerService.instance.initialize();
 
-  await initializeDateFormatting('es_ES', null);
+  await initializeDateFormatting('es_ES');
 
-  runApp(ProviderScope(
-    overrides: [
-       trainingRepositoryProvider.overrideWithValue(driftRepository),
-    ],
-    child: const JuanTrainingApp(),
-  ));
+  runApp(
+    ProviderScope(
+      overrides: [
+        trainingRepositoryProvider.overrideWithValue(driftRepository),
+      ],
+      child: const JuanTrainingApp(),
+    ),
+  );
 }
 
 class JuanTrainingApp extends StatelessWidget {

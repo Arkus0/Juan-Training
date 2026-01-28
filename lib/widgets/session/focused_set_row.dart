@@ -1,17 +1,20 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/serie_log.dart';
 import '../../screens/plate_calculator_dialog.dart';
+import '../../utils/design_system.dart';
 import 'numpad_input_modal.dart';
+
+typedef NullableBoolChanged = void Function({required bool? value});
 
 /// ============================================================================
 /// FOCUSED SET ROW — Intensidad Roja (Underground Gym)
 /// ============================================================================
 ///
 /// Widget de fila de serie con jerarquía visual clara:
-/// 
+///
 /// Estados visuales:
 /// - ACTIVA: Rojo profundo, prominente, touch targets grandes
 /// - COMPLETADA: Verde brillante, check claro
@@ -90,7 +93,8 @@ class _RowStyles {
     borderColor: Color(0x402E8B57), // Verde @ 0.25 alpha
     textColor: TrainingColors.textSecondary,
     opacity: 0.6, // Desaturada
-    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12), // 🆕 Más padding
+    padding:
+        EdgeInsets.symmetric(vertical: 10, horizontal: 12), // 🆕 Más padding
   );
 
   // ACTIVA: Rojo prominente, LA ÚNICA que destaca
@@ -99,7 +103,8 @@ class _RowStyles {
     borderColor: TrainingColors.activeSet,
     textColor: TrainingColors.textPrimary,
     opacity: 1.0,
-    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 14), // 🆕 Más padding
+    padding:
+        EdgeInsets.symmetric(vertical: 14, horizontal: 14), // 🆕 Más padding
   );
 
   // FUTURA: Casi invisible
@@ -108,7 +113,8 @@ class _RowStyles {
     borderColor: Colors.transparent,
     textColor: TrainingColors.textDisabled,
     opacity: 0.3, // Muy sutil
-    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12), // 🆕 Más padding
+    padding:
+        EdgeInsets.symmetric(vertical: 6, horizontal: 12), // 🆕 Más padding
   );
 
   // PASADA (sin completar): Sutil
@@ -117,7 +123,8 @@ class _RowStyles {
     borderColor: Colors.transparent,
     textColor: TrainingColors.textSecondary,
     opacity: 0.5,
-    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12), // 🆕 Más padding
+    padding:
+        EdgeInsets.symmetric(vertical: 8, horizontal: 12), // 🆕 Más padding
   );
 }
 
@@ -131,7 +138,7 @@ class FocusedSetRow extends StatefulWidget {
   final int totalSets;
   final Function(double) onWeightChanged;
   final Function(int) onRepsChanged;
-  final ValueChanged<bool?> onCompleted;
+  final NullableBoolChanged onCompleted;
   final VoidCallback? onLongPress;
   final VoidCallback? onDelete; // 🆕 Callback para eliminar serie
   final bool canDelete; // 🆕 Si se puede eliminar (>1 serie)
@@ -157,11 +164,12 @@ class FocusedSetRow extends StatefulWidget {
   State<FocusedSetRow> createState() => _FocusedSetRowState();
 }
 
-class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProviderStateMixin {
+class _FocusedSetRowState extends State<FocusedSetRow>
+    with SingleTickerProviderStateMixin {
   /// Animación de flash verde al completar
   late AnimationController _flashController;
   late Animation<double> _flashAnimation;
-  
+
   /// Tracking del estado anterior para detectar completado
   bool _wasCompleted = false;
 
@@ -199,10 +207,10 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
     final isCompleted = widget.log.completed;
 
     // Colores y estilos según estado
-    final RowStyle style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture);
+    final style = _getRowStyle(isCompleted, widget.isActive, widget.isFuture);
 
     // 🆕 Contenido base de la fila
-    Widget rowContent = GestureDetector(
+    final Widget rowContent = GestureDetector(
       onLongPress: widget.onLongPress,
       child: AnimatedBuilder(
         animation: _flashAnimation,
@@ -230,7 +238,8 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
           opacity: style.opacity,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(vertical: 4), // 🆕 Más separación entre series
+            margin: const EdgeInsets.symmetric(
+                vertical: 4,), // 🆕 Más separación entre series
             padding: style.padding,
             decoration: BoxDecoration(
               color: style.bgColor,
@@ -263,9 +272,7 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
                     isCompleted: isCompleted,
                     textColor: style.textColor,
                     allowZeroAndNegative: true, // 🎯 FIX #3
-                    onTap: isCompleted
-                        ? null
-                        : () => _openWeightInput(context),
+                    onTap: isCompleted ? null : () => _openWeightInput(context),
                   ),
                 ),
 
@@ -281,10 +288,9 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
                     isCompleted: isCompleted,
                     textColor: style.textColor,
                     isInteger: true,
-                    allowZeroAndNegative: true, // 🎯 FIX #3: permite 0 para isométricos
-                    onTap: isCompleted
-                        ? null
-                        : () => _openRepsInput(context),
+                    allowZeroAndNegative:
+                        true, // 🎯 FIX #3: permite 0 para isométricos
+                    onTap: isCompleted ? null : () => _openRepsInput(context),
                   ),
                 ),
 
@@ -365,7 +371,6 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       fieldLabel: 'KG',
       previousValue: widget.prevLog?.peso.toDouble(),
       currentValue: widget.log.peso > 0 ? widget.log.peso.toDouble() : null,
-      isInteger: false,
       onOpenPlateCalc: (currentWeight, onWeightUpdate, onApplyAndClose) {
         _showPlateCalculator(context, currentWeight, onApplyAndClose);
       },
@@ -379,7 +384,8 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
   }
 
   /// 🆕 Muestra calculadora de placas - "APLICAR" cierra todo y aplica directamente
-  void _showPlateCalculator(BuildContext context, double currentWeight, Function(double) onApplyAndClose) {
+  void _showPlateCalculator(BuildContext context, double currentWeight,
+      Function(double) onApplyAndClose,) {
     showDialog(
       context: context,
       builder: (dialogContext) => PlateCalculatorDialog(
@@ -422,7 +428,7 @@ class _FocusedSetRowState extends State<FocusedSetRow> with SingleTickerProvider
       Future.delayed(const Duration(milliseconds: 100), () {
         // Solo completar si el widget sigue montado y es el mismo set
         if (mounted && widget.log.id == currentSetId) {
-          widget.onCompleted(true);
+          widget.onCompleted(value: true);
         }
       });
     }
@@ -465,8 +471,8 @@ class _SetNumberBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color bgColor;
-    Color textColor = AppColors.textOnAccent;
-    String label = '${index + 1}';
+    var textColor = AppColors.textOnAccent;
+    var label = '${index + 1}';
 
     if (isWarmup) {
       bgColor = AppColors.info;
@@ -568,18 +574,22 @@ class _TappableValueInput extends StatelessWidget {
               Text(
                 _displayValue,
                 // ⚡ OPTIMIZACIÓN: Estilos pre-computados - valores MUY prominentes
-                style: (isActive ? _SetRowStyles.valueActiveText : _SetRowStyles.valueNormalText)
+                style: (isActive
+                        ? _SetRowStyles.valueActiveText
+                        : _SetRowStyles.valueNormalText)
                     .copyWith(
-                      color: value == null || value == 0
-                          ? TrainingColors.textDisabled
-                          : textColor,
-                    ),
+                  color: value == null || value == 0
+                      ? TrainingColors.textDisabled
+                      : textColor,
+                ),
               ),
               const SizedBox(width: 4),
               Text(
                 label,
                 // Labels muy sutiles para no competir con datos
-                style: isActive ? _SetRowStyles.labelActiveText : _SetRowStyles.labelNormalText,
+                style: isActive
+                    ? _SetRowStyles.labelActiveText
+                    : _SetRowStyles.labelNormalText,
               ),
             ],
           ),
@@ -593,7 +603,7 @@ class _TappableValueInput extends StatelessWidget {
 class _CompletionCheckbox extends StatelessWidget {
   final bool isCompleted;
   final bool isActive;
-  final ValueChanged<bool?> onChanged;
+  final NullableBoolChanged onChanged;
 
   const _CompletionCheckbox({
     required this.isCompleted,
@@ -611,7 +621,7 @@ class _CompletionCheckbox extends StatelessWidget {
         child: InkWell(
           onTap: () {
             HapticFeedback.mediumImpact();
-            onChanged(!isCompleted);
+            onChanged(value: !isCompleted);
           },
           borderRadius: BorderRadius.circular(12),
           child: Center(
@@ -634,7 +644,7 @@ class _CompletionCheckbox extends StatelessWidget {
                 ),
               ),
               child: isCompleted
-                  ? Icon(
+                  ? const Icon(
                       Icons.check_rounded,
                       color: AppColors.textOnAccent,
                       size: 28,

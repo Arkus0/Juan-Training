@@ -1,10 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:logger/logger.dart';
+
 import '../database/database.dart';
-import '../models/rutina.dart';
 import '../models/dia.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/progression_type.dart';
+import '../models/rutina.dart';
 
 /// Repositorio especializado para operaciones de Rutinas.
 /// Extraído de DriftTrainingRepository para mejor separación de responsabilidades.
@@ -17,7 +18,10 @@ class RoutineRepository {
   // --- Mappers ---
 
   Rutina mapRutina(
-      Routine row, List<RoutineDay> days, List<RoutineExercise> exercises) {
+    Routine row,
+    List<RoutineDay> days,
+    List<RoutineExercise> exercises,
+  ) {
     // Map exercises to days
     final exercisesByDay = <String, List<RoutineExercise>>{};
     for (final ex in exercises) {
@@ -34,26 +38,28 @@ class RoutineRepository {
         nombre: dayRow.name,
         progressionType: dayRow.progressionType,
         ejercicios: dayExercises
-            .map((e) => EjercicioEnRutina(
-                  instanceId: e.id,
-                  id: e.libraryId,
-                  nombre: e.name,
-                  descripcion: e.description,
-                  musculosPrincipales: e.musclesPrimary,
-                  musculosSecundarios: e.musclesSecondary,
-                  equipo: e.equipment,
-                  localImagePath: e.localImagePath,
-                  series: e.series,
-                  repsRange: e.repsRange,
-                  descansoSugerido: e.suggestedRestSeconds != null
-                      ? Duration(seconds: e.suggestedRestSeconds!)
-                      : null,
-                  notas: e.notes,
-                  supersetId: e.supersetId,
-                  progressionType: ProgressionType.fromString(e.progressionType),
-                  weightIncrement: e.weightIncrement,
-                  targetRpe: e.targetRpe,
-                ))
+            .map(
+              (e) => EjercicioEnRutina(
+                instanceId: e.id,
+                id: e.libraryId,
+                nombre: e.name,
+                descripcion: e.description,
+                musculosPrincipales: e.musclesPrimary,
+                musculosSecundarios: e.musclesSecondary,
+                equipo: e.equipment,
+                localImagePath: e.localImagePath,
+                series: e.series,
+                repsRange: e.repsRange,
+                descansoSugerido: e.suggestedRestSeconds != null
+                    ? Duration(seconds: e.suggestedRestSeconds!)
+                    : null,
+                notas: e.notes,
+                supersetId: e.supersetId,
+                progressionType: ProgressionType.fromString(e.progressionType),
+                weightIncrement: e.weightIncrement,
+                targetRpe: e.targetRpe,
+              ),
+            )
             .toList(),
       );
     }).toList();
@@ -79,9 +85,13 @@ class RoutineRepository {
   Stream<List<Rutina>> watchRutinas() {
     final query = db.select(db.routines).join([
       leftOuterJoin(
-          db.routineDays, db.routineDays.routineId.equalsExp(db.routines.id)),
-      leftOuterJoin(db.routineExercises,
-          db.routineExercises.dayId.equalsExp(db.routineDays.id)),
+        db.routineDays,
+        db.routineDays.routineId.equalsExp(db.routines.id),
+      ),
+      leftOuterJoin(
+        db.routineExercises,
+        db.routineExercises.dayId.equalsExp(db.routineDays.id),
+      ),
     ]);
 
     return query.watch().map((rows) {
@@ -119,7 +129,8 @@ class RoutineRepository {
 
         return result;
       } catch (e, s) {
-        _logger.e('Error while mapping routines stream', error: e, stackTrace: s);
+        _logger.e('Error while mapping routines stream',
+            error: e, stackTrace: s,);
         return <Rutina>[];
       }
     });
@@ -136,7 +147,8 @@ class RoutineRepository {
           .expand((d) => d.ejercicios.map((e) => e.instanceId))
           .toList();
       if (allInstanceIds.length != allInstanceIds.toSet().length) {
-        throw Exception('Duplicated exercise instance IDs in rutina before DB insert.');
+        throw Exception(
+            'Duplicated exercise instance IDs in rutina before DB insert.',);
       }
 
       await db.transaction(() async {
@@ -171,36 +183,41 @@ class RoutineRepository {
 
         for (var i = 0; i < rutina.dias.length; i++) {
           final dia = rutina.dias[i];
-          daysCompanions.add(RoutineDaysCompanion.insert(
-            id: dia.id,
-            routineId: rutina.id,
-            name: dia.nombre,
-            progressionType: Value(dia.progressionType),
-            dayIndex: i,
-          ));
+          daysCompanions.add(
+            RoutineDaysCompanion.insert(
+              id: dia.id,
+              routineId: rutina.id,
+              name: dia.nombre,
+              progressionType: Value(dia.progressionType),
+              dayIndex: i,
+            ),
+          );
 
           for (var j = 0; j < dia.ejercicios.length; j++) {
             final ej = dia.ejercicios[j];
-            exercisesCompanions.add(RoutineExercisesCompanion.insert(
-              id: ej.instanceId,
-              dayId: dia.id,
-              libraryId: ej.id,
-              name: ej.nombre,
-              description: Value(ej.descripcion),
-              musclesPrimary: ej.musculosPrincipales,
-              musclesSecondary: ej.musculosSecundarios,
-              equipment: ej.equipo,
-              localImagePath: Value(ej.localImagePath),
-              series: ej.series,
-              repsRange: ej.repsRange,
-              suggestedRestSeconds: Value(ej.descansoSugerido?.inSeconds ?? 60),
-              notes: Value(ej.notas ?? ""),
-              supersetId: Value(ej.supersetId),
-              exerciseIndex: j,
-              progressionType: Value(ej.progressionType.value),
-              weightIncrement: Value(ej.weightIncrement),
-              targetRpe: Value(ej.targetRpe),
-            ));
+            exercisesCompanions.add(
+              RoutineExercisesCompanion.insert(
+                id: ej.instanceId,
+                dayId: dia.id,
+                libraryId: ej.id,
+                name: ej.nombre,
+                description: Value(ej.descripcion),
+                musclesPrimary: ej.musculosPrincipales,
+                musclesSecondary: ej.musculosSecundarios,
+                equipment: ej.equipo,
+                localImagePath: Value(ej.localImagePath),
+                series: ej.series,
+                repsRange: ej.repsRange,
+                suggestedRestSeconds:
+                    Value(ej.descansoSugerido?.inSeconds ?? 60),
+                notes: Value(ej.notas ?? ''),
+                supersetId: Value(ej.supersetId),
+                exerciseIndex: j,
+                progressionType: Value(ej.progressionType.value),
+                weightIncrement: Value(ej.weightIncrement),
+                targetRpe: Value(ej.targetRpe),
+              ),
+            );
           }
         }
 

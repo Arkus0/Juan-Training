@@ -217,7 +217,10 @@ class SeriesRepsHypothesis {
 
   /// ¿Está completa? (tiene al menos series Y reps)
   bool get isComplete =>
-      series != null && series!.isConfident && minReps != null && minReps!.isConfident;
+      series != null &&
+      series!.isConfident &&
+      minReps != null &&
+      minReps!.isConfident;
 
   /// ¿Es un rango de reps? (ej: 8-12)
   bool get isRepsRange => maxReps != null && maxReps!.value != minReps?.value;
@@ -227,10 +230,16 @@ class SeriesRepsHypothesis {
 
   /// ¿Es válida? (valores dentro de rangos razonables)
   bool get isValid {
-    if (series != null && (series!.value < 1 || series!.value > 20)) return false;
-    if (minReps != null && (minReps!.value < 1 || minReps!.value > 100)) return false;
+    if (series != null && (series!.value < 1 || series!.value > 20)) {
+      return false;
+    }
+    if (minReps != null && (minReps!.value < 1 || minReps!.value > 100)) {
+      return false;
+    }
     if (maxReps != null && maxReps!.value < (minReps?.value ?? 0)) return false;
-    if (weight != null && (weight!.value < 0 || weight!.value > 500)) return false;
+    if (weight != null && (weight!.value < 0 || weight!.value > 500)) {
+      return false;
+    }
     return true;
   }
 

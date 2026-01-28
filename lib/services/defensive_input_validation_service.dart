@@ -72,15 +72,21 @@ class DefensiveInputValidationService {
     _logger.d('Fase 1: Capturando texto OCR');
 
     // Dividir en líneas
-    final lines = rawText.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    final lines =
+        rawText.split('\n').where((l) => l.trim().isNotEmpty).toList();
 
     final ocrLines = lines.map((line) {
-      final words = line.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+      final words =
+          line.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
       return OcrLine(
-        words: words.map((w) => OcrWord(
-          text: w,
-          confidence: imageQuality, // Heredar confianza de imagen
-        )).toList(),
+        words: words
+            .map(
+              (w) => OcrWord(
+                text: w,
+                confidence: imageQuality, // Heredar confianza de imagen
+              ),
+            )
+            .toList(),
       );
     }).toList();
 
@@ -131,7 +137,8 @@ class DefensiveInputValidationService {
 
     // Verificar calidad mínima
     if (!capture.hasAcceptableQuality) {
-      _logger.w('Captura con calidad insuficiente: ${capture.overallConfidence}');
+      _logger
+          .w('Captura con calidad insuficiente: ${capture.overallConfidence}');
       return [
         _createFailedHypothesis(
           capture,
@@ -223,19 +230,24 @@ class DefensiveInputValidationService {
     // Obtener múltiples candidatos
     final results = await _matchingService.matchMultiple(
       queryText,
-      limit: _maxCandidates,
     );
 
     // Filtrar por confianza mínima
     final candidates = results
-        .where((r) => r.confidence >= _minConfidenceForCandidate && r.exercise != null)
-        .map((r) => ExerciseCandidate(
-              exercise: r.exercise!,
-              confidence: r.confidence,
-              source: r.source,
-              resolvedSynonym: r.resolvedSynonym,
-              matchReason: _describeMatchReason(r.source, r.resolvedSynonym),
-            ))
+        .where(
+          (r) =>
+              r.confidence >= _minConfidenceForCandidate && r.exercise != null,
+        )
+        .map(
+          (r) => ExerciseCandidate(
+            exercise: r.exercise!,
+            confidence: r.confidence,
+            source: r.source,
+            resolvedSynonym: r.resolvedSynonym,
+            matchReason: _describeMatchReason(r.source, r.resolvedSynonym),
+          ),
+        )
+        .take(_maxCandidates)
         .toList();
 
     if (candidates.isEmpty) {
@@ -286,11 +298,13 @@ class DefensiveInputValidationService {
     // Buscar patrón NxM (más claro e inequívoco)
     for (final token in tokens) {
       if (token.tokenType == RawTokenType.setRepPattern) {
-        final match = RegExp(r'(\d+)[xX×*](\d+)(?:-(\d+))?').firstMatch(token.text);
+        final match =
+            RegExp(r'(\d+)[xX×*](\d+)(?:-(\d+))?').firstMatch(token.text);
         if (match != null) {
           final s = int.tryParse(match.group(1)!);
           final rMin = int.tryParse(match.group(2)!);
-          final rMax = match.group(3) != null ? int.tryParse(match.group(3)!) : null;
+          final rMax =
+              match.group(3) != null ? int.tryParse(match.group(3)!) : null;
 
           if (s != null && rMin != null) {
             series = ParsedValue(
@@ -320,8 +334,9 @@ class DefensiveInputValidationService {
     // Buscar peso con unidad explícita
     for (final token in tokens) {
       if (token.tokenType == RawTokenType.weightWithUnit) {
-        final match = RegExp(r'(\d+(?:[.,]\d+)?)(?:kg|lb)', caseSensitive: false)
-            .firstMatch(token.text);
+        final match =
+            RegExp(r'(\d+(?:[.,]\d+)?)(?:kg|lb)', caseSensitive: false)
+                .firstMatch(token.text);
         if (match != null) {
           final w = double.tryParse(match.group(1)!.replaceAll(',', '.'));
           if (w != null) {
@@ -340,7 +355,7 @@ class DefensiveInputValidationService {
     if (series == null) {
       // Buscar palabras como "series", "sets" seguidas de número
       final tokenTexts = tokens.map((t) => t.text.toLowerCase()).toList();
-      for (int i = 0; i < tokenTexts.length - 1; i++) {
+      for (var i = 0; i < tokenTexts.length - 1; i++) {
         if (_isSeriesKeyword(tokenTexts[i])) {
           final nextToken = tokens[i + 1];
           if (nextToken.tokenType == RawTokenType.number) {
@@ -389,11 +404,13 @@ class DefensiveInputValidationService {
   }
 
   bool _isSeriesKeyword(String text) {
-    return RegExp(r'^(series?|sets?|tandas?)$', caseSensitive: false).hasMatch(text);
+    return RegExp(r'^(series?|sets?|tandas?)$', caseSensitive: false)
+        .hasMatch(text);
   }
 
   bool _isRepsKeyword(String text) {
-    return RegExp(r'^(reps?|repeticiones?|veces)$', caseSensitive: false).hasMatch(text);
+    return RegExp(r'^(reps?|repeticiones?|veces)$', caseSensitive: false)
+        .hasMatch(text);
   }
 
   // =========================================
@@ -447,7 +464,8 @@ class DefensiveInputValidationService {
       case InputMode.activeWorkout:
         // Solo permitir 1 ejercicio en entrenamiento activo
         if (segments.length > 1) {
-          _logger.d('Contexto activo: limitando a 1 ejercicio de ${segments.length}');
+          _logger.d(
+              'Contexto activo: limitando a 1 ejercicio de ${segments.length}',);
           return [segments.first];
         }
         return segments;
@@ -467,7 +485,8 @@ class DefensiveInputValidationService {
   }
 
   /// Crea una hipótesis fallida
-  InputHypothesis _createFailedHypothesis(RawInputCapture capture, String reason) {
+  InputHypothesis _createFailedHypothesis(
+      RawInputCapture capture, String reason,) {
     return InputHypothesis(
       rawCapture: capture,
       exerciseHypothesis: ExerciseHypothesis.noMatch(''),

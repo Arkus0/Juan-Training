@@ -15,7 +15,6 @@ void main() {
       final endTime = DateTime.now().add(const Duration(seconds: 30));
       final state = TimerPlatformState(
         isActive: true,
-        isPaused: false,
         totalSeconds: 60,
         endTime: endTime,
       );
@@ -29,7 +28,6 @@ void main() {
         isActive: true,
         isPaused: true,
         totalSeconds: 45,
-        endTime: null,
       );
 
       expect(state.remainingSeconds, 45);
@@ -39,8 +37,6 @@ void main() {
       final endTime = DateTime.now().add(const Duration(seconds: 45));
       final state = TimerPlatformState(
         isActive: true,
-        isPaused: false,
-        totalSeconds: 90,
         endTime: endTime,
       );
 
@@ -52,7 +48,6 @@ void main() {
       final endTime = DateTime.now().subtract(const Duration(seconds: 5));
       final state = TimerPlatformState(
         isActive: true,
-        isPaused: false,
         totalSeconds: 60,
         endTime: endTime,
       );
@@ -64,8 +59,6 @@ void main() {
     test('copyWith debe preservar valores no modificados', () {
       const original = TimerPlatformState(
         isActive: true,
-        isPaused: false,
-        totalSeconds: 90,
         exerciseIndex: 2,
         setIndex: 1,
       );
@@ -96,8 +89,6 @@ void main() {
         final endTime = DateTime.now().add(const Duration(seconds: 60));
         final original = TimerPlatformState(
           isActive: true,
-          isPaused: false,
-          totalSeconds: 90,
           endTime: endTime,
           exerciseIndex: 3,
           setIndex: 2,

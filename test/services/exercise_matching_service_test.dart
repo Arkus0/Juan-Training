@@ -5,11 +5,13 @@ void main() {
   group('ExerciseMatchingService', () {
     group('normalizeText', () {
       test('Debe convertir a minúsculas', () {
-        expect(ExerciseMatchingService.normalizeText('PRESS BANCA'), 'press banca');
+        expect(ExerciseMatchingService.normalizeText('PRESS BANCA'),
+            'press banca',);
       });
 
       test('Debe remover acentos', () {
-        expect(ExerciseMatchingService.normalizeText('Elevación Lateral'), 'elevacion lateral');
+        expect(ExerciseMatchingService.normalizeText('Elevación Lateral'),
+            'elevacion lateral',);
         expect(ExerciseMatchingService.normalizeText('Jalón'), 'jalon');
         expect(ExerciseMatchingService.normalizeText('Bíceps'), 'biceps');
       });
@@ -19,13 +21,17 @@ void main() {
       });
 
       test('Debe remover caracteres especiales', () {
-        expect(ExerciseMatchingService.normalizeText('Press (Banca)'), 'press banca');
-        expect(ExerciseMatchingService.normalizeText('Curl-Martillo'), 'curl martillo');
+        expect(ExerciseMatchingService.normalizeText('Press (Banca)'),
+            'press banca',);
+        expect(ExerciseMatchingService.normalizeText('Curl-Martillo'),
+            'curl martillo',);
       });
 
       test('Debe normalizar espacios múltiples', () {
-        expect(ExerciseMatchingService.normalizeText('Press    Banca'), 'press banca');
-        expect(ExerciseMatchingService.normalizeText('  Press Banca  '), 'press banca');
+        expect(ExerciseMatchingService.normalizeText('Press    Banca'),
+            'press banca',);
+        expect(ExerciseMatchingService.normalizeText('  Press Banca  '),
+            'press banca',);
       });
 
       test('Debe manejar strings vacíos', () {

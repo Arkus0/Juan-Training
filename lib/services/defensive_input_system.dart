@@ -97,17 +97,15 @@
 ///
 /// Que OCR y voz sean un **asistente torpe pero útil**,
 /// no un **autómata confiado que se equivoca**.
-library defensive_input_system;
+library;
 
+export '../models/input_hypothesis.dart';
 // Modelos
 export '../models/raw_input_capture.dart';
-export '../models/input_hypothesis.dart';
 export '../models/reviewable_hypothesis.dart';
-
 // Servicios
 export 'defensive_input_validation_service.dart';
-export 'input_context_restrictions_service.dart';
 export 'defensive_metrics_service.dart';
-
 // Re-exportar tipos necesarios de otros módulos
 export 'exercise_matching_service.dart' show MatchSource;
+export 'input_context_restrictions_service.dart';

@@ -24,10 +24,12 @@ class CreateEditRoutineScreen extends ConsumerStatefulWidget {
   const CreateEditRoutineScreen({super.key, this.rutina});
 
   @override
-  ConsumerState<CreateEditRoutineScreen> createState() => _CreateEditRoutineScreenState();
+  ConsumerState<CreateEditRoutineScreen> createState() =>
+      _CreateEditRoutineScreenState();
 }
 
-class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScreen> {
+class _CreateEditRoutineScreenState
+    extends ConsumerState<CreateEditRoutineScreen> {
   late TextEditingController _nameController;
 
   /// Flag para saber si ya se guardó la rutina (evitar diálogo al salir después de guardar)
@@ -51,9 +53,10 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     // Si es nueva rutina, verificar si tiene contenido
     if (widget.rutina == null) {
       // Tiene cambios si: nombre no está vacío Y no es el default, O tiene ejercicios
-      final hasExercises = currentState.dias.any((d) => d.ejercicios.isNotEmpty);
+      final hasExercises =
+          currentState.dias.any((d) => d.ejercicios.isNotEmpty);
       final nameChanged = currentState.nombre.isNotEmpty &&
-                          currentState.nombre != _generateDefaultName();
+          currentState.nombre != _generateDefaultName();
       return hasExercises || nameChanged;
     }
 
@@ -67,7 +70,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     if (currentState.dias.length != original.dias.length) return true;
 
     // Comparar cada día en detalle
-    for (int i = 0; i < currentState.dias.length; i++) {
+    for (var i = 0; i < currentState.dias.length; i++) {
       final currentDay = currentState.dias[i];
       final originalDay = original.dias[i];
 
@@ -75,13 +78,17 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       if (currentDay.nombre != originalDay.nombre) return true;
 
       // Comparar tipo de progresión del día
-      if (currentDay.progressionType != originalDay.progressionType) return true;
+      if (currentDay.progressionType != originalDay.progressionType) {
+        return true;
+      }
 
       // Comparar número de ejercicios
-      if (currentDay.ejercicios.length != originalDay.ejercicios.length) return true;
+      if (currentDay.ejercicios.length != originalDay.ejercicios.length) {
+        return true;
+      }
 
       // 🎯 FIX #4: Comparación PROFUNDA de cada ejercicio
-      for (int j = 0; j < currentDay.ejercicios.length; j++) {
+      for (var j = 0; j < currentDay.ejercicios.length; j++) {
         final currentEx = currentDay.ejercicios[j];
         final originalEx = originalDay.ejercicios[j];
 
@@ -91,10 +98,16 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         if (currentEx.series != originalEx.series) return true;
         if (currentEx.repsRange != originalEx.repsRange) return true;
         if (currentEx.notas != originalEx.notas) return true;
-        if (currentEx.descansoSugerido != originalEx.descansoSugerido) return true;
+        if (currentEx.descansoSugerido != originalEx.descansoSugerido) {
+          return true;
+        }
         if (currentEx.supersetId != originalEx.supersetId) return true;
-        if (currentEx.progressionType != originalEx.progressionType) return true;
-        if (currentEx.weightIncrement != originalEx.weightIncrement) return true;
+        if (currentEx.progressionType != originalEx.progressionType) {
+          return true;
+        }
+        if (currentEx.weightIncrement != originalEx.weightIncrement) {
+          return true;
+        }
         if (currentEx.targetRpe != originalEx.targetRpe) return true;
       }
     }
@@ -149,7 +162,20 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   /// Genera un nombre por defecto basado en la fecha
   String _generateDefaultName() {
     final now = DateTime.now();
-    final months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    final months = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
+    ];
     return 'Rutina ${months[now.month - 1]} ${now.year}';
   }
 
@@ -175,7 +201,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             backgroundColor: AppColors.neonPrimary,
           ),
         );
-        HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
+        HapticsController.instance
+            .trigger(HapticEvent.voiceError); // Error feedback
         return;
       }
 
@@ -187,11 +214,13 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
 
       // Flash
       final overlay = Overlay.of(context);
-      final entry = OverlayEntry(builder: (context) {
-        return Container(
-          color: AppColors.neonPrimaryPressed.withValues(alpha: 0.4),
-        );
-      });
+      final entry = OverlayEntry(
+        builder: (context) {
+          return Container(
+            color: AppColors.neonPrimaryPressed.withValues(alpha: 0.4),
+          );
+        },
+      );
       overlay.insert(entry);
 
       // 🎯 RUTINA FORJADA: Vibración fuerte de celebración
@@ -200,8 +229,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       // SnackBar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡RUTINA FORJADA!',
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, color: Colors.white)),
+          content: Text(
+            '¡RUTINA FORJADA!',
+            style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w900, color: Colors.white,),
+          ),
           backgroundColor: AppColors.neonPrimaryPressed,
         ),
       );
@@ -212,21 +244,24 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       entry.remove();
 
       if (mounted) navigator.pop();
-
     } catch (e, s) {
       // Unexpected error: show friendly message and log
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error inesperado al guardar: ${e.toString()}', style: const TextStyle(color: Colors.white)),
+          content: Text('Error inesperado al guardar: ${e.toString()}',
+              style: const TextStyle(color: Colors.white),),
           backgroundColor: AppColors.neonPrimary,
         ),
       );
-      HapticsController.instance.trigger(HapticEvent.voiceError); // Error feedback
+      HapticsController.instance
+          .trigger(HapticEvent.voiceError); // Error feedback
       final logger = Logger();
       logger.e('Unexpected error in _saveRoutine', error: e, stackTrace: s);
       return;
     }
   }
+
   void _addExercise(int dayIndex) {
     showModalBottomSheet(
       context: context,
@@ -238,7 +273,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           SmartDefaults? defaults;
           try {
             final repo = ref.read(trainingRepositoryProvider);
-            final sessions = await repo.getExpandedHistoryForExercise(ex.name, limit: 3);
+            final sessions =
+                await repo.getExpandedHistoryForExercise(ex.name, limit: 3);
             if (sessions.isNotEmpty) {
               // Calcular series y reps más comunes del historial
               defaults = _calculateSmartDefaults(sessions, ex.name);
@@ -246,7 +282,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
           } catch (_) {
             // Si falla, usar defaults normales
           }
-          
+
           ref
               .read(createRoutineProvider(widget.rutina).notifier)
               .addExerciseToDay(
@@ -263,7 +299,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         getPersonalRecord: (exerciseName) async {
           try {
             final repo = ref.read(trainingRepositoryProvider);
-            final prs = await repo.getPersonalRecords(exerciseNames: [exerciseName]);
+            final prs =
+                await repo.getPersonalRecords(exerciseNames: [exerciseName]);
             return prs.isNotEmpty ? prs.first : null;
           } catch (_) {
             return null;
@@ -273,7 +310,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         getSmartDefaults: (exerciseName) async {
           try {
             final repo = ref.read(trainingRepositoryProvider);
-            final sessions = await repo.getExpandedHistoryForExercise(exerciseName, limit: 3);
+            final sessions = await repo
+                .getExpandedHistoryForExercise(exerciseName, limit: 3);
             if (sessions.isNotEmpty) {
               return _calculateSmartDefaults(sessions, exerciseName);
             }
@@ -283,14 +321,15 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       ),
     );
   }
-  
+
   /// 🆕 Calcula SmartDefaults basado en historial del usuario
-  SmartDefaults? _calculateSmartDefaults(List<Sesion> sessions, String exerciseName) {
+  SmartDefaults? _calculateSmartDefaults(
+      List<Sesion> sessions, String exerciseName,) {
     // Recopilar datos de sets del ejercicio
-    int totalSeries = 0;
-    int sessionCount = 0;
+    var totalSeries = 0;
+    var sessionCount = 0;
     final repsList = <int>[];
-    
+
     for (final session in sessions) {
       for (final ejercicio in session.ejerciciosCompletados) {
         if (ejercicio.nombre.toLowerCase() == exerciseName.toLowerCase()) {
@@ -304,25 +343,23 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
         }
       }
     }
-    
+
     if (sessionCount == 0) return null;
-    
+
     // Series: promedio redondeado
     final avgSeries = (totalSeries / sessionCount).round();
-    
+
     // Reps: rango min-max o valor único
     if (repsList.isEmpty) {
       return SmartDefaults(series: avgSeries, repsRange: '8-12');
     }
-    
+
     repsList.sort();
     final minReps = repsList.first;
     final maxReps = repsList.last;
-    
-    final repsRange = minReps == maxReps 
-        ? '$minReps' 
-        : '$minReps-$maxReps';
-    
+
+    final repsRange = minReps == maxReps ? '$minReps' : '$minReps-$maxReps';
+
     return SmartDefaults(
       series: avgSeries.clamp(1, 10),
       repsRange: repsRange,
@@ -367,7 +404,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   /// Importa ejercicios desde imagen usando OCR
   void _importFromOcr() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
-    
+
     // Verificar que hay al menos un día
     if (routineState.dias.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -384,9 +421,11 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     }
 
     // Mostrar selector de día si hay más de uno
-    final targetDayIndex = routineState.dias.length == 1 
-        ? 0 
-        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+    final targetDayIndex = routineState.dias.length == 1
+        ? 0
+        : ref
+            .read(createRoutineProvider(widget.rutina).notifier)
+            .expandedDayIndex;
 
     // Si no hay día expandido y hay múltiples días, preguntar
     if (targetDayIndex < 0 && routineState.dias.length > 1) {
@@ -407,7 +446,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   /// Muestra selector de día para importar
   void _showDaySelectorForImport() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -449,7 +488,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+                  style: GoogleFonts.montserrat(
+                      color: Colors.white54, fontSize: 12,),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -470,7 +510,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
   }
 
   /// Procesa los candidatos de OCR y los añade al día
-  Future<void> _processOcrCandidates(int dayIndex, List<ParsedExerciseCandidate> candidates) async {
+  Future<void> _processOcrCandidates(
+      int dayIndex, List<ParsedExerciseCandidate> candidates,) async {
     final ocrService = RoutineOcrService.instance;
     final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
 
@@ -480,8 +521,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
 
     for (final candidate in candidates) {
       if (candidate.matchedExerciseId == null) continue;
-      
-      final exercise = await ocrService.getExerciseById(candidate.matchedExerciseId!);
+
+      final exercise =
+          await ocrService.getExerciseById(candidate.matchedExerciseId!);
       if (exercise != null) {
         exercises.add(exercise);
         seriesList.add(candidate.series);
@@ -490,8 +532,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     }
 
     if (exercises.isNotEmpty) {
-      notifier.addExercisesFromOcr(dayIndex, exercises, seriesList, repsRangeList);
-      
+      notifier.addExercisesFromOcr(
+          dayIndex, exercises, seriesList, repsRangeList,);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -506,7 +549,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
+        HapticsController.instance
+            .trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
@@ -535,7 +579,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     // Determinar día objetivo
     final targetDayIndex = routineState.dias.length == 1
         ? 0
-        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+        : ref
+            .read(createRoutineProvider(widget.rutina).notifier)
+            .expandedDayIndex;
 
     // Si no hay día expandido y hay múltiples días, preguntar
     if (targetDayIndex < 0 && routineState.dias.length > 1) {
@@ -598,7 +644,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
                 ),
                 subtitle: Text(
                   '${dia.ejercicios.length} ejercicio${dia.ejercicios.length == 1 ? '' : 's'}',
-                  style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+                  style: GoogleFonts.montserrat(
+                      color: Colors.white54, fontSize: 12,),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -648,7 +695,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
 
     if (exercises.isNotEmpty) {
       // Reutilizamos el método existente de OCR ya que tienen la misma estructura
-      notifier.addExercisesFromOcr(dayIndex, exercises, seriesList, repsRangeList);
+      notifier.addExercisesFromOcr(
+          dayIndex, exercises, seriesList, repsRangeList,);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -670,7 +718,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
+        HapticsController.instance
+            .trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
@@ -771,13 +820,15 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       ),
     );
   }
-  
+
   /// Añade ejercicio desde biblioteca (determina día automáticamente)
   void _handleAddFromLibrary() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
     final targetDayIndex = routineState.dias.length == 1
         ? 0
-        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+        : ref
+            .read(createRoutineProvider(widget.rutina).notifier)
+            .expandedDayIndex;
 
     if (targetDayIndex < 0 && routineState.dias.length > 1) {
       // Mostrar selector de día y luego biblioteca
@@ -786,7 +837,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       _addExercise(targetDayIndex < 0 ? 0 : targetDayIndex);
     }
   }
-  
+
   /// Selector de día antes de mostrar biblioteca
   void _showDaySelectorThenLibrary() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
@@ -858,7 +909,9 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     // Determinar día objetivo
     final targetDayIndex = routineState.dias.length == 1
         ? 0
-        : ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex;
+        : ref
+            .read(createRoutineProvider(widget.rutina).notifier)
+            .expandedDayIndex;
 
     // Si no hay día expandido y hay múltiples días, preguntar
     if (targetDayIndex < 0 && routineState.dias.length > 1) {
@@ -869,7 +922,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     final dayIndex = targetDayIndex < 0 ? 0 : targetDayIndex;
     _showSmartImportSheet(dayIndex);
   }
-  
+
   /// Muestra selector de día para smart import
   void _showDaySelectorForSmartImport() {
     final routineState = ref.read(createRoutineProvider(widget.rutina));
@@ -909,7 +962,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
               ),
               subtitle: Text(
                 '${dia.ejercicios.length} ejercicios',
-                style: GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
+                style:
+                    GoogleFonts.montserrat(color: Colors.white54, fontSize: 12),
               ),
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -922,7 +976,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       ),
     );
   }
-  
+
   /// Muestra el sheet de smart import para un día específico
   void _showSmartImportSheet(int dayIndex) {
     SmartImportSheet.show(
@@ -932,7 +986,7 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       },
     );
   }
-  
+
   /// Procesa los ejercicios del smart import y los añade al día
   Future<void> _processSmartImportExercises(
     int dayIndex,
@@ -957,7 +1011,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
     }
 
     if (exercises.isNotEmpty) {
-      notifier.addExercisesFromOcr(dayIndex, exercises, seriesList, repsRangeList);
+      notifier.addExercisesFromOcr(
+          dayIndex, exercises, seriesList, repsRangeList,);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -976,7 +1031,8 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
             behavior: SnackBarBehavior.floating,
           ),
         );
-        HapticsController.instance.trigger(HapticEvent.inputSubmit); // Import success
+        HapticsController.instance
+            .trigger(HapticEvent.inputSubmit); // Import success
       }
     }
   }
@@ -991,205 +1047,241 @@ class _CreateEditRoutineScreenState extends ConsumerState<CreateEditRoutineScree
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldPop = await _confirmExit();
+        if (!context.mounted) return;
         if (shouldPop && mounted) {
           Navigator.of(context).pop();
         }
       },
       child: Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(
-          widget.rutina == null ? 'CREA TU RUTINA' : 'EDITAR: ${routineState.nombre.toUpperCase()}',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 22),
-        ),
-        backgroundColor: AppColors.neonPrimaryPressed,
-        actions: [
-          // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 28),
-            tooltip: 'Añadir ejercicios',
-            onPressed: _showUnifiedImportSheet,
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text(
+            widget.rutina == null
+                ? 'CREA TU RUTINA'
+                : 'EDITAR: ${routineState.nombre.toUpperCase()}',
+            style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.w900, fontSize: 22,),
           ),
-          // Export button - only show when editing an existing routine with content
-          if (widget.rutina != null || routineState.dias.isNotEmpty)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                if (value == 'export') {
-                  _exportRoutine(routineState);
-                }
-              },
-              itemBuilder: (ctx) => [
-                const PopupMenuItem(
-                  value: 'export',
-                  child: Row(
-                    children: [
-                      Icon(Icons.share, size: 20),
-                      SizedBox(width: 8),
-                      Text('Compartir Rutina'),
-                    ],
-                  ),
-                ),
-              ],
+          backgroundColor: AppColors.neonPrimaryPressed,
+          actions: [
+            // 🎯 UX ALTO: Un solo botón Smart Import (consolida voz + OCR + smart)
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline, size: 28),
+              tooltip: 'Añadir ejercicios',
+              onPressed: _showUnifiedImportSheet,
             ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100), // Space for FAB/Button
-        child: Column(
-          children: [
-            // Routine Name Input
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _nameController,
-                style: GoogleFonts.montserrat(
-                  fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Nombre que motive miedo',
-                  hintStyle: GoogleFonts.montserrat(color: AppColors.neonPrimaryPressed.withValues(alpha: 0.5)),
-                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimaryPressed)),
-                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.neonPrimary, width: 2)),
-                ),
-                onChanged: (val) => notifier.updateName(val),
-              ),
-            ),
-
-            // Days List (Reorderable)
-            // Using ReorderableColumn to handle list of Days
-            if (routineState.dias.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40.0),
-                child: Center(
-                  child: Text(
-                    'AÑADE TU PRIMER DÍA',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white24,
+            // Export button - only show when editing an existing routine with content
+            if (widget.rutina != null || routineState.dias.isNotEmpty)
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  if (value == 'export') {
+                    _exportRoutine(routineState);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'export',
+                    child: Row(
+                      children: [
+                        Icon(Icons.share, size: 20),
+                        SizedBox(width: 8),
+                        Text('Compartir Rutina'),
+                      ],
                     ),
                   ),
-                ),
-              )
-            else
-              ReorderableListView.builder(
-                key: ValueKey(routineState.dias.length),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                proxyDecorator: (child, index, animation) {
-                  // Detectamos el inicio del arrastre y colapsamos cualquier día abierto para evitar glitches visuales
-                  Future.microtask(() {
-                    final notifier = ref.read(createRoutineProvider(widget.rutina).notifier);
-                    if (notifier.expandedDayIndex != -1) {
-                      notifier.collapseAllDays();
-                    }
-                  });
-
-                  return AnimatedBuilder(
-                    animation: animation,
-                    builder: (context, child) {
-                      return Material(
-                        elevation: animation.value * 8,
-                        color: Colors.transparent,
-                        shadowColor: AppColors.neonPrimaryPressed,
-                        child: child,
-                      );
-                    },
-                    child: child,
-                  );
-                },
-                onReorder: notifier.reorderDays,
-                itemCount: routineState.dias.length,
-                itemBuilder: (context, index) {
-                  final dia = routineState.dias[index];
-                  return Container(
-                    key: Key(dia.id),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    child: DiaExpansionTile(
-                      dayIndex: index,
-                      dia: dia,
-                      // Ensure this item rebuilds when routine state changes (watch),
-                      // but read the notifier to get the UI-only expanded index.
-                      initiallyExpanded: ref.read(createRoutineProvider(widget.rutina).notifier).expandedDayIndex == index,
-                      onExpansionChanged: (val) {
-                        if (val) {
-                          ref.read(createRoutineProvider(widget.rutina).notifier).setExpandedDay(index);
-                        } else {
-                          ref.read(createRoutineProvider(widget.rutina).notifier).collapseAllDays();
-                        }
-                      },
-                      onUpdateName: (val) => notifier.updateDayName(index, val),
-                      onUpdateProgression: (val) =>
-                          notifier.updateDayProgression(index, val),
-                      onAddExercise: () => _addExercise(index),
-                      onReorderExercises: (oldIdx, newIdx) =>
-                          notifier.reorderVisualExercises(index, oldIdx, newIdx),
-                      onRemoveExercise: (exIdx) =>
-                          notifier.removeExercise(index, exIdx),
-                      onUndoRemove: (exIdx, ex) =>
-                          notifier.insertExercise(index, exIdx, ex),
-                      onUpdateExercise: (exIdx, updated) =>
-                          notifier.updateExercise(index, exIdx, updated),
-                      onReplaceExercise: (exIdx, alternativaNombre) =>
-                          notifier.replaceExercise(index, exIdx, alternativaNombre),
-                      onRemoveDay: () => notifier.removeDay(index),
-                      onDuplicateDay: () => notifier.duplicateDay(index),
-                      onDuplicateExercise: (exIdx) =>  // 🆕 Duplicar ejercicio
-                          notifier.duplicateExercise(index, exIdx),
-                      onCreateSuperset: (idxA, idxB) =>
-                          notifier.createSuperset(index, idxA, idxB),
-                      onMoveSuperset: (supersetId, toFlat) => notifier.moveSuperset(index, supersetId, toFlat),
-                      onMoveExercise: (fromFlat, toFlat) => notifier.reorderExercises(index, fromFlat, toFlat),
-                      onRemoveFromSuperset: (exIdx) =>
-                          notifier.removeFromSuperset(index, exIdx),
-                    ),
-                  );
-                },
+                ],
               ),
-
-            const SizedBox(height: 24),
-
-            // FAB Add Day (Inline or actual FAB? Requirements: "Floating big red FAB... Below list: big red FAB")
-            // "Below list: big red FAB 'AÑADIR DÍA'"
-            Center(
-              child: FloatingActionButton.extended(
-                heroTag: 'add_day_fab',
-                onPressed: () {
-                  notifier.addDay();
-                  HapticsController.instance.trigger(HapticEvent.buttonTap);
-                },
-                icon: const Icon(Icons.add, size: 32),
-                label: Text('AÑADIR DÍA', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 16)),
-                backgroundColor: AppColors.neonPrimaryPressed,
-                elevation: 8,
-              ),
-            ),
           ],
         ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.black,
-          boxShadow: [BoxShadow(color: AppColors.neonPrimaryPressed.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, -4))],
-        ),
-        child: ElevatedButton(
-          onPressed: _saveRoutine,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.neonPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shadowColor: AppColors.neonPrimary,
-            elevation: 10,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 100), // Space for FAB/Button
+          child: Column(
+            children: [
+              // Routine Name Input
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _nameController,
+                  style: GoogleFonts.montserrat(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Nombre que motive miedo',
+                    hintStyle: GoogleFonts.montserrat(
+                        color: AppColors.neonPrimaryPressed
+                            .withValues(alpha: 0.5),),
+                    enabledBorder: const UnderlineInputBorder(
+                        borderSide:
+                            BorderSide(color: AppColors.neonPrimaryPressed),),
+                    focusedBorder: const UnderlineInputBorder(
+                        borderSide:
+                            BorderSide(color: AppColors.neonPrimary, width: 2),),
+                  ),
+                  onChanged: (val) => notifier.updateName(val),
+                ),
+              ),
+
+              // Days List (Reorderable)
+              // Using ReorderableColumn to handle list of Days
+              if (routineState.dias.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40.0),
+                  child: Center(
+                    child: Text(
+                      'AÑADE TU PRIMER DÍA',
+                      style: GoogleFonts.montserrat(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white24,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ReorderableListView.builder(
+                  key: ValueKey(routineState.dias.length),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  buildDefaultDragHandles: false,
+                  proxyDecorator: (child, index, animation) {
+                    // Detectamos el inicio del arrastre y colapsamos cualquier día abierto para evitar glitches visuales
+                    Future.microtask(() {
+                      final notifier = ref
+                          .read(createRoutineProvider(widget.rutina).notifier);
+                      if (notifier.expandedDayIndex != -1) {
+                        notifier.collapseAllDays();
+                      }
+                    });
+
+                    return AnimatedBuilder(
+                      animation: animation,
+                      builder: (context, child) {
+                        return Material(
+                          elevation: animation.value * 8,
+                          color: Colors.transparent,
+                          shadowColor: AppColors.neonPrimaryPressed,
+                          child: child,
+                        );
+                      },
+                      child: child,
+                    );
+                  },
+                  onReorder: notifier.reorderDays,
+                  itemCount: routineState.dias.length,
+                  itemBuilder: (context, index) {
+                    final dia = routineState.dias[index];
+                    return Container(
+                      key: Key(dia.id),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4,),
+                      child: DiaExpansionTile(
+                        dayIndex: index,
+                        dia: dia,
+                        // Ensure this item rebuilds when routine state changes (watch),
+                        // but read the notifier to get the UI-only expanded index.
+                        initiallyExpanded: ref
+                                .read(createRoutineProvider(widget.rutina)
+                                    .notifier,)
+                                .expandedDayIndex ==
+                            index,
+                        onExpansionChanged: (val) {
+                          if (val) {
+                            ref
+                                .read(createRoutineProvider(widget.rutina)
+                                    .notifier,)
+                                .setExpandedDay(index);
+                          } else {
+                            ref
+                                .read(createRoutineProvider(widget.rutina)
+                                    .notifier,)
+                                .collapseAllDays();
+                          }
+                        },
+                        onUpdateName: (val) =>
+                            notifier.updateDayName(index, val),
+                        onUpdateProgression: (val) =>
+                            notifier.updateDayProgression(index, val),
+                        onAddExercise: () => _addExercise(index),
+                        onReorderExercises: (oldIdx, newIdx) => notifier
+                            .reorderVisualExercises(index, oldIdx, newIdx),
+                        onRemoveExercise: (exIdx) =>
+                            notifier.removeExercise(index, exIdx),
+                        onUndoRemove: (exIdx, ex) =>
+                            notifier.insertExercise(index, exIdx, ex),
+                        onUpdateExercise: (exIdx, updated) =>
+                            notifier.updateExercise(index, exIdx, updated),
+                        onReplaceExercise: (exIdx, alternativaNombre) =>
+                            notifier.replaceExercise(
+                                index, exIdx, alternativaNombre,),
+                        onRemoveDay: () => notifier.removeDay(index),
+                        onDuplicateDay: () => notifier.duplicateDay(index),
+                        onDuplicateExercise: (exIdx) => // 🆕 Duplicar ejercicio
+                            notifier.duplicateExercise(index, exIdx),
+                        onCreateSuperset: (idxA, idxB) =>
+                            notifier.createSuperset(index, idxA, idxB),
+                        onMoveSuperset: (supersetId, toFlat) =>
+                            notifier.moveSuperset(index, supersetId, toFlat),
+                        onMoveExercise: (fromFlat, toFlat) =>
+                            notifier.reorderExercises(index, fromFlat, toFlat),
+                        onRemoveFromSuperset: (exIdx) =>
+                            notifier.removeFromSuperset(index, exIdx),
+                      ),
+                    );
+                  },
+                ),
+
+              const SizedBox(height: 24),
+
+              // FAB Add Day (Inline or actual FAB? Requirements: "Floating big red FAB... Below list: big red FAB")
+              // "Below list: big red FAB 'AÑADIR DÍA'"
+              Center(
+                child: FloatingActionButton.extended(
+                  heroTag: 'add_day_fab',
+                  onPressed: () {
+                    notifier.addDay();
+                    HapticsController.instance.trigger(HapticEvent.buttonTap);
+                  },
+                  icon: const Icon(Icons.add, size: 32),
+                  label: Text('AÑADIR DÍA',
+                      style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w900, fontSize: 16,),),
+                  backgroundColor: AppColors.neonPrimaryPressed,
+                  elevation: 8,
+                ),
+              ),
+            ],
           ),
-          child: Text(
-            'GUARDAR RUTINA',
-            style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            boxShadow: [
+              BoxShadow(
+                  color: AppColors.neonPrimaryPressed.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: _saveRoutine,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.neonPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shadowColor: AppColors.neonPrimary,
+              elevation: 10,
+            ),
+            child: Text(
+              'GUARDAR RUTINA',
+              style: GoogleFonts.montserrat(
+                  fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1,),
+            ),
           ),
         ),
-      ),
-    ),  // Close PopScope
+      ), // Close PopScope
     );
   }
 }

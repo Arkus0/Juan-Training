@@ -30,7 +30,8 @@ Future<void> main() async {
     if (_isPlaceholder(name, id)) missing.add(entry);
   }
 
-  print('Found ${missing.length} placeholder names to attempt filling');
+  stdout
+      .writeln('Found ${missing.length} placeholder names to attempt filling');
   final langs = [4, 2]; // Spanish, then English
   var updated = 0;
 
@@ -40,7 +41,8 @@ Future<void> main() async {
     for (final lang in langs) {
       try {
         final url = 'https://wger.de/api/v2/exerciseinfo/$id/?language=$lang';
-        final resp = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+        final resp =
+            await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
         if (resp.statusCode == 200 && resp.body.isNotEmpty) {
           final data = jsonDecode(resp.body) as Map<String, dynamic>;
           final n = (data['name'] as String?)?.trim();
@@ -59,14 +61,15 @@ Future<void> main() async {
     if (foundName != null) {
       entry['name'] = foundName;
       updated++;
-      print('Updated name for $id -> $foundName');
+      stdout.writeln('Updated name for $id -> $foundName');
     }
   }
 
   if (updated > 0) {
-    await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
-    print('Wrote updated JSON, updated $updated names');
+    await jsonFile
+        .writeAsString(const JsonEncoder.withIndent('  ').convert(list));
+    stdout.writeln('Wrote updated JSON, updated $updated names');
   } else {
-    print('No names updated');
+    stdout.writeln('No names updated');
   }
 }

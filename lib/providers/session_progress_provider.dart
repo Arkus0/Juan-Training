@@ -65,7 +65,9 @@ class SessionProgress {
       lastMilestone: lastMilestone ?? this.lastMilestone,
       isComplete: isComplete ?? this.isComplete,
       supersets: supersets ?? this.supersets,
-      newlyReachedMilestone: clearNewlyReachedMilestone ? null : (newlyReachedMilestone ?? this.newlyReachedMilestone),
+      newlyReachedMilestone: clearNewlyReachedMilestone
+          ? null
+          : (newlyReachedMilestone ?? this.newlyReachedMilestone),
     );
   }
 
@@ -102,11 +104,11 @@ class SupersetProgressInfo {
 }
 
 /// Notifier que calcula y gestiona el progreso de la sesión
-class SessionProgressNotifier extends StateNotifier<SessionProgress> {
-  final Ref ref;
+class SessionProgressNotifier extends Notifier<SessionProgress> {
   int _lastNotifiedMilestone = 0;
 
-  SessionProgressNotifier(this.ref) : super(const SessionProgress()) {
+  @override
+  SessionProgress build() {
     // Escuchar cambios en la sesión de entrenamiento
     ref.listen<TrainingState>(
       trainingSessionProvider,
@@ -114,6 +116,7 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
         _calculateProgress(next.exercises);
       },
     );
+    return const SessionProgress();
   }
 
   void _calculateProgress(List<Ejercicio> exercises) {
@@ -123,14 +126,14 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
       return;
     }
 
-    int totalSets = 0;
-    int completedSets = 0;
-    int totalExercises = exercises.length;
-    int completedExercises = 0;
+    var totalSets = 0;
+    var completedSets = 0;
+    final totalExercises = exercises.length;
+    var completedExercises = 0;
 
     // Mapeo de superseries para contarlas como bloques
-    final Map<String, List<Ejercicio>> supersetGroups = {};
-    final List<Ejercicio> standaloneExercises = [];
+    final supersetGroups = <String, List<Ejercicio>>{};
+    final standaloneExercises = <Ejercicio>[];
 
     for (final exercise in exercises) {
       // Contar sets
@@ -145,36 +148,41 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
 
       // Agrupar por superset
       if (exercise.isInSuperset) {
-        supersetGroups.putIfAbsent(exercise.supersetId!, () => []).add(exercise);
+        supersetGroups
+            .putIfAbsent(exercise.supersetId!, () => [])
+            .add(exercise);
       } else {
         standaloneExercises.add(exercise);
       }
     }
 
     // Calcular info de superseries
-    final List<SupersetProgressInfo> supersetInfos = [];
+    final supersetInfos = <SupersetProgressInfo>[];
     for (final entry in supersetGroups.entries) {
       final ssExercises = entry.value;
       if (ssExercises.isEmpty) continue;
 
       // Un "round" de superset es completar un set de cada ejercicio
-      final minSets = ssExercises.map((e) => e.logs.length).reduce((a, b) => a < b ? a : b);
+      final minSets =
+          ssExercises.map((e) => e.logs.length).reduce((a, b) => a < b ? a : b);
 
-      int completedRounds = 0;
-      for (int round = 0; round < minSets; round++) {
+      var completedRounds = 0;
+      for (var round = 0; round < minSets; round++) {
         final roundComplete = ssExercises.every(
           (e) => round < e.logs.length && e.logs[round].completed,
         );
         if (roundComplete) completedRounds++;
       }
 
-      supersetInfos.add(SupersetProgressInfo(
-        supersetId: entry.key,
-        exerciseNames: ssExercises.map((e) => e.nombre).toList(),
-        totalRounds: minSets,
-        completedRounds: completedRounds,
-        isComplete: completedRounds >= minSets,
-      ));
+      supersetInfos.add(
+        SupersetProgressInfo(
+          supersetId: entry.key,
+          exerciseNames: ssExercises.map((e) => e.nombre).toList(),
+          totalRounds: minSets,
+          completedRounds: completedRounds,
+          isComplete: completedRounds >= minSets,
+        ),
+      );
     }
 
     // Calcular porcentaje
@@ -182,7 +190,7 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
     final isComplete = completedSets >= totalSets && totalSets > 0;
 
     // Determinar milestone alcanzado
-    int currentMilestone = 0;
+    var currentMilestone = 0;
     if (percentage >= 1.0) {
       currentMilestone = 100;
     } else if (percentage >= 0.75) {
@@ -235,8 +243,9 @@ class SessionProgressNotifier extends StateNotifier<SessionProgress> {
 }
 
 /// Provider principal del progreso de sesión
-final sessionProgressProvider = StateNotifierProvider<SessionProgressNotifier, SessionProgress>(
-  (ref) => SessionProgressNotifier(ref),
+final sessionProgressProvider =
+    NotifierProvider<SessionProgressNotifier, SessionProgress>(
+  SessionProgressNotifier.new,
 );
 
 /// Provider de conveniencia para el porcentaje
@@ -309,19 +318,21 @@ class ExerciseCompletionInfo {
 }
 
 /// Notifier que trackea ejercicios completados y permite mostrar feedback
-class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> {
-  final Ref ref;
+class ExerciseCompletionNotifier extends Notifier<ExerciseCompletionInfo?> {
   Set<int> _completedExercises = {};
-  
-  ExerciseCompletionNotifier(this.ref) : super(null) {
+
+  @override
+  ExerciseCompletionInfo? build() {
     // Escuchar cambios en el training state
     ref.listen<TrainingState>(trainingSessionProvider, (prev, next) {
       _checkForNewlyCompletedExercise(prev, next);
     });
+    return null;
   }
-  
-  void _checkForNewlyCompletedExercise(TrainingState? prev, TrainingState next) {
-    for (int i = 0; i < next.exercises.length; i++) {
+
+  void _checkForNewlyCompletedExercise(
+      TrainingState? prev, TrainingState next,) {
+    for (var i = 0; i < next.exercises.length; i++) {
       final exercise = next.exercises[i];
       final allCompleted = exercise.logs.every((log) => log.completed);
 
@@ -339,9 +350,10 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
 
         const targetReps = 8; // Default, idealmente vendría del ejercicio
         final completedSets = exercise.logs.where((l) => l.completed).length;
-        final totalReps = exercise.logs.fold<int>(0, (sum, log) => sum + log.reps);
+        final totalReps =
+            exercise.logs.fold<int>(0, (sum, log) => sum + log.reps);
         final metTarget = exercise.logs.every((l) => l.reps >= targetReps);
-        
+
         state = ExerciseCompletionInfo(
           exerciseIndex: i,
           exerciseName: exercise.nombre,
@@ -349,22 +361,24 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
           targetSets: exercise.logs.length,
           totalReps: totalReps,
           metTarget: metTarget,
-          nextSessionHint: metTarget ? 'Próxima: más peso o reps' : 'Repite este objetivo',
-          needsHapticFeedback: true, // La UI debe consumir esto y disparar haptic
+          nextSessionHint:
+              metTarget ? 'Próxima: más peso o reps' : 'Repite este objetivo',
+          needsHapticFeedback:
+              true, // La UI debe consumir esto y disparar haptic
         );
-        
+
         // Auto-clear después de 5 segundos si no se dismissea
         Future.delayed(const Duration(seconds: 5), () {
-          if (mounted && state?.exerciseIndex == i) {
+          if (ref.mounted && state?.exerciseIndex == i) {
             state = null;
           }
         });
-        
+
         return; // Solo un ejercicio a la vez
       }
     }
   }
-  
+
   /// Limpia el estado de completitud mostrado
   void dismiss() {
     state = null;
@@ -385,6 +399,7 @@ class ExerciseCompletionNotifier extends StateNotifier<ExerciseCompletionInfo?> 
 }
 
 /// Provider para ejercicio recién completado
-final exerciseCompletionProvider = StateNotifierProvider<ExerciseCompletionNotifier, ExerciseCompletionInfo?>(
-  (ref) => ExerciseCompletionNotifier(ref),
+final exerciseCompletionProvider =
+    NotifierProvider<ExerciseCompletionNotifier, ExerciseCompletionInfo?>(
+  ExerciseCompletionNotifier.new,
 );

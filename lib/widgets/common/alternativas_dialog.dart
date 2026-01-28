@@ -1,9 +1,10 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/library_exercise.dart';
 import '../../services/alternativas_service.dart';
+import '../../utils/design_system.dart';
 
 /// Dialog que muestra las alternativas para un ejercicio.
 class AlternativasDialog extends StatelessWidget {
@@ -40,7 +41,8 @@ class AlternativasDialog extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.swap_horiz, color: AppColors.neonPrimary, size: 24),
+              const Icon(Icons.swap_horiz,
+                  color: AppColors.neonPrimary, size: 24,),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -109,7 +111,8 @@ class AlternativasDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildAlternativasList(BuildContext context, List<LibraryExercise> alternativas) {
+  Widget _buildAlternativasList(
+      BuildContext context, List<LibraryExercise> alternativas,) {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: alternativas.length,
@@ -123,7 +126,9 @@ class AlternativasDialog extends StatelessWidget {
           exercise: alternativa,
           isFirst: index == 0,
           onTap: () {
-            try { HapticFeedback.selectionClick(); } catch (_) {}
+            try {
+              HapticFeedback.selectionClick();
+            } catch (_) {}
             Navigator.pop(context);
             onReplace(alternativa);
           },

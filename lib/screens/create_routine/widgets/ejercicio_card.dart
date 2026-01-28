@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,8 +7,8 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
-import 'package:juan_training/services/exercise_library_service.dart';
 import 'package:juan_training/services/alternativas_service.dart';
+import 'package:juan_training/services/exercise_library_service.dart';
 import 'package:juan_training/widgets/common/alternativas_dialog.dart';
 
 /// Payload passed through drag events so the parent knows which item is moving.
@@ -59,7 +60,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
   @override
   void initState() {
     super.initState();
-    _seriesController = TextEditingController(text: widget.ejercicio.series.toString());
+    _seriesController =
+        TextEditingController(text: widget.ejercicio.series.toString());
     _repsController = TextEditingController(text: widget.ejercicio.repsRange);
   }
 
@@ -101,24 +103,29 @@ class _EjercicioCardState extends State<EjercicioCard> {
     super.dispose();
   }
 
-  void _showAlternativasDialog(BuildContext context, LibraryExercise? libExercise) {
+  void _showAlternativasDialog(
+      BuildContext context, LibraryExercise? libExercise,) {
     if (libExercise == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: No se encontró información del ejercicio en la biblioteca')),
+        const SnackBar(
+            content: Text(
+                'Error: No se encontró información del ejercicio en la biblioteca',),),
       );
       return;
     }
 
     // Obtenemos la lista completa de ejercicios para que el servicio pueda buscar
-    final allExercises = ExerciseLibraryService.instance.exercises.cast<LibraryExercise>();
+    final allExercises =
+        ExerciseLibraryService.instance.exercises.cast<LibraryExercise>();
 
     showAlternativasDialog(
       context: context,
       ejercicioOriginal: libExercise,
       allExercises: allExercises,
       onReplace: (LibraryExercise seleccion) {
-        try { HapticFeedback.vibrate(); } catch (_) {}
-
+        try {
+          HapticFeedback.vibrate();
+        } catch (_) {}
 
         if (widget.onReplace != null) {
           widget.onReplace!(seleccion.name);
@@ -147,7 +154,9 @@ class _EjercicioCardState extends State<EjercicioCard> {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-            left: 24, right: 24, top: 24,
+            left: 24,
+            right: 24,
+            top: 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -155,14 +164,19 @@ class _EjercicioCardState extends State<EjercicioCard> {
               Text(
                 'OPCIONES: ${widget.ejercicio.nombre}',
                 style: GoogleFonts.montserrat(
-                  fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 16),
 
               if (widget.onUnlink != null)
                 ListTile(
                   leading: const Icon(Icons.link_off, color: Colors.orange),
-                  title: const Text('DESVINCULAR (ROMPER SUPERSERIE)', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                  title: const Text('DESVINCULAR (ROMPER SUPERSERIE)',
+                      style: TextStyle(
+                          color: Colors.orange, fontWeight: FontWeight.bold,),),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     widget.onUnlink!();
@@ -172,7 +186,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
               TextFormField(
                 initialValue: widget.ejercicio.notas,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: 'Notas / RPE / Tempo'),
+                decoration:
+                    const InputDecoration(labelText: 'Notas / RPE / Tempo'),
                 onChanged: (val) {
                   widget.onUpdate(widget.ejercicio.copyWith(notas: val));
                 },
@@ -181,16 +196,20 @@ class _EjercicioCardState extends State<EjercicioCard> {
               // Rest Time
               Row(
                 children: [
-                  const Text('Descanso (seg): ', style: TextStyle(color: Colors.white)),
+                  const Text('Descanso (seg): ',
+                      style: TextStyle(color: Colors.white),),
                   Expanded(
                     child: TextFormField(
-                      initialValue: widget.ejercicio.descansoSugerido?.inSeconds.toString() ?? '60',
+                      initialValue: widget.ejercicio.descansoSugerido?.inSeconds
+                              .toString() ??
+                          '60',
                       keyboardType: TextInputType.number,
                       style: const TextStyle(color: Colors.white),
                       onChanged: (val) {
                         final sec = int.tryParse(val);
                         if (sec != null) {
-                          widget.onUpdate(widget.ejercicio.copyWith(descansoSugerido: Duration(seconds: sec)));
+                          widget.onUpdate(widget.ejercicio.copyWith(
+                              descansoSugerido: Duration(seconds: sec),),);
                         }
                       },
                     ),
@@ -205,7 +224,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
                 },
                 icon: const Icon(Icons.delete, color: Colors.white),
                 label: const Text('ELIMINAR EJERCICIO'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red[900]),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: Colors.red[900]),
               ),
               const SizedBox(height: 24),
             ],
@@ -218,7 +238,7 @@ class _EjercicioCardState extends State<EjercicioCard> {
   @override
   Widget build(BuildContext context) {
     // Lookup library exercise by library ID (more reliable than matching by name)
-    final int? libId = int.tryParse(widget.ejercicio.id);
+    final libId = int.tryParse(widget.ejercicio.id);
     final libraryExercise = libId == null
         ? null
         : ExerciseLibraryService.instance.exercises
@@ -228,8 +248,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
     final imageWidget = _buildImage(libraryExercise);
 
     // Verificar si hay alternativas usando el ID entero
-    final bool tieneAlternativas = libId != null &&
-        AlternativasService.instance.hasAlternativas(libId);
+    final tieneAlternativas =
+        libId != null && AlternativasService.instance.hasAlternativas(libId);
 
     final card = Card(
       color: Colors.grey[900],
@@ -256,7 +276,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   Text(
                     widget.ejercicio.nombre.toUpperCase(),
                     style: GoogleFonts.montserrat(
-                      fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -264,7 +287,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
                   Text(
                     widget.ejercicio.musculosPrincipales.join(', '),
                     style: GoogleFonts.montserrat(
-                      fontSize: 10, color: Colors.grey[400], fontWeight: FontWeight.bold),
+                      fontSize: 10,
+                      color: Colors.grey[400],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   // Series x Reps Inputs with controllers to prevent focus loss
@@ -276,15 +302,23 @@ class _EjercicioCardState extends State<EjercicioCard> {
                           controller: _seriesController,
                           keyboardType: TextInputType.number,
                           style: GoogleFonts.montserrat(
-                              fontSize: 14, color: Colors.white, fontWeight: FontWeight.w800),
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                           decoration: const InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 4,),
+                            border: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey),),
                           ),
                           onChanged: (val) {
                             final s = int.tryParse(val);
-                            if (s != null) widget.onUpdate(widget.ejercicio.copyWith(series: s));
+                            if (s != null) {
+                              widget.onUpdate(
+                                  widget.ejercicio.copyWith(series: s),);
+                            }
                           },
                         ),
                       ),
@@ -294,14 +328,20 @@ class _EjercicioCardState extends State<EjercicioCard> {
                         child: TextField(
                           controller: _repsController,
                           style: GoogleFonts.montserrat(
-                              fontSize: 14, color: Colors.white, fontWeight: FontWeight.w800),
+                            fontSize: 14,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                           decoration: const InputDecoration(
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 4,),
+                            border: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.grey),),
                           ),
                           onChanged: (val) {
-                            widget.onUpdate(widget.ejercicio.copyWith(repsRange: val));
+                            widget.onUpdate(
+                                widget.ejercicio.copyWith(repsRange: val),);
                           },
                         ),
                       ),
@@ -314,8 +354,10 @@ class _EjercicioCardState extends State<EjercicioCard> {
             // Alternatives button
             if (tieneAlternativas)
               IconButton(
-                icon: Icon(Icons.swap_horiz, color: Colors.orange[600], size: 20),
-                onPressed: () => _showAlternativasDialog(context, libraryExercise),
+                icon:
+                    Icon(Icons.swap_horiz, color: Colors.orange[600], size: 20),
+                onPressed: () =>
+                    _showAlternativasDialog(context, libraryExercise),
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Ver alternativas',
               ),
@@ -382,7 +424,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
           width: 60,
           height: 60,
           fit: BoxFit.cover,
-          errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+          errorBuilder: (ctx, err, stack) =>
+              const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
         );
       }
       return Image.asset(
@@ -390,7 +433,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+        errorBuilder: (ctx, err, stack) =>
+            const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
       );
     }
 
@@ -403,7 +447,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
             width: 60,
             height: 60,
             fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+            errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center,
+                color: Colors.white24, size: 30,),
           );
         }
       }
@@ -417,7 +462,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
         width: 60,
         height: 60,
         fit: BoxFit.cover,
-        errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+        errorBuilder: (ctx, err, stack) =>
+            const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
       );
     }
 
@@ -426,7 +472,8 @@ class _EjercicioCardState extends State<EjercicioCard> {
       width: 60,
       height: 60,
       fit: BoxFit.cover,
-      errorBuilder: (ctx, err, stack) => const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
+      errorBuilder: (ctx, err, stack) =>
+          const Icon(Icons.fitness_center, color: Colors.white24, size: 30),
     );
   }
 }

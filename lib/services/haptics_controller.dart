@@ -6,43 +6,43 @@ import 'package:flutter/widgets.dart';
 /// La lógica decide QUÉ ocurrió, el controller decide CÓMO vibrar
 enum HapticEvent {
   // === Entrenamiento ===
-  setCompleted,        // Serie completada
-  exerciseCompleted,   // Ejercicio completo (todas las series)
-  milestone50,         // 50% del entrenamiento
-  milestone75,         // 75% del entrenamiento
-  sessionCompleted,    // 100% del entrenamiento - celebración
-  prAchieved,          // Personal Record
+  setCompleted, // Serie completada
+  exerciseCompleted, // Ejercicio completo (todas las series)
+  milestone50, // 50% del entrenamiento
+  milestone75, // 75% del entrenamiento
+  sessionCompleted, // 100% del entrenamiento - celebración
+  prAchieved, // Personal Record
 
   // === Timer/Descanso ===
-  restFinished,        // Descanso terminado
-  restWarning5s,       // Quedan 5 segundos
-  restWarning3s,       // Quedan 3 segundos
-  timerPaused,         // Timer pausado
-  timerResumed,        // Timer reanudado
+  restFinished, // Descanso terminado
+  restWarning5s, // Quedan 5 segundos
+  restWarning3s, // Quedan 3 segundos
+  timerPaused, // Timer pausado
+  timerResumed, // Timer reanudado
 
   // === Input/UI ===
-  focusChanged,        // Auto-focus cambió de campo
-  inputSubmit,         // Valor enviado (peso/reps)
-  buttonTap,           // Tap en botón crítico
+  focusChanged, // Auto-focus cambió de campo
+  inputSubmit, // Valor enviado (peso/reps)
+  buttonTap, // Tap en botón crítico
 
   // === Voz ===
-  voiceStarted,        // Empezó a escuchar
-  voiceStopped,        // Dejó de escuchar
-  voiceSuccess,        // Reconocimiento exitoso
-  voiceError,          // Error de reconocimiento
+  voiceStarted, // Empezó a escuchar
+  voiceStopped, // Dejó de escuchar
+  voiceSuccess, // Reconocimiento exitoso
+  voiceError, // Error de reconocimiento
 
   // === Música ===
-  mediaCommand,        // Comando de media enviado
+  mediaCommand, // Comando de media enviado
 
   // === Rutinas ===
-  routineForged,       // ¡Rutina creada! ("Rutina forjada")
+  routineForged, // ¡Rutina creada! ("Rutina forjada")
 }
 
 /// Nivel de importancia del evento - determina si se throttlea
 enum _HapticPriority {
-  low,      // UI menor - puede omitirse
-  medium,   // Normal - throttling moderado
-  high,     // Importante - throttling mínimo
+  low, // UI menor - puede omitirse
+  medium, // Normal - throttling moderado
+  high, // Importante - throttling mínimo
   critical, // Siempre vibra (PR, session complete)
 }
 
@@ -79,7 +79,7 @@ class HapticsController with WidgetsBindingObserver {
 
   // === Throttling ===
   final Map<HapticEvent, DateTime> _lastTriggerTime = {};
-  static const _defaultThrottleMs = 200;  // ms mínimo entre vibraciones
+  static const _defaultThrottleMs = 200; // ms mínimo entre vibraciones
   static const _highPriorityThrottleMs = 100;
   static const _lowPriorityThrottleMs = 500;
 
@@ -125,12 +125,12 @@ class HapticsController with WidgetsBindingObserver {
   // ════════════════════════════════════════════════════════════════════════════
 
   /// Habilita/deshabilita todos los haptics
-  void setEnabled(bool enabled) {
+  void setEnabled({required bool enabled}) {
     _enabled = enabled;
   }
 
   /// Modo reducido (solo eventos críticos)
-  void setReduceVibrations(bool reduce) {
+  void setReduceVibrations({required bool reduce}) {
     _reduceVibrations = reduce;
   }
 

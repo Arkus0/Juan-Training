@@ -3,7 +3,7 @@
 /// ============================================================================
 ///
 /// Implementa feedback visceral pero CONTENIDO para hitos de progreso.
-/// 
+///
 /// PRINCIPIOS:
 /// - Celebraciones BREVES, no exageradas
 /// - Oro cálido para logros (sutil, no brillante)
@@ -26,7 +26,7 @@ import '../../utils/design_system.dart';
 class MilestoneCelebrationController {
   // Tracks which milestones have been shown to avoid repeats
   final Set<int> _shownMilestones = {};
-  
+
   /// Verifica si un hito debe mostrarse y lo marca como mostrado
   bool shouldShowMilestone(int percentage) {
     final milestones = [25, 50, 75, 100];
@@ -34,14 +34,14 @@ class MilestoneCelebrationController {
       (m) => percentage >= m && !_shownMilestones.contains(m),
       orElse: () => -1,
     );
-    
+
     if (milestone != -1) {
       _shownMilestones.add(milestone);
       return true;
     }
     return false;
   }
-  
+
   /// Obtiene el hito alcanzado
   int? getMilestoneReached(int percentage) {
     if (percentage >= 100 && !_shownMilestones.contains(100)) return 100;
@@ -50,7 +50,7 @@ class MilestoneCelebrationController {
     if (percentage >= 25 && !_shownMilestones.contains(25)) return 25;
     return null;
   }
-  
+
   /// Resetea los hitos mostrados (para nueva sesión)
   void reset() {
     _shownMilestones.clear();
@@ -71,7 +71,8 @@ void showMilestoneCelebration(BuildContext context, int milestone) {
       break;
     case 75:
       HapticFeedback.heavyImpact();
-      _showMicroToast(context, '¡Ya casi lo tienes! 🔥', Icons.local_fire_department);
+      _showMicroToast(
+          context, '¡Ya casi lo tienes! 🔥', Icons.local_fire_department,);
       break;
     case 100:
       HapticFeedback.vibrate();
@@ -83,16 +84,16 @@ void showMilestoneCelebration(BuildContext context, int milestone) {
 /// Toast no invasivo (aparece arriba, desaparece rápido)
 void _showMicroToast(BuildContext context, String message, IconData icon) {
   final overlay = Overlay.of(context);
-  
+
   final overlayEntry = OverlayEntry(
     builder: (context) => _MicroToast(
       message: message,
       icon: icon,
     ),
   );
-  
+
   overlay.insert(overlayEntry);
-  
+
   // Remover después de 1.5 segundos
   Future.delayed(const Duration(milliseconds: 1500), () {
     overlayEntry.remove();
@@ -103,13 +104,13 @@ void _showMicroToast(BuildContext context, String message, IconData icon) {
 void _showCompletionCelebration(BuildContext context) {
   showDialog(
     context: context,
-    barrierDismissible: true,
     barrierColor: Colors.black54,
     builder: (context) => const _CompletionCelebrationDialog(),
   );
-  
+
   // Auto-cerrar después de 2 segundos
   Future.delayed(const Duration(milliseconds: 2000), () {
+    if (!context.mounted) return;
     if (Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -120,22 +121,22 @@ void _showCompletionCelebration(BuildContext context) {
 class _MicroToast extends StatefulWidget {
   final String message;
   final IconData icon;
-  
+
   const _MicroToast({
     required this.message,
     required this.icon,
   });
-  
+
   @override
   State<_MicroToast> createState() => _MicroToastState();
 }
 
-class _MicroToastState extends State<_MicroToast> 
+class _MicroToastState extends State<_MicroToast>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -143,18 +144,18 @@ class _MicroToastState extends State<_MicroToast>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, -0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    
+
     _controller.forward();
-    
+
     // Fade out después de 1 segundo
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
@@ -162,13 +163,13 @@ class _MicroToastState extends State<_MicroToast>
       }
     });
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -184,7 +185,7 @@ class _MicroToastState extends State<_MicroToast>
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 // Verde apagado para completado, sutil
-                color: AppColors.completedGreen.withValues(alpha:0.9),
+                color: AppColors.completedGreen.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(AppRadius.round),
                 boxShadow: AppShadows.elevated,
               ),
@@ -216,19 +217,19 @@ class _MicroToastState extends State<_MicroToast>
 /// Diálogo de celebración al completar sesión
 class _CompletionCelebrationDialog extends StatefulWidget {
   const _CompletionCelebrationDialog();
-  
+
   @override
-  State<_CompletionCelebrationDialog> createState() => 
+  State<_CompletionCelebrationDialog> createState() =>
       _CompletionCelebrationDialogState();
 }
 
-class _CompletionCelebrationDialogState 
+class _CompletionCelebrationDialogState
     extends State<_CompletionCelebrationDialog>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -236,24 +237,24 @@ class _CompletionCelebrationDialogState
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
     );
-    
+
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-    
+
     _controller.forward();
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -268,7 +269,7 @@ class _CompletionCelebrationDialogState
               borderRadius: BorderRadius.circular(AppRadius.xl),
               // Oro cálido sutil para celebración final
               border: Border.all(
-                color: AppColors.goldAccent.withValues(alpha:0.4),
+                color: AppColors.goldAccent.withValues(alpha: 0.4),
                 width: 2,
               ),
               boxShadow: AppShadows.glow(AppColors.goldAccent),
@@ -279,7 +280,7 @@ class _CompletionCelebrationDialogState
                 // Icono animado - Oro para logro
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.goldSubtle,
                     shape: BoxShape.circle,
                   ),
@@ -289,9 +290,9 @@ class _CompletionCelebrationDialogState
                     color: AppColors.goldAccent,
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 Text(
                   '¡SESIÓN COMPLETADA!',
                   style: AppTypography.hero.copyWith(
@@ -300,9 +301,9 @@ class _CompletionCelebrationDialogState
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'Gran trabajo 💪',
                   style: AppTypography.label.copyWith(
@@ -323,13 +324,13 @@ class _CompletionCelebrationDialogState
 class PRCelebration extends StatelessWidget {
   final String exerciseName;
   final String improvement;
-  
+
   const PRCelebration({
     super.key,
     required this.exerciseName,
     required this.improvement,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -339,7 +340,7 @@ class PRCelebration extends StatelessWidget {
         color: AppColors.goldSubtle,
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: AppColors.goldAccent.withValues(alpha:0.3),
+          color: AppColors.goldAccent.withValues(alpha: 0.3),
         ),
       ),
       child: Row(

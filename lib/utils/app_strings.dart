@@ -207,8 +207,7 @@ abstract class AppStrings {
 /// Formateador de strings con parámetros
 class AppStringFormatter {
   /// Formatea "SERIE X DE Y"
-  static String setOf(int current, int total) =>
-      'SERIE $current DE $total';
+  static String setOf(int current, int total) => 'SERIE $current DE $total';
 
   /// Formatea peso con kg
   static String weight(double kg) {
@@ -225,6 +224,5 @@ class AppStringFormatter {
   static String restTime(int seconds) => '${seconds}s';
 
   /// Formatea porcentaje de progreso
-  static String progress(double percentage) =>
-      '${(percentage * 100).round()}%';
+  static String progress(double percentage) => '${(percentage * 100).round()}%';
 }

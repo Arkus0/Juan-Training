@@ -4,7 +4,8 @@ class Sesion {
   final String id;
   final String rutinaId;
   final String? dayName; // Nombre del día entrenado
-  final int? dayIndex; // Índice del día en la rutina (para sugerencia inteligente)
+  final int?
+      dayIndex; // Índice del día en la rutina (para sugerencia inteligente)
   final DateTime fecha;
   final List<Ejercicio> ejerciciosCompletados;
   final List<Ejercicio> ejerciciosObjetivo;
@@ -40,7 +41,8 @@ class Sesion {
       dayName: dayName ?? this.dayName,
       dayIndex: dayIndex ?? this.dayIndex,
       fecha: fecha ?? this.fecha,
-      ejerciciosCompletados: ejerciciosCompletados ?? this.ejerciciosCompletados,
+      ejerciciosCompletados:
+          ejerciciosCompletados ?? this.ejerciciosCompletados,
       ejerciciosObjetivo: ejerciciosObjetivo ?? this.ejerciciosObjetivo,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       isBadDay: isBadDay ?? this.isBadDay,
@@ -62,7 +64,7 @@ class Sesion {
 
   /// Cuenta el total de series completadas.
   int get completedSetsCount {
-    int count = 0;
+    var count = 0;
     for (final ejercicio in ejerciciosCompletados) {
       count += ejercicio.logs.where((l) => l.completed).length;
     }

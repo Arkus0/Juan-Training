@@ -43,7 +43,8 @@ class PerformanceBoundary extends StatelessWidget {
 /// Useful for reducing animation frame rates when 60fps isn't needed.
 class ThrottledBuilder extends StatefulWidget {
   final Widget Function(BuildContext context) builder;
-  final int frameInterval; // Rebuild every N frames (1 = 60fps, 2 = 30fps, 3 = 20fps)
+  final int
+      frameInterval; // Rebuild every N frames (1 = 60fps, 2 = 30fps, 3 = 20fps)
 
   const ThrottledBuilder({
     super.key,
@@ -173,7 +174,8 @@ class MemoCache<K, V> {
     final now = DateTime.now();
 
     if (existing != null) {
-      if (expiration == null || now.difference(existing.timestamp) < expiration!) {
+      if (expiration == null ||
+          now.difference(existing.timestamp) < expiration!) {
         return existing.value;
       }
     }
@@ -295,14 +297,14 @@ class PerformanceMode {
   /// Notifier for performance mode changes
   final ValueNotifier<bool> modeNotifier = ValueNotifier(false);
 
-  void setPerformanceMode(bool enabled) {
+  void setPerformanceMode({required bool enabled}) {
     reduceAnimations = enabled;
     reduceVibrations = enabled;
     useLowPowerMode = enabled;
     modeNotifier.value = enabled;
   }
 
-  void toggle() => setPerformanceMode(!reduceAnimations);
+  void toggle() => setPerformanceMode(enabled: !reduceAnimations);
 }
 
 // ============================================================================
@@ -326,7 +328,6 @@ class OptimizedListConfig {
 /// Creates a ScrollController optimized for performance.
 ScrollController createOptimizedScrollController() {
   return ScrollController(
-    keepScrollOffset: true,
     debugLabel: 'OptimizedScrollController',
   );
 }

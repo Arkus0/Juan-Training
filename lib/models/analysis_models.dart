@@ -18,10 +18,10 @@ class DailyActivity {
   /// Based on volume thresholds (in kg)
   int get intensityLevel {
     if (sessionsCount == 0) return 0;
-    if (totalVolume < 2000) return 1;   // Light session
-    if (totalVolume < 5000) return 2;   // Normal session
-    if (totalVolume < 10000) return 3;  // Heavy session
-    return 4;                            // Beast mode
+    if (totalVolume < 2000) return 1; // Light session
+    if (totalVolume < 5000) return 2; // Normal session
+    if (totalVolume < 10000) return 3; // Heavy session
+    return 4; // Beast mode
   }
 
   /// Create empty activity for a specific date
@@ -37,9 +37,9 @@ class DailyActivity {
 
 /// Recovery status for muscle groups
 enum RecoveryStatus {
-  recovering(0, 2, 'Recuperando', Color(0xFFFF1744)),   // Red - needs rest
-  ready(3, 4, 'Listo', Color(0xFFFFEB3B)),              // Yellow - can train
-  fresh(5, 999, 'Fresco', Color(0xFF4CAF50));           // Green - fully recovered
+  recovering(0, 2, 'Recuperando', Color(0xFFFF1744)), // Red - needs rest
+  ready(3, 4, 'Listo', Color(0xFFFFEB3B)), // Yellow - can train
+  fresh(5, 999, 'Fresco', Color(0xFF4CAF50)); // Green - fully recovered
 
   final int minDays;
   final int maxDays;
@@ -186,8 +186,6 @@ class StreakData {
   static const empty = StreakData(
     currentStreak: 0,
     longestStreak: 0,
-    lastTrainingDate: null,
-    recentDates: [],
   );
 
   /// Check if trained today
@@ -195,8 +193,8 @@ class StreakData {
     if (lastTrainingDate == null) return false;
     final now = DateTime.now();
     return lastTrainingDate!.year == now.year &&
-           lastTrainingDate!.month == now.month &&
-           lastTrainingDate!.day == now.day;
+        lastTrainingDate!.month == now.month &&
+        lastTrainingDate!.day == now.day;
   }
 }
 
@@ -344,7 +342,7 @@ String normalizeMuscleGroup(String muscle) {
 /// (El récord mundial de peso muerto es ~501kg)
 double estimateOneRepMax(double weight, int reps) {
   // Constante: Máximo 1RM razonable en el mundo real
-  const double max1RMCeiling = 600.0;
+  const max1RMCeiling = 600.0;
 
   if (reps <= 0 || weight <= 0) return 0;
   if (reps == 1) return weight.clamp(0, max1RMCeiling);
@@ -373,11 +371,11 @@ double estimateOneRepMax(double weight, int reps) {
 /// Heatmap colors from inactive to maximum intensity
 /// Gradiente rojo: de vacío (#1A1A1A) a lleno (#FF3333 fire)
 const List<Color> kHeatmapColors = [
-  Color(0xFF1A1A1A),  // Level 0 - No activity (dark background)
-  Color(0xFF3D0A0A),  // Level 1 - Low (very dark red)
-  Color(0xFF6E1515),  // Level 2 - Medium-low (dark red blend)
-  Color(0xFFC41E3A),  // Level 3 - Medium-high (bloodRed/Ferrari)
-  Color(0xFFFF3333),  // Level 4 - High (fireRed "on fire")
+  Color(0xFF1A1A1A), // Level 0 - No activity (dark background)
+  Color(0xFF3D0A0A), // Level 1 - Low (very dark red)
+  Color(0xFF6E1515), // Level 2 - Medium-low (dark red blend)
+  Color(0xFFC41E3A), // Level 3 - Medium-high (bloodRed/Ferrari)
+  Color(0xFFFF3333), // Level 4 - High (fireRed "on fire")
 ];
 
 /// Get color for intensity level
@@ -415,26 +413,21 @@ const Map<String, String> kBigLiftNormalized = {
   'press banca': 'Press de Banca',
   'bench press': 'Press de Banca',
   'flat bench': 'Press de Banca',
-
   'sentadilla': 'Sentadilla',
   'squat': 'Sentadilla',
   'back squat': 'Sentadilla',
-
   'peso muerto': 'Peso Muerto',
   'deadlift': 'Peso Muerto',
   'conventional deadlift': 'Peso Muerto',
-
   'press militar': 'Press Militar',
   'overhead press': 'Press Militar',
   'ohp': 'Press Militar',
   'military press': 'Press Militar',
-
   'dominadas': 'Dominadas',
   'pull-ups': 'Dominadas',
   'pullups': 'Dominadas',
   'chin-ups': 'Dominadas',
   'chinups': 'Dominadas',
-
   'remo con barra': 'Remo con Barra',
   'barbell row': 'Remo con Barra',
   'bent over row': 'Remo con Barra',

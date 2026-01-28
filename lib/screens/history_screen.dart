@@ -1,18 +1,19 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import '../models/sesion.dart';
+
 import '../models/rutina.dart';
-import '../models/external_session.dart';
-import 'session_detail_screen.dart';
+import '../models/sesion.dart';
 import '../providers/training_provider.dart';
+import '../utils/design_system.dart';
 import '../widgets/common/app_widgets.dart';
 import '../widgets/external_session_sheet.dart';
-import '../utils/design_system.dart';
+import 'session_detail_screen.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -30,7 +31,7 @@ class HistoryScreen extends ConsumerWidget {
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
               if (value == 'export_all') {
-                final sessions = sessionsAsync.valueOrNull ?? [];
+                final sessions = sessionsAsync.asData?.value ?? [];
                 _exportAllSessions(context, sessions);
               }
             },
@@ -58,25 +59,28 @@ class HistoryScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: Text(
           'SESIÓN EXTERNA',
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
+          style:
+              GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 12),
         ),
       ),
       body: sessionsAsync.when(
-        loading: () => const AppLoadingIndicator(message: 'Cargando historial...'),
+        loading: () =>
+            const AppLoadingIndicator(message: 'Cargando historial...'),
         error: (err, stack) => ErrorStateWidget(
           message: err.toString(),
           onRetry: () => ref.invalidate(sesionesHistoryStreamProvider),
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
-            return _buildEmptyStateWithHint(context);
+            return _buildEmptyStateWithHint(context, ref);
           }
 
           return rutinasAsync.when(
             loading: () => const AppLoadingIndicator(),
-            error: (err, stack) => ErrorStateWidget(message: 'Error cargando rutinas: $err'),
+            error: (err, stack) =>
+                ErrorStateWidget(message: 'Error cargando rutinas: $err'),
             data: (rutinas) {
-              final rutinasMap = {for (var r in rutinas) r.id: r};
+              final rutinasMap = {for (final r in rutinas) r.id: r};
 
               // Agrupar sesiones por semana
               final groupedSessions = _groupSessionsByWeek(sessions);
@@ -115,7 +119,9 @@ class HistoryScreen extends ConsumerWidget {
       } else if (diff < 30) {
         label = 'ESTE MES';
       } else {
-        final monthLabel = DateFormat('MMMM yyyy', 'es_ES').format(session.fecha).toUpperCase();
+        final monthLabel = DateFormat('MMMM yyyy', 'es_ES')
+            .format(session.fecha)
+            .toUpperCase();
         label = monthLabel;
       }
 
@@ -131,9 +137,11 @@ class HistoryScreen extends ConsumerWidget {
     final data = sessions.map((s) => _sessionToMap(s)).toList();
     final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
 
-    Share.share(
-      jsonStr,
-      subject: 'Juan Training - Historial Completo',
+    SharePlus.instance.share(
+      ShareParams(
+        text: jsonStr,
+        subject: 'Juan Training - Historial Completo',
+      ),
     );
   }
 
@@ -141,22 +149,32 @@ class HistoryScreen extends ConsumerWidget {
     return {
       'id': session.id,
       'fecha': session.fecha.toIso8601String(),
-      'duracionMin': session.durationSeconds != null ? (session.durationSeconds! / 60).round() : null,
+      'duracionMin': session.durationSeconds != null
+          ? (session.durationSeconds! / 60).round()
+          : null,
       'volumenTotal': session.totalVolume,
       'seriesCompletadas': session.completedSetsCount,
-      'ejercicios': session.ejerciciosCompletados.map((e) => {
-        'nombre': e.nombre,
-        'series': e.logs.map((l) => {
-          'peso': l.peso,
-          'reps': l.reps,
-          'completado': l.completed,
-          'rpe': l.rpe,
-        }).toList(),
-      }).toList(),
+      'ejercicios': session.ejerciciosCompletados
+          .map(
+            (e) => {
+              'nombre': e.nombre,
+              'series': e.logs
+                  .map(
+                    (l) => {
+                      'peso': l.peso,
+                      'reps': l.reps,
+                      'completado': l.completed,
+                      'rpe': l.rpe,
+                    },
+                  )
+                  .toList(),
+            },
+          )
+          .toList(),
     };
   }
 
-  Widget _buildEmptyStateWithHint(BuildContext context) {
+  Widget _buildEmptyStateWithHint(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -192,13 +210,15 @@ class HistoryScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.neonCyan.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.neonCyan.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: AppColors.neonCyan.withValues(alpha: 0.3),),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.lightbulb_outline, color: AppColors.neonCyan, size: 20),
+                      const Icon(Icons.lightbulb_outline,
+                          color: AppColors.neonCyan, size: 20,),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -224,7 +244,7 @@ class HistoryScreen extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showExternalSessionSheet(context),
+                      onPressed: () => _showExternalSessionSheet(context, ref),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('AGREGAR SESIÓN EXTERNA'),
                       style: OutlinedButton.styleFrom(
@@ -244,7 +264,9 @@ class HistoryScreen extends ConsumerWidget {
 
   /// 🎯 FIX #5: Muestra el sheet para agregar sesión externa y la guarda en la BD
   void _showExternalSessionSheet(BuildContext context, WidgetRef ref) async {
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
 
     final externalSession = await ExternalSessionSheet.show(context);
 
@@ -263,7 +285,8 @@ class HistoryScreen extends ConsumerWidget {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+                  const Icon(Icons.check_circle,
+                      color: AppColors.neonCyan, size: 20,),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -279,7 +302,6 @@ class HistoryScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 side: const BorderSide(color: AppColors.border),
               ),
-              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -289,7 +311,8 @@ class HistoryScreen extends ConsumerWidget {
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                  const Icon(Icons.error_outline,
+                      color: AppColors.error, size: 20,),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -349,11 +372,13 @@ class _WeekSection extends StatelessWidget {
             ],
           ),
         ),
-        ...sessions.map((session) => _SessionTile(
-          key: ValueKey(session.id),
-          session: session,
-          rutinasMap: rutinasMap,
-        )),
+        ...sessions.map(
+          (session) => _SessionTile(
+            key: ValueKey(session.id),
+            session: session,
+            rutinasMap: rutinasMap,
+          ),
+        ),
         const SizedBox(height: 8),
       ],
     );
@@ -364,7 +389,8 @@ class _SessionTile extends StatefulWidget {
   final Sesion session;
   final Map<String, Rutina> rutinasMap;
 
-  const _SessionTile({super.key, required this.session, required this.rutinasMap});
+  const _SessionTile(
+      {super.key, required this.session, required this.rutinasMap,});
 
   @override
   State<_SessionTile> createState() => _SessionTileState();
@@ -378,29 +404,35 @@ class _SessionTileState extends State<_SessionTile> {
     final rutina = widget.rutinasMap[widget.session.rutinaId];
     final rutinaName = rutina?.nombre ?? 'RUTINA ELIMINADA';
 
-    final dateStr = DateFormat('d MMM', 'es_ES').format(widget.session.fecha).toUpperCase();
+    final dateStr =
+        DateFormat('d MMM', 'es_ES').format(widget.session.fecha).toUpperCase();
     final timeStr = DateFormat('HH:mm').format(widget.session.fecha);
 
     final durationText = widget.session.durationSeconds != null
-       ? '${(widget.session.durationSeconds! / 60).toStringAsFixed(0)} MIN'
-       : 'N/A';
+        ? '${(widget.session.durationSeconds! / 60).toStringAsFixed(0)} MIN'
+        : 'N/A';
 
     return Card(
       child: Column(
         children: [
           InkWell(
             onTap: () {
-              try { HapticFeedback.selectionClick(); } catch (_) {}
+              try {
+                HapticFeedback.selectionClick();
+              } catch (_) {}
               setState(() {
                 _isExpanded = !_isExpanded;
               });
             },
             onLongPress: () {
-              try { HapticFeedback.mediumImpact(); } catch (_) {}
+              try {
+                HapticFeedback.mediumImpact();
+              } catch (_) {}
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SessionDetailScreen(sesion: widget.session),
+                  builder: (context) =>
+                      SessionDetailScreen(sesion: widget.session),
                 ),
               );
             },
@@ -421,17 +453,23 @@ class _SessionTileState extends State<_SessionTile> {
                       children: [
                         Text(
                           dateStr.split(' ')[0],
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
-                            height: 1,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                height: 1,
+                              ),
                         ),
                         Text(
-                          dateStr.split(' ').length > 1 ? dateStr.split(' ')[1] : '',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.redAccent[700],
-                            fontWeight: FontWeight.bold,
-                          ),
+                          dateStr.split(' ').length > 1
+                              ? dateStr.split(' ')[1]
+                              : '',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.redAccent[700],
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ],
                     ),
@@ -446,19 +484,24 @@ class _SessionTileState extends State<_SessionTile> {
                             Expanded(
                               child: Text(
                                 rutinaName.toUpperCase(),
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             if (widget.session.dayName != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2,),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[900]?.withValues(alpha: 0.3),
+                                  color:
+                                      Colors.red[900]?.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -475,15 +518,20 @@ class _SessionTileState extends State<_SessionTile> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                            Icon(Icons.access_time,
+                                size: 14, color: Colors.grey[500],),
                             const SizedBox(width: 4),
-                            Text(timeStr, style: Theme.of(context).textTheme.bodySmall),
+                            Text(timeStr,
+                                style: Theme.of(context).textTheme.bodySmall,),
                             const SizedBox(width: 12),
-                            Icon(Icons.timer, size: 14, color: Colors.grey[500]),
+                            Icon(Icons.timer,
+                                size: 14, color: Colors.grey[500],),
                             const SizedBox(width: 4),
-                            Text(durationText, style: Theme.of(context).textTheme.bodySmall),
+                            Text(durationText,
+                                style: Theme.of(context).textTheme.bodySmall,),
                             const SizedBox(width: 12),
-                            Icon(Icons.fitness_center, size: 14, color: Colors.grey[500]),
+                            Icon(Icons.fitness_center,
+                                size: 14, color: Colors.grey[500],),
                             const SizedBox(width: 4),
                             Text(
                               '${(widget.session.totalVolume / 1000).toStringAsFixed(1)}t',
@@ -506,7 +554,9 @@ class _SessionTileState extends State<_SessionTile> {
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: _buildExpandedContent(),
-            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
         ],
@@ -524,7 +574,8 @@ class _SessionTileState extends State<_SessionTile> {
           const SizedBox(height: 8),
           // Lista de ejercicios resumida
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
-            final completedSets = ejercicio.logs.where((l) => l.completed).length;
+            final completedSets =
+                ejercicio.logs.where((l) => l.completed).length;
             final maxWeight = ejercicio.logs
                 .where((l) => l.completed)
                 .fold(0.0, (max, l) => l.peso > max ? l.peso : max);
@@ -535,7 +586,8 @@ class _SessionTileState extends State<_SessionTile> {
                   Expanded(
                     child: Text(
                       ejercicio.nombre,
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -547,7 +599,10 @@ class _SessionTileState extends State<_SessionTile> {
                   const SizedBox(width: 12),
                   Text(
                     '${maxWeight}kg max',
-                    style: TextStyle(color: Colors.redAccent[100], fontSize: 12, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.redAccent[100],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,),
                   ),
                 ],
               ),
@@ -571,7 +626,8 @@ class _SessionTileState extends State<_SessionTile> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SessionDetailScreen(sesion: widget.session),
+                        builder: (context) =>
+                            SessionDetailScreen(sesion: widget.session),
                       ),
                     );
                   },
@@ -601,29 +657,40 @@ class _SessionTileState extends State<_SessionTile> {
   }
 
   void _exportSession(BuildContext context, Sesion session) {
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
 
     final buffer = StringBuffer();
     buffer.writeln('=== JUAN TRAINING ===');
-    buffer.writeln('Fecha: ${DateFormat('dd/MM/yyyy HH:mm', 'es_ES').format(session.fecha)}');
+    buffer.writeln(
+        'Fecha: ${DateFormat('dd/MM/yyyy HH:mm', 'es_ES').format(session.fecha)}',);
     if (session.dayName != null) buffer.writeln('Día: ${session.dayName}');
     buffer.writeln('Duración: ${session.formattedDuration}');
-    buffer.writeln('Volumen Total: ${(session.totalVolume / 1000).toStringAsFixed(1)} toneladas');
-    buffer.writeln('');
+    buffer.writeln(
+        'Volumen Total: ${(session.totalVolume / 1000).toStringAsFixed(1)} toneladas',);
+    buffer.writeln();
     buffer.writeln('--- EJERCICIOS ---');
 
     for (final ejercicio in session.ejerciciosCompletados) {
-      buffer.writeln('');
+      buffer.writeln();
       buffer.writeln('${ejercicio.nombre}:');
       for (var i = 0; i < ejercicio.logs.length; i++) {
         final log = ejercicio.logs[i];
         if (log.completed) {
           final rpeStr = log.rpe != null ? ' RPE:${log.rpe}' : '';
-          buffer.writeln('  Serie ${i + 1}: ${log.peso}kg x ${log.reps}$rpeStr');
+          buffer
+              .writeln('  Serie ${i + 1}: ${log.peso}kg x ${log.reps}$rpeStr');
         }
       }
     }
 
-    Share.share(buffer.toString(), subject: 'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}');
+    SharePlus.instance.share(
+      ShareParams(
+        text: buffer.toString(),
+        subject:
+            'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}',
+      ),
+    );
   }
 }

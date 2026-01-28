@@ -10,7 +10,7 @@ import '../../utils/design_system.dart';
 import 'voice_mic_button.dart';
 
 /// Sheet modal para dictado de ejercicios por voz
-/// 
+///
 /// Flujo:
 /// 1. Usuario pulsa mic → empieza a escuchar
 /// 2. Transcripción en tiempo real (gris clarito)
@@ -128,7 +128,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
     } catch (_) {}
   }
 
-  Future<void> _onChangeExercise(int index, VoiceParsedExercise exercise) async {
+  Future<void> _onChangeExercise(
+      int index, VoiceParsedExercise exercise,) async {
     // Mostrar búsqueda de alternativas
     final alternatives = await ref
         .read(voiceInputProvider.notifier)
@@ -145,7 +146,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       builder: (ctx) => _AlternativeExerciseSheet(
         query: exercise.rawText,
         alternatives: alternatives,
-        onSearch: (q) => ref.read(voiceInputProvider.notifier).searchAlternatives(q),
+        onSearch: (q) =>
+            ref.read(voiceInputProvider.notifier).searchAlternatives(q),
       ),
     );
 
@@ -231,9 +233,7 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             const SizedBox(height: 16),
 
             // Preview de transcripción
-            const VoiceTranscriptPreview(
-              
-            ),
+            const VoiceTranscriptPreview(),
             const SizedBox(height: 16),
 
             // Estado de error técnico
@@ -244,7 +244,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
 
             // Estado "No entendido" - feedback claro
             if (voiceState.notUnderstood) ...[
-              _buildNotUnderstoodState(voiceState.notUnderstoodMessage ?? 'No entendido'),
+              _buildNotUnderstoodState(
+                  voiceState.notUnderstoodMessage ?? 'No entendido',),
               const SizedBox(height: 16),
             ],
 
@@ -276,12 +277,15 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                     return _ParsedExerciseCard(
                       exercise: exercise,
                       index: index,
-                      seriesController: _getSeriesController(index, exercise.series),
-                      repsController: _getRepsController(index, exercise.repsRange),
+                      seriesController:
+                          _getSeriesController(index, exercise.series),
+                      repsController:
+                          _getRepsController(index, exercise.repsRange),
                       onSeriesChanged: (v) => _updateExerciseSeries(index, v),
                       onRepsChanged: (v) => _updateExerciseReps(index, v),
                       onRemove: () => _onRemoveExercise(index),
-                      onChangeExercise: () => _onChangeExercise(index, exercise),
+                      onChangeExercise: () =>
+                          _onChangeExercise(index, exercise),
                     );
                   },
                 ),
@@ -304,7 +308,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                        style:
+                            GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -312,7 +317,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: voiceState.validExercises.isNotEmpty ? _onConfirm : null,
+                      onPressed: voiceState.validExercises.isNotEmpty
+                          ? _onConfirm
+                          : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
@@ -321,7 +328,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
                       ),
                       child: Text(
                         'AÑADIR ${voiceState.validExercises.length} EJERCICIO${voiceState.validExercises.length == 1 ? '' : 'S'}',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.w900),
+                        style:
+                            GoogleFonts.montserrat(fontWeight: FontWeight.w900),
                       ),
                     ),
                   ),
@@ -330,7 +338,9 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
             ],
 
             // Sugerencias cuando no hay resultados
-            if (!voiceState.hasResults && !voiceState.isListening && !voiceState.isProcessing) ...[
+            if (!voiceState.hasResults &&
+                !voiceState.isListening &&
+                !voiceState.isProcessing) ...[
               const SizedBox(height: 16),
               _buildSuggestions(),
             ],
@@ -339,14 +349,14 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       ),
     );
   }
-  
+
   /// Indicador de estado actual de la voz
   Widget _buildStatusIndicator(VoiceInputState voiceState) {
     if (voiceState.isListening) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const _PulsingDot(color: Colors.red),
+          const _PulsingDot(color: Colors.red, size: 6),
           const SizedBox(width: 8),
           Text(
             'ESCUCHANDO...',
@@ -391,7 +401,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
+          const Icon(Icons.error_outline,
+              color: AppColors.neonPrimary, size: 20,),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -432,7 +443,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.orange, size: 20,),
               const SizedBox(width: 8),
               Text(
                 'NO ENTENDIDO',
@@ -510,7 +522,8 @@ class _VoiceInputSheetState extends ConsumerState<VoiceInputSheet> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          const Icon(Icons.format_quote, size: 16, color: AppColors.neonPrimary),
+          const Icon(Icons.format_quote,
+              size: 16, color: AppColors.neonPrimary,),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -559,7 +572,9 @@ class _ParsedExerciseCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgElevated : AppColors.live.withValues(alpha: 0.2),
+        color: isValid
+            ? AppColors.bgElevated
+            : AppColors.live.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isValid ? AppColors.border : AppColors.error,
@@ -610,7 +625,8 @@ class _ParsedExerciseCard extends StatelessWidget {
               // Indicador de confianza
               if (isValid) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: confidenceColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -680,7 +696,8 @@ class _ParsedExerciseCard extends StatelessWidget {
               if (exercise.weight != null) ...[
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.bgDeep,
                     borderRadius: BorderRadius.circular(8),
@@ -706,7 +723,8 @@ class _ParsedExerciseCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.goldAccent.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.goldAccent.withValues(alpha: 0.5)),
+                border: Border.all(
+                    color: AppColors.goldAccent.withValues(alpha: 0.5),),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -791,7 +809,8 @@ class _CompactField extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: AppColors.bgDeep,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -816,7 +835,8 @@ class _AlternativeExerciseSheet extends StatefulWidget {
   });
 
   @override
-  State<_AlternativeExerciseSheet> createState() => _AlternativeExerciseSheetState();
+  State<_AlternativeExerciseSheet> createState() =>
+      _AlternativeExerciseSheetState();
 }
 
 class _AlternativeExerciseSheetState extends State<_AlternativeExerciseSheet> {
@@ -1042,7 +1062,7 @@ class _PulsingDot extends StatefulWidget {
 
   const _PulsingDot({
     required this.color,
-    this.size = 12.0,
+    required this.size,
   });
 
   @override

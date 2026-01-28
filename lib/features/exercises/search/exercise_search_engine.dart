@@ -17,8 +17,7 @@ String normalize(String input) {
   final withoutDiacritics = buffer.toString();
   final withoutPunctuation =
       withoutDiacritics.replaceAll(RegExp(r'[^a-z0-9\s]'), ' ');
-  final normalized =
-      withoutPunctuation.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final normalized = withoutPunctuation.replaceAll(RegExp(r'\s+'), ' ').trim();
 
   return normalized;
 }
@@ -328,7 +327,7 @@ class ExerciseSearchEngine {
       addFromToken(token);
     }
 
-    if (candidates.isEmpty) {
+    if (query.tokens.isNotEmpty && candidates.length < maxCandidates) {
       for (final token in query.tokens) {
         final prefix = token.substring(0, min(3, token.length));
         if (prefix.isEmpty) continue;
@@ -373,7 +372,8 @@ class ExerciseSearchEngine {
 
       if (matches.isNotEmpty) {
         final missing = tokens.length - matches.length;
-        final penalty = (missing * 5) + _aliasPenalty(matches, query.aliasTokens);
+        final penalty =
+            (missing * 5) + _aliasPenalty(matches, query.aliasTokens);
         return max(5, 40 - penalty);
       }
     }
@@ -392,12 +392,13 @@ class ExerciseSearchEngine {
     if (query.isEmpty || name.isEmpty) return null;
 
     final maxDistance = max(2, (query.length * 0.25).round());
-    final distance = _levenshteinDistance(query, name, maxDistance: maxDistance);
+    final distance =
+        _levenshteinDistance(query, name, maxDistance: maxDistance);
     if (distance == null) return null;
 
     final maxLen = max(query.length, name.length);
     final similarity = 1 - (distance / maxLen);
-    if (similarity < 0.74) return null;
+    if (similarity < 0.72) return null;
 
     final score = 20 + ((similarity - 0.74) * 30).round();
     return score.clamp(20, 35);

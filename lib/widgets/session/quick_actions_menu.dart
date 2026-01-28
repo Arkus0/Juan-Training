@@ -24,8 +24,8 @@ import '../../utils/design_system.dart';
 
 /// Tipos de acciones rápidas disponibles
 enum QuickActionType {
-  repeat,    // Copiar peso/reps de serie anterior
-  history,   // Ver historial del ejercicio
+  repeat, // Copiar peso/reps de serie anterior
+  history, // Ver historial del ejercicio
   restTimer, // Ajustar tiempo de descanso
   quickNote, // Añadir nota rápida
 }
@@ -231,6 +231,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   label: 'REPITE',
                   sublabel: 'Mismo peso/reps',
                   color: AppColors.bloodRed,
+                  filled: false,
                   onTap: () {
                     _handleAction(widget.onRepeat);
                     _closeMenu();
@@ -244,6 +245,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   label: 'HISTORIAL',
                   sublabel: 'Últimas sesiones',
                   color: AppColors.textPrimary,
+                  filled: false,
                   onTap: () {
                     _handleAction(widget.onHistory);
                     _closeMenu();
@@ -262,6 +264,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   label: _formatTime(widget.currentRestSeconds),
                   sublabel: 'Descanso',
                   color: AppColors.restTeal,
+                  filled: false,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     setState(() {
@@ -278,6 +281,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   label: 'NOTA',
                   sublabel: 'Añadir nota',
                   color: AppColors.techCyan,
+                  filled: false,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     setState(() {
@@ -345,11 +349,13 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               ),
               const SizedBox(width: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.restTeal.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.restTeal.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppColors.restTeal.withValues(alpha: 0.3),),
                 ),
                 child: Text(
                   _formatTime(_selectedRestSeconds),
@@ -387,7 +393,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                   setState(() => _selectedRestSeconds = seconds);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.restTeal.withValues(alpha: 0.2)
@@ -403,7 +410,9 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.restTeal : AppColors.textSecondary,
+                      color: isSelected
+                          ? AppColors.restTeal
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -445,7 +454,8 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     );
   }
 
-  Widget _buildRestControl({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildRestControl(
+      {required IconData icon, required VoidCallback onTap,}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -504,13 +514,13 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
             controller: _noteController,
             autofocus: true,
             maxLines: 2,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.montserrat(
               fontSize: 14,
               color: AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: 'Ej: Subir peso próxima vez, ajustar agarre...',
-              hintStyle: GoogleFonts.inter(
+              hintStyle: GoogleFonts.montserrat(
                 fontSize: 13,
                 color: AppColors.textTertiary,
               ),
@@ -518,15 +528,16 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
               fillColor: AppColors.bgInteractive,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: AppColors.techCyan, width: 1.5),
+                borderSide:
+                    const BorderSide(color: AppColors.techCyan, width: 1.5),
               ),
               contentPadding: const EdgeInsets.all(12),
             ),
@@ -597,7 +608,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
         ),
         child: Text(
           text,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.montserrat(
             fontSize: 11,
             color: AppColors.textSecondary,
           ),
@@ -632,7 +643,7 @@ class _QuickActionTile extends StatelessWidget {
     required this.sublabel,
     required this.color,
     required this.onTap,
-    this.filled = false,
+    required this.filled,
   });
 
   @override
@@ -671,7 +682,7 @@ class _QuickActionTile extends StatelessWidget {
               ),
               Text(
                 sublabel,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.montserrat(
                   fontSize: 9,
                   color: AppColors.textTertiary,
                 ),

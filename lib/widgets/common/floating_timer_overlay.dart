@@ -25,7 +25,8 @@ class FloatingTimerOverlay extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<FloatingTimerOverlay> createState() => _FloatingTimerOverlayState();
+  ConsumerState<FloatingTimerOverlay> createState() =>
+      _FloatingTimerOverlayState();
 }
 
 class _FloatingTimerOverlayState extends ConsumerState<FloatingTimerOverlay> {
@@ -47,7 +48,8 @@ class _FloatingTimerBubble extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_FloatingTimerBubble> createState() => _FloatingTimerBubbleState();
+  ConsumerState<_FloatingTimerBubble> createState() =>
+      _FloatingTimerBubbleState();
 }
 
 class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
@@ -160,14 +162,19 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
           height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isPaused ? AppColors.goldAccent : (isCritical ? AppColors.live : AppColors.bgElevated),
+            color: isPaused
+                ? AppColors.goldAccent
+                : (isCritical ? AppColors.live : AppColors.bgElevated),
             border: Border.all(
-              color: isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : AppColors.border),
+              color: isPaused
+                  ? AppColors.warning
+                  : (isCritical ? AppColors.neonPrimary : AppColors.border),
               width: 3,
             ),
             boxShadow: [
               BoxShadow(
-                color: (isCritical ? AppColors.live : Colors.black).withValues(alpha: 0.6),
+                color: (isCritical ? AppColors.live : Colors.black)
+                    .withValues(alpha: 0.6),
                 blurRadius: 12,
                 spreadRadius: 2,
               ),
@@ -185,7 +192,9 @@ class _FloatingTimerBubbleState extends ConsumerState<_FloatingTimerBubble>
                   strokeWidth: 3,
                   backgroundColor: AppColors.bgDeep,
                   valueColor: AlwaysStoppedAnimation(
-                    isPaused ? AppColors.warning : (isCritical ? AppColors.neonPrimary : Colors.white),
+                    isPaused
+                        ? AppColors.warning
+                        : (isCritical ? AppColors.neonPrimary : Colors.white),
                   ),
                 ),
               ),

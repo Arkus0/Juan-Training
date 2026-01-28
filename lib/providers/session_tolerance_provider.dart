@@ -18,13 +18,13 @@ import 'analysis_provider.dart';
 class SessionToleranceState {
   /// Resultado del análisis de gap de sesión (días sin entrenar)
   final SessionGapResult? sessionGapResult;
-  
+
   /// ¿Ya se mostró el mensaje de bienvenida?
   final bool welcomeMessageShown;
-  
+
   /// Resultado del día malo (si aplica)
   final BadDayResult? badDayResult;
-  
+
   /// Ejercicios con rendimiento difícil en esta sesión
   final Set<String> difficultExercises;
 
@@ -50,16 +50,15 @@ class SessionToleranceState {
   }
 
   /// ¿Debería mostrar mensaje de bienvenida?
-  bool get shouldShowWelcome => 
-      sessionGapResult != null && 
-      sessionGapResult!.message != null && 
+  bool get shouldShowWelcome =>
+      sessionGapResult != null &&
+      sessionGapResult!.message != null &&
       !welcomeMessageShown;
-  
+
   /// ¿Es una vuelta después de muchos días?
-  bool get isComingBack => 
-      sessionGapResult != null && 
-      sessionGapResult!.message != null;
-  
+  bool get isComingBack =>
+      sessionGapResult != null && sessionGapResult!.message != null;
+
   /// Días desde la última sesión
   int get daysSinceLastSession {
     if (sessionGapResult == null) return 0;
@@ -71,16 +70,15 @@ class SessionToleranceState {
 }
 
 /// Provider para el estado de tolerancia de la sesión
-class SessionToleranceNotifier extends StateNotifier<SessionToleranceState> {
-  final Ref _ref;
-
-  SessionToleranceNotifier(this._ref) : super(const SessionToleranceState());
+class SessionToleranceNotifier extends Notifier<SessionToleranceState> {
+  @override
+  SessionToleranceState build() => const SessionToleranceState();
 
   /// Evalúa el gap desde la última sesión
   Future<void> evaluateSessionGap() async {
     try {
-      final streakData = await _ref.read(streakDataProvider.future);
-      
+      final streakData = await ref.read(streakDataProvider.future);
+
       if (streakData.lastTrainingDate == null) {
         // Primera sesión, no hay gap
         return;
@@ -88,7 +86,7 @@ class SessionToleranceNotifier extends StateNotifier<SessionToleranceState> {
 
       // Obtener el último estado del controlador (simplificado a progressing)
       const lastState = ControllerState.progressing;
-      
+
       // Usar un peso de referencia (se ajustará por ejercicio)
       const lastWeight = 0.0; // Se maneja por ejercicio individual
 
@@ -132,10 +130,10 @@ class SessionToleranceNotifier extends StateNotifier<SessionToleranceState> {
       );
     }
   }
-  
+
   /// Limpia el resultado de día malo (después de mostrar feedback)
   void clearBadDayResult() {
-    state = state.copyWith(badDayResult: null);
+    state = state.copyWith();
   }
 
   /// Limpia el estado al terminar sesión
@@ -144,13 +142,14 @@ class SessionToleranceNotifier extends StateNotifier<SessionToleranceState> {
   }
 }
 
-final sessionToleranceProvider = 
-    StateNotifierProvider<SessionToleranceNotifier, SessionToleranceState>((ref) {
-  return SessionToleranceNotifier(ref);
-});
+final sessionToleranceProvider =
+    NotifierProvider<SessionToleranceNotifier, SessionToleranceState>(
+  SessionToleranceNotifier.new,
+);
 
 /// Provider que evalúa automáticamente el gap al iniciar
-final sessionGapEvaluatedProvider = FutureProvider<SessionGapResult?>((ref) async {
+final sessionGapEvaluatedProvider =
+    FutureProvider<SessionGapResult?>((ref) async {
   final notifier = ref.read(sessionToleranceProvider.notifier);
   await notifier.evaluateSessionGap();
   return ref.read(sessionToleranceProvider).sessionGapResult;
@@ -167,6 +166,7 @@ class SuspiciousDataState {
   final double? suggestedWeight;
   final int? exerciseIndex;
   final int? setIndex;
+
   /// Flag para evitar mostrar múltiples diálogos (race condition en rebuild)
   final bool dialogShowing;
 
@@ -186,18 +186,19 @@ class SuspiciousDataState {
   SuspiciousDataState clear() => const SuspiciousDataState();
 
   SuspiciousDataState markDialogShowing() => SuspiciousDataState(
-    exerciseName: exerciseName,
-    enteredWeight: enteredWeight,
-    suggestedWeight: suggestedWeight,
-    exerciseIndex: exerciseIndex,
-    setIndex: setIndex,
-    dialogShowing: true,
-  );
+        exerciseName: exerciseName,
+        enteredWeight: enteredWeight,
+        suggestedWeight: suggestedWeight,
+        exerciseIndex: exerciseIndex,
+        setIndex: setIndex,
+        dialogShowing: true,
+      );
 }
 
-class SuspiciousDataNotifier extends StateNotifier<SuspiciousDataState> {
-  SuspiciousDataNotifier() : super(const SuspiciousDataState());
-  
+class SuspiciousDataNotifier extends Notifier<SuspiciousDataState> {
+  @override
+  SuspiciousDataState build() => const SuspiciousDataState();
+
   /// Registra datos sospechosos para mostrar diálogo
   void setSuspiciousData({
     required String exerciseName,
@@ -214,7 +215,7 @@ class SuspiciousDataNotifier extends StateNotifier<SuspiciousDataState> {
       setIndex: setIndex,
     );
   }
-  
+
   /// Marca que el diálogo se está mostrando (previene múltiples diálogos)
   void markDialogShowing() {
     state = state.markDialogShowing();
@@ -226,7 +227,7 @@ class SuspiciousDataNotifier extends StateNotifier<SuspiciousDataState> {
   }
 }
 
-final suspiciousDataProvider = 
-    StateNotifierProvider<SuspiciousDataNotifier, SuspiciousDataState>((ref) {
-  return SuspiciousDataNotifier();
-});
+final suspiciousDataProvider =
+    NotifierProvider<SuspiciousDataNotifier, SuspiciousDataState>(
+  SuspiciousDataNotifier.new,
+);

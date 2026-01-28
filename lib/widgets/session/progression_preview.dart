@@ -1,12 +1,13 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/progression_engine_models.dart';
+import '../../utils/design_system.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // CONSECUENCIA MESSAGE - WIDGET PRINCIPAL DE UX
 // ════════════════════════════════════════════════════════════════════════════
-// 
+//
 // Filosofía UX (de PROGRESSION_USER_EXPERIENCE.md):
 // - Mostrar CONSECUENCIAS, no métricas
 // - "Si lo logras: +2.5kg" en vez de "Incremento: 2.5kg"
@@ -14,16 +15,16 @@ import '../../models/progression_engine_models.dart';
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Widget de consecuencia clara: "Si lo logras: siguiente vez 82.5kg"
-/// 
+///
 /// Estados según documento UX:
-/// - Normal: "Si lo logras: +2.5kg"  
+/// - Normal: "Si lo logras: +2.5kg"
 /// - Confirmando: "Repite para confirmar subida"
 /// - Deload: "Peso reducido para recuperar"
 /// - Día difícil: "No pasa nada. Completa lo que puedas."
 class ConsequenceMessage extends StatelessWidget {
   final ProgressionDecision decision;
   final bool showIcon;
-  
+
   const ConsequenceMessage({
     super.key,
     required this.decision,
@@ -34,7 +35,7 @@ class ConsequenceMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = _buildMessage();
     final (bgColor, iconColor) = _getColors();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -65,34 +66,34 @@ class ConsequenceMessage extends StatelessWidget {
       ),
     );
   }
-  
+
   String _buildMessage() {
-    final isConfirming = decision.reason.contains('1/2') || 
-                         decision.reason.contains('Confirmando') ||
-                         decision.reason.contains('confirmando');
-    
+    final isConfirming = decision.reason.contains('1/2') ||
+        decision.reason.contains('Confirmando') ||
+        decision.reason.contains('confirmando');
+
     switch (decision.action) {
       case ProgressionAction.increaseWeight:
         final weight = _formatWeight(decision.suggestedWeight);
         return 'Si éxito: ${weight}kg';
-      
+
       case ProgressionAction.increaseReps:
         return 'Siguiente: ${decision.suggestedReps} reps';
-      
+
       case ProgressionAction.maintain:
         if (isConfirming) {
           return 'Repite para confirmar subida';
         }
         return 'Mismo objetivo hoy';
-      
+
       case ProgressionAction.decreaseWeight:
         return 'Peso reducido para recuperar';
-      
+
       case ProgressionAction.decreaseReps:
         return 'Consolidando base';
     }
   }
-  
+
   (Color, Color) _getColors() {
     switch (decision.action) {
       case ProgressionAction.increaseWeight:
@@ -116,7 +117,7 @@ class ConsequenceMessage extends StatelessWidget {
         );
     }
   }
-  
+
   IconData _getIcon() {
     switch (decision.action) {
       case ProgressionAction.increaseWeight:
@@ -130,7 +131,7 @@ class ConsequenceMessage extends StatelessWidget {
         return Icons.flash_on_rounded;
     }
   }
-  
+
   String _formatWeight(double weight) {
     if (weight == weight.roundToDouble()) {
       return weight.toInt().toString();
@@ -140,7 +141,7 @@ class ConsequenceMessage extends StatelessWidget {
 }
 
 /// Widget que muestra la predicción de progresión de forma clara
-/// 
+///
 /// Diseño:
 /// - Muestra claramente qué se espera en esta sesión
 /// - Indica qué pasará si el usuario tiene éxito
@@ -166,9 +167,9 @@ class ProgressionPreviewCard extends StatelessWidget {
         child: ConsequenceMessage(decision: decision),
       );
     }
-    
+
     final (bgColor, borderColor, iconColor) = _getColors(decision);
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -222,9 +223,9 @@ class ProgressionPreviewCard extends StatelessWidget {
             ],
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Peso y reps grandes
         Text(
           '${_formatWeight(decision.suggestedWeight)}kg × ${decision.suggestedReps}',
@@ -234,9 +235,9 @@ class ProgressionPreviewCard extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        
+
         const SizedBox(height: 6),
-        
+
         // Mensaje para usuario
         Text(
           decision.userMessage,
@@ -245,7 +246,7 @@ class ProgressionPreviewCard extends StatelessWidget {
             color: AppColors.textSecondary,
           ),
         ),
-        
+
         // Preview del siguiente paso
         if (decision.nextStepPreview != null) ...[
           const SizedBox(height: 8),
@@ -258,7 +259,8 @@ class ProgressionPreviewCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.next_plan_outlined, size: 12, color: AppColors.textTertiary),
+                const Icon(Icons.next_plan_outlined,
+                    size: 12, color: AppColors.textTertiary,),
                 const SizedBox(width: 4),
                 Text(
                   decision.nextStepPreview!,
@@ -344,12 +346,12 @@ class ProgressionPreviewCard extends StatelessWidget {
 }
 
 /// Badge pequeño para mostrar junto al nombre del ejercicio
-/// 
+///
 /// Muestra estado de confirmación cuando aplica (1/2, 2/2)
 class ProgressionBadge extends StatelessWidget {
   final ProgressionDecision decision;
   final int? confirmationStep; // 1 = esperando confirmación, 2 = confirmado
-  
+
   const ProgressionBadge({
     super.key,
     required this.decision,
@@ -360,15 +362,15 @@ class ProgressionBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _getColor(decision.action);
     final icon = _getIcon(decision.action);
-    final isConfirming = decision.reason.contains('1/2') || 
-                         decision.reason.contains('Confirmando');
+    final isConfirming = decision.reason.contains('1/2') ||
+        decision.reason.contains('Confirmando');
     final label = _getShortLabel(decision.action, isConfirming);
-    
+
     // No mostrar el badge si la etiqueta está vacía (caso "maintain" sin confirmar)
     if (label.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -443,7 +445,7 @@ class ProgressionBadge extends StatelessWidget {
 class ProgressionInfoTooltip extends StatelessWidget {
   final ProgressionDecision decision;
   final ExerciseProgressionContext? context;
-  
+
   const ProgressionInfoTooltip({
     super.key,
     required this.decision,
@@ -473,13 +475,14 @@ class ProgressionInfoTooltip extends StatelessWidget {
               color: AppColors.textTertiary,
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Razón técnica
           Row(
             children: [
-              const Icon(Icons.analytics_outlined, size: 16, color: AppColors.textSecondary),
+              const Icon(Icons.analytics_outlined,
+                  size: 16, color: AppColors.textSecondary,),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -492,9 +495,9 @@ class ProgressionInfoTooltip extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Confianza
           Row(
             children: [
@@ -513,13 +516,12 @@ class ProgressionInfoTooltip extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Contexto adicional si existe
           if (this.context != null) ...[
             const SizedBox(height: 12),
             const Divider(color: Colors.grey),
             const SizedBox(height: 12),
-            
             Text(
               'HISTORIAL',
               style: GoogleFonts.montserrat(
@@ -530,7 +532,6 @@ class ProgressionInfoTooltip extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            
             Text(
               '${this.context!.recentSessions.length} sesiones analizadas',
               style: GoogleFonts.montserrat(
@@ -542,8 +543,8 @@ class ProgressionInfoTooltip extends StatelessWidget {
               '${this.context!.consecutiveSuccesses} éxitos consecutivos',
               style: GoogleFonts.montserrat(
                 fontSize: 11,
-                color: this.context!.consecutiveSuccesses > 0 
-                    ? AppColors.neonCyan 
+                color: this.context!.consecutiveSuccesses > 0
+                    ? AppColors.neonCyan
                     : AppColors.textSecondary,
               ),
             ),
@@ -588,13 +589,13 @@ class ProgressionInfoTooltip extends StatelessWidget {
 }
 
 /// Widget que muestra el progreso de la sesión actual en tiempo real
-/// 
+///
 /// Muestra: ✅ ✅ ✅ ⬜ (75%) - Meta: 80%
 /// El usuario sabe si va bien ANTES de terminar
 class SessionProgressIndicator extends StatelessWidget {
   final List<bool> setsCompleted; // true = serie completada con éxito
   final int successThreshold; // % necesario para éxito (default 80)
-  
+
   const SessionProgressIndicator({
     super.key,
     required this.setsCompleted,
@@ -604,13 +605,13 @@ class SessionProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (setsCompleted.isEmpty) return const SizedBox.shrink();
-    
+
     final completed = setsCompleted.where((s) => s).length;
     final total = setsCompleted.length;
     final percent = (completed / total * 100).round();
     final isSuccess = percent >= successThreshold;
     final setsNeeded = ((successThreshold / 100) * total).ceil() - completed;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -635,9 +636,9 @@ class SessionProgressIndicator extends StatelessWidget {
               ),
             );
           }),
-          
+
           const SizedBox(width: 6),
-          
+
           // Porcentaje
           Text(
             '$percent%',
@@ -647,7 +648,7 @@ class SessionProgressIndicator extends StatelessWidget {
               color: isSuccess ? AppColors.neonCyan : AppColors.textSecondary,
             ),
           ),
-          
+
           // Mensaje de ayuda
           if (!isSuccess && setsNeeded > 0) ...[
             const SizedBox(width: 6),
@@ -659,7 +660,7 @@ class SessionProgressIndicator extends StatelessWidget {
               ),
             ),
           ],
-          
+
           if (isSuccess) ...[
             const SizedBox(width: 4),
             const Icon(Icons.check, size: 12, color: AppColors.neonCyan),
@@ -706,7 +707,7 @@ class ProtectionBadge extends StatelessWidget {
 class IncrementInfoBadge extends StatelessWidget {
   final double increment;
   final String categoryLabel;
-  
+
   const IncrementInfoBadge({
     super.key,
     required this.increment,
@@ -724,7 +725,8 @@ class IncrementInfoBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.add_circle_outline, size: 10, color: AppColors.textTertiary),
+          const Icon(Icons.add_circle_outline,
+              size: 10, color: AppColors.textTertiary,),
           const SizedBox(width: 3),
           Text(
             '+${_formatWeight(increment)}kg',
@@ -738,7 +740,7 @@ class IncrementInfoBadge extends StatelessWidget {
       ),
     );
   }
-  
+
   String _formatWeight(double weight) {
     if (weight == weight.roundToDouble()) {
       return weight.toInt().toString();
@@ -750,7 +752,7 @@ class IncrementInfoBadge extends StatelessWidget {
 // ════════════════════════════════════════════════════════════════════════════
 // EMPATHETIC FEEDBACK - MENSAJES DE DÍAS DIFÍCILES
 // ════════════════════════════════════════════════════════════════════════════
-// 
+//
 // Filosofía UX (ERROR_TOLERANCE_DESIGN.md + PROGRESSION_USER_EXPERIENCE.md):
 // - Nunca rojo para feedback negativo
 // - Normalizar días difíciles
@@ -761,25 +763,29 @@ class IncrementInfoBadge extends StatelessWidget {
 enum DifficultDayType {
   /// Las reps fueron menores al objetivo
   underperformed,
+
   /// El usuario falló la serie
   failedSet,
+
   /// El usuario saltó una sesión
   missedSession,
+
   /// El usuario lleva varias sesiones sin progreso
   plateau,
+
   /// El sistema sugiere un deload
   deloadRecommended,
 }
 
 /// Widget de feedback empático para días difíciles
-/// 
+///
 /// NUNCA usa rojo - solo colores neutros
 /// Mensajes de apoyo, no de juicio
 class EmpatheticFeedback extends StatelessWidget {
   final DifficultDayType type;
   final String? customMessage;
   final VoidCallback? onDismiss;
-  
+
   const EmpatheticFeedback({
     super.key,
     required this.type,
@@ -791,7 +797,7 @@ class EmpatheticFeedback extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = customMessage ?? _getDefaultMessage();
     final subtext = _getSubtext();
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -827,7 +833,8 @@ class EmpatheticFeedback extends StatelessWidget {
               ),
               if (onDismiss != null)
                 IconButton(
-                  icon: const Icon(Icons.close, size: 16, color: AppColors.textTertiary),
+                  icon: const Icon(Icons.close,
+                      size: 16, color: AppColors.textTertiary,),
                   onPressed: onDismiss,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -848,7 +855,7 @@ class EmpatheticFeedback extends StatelessWidget {
       ),
     );
   }
-  
+
   String _getDefaultMessage() {
     switch (type) {
       case DifficultDayType.underperformed:
@@ -863,7 +870,7 @@ class EmpatheticFeedback extends StatelessWidget {
         return 'Tu cuerpo pide recuperarse';
     }
   }
-  
+
   String? _getSubtext() {
     switch (type) {
       case DifficultDayType.underperformed:
@@ -878,7 +885,7 @@ class EmpatheticFeedback extends StatelessWidget {
         return 'Descansar también es entrenar.';
     }
   }
-  
+
   IconData _getIcon() {
     switch (type) {
       case DifficultDayType.underperformed:
@@ -899,13 +906,13 @@ class EmpatheticFeedback extends StatelessWidget {
 class EmpatheticBanner extends StatelessWidget {
   final String message;
   final VoidCallback? onTap;
-  
+
   const EmpatheticBanner({
     super.key,
     required this.message,
     this.onTap,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -941,7 +948,7 @@ class EmpatheticBanner extends StatelessWidget {
 }
 
 /// Widget para mostrar resumen post-ejercicio
-/// 
+///
 /// Muestra de forma positiva lo logrado, incluso si no se alcanzó el objetivo
 class ExerciseSummaryFeedback extends StatelessWidget {
   final int completedSets;
@@ -949,7 +956,7 @@ class ExerciseSummaryFeedback extends StatelessWidget {
   final int totalReps;
   final bool metTarget;
   final String? nextSessionHint;
-  
+
   const ExerciseSummaryFeedback({
     super.key,
     required this.completedSets,
@@ -958,13 +965,13 @@ class ExerciseSummaryFeedback extends StatelessWidget {
     required this.metTarget,
     this.nextSessionHint,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: metTarget 
+        color: metTarget
             ? Colors.green.withValues(alpha: 0.1)
             : AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
@@ -982,7 +989,9 @@ class ExerciseSummaryFeedback extends StatelessWidget {
           Row(
             children: [
               Icon(
-                metTarget ? Icons.check_circle_rounded : Icons.sports_score_rounded,
+                metTarget
+                    ? Icons.check_circle_rounded
+                    : Icons.sports_score_rounded,
                 size: 20,
                 color: metTarget ? AppColors.neonCyan : AppColors.textSecondary,
               ),
@@ -997,9 +1006,9 @@ class ExerciseSummaryFeedback extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Stats compactos
           Row(
             children: [
@@ -1016,7 +1025,7 @@ class ExerciseSummaryFeedback extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Hint para próxima sesión
           if (nextSessionHint != null) ...[
             const SizedBox(height: 10),
@@ -1029,7 +1038,8 @@ class ExerciseSummaryFeedback extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.textTertiary),
+                  const Icon(Icons.arrow_forward_rounded,
+                      size: 12, color: AppColors.textTertiary,),
                   const SizedBox(width: 4),
                   Text(
                     nextSessionHint!,
@@ -1052,19 +1062,19 @@ class _StatChip extends StatelessWidget {
   final String label;
   final String value;
   final bool highlighted;
-  
+
   const _StatChip({
     required this.label,
     required this.value,
     required this.highlighted,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: highlighted 
+        color: highlighted
             ? Colors.green.withValues(alpha: 0.15)
             : AppColors.bgDeep,
         borderRadius: BorderRadius.circular(6),

@@ -1,10 +1,11 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// GitHub-style activity heatmap for training consistency visualization
 class ActivityHeatmap extends ConsumerStatefulWidget {
@@ -39,7 +40,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     if (!_scrollController.hasClients) return;
 
     final now = DateTime.now();
-    final startOfYear = DateTime(now.year, 1, 1);
+    final startOfYear = DateTime(now.year);
     final weekOfYear = ((now.difference(startOfYear).inDays) / 7).floor();
 
     // Calculate scroll position (each week column is ~14 pixels + 2 gap)
@@ -98,10 +99,11 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.chevron_left, color: AppColors.textTertiary, size: 20),
+              icon: const Icon(Icons.chevron_left,
+                  color: AppColors.textTertiary, size: 20,),
               onPressed: () {
                 HapticFeedback.selectionClick();
-                ref.read(selectedYearProvider.notifier).state = year - 1;
+                ref.read(selectedYearProvider.notifier).setYear(year - 1);
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -115,11 +117,12 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
+              icon: const Icon(Icons.chevron_right,
+                  color: AppColors.textTertiary, size: 20,),
               onPressed: year < DateTime.now().year
                   ? () {
                       HapticFeedback.selectionClick();
-                      ref.read(selectedYearProvider.notifier).state = year + 1;
+                      ref.read(selectedYearProvider.notifier).setYear(year + 1);
                     }
                   : null,
               padding: EdgeInsets.zero,
@@ -137,7 +140,7 @@ class _ActivityHeatmapState extends ConsumerState<ActivityHeatmap> {
     const rows = 7; // Days of week
 
     // Calculate all weeks of the year
-    final startOfYear = DateTime(year, 1, 1);
+    final startOfYear = DateTime(year);
     final endOfYear = DateTime(year, 12, 31);
     final totalDays = endOfYear.difference(startOfYear).inDays + 1;
     final weeks = (totalDays / 7).ceil() + 1;
@@ -270,8 +273,20 @@ class _MonthLabelsRow extends StatelessWidget {
     required this.gap,
   });
 
-  static const _monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-                               'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  static const _monthLabels = [
+    'Ene',
+    'Feb',
+    'Mar',
+    'Abr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dic',
+  ];
 
   // Pre-computed style para evitar GoogleFonts en build
   static final _labelStyle = GoogleFonts.montserrat(
@@ -330,7 +345,8 @@ class _WeekColumn extends StatelessWidget {
       child: Column(
         children: List.generate(7, (dayOfWeek) {
           // Calculate date for this cell
-          final daysOffset = (weekIndex * 7) + dayOfWeek - (firstDayWeekday - 1);
+          final daysOffset =
+              (weekIndex * 7) + dayOfWeek - (firstDayWeekday - 1);
           final cellDate = startOfYear.add(Duration(days: daysOffset));
 
           // Skip if outside year
@@ -342,7 +358,8 @@ class _WeekColumn extends StatelessWidget {
           }
 
           // Get activity for this date
-          final normalizedDate = DateTime(cellDate.year, cellDate.month, cellDate.day);
+          final normalizedDate =
+              DateTime(cellDate.year, cellDate.month, cellDate.day);
           final dayActivity = activity[normalizedDate];
           final intensity = dayActivity?.intensityLevel ?? 0;
 
@@ -382,9 +399,8 @@ class _HeatmapCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = kHeatmapColors[intensity.clamp(0, 4)];
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-                    date.month == now.month &&
-                    date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     return GestureDetector(
       onTap: () {
@@ -403,7 +419,7 @@ class _HeatmapCell extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(2),
             border: isToday
-                ? Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1)
+                ? Border.all(color: Colors.white.withValues(alpha: 0.5))
                 : null,
           ),
         ),

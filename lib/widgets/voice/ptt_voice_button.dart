@@ -9,11 +9,11 @@ import 'voice_training_fab.dart';
 
 /// Estados explícitos del botón Push To Talk
 enum PttState {
-  idle,       // Esperando - Gris neutro - "Pulsa para hablar"
-  listening,  // Escuchando activamente - Rojo vivo - "Escuchando..."
+  idle, // Esperando - Gris neutro - "Pulsa para hablar"
+  listening, // Escuchando activamente - Rojo vivo - "Escuchando..."
   processing, // Procesando transcripción - Amarillo - "Procesando..."
-  success,    // Éxito - Verde - "Detectado: [preview]"
-  error,      // Error - Naranja - "No entendido"
+  success, // Éxito - Verde - "Detectado: [preview]"
+  error, // Error - Naranja - "No entendido"
 }
 
 /// Botón Push To Talk con comportamiento explícito.
@@ -148,7 +148,10 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
     if (exercises.isNotEmpty && exercises.any((e) => e.isValid)) {
       setState(() {
         _displayState = PttState.success;
-        _successPreview = exercises.where((e) => e.isValid).map((e) => e.matchedName).join(', ');
+        _successPreview = exercises
+            .where((e) => e.isValid)
+            .map((e) => e.matchedName)
+            .join(', ');
       });
 
       // Volver a idle después de mostrar éxito
@@ -229,7 +232,8 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
         ],
 
         // Transcripción en tiempo real
-        if (_displayState == PttState.listening && voiceState.partialTranscript.isNotEmpty) ...[
+        if (_displayState == PttState.listening &&
+            voiceState.partialTranscript.isNotEmpty) ...[
           const SizedBox(height: 16),
           _buildTranscriptPreview(voiceState.partialTranscript),
         ],
@@ -264,8 +268,10 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
 
   Widget _buildButton() {
     final config = _getStateConfig();
-    final scale = _displayState == PttState.listening ? _pulseAnimation.value : 1.0;
-    final glowOpacity = _displayState == PttState.listening ? _glowAnimation.value : 0.0;
+    final scale =
+        _displayState == PttState.listening ? _pulseAnimation.value : 1.0;
+    final glowOpacity =
+        _displayState == PttState.listening ? _glowAnimation.value : 0.0;
 
     return Transform.scale(
       scale: scale,
@@ -374,7 +380,7 @@ class _PttVoiceButtonState extends ConsumerState<PttVoiceButton>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _PulsingDot(color: AppColors.error),
+          const _PulsingDot(color: AppColors.error, size: 6),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -468,7 +474,7 @@ class _PulsingDot extends StatefulWidget {
 
   const _PulsingDot({
     required this.color,
-    this.size = 8.0,
+    required this.size,
   });
 
   @override
@@ -504,7 +510,8 @@ class _PulsingDotState extends State<_PulsingDot>
           height: widget.size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: widget.color.withValues(alpha: 0.5 + _controller.value * 0.5),
+            color:
+                widget.color.withValues(alpha: 0.5 + _controller.value * 0.5),
           ),
         );
       },
@@ -560,11 +567,15 @@ class _PttCompactButtonState extends ConsumerState<PttCompactButton>
 
     return GestureDetector(
       onTapDown: (_) async {
-        try { HapticFeedback.mediumImpact(); } catch (_) {}
+        try {
+          HapticFeedback.mediumImpact();
+        } catch (_) {}
         await ref.read(voiceInputProvider.notifier).startListening();
       },
       onTapUp: (_) async {
-        try { HapticFeedback.heavyImpact(); } catch (_) {}
+        try {
+          HapticFeedback.heavyImpact();
+        } catch (_) {}
         await ref.read(voiceInputProvider.notifier).stopListening();
       },
       onTapCancel: () {

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../utils/performance_utils.dart';
+
 import '../../utils/design_system.dart';
+import '../../utils/performance_utils.dart';
 
 // ============================================================================
 // PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
@@ -182,7 +183,8 @@ class _LogInputState extends State<LogInput> {
         String newText;
         if (widget.isInteger) {
           final v = widgetNum ?? double.tryParse(widget.value) ?? 0.0;
-          newText = v.truncateToDouble() == v ? v.toInt().toString() : widget.value;
+          newText =
+              v.truncateToDouble() == v ? v.toInt().toString() : widget.value;
         } else {
           if (widgetNum != null && widgetNum.truncateToDouble() == widgetNum) {
             newText = widgetNum.toInt().toString();
@@ -194,10 +196,13 @@ class _LogInputState extends State<LogInput> {
         // Mantener selección si es válida, sino poner cursor al final
         final selection = _controller.selection;
         _controller.text = newText;
-        if (selection.isValid && selection.baseOffset <= newText.length && selection.extentOffset <= newText.length) {
+        if (selection.isValid &&
+            selection.baseOffset <= newText.length &&
+            selection.extentOffset <= newText.length) {
           _controller.selection = selection;
         } else {
-          _controller.selection = TextSelection.collapsed(offset: newText.length);
+          _controller.selection =
+              TextSelection.collapsed(offset: newText.length);
         }
       }
     }
@@ -233,12 +238,16 @@ class _LogInputState extends State<LogInput> {
 
   Future<void> _triggerLightVibration() async {
     if (PerformanceMode.instance.reduceVibrations) return;
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
   }
 
   Future<void> _triggerMediumVibration() async {
     if (PerformanceMode.instance.reduceVibrations) return;
-    try { HapticFeedback.lightImpact(); } catch (_) {}
+    try {
+      HapticFeedback.lightImpact();
+    } catch (_) {}
   }
 
   void _handleGhostTap() {
@@ -251,7 +260,8 @@ class _LogInputState extends State<LogInput> {
   }
 
   void _handleVerticalDrag(DragUpdateDetails details) {
-    _dragAccumulator -= details.delta.dy; // Negativo porque swipe up = incremento
+    _dragAccumulator -=
+        details.delta.dy; // Negativo porque swipe up = incremento
 
     if (_dragAccumulator.abs() >= _swipeThreshold) {
       final currentValue = _parseCurrentValue();
@@ -263,7 +273,8 @@ class _LogInputState extends State<LogInput> {
       final formatted = widget.isInteger
           ? newValue.round().toString()
           : newValue.toStringAsFixed(
-              newValue.truncateToDouble() == newValue ? 0 : 1);
+              newValue.truncateToDouble() == newValue ? 0 : 1,
+            );
 
       _controller.text = formatted;
       widget.onChanged(formatted);
@@ -306,26 +317,40 @@ class _LogInputState extends State<LogInput> {
           child: Material(
             color: Colors.transparent,
             child: LogInputToolbar(
-              onCopyPrevious: (widget.ghostValue != null && widget.ghostValue!.isNotEmpty) ? () {
-                final val = widget.ghostValue!;
-                // Sobrescribimos sin piedad
-                _controller.text = val;
-                // Mover cursor al final
-                _controller.selection = TextSelection.fromPosition(TextPosition(offset: val.length));
-                widget.onChanged(val);
-                HapticFeedback.selectionClick();
-              } : null,
+              onCopyPrevious:
+                  (widget.ghostValue != null && widget.ghostValue!.isNotEmpty)
+                      ? () {
+                          final val = widget.ghostValue!;
+                          // Sobrescribimos sin piedad
+                          _controller.text = val;
+                          // Mover cursor al final
+                          _controller.selection = TextSelection.fromPosition(
+                              TextPosition(offset: val.length),);
+                          widget.onChanged(val);
+                          HapticFeedback.selectionClick();
+                        }
+                      : null,
               onDecrement: () {
                 final current = _parseCurrentValue();
-                final newValue = (current - widget.swipeIncrement).clamp(0.0, 9999.0);
-                final formatted = widget.isInteger ? newValue.round().toString() : (newValue.truncateToDouble() == newValue ? newValue.toInt().toString() : newValue.toStringAsFixed(1));
+                final newValue =
+                    (current - widget.swipeIncrement).clamp(0.0, 9999.0);
+                final formatted = widget.isInteger
+                    ? newValue.round().toString()
+                    : (newValue.truncateToDouble() == newValue
+                        ? newValue.toInt().toString()
+                        : newValue.toStringAsFixed(1));
                 _controller.text = formatted;
                 widget.onChanged(formatted);
               },
               onIncrement: () {
                 final current = _parseCurrentValue();
-                final newValue = (current + widget.swipeIncrement).clamp(0.0, 9999.0);
-                final formatted = widget.isInteger ? newValue.round().toString() : (newValue.truncateToDouble() == newValue ? newValue.toInt().toString() : newValue.toStringAsFixed(1));
+                final newValue =
+                    (current + widget.swipeIncrement).clamp(0.0, 9999.0);
+                final formatted = widget.isInteger
+                    ? newValue.round().toString()
+                    : (newValue.truncateToDouble() == newValue
+                        ? newValue.toInt().toString()
+                        : newValue.toStringAsFixed(1));
                 _controller.text = formatted;
                 widget.onChanged(formatted);
               },
@@ -333,9 +358,13 @@ class _LogInputState extends State<LogInput> {
                 // Close keyboard and remove overlay
                 FocusScope.of(context).unfocus();
                 _removeToolbarOverlay();
-                if (widget.onEditingComplete != null) widget.onEditingComplete!();
+                if (widget.onEditingComplete != null) {
+                  widget.onEditingComplete!();
+                }
               },
-              incrementLabel: widget.swipeIncrement % 1 == 0 ? '+${widget.swipeIncrement.toInt()}' : '+${widget.swipeIncrement}',
+              incrementLabel: widget.swipeIncrement % 1 == 0
+                  ? '+${widget.swipeIncrement.toInt()}'
+                  : '+${widget.swipeIncrement}',
             ),
           ),
         );
@@ -373,7 +402,6 @@ class _LogInputState extends State<LogInput> {
                 focusNode: _focusNode,
                 keyboardType: TextInputType.numberWithOptions(
                   decimal: !widget.isInteger,
-                  signed: false,
                 ),
                 textInputAction: widget.textInputAction,
                 textAlign: TextAlign.center,
@@ -383,7 +411,8 @@ class _LogInputState extends State<LogInput> {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                   filled: true,
-                  fillColor: _hasFocus ? AppColors.bgElevated : AppColors.bgDeep,
+                  fillColor:
+                      _hasFocus ? AppColors.bgElevated : AppColors.bgDeep,
                   // Ghost value como hint
                   hintText: hasGhost ? widget.ghostValue : null,
                   hintStyle: widget.isSuggestion
@@ -409,8 +438,8 @@ class _LogInputState extends State<LogInput> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: AppColors.neonPrimary, width: 2),
+                    borderSide: const BorderSide(
+                        color: AppColors.neonPrimary, width: 2,),
                   ),
                 ),
                 inputFormatters: [
@@ -443,10 +472,16 @@ class _LogInputState extends State<LogInput> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.keyboard_arrow_up,
-                          size: 10, color: AppColors.border),
-                      Icon(Icons.keyboard_arrow_down,
-                          size: 10, color: AppColors.border),
+                      Icon(
+                        Icons.keyboard_arrow_up,
+                        size: 10,
+                        color: AppColors.border,
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 10,
+                        color: AppColors.border,
+                      ),
                     ],
                   ),
                 ),

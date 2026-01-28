@@ -14,7 +14,7 @@ bool _isPlaceholder(String? name) {
 Future<void> main(List<String> args) async {
   final start = args.isNotEmpty ? int.tryParse(args[0]) ?? 0 : 0;
   final batch = args.length > 1 ? int.tryParse(args[1]) ?? 50 : 50;
-  print('Batch (EN) start=$start size=$batch');
+  stdout.writeln('Batch (EN) start=$start size=$batch');
 
   final jsonFile = File('assets/data/exercises.json');
   if (!await jsonFile.exists()) {
@@ -22,7 +22,8 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final list = (jsonDecode(await jsonFile.readAsString()) as List<dynamic>).cast<Map<String, dynamic>>();
+  final list = (jsonDecode(await jsonFile.readAsString()) as List<dynamic>)
+      .cast<Map<String, dynamic>>();
   final missingIdx = <int>[];
   for (var i = 0; i < list.length; i++) {
     final entry = list[i];
@@ -30,26 +31,28 @@ Future<void> main(List<String> args) async {
     if (_isPlaceholder(name)) missingIdx.add(i);
   }
 
-  print('Total placeholders: ${missingIdx.length}');
+  stdout.writeln('Total placeholders: ${missingIdx.length}');
   if (start >= missingIdx.length) {
-    print('Start >= total placeholders, nothing to do');
+    stdout.writeln('Start >= total placeholders, nothing to do');
     return;
   }
 
-  final end = (start + batch) < missingIdx.length ? (start + batch) : missingIdx.length;
+  final end =
+      (start + batch) < missingIdx.length ? (start + batch) : missingIdx.length;
   final slice = missingIdx.sublist(start, end);
 
   final langs = [2, 1]; // English, then default
   var updated = 0;
 
-  for (var idx in slice) {
+  for (final idx in slice) {
     final entry = list[idx];
     final id = entry['id'] as int;
     String? foundName;
     for (final lang in langs) {
       try {
         final url = 'https://wger.de/api/v2/exerciseinfo/$id/?language=$lang';
-        final resp = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
+        final resp =
+            await http.get(Uri.parse(url)).timeout(const Duration(seconds: 8));
         if (resp.statusCode == 200 && resp.body.isNotEmpty) {
           final data = jsonDecode(resp.body) as Map<String, dynamic>;
           final n = (data['name'] as String?)?.trim();
@@ -66,18 +69,20 @@ Future<void> main(List<String> args) async {
     if (foundName != null) {
       entry['name'] = foundName;
       updated++;
-      print('Updated $id -> $foundName');
+      stdout.writeln('Updated $id -> $foundName');
     } else {
-      print('No name for $id');
+      stdout.writeln('No name for $id');
     }
   }
 
   if (updated > 0) {
-    await jsonFile.writeAsString(const JsonEncoder.withIndent('  ').convert(list));
-    print('Wrote JSON; updated $updated names in this batch');
+    await jsonFile
+        .writeAsString(const JsonEncoder.withIndent('  ').convert(list));
+    stdout.writeln('Wrote JSON; updated $updated names in this batch');
   } else {
-    print('No updates in this batch');
+    stdout.writeln('No updates in this batch');
   }
 
-  print('Batch done: processed ${slice.length} placeholders (indexes $start..${end - 1})');
+  stdout.writeln(
+      'Batch done: processed ${slice.length} placeholders (indexes $start..${end - 1})',);
 }

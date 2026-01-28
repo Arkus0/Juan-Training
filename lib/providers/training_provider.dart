@@ -1,19 +1,20 @@
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
-import 'package:collection/collection.dart';
-import '../models/rutina.dart';
+
 import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
-import '../models/sesion.dart';
-import '../models/serie_log.dart';
-import '../models/progression_engine_models.dart';
 import '../models/library_exercise.dart';
-import 'main_provider.dart';
+import '../models/progression_engine_models.dart';
+import '../models/rutina.dart';
+import '../models/serie_log.dart';
+import '../models/sesion.dart';
 import '../repositories/i_training_repository.dart';
 import '../services/error_tolerance_system.dart';
 import '../services/rest_timer_controller.dart';
 import '../services/session_persistence_service.dart';
+import 'main_provider.dart';
 import 'session_tolerance_provider.dart';
 
 final trainingRepositoryProvider = Provider<ITrainingRepository>((ref) {
@@ -49,7 +50,8 @@ class TrainingState {
   final RestTimerState restTimer; // Nuevo estado avanzado del timer
 
   // New State Fields
-  final Map<String, List<SerieLog>> history; // Key: Ejercicio.historyKey, Value: Last Session Logs
+  final Map<String, List<SerieLog>>
+      history; // Key: Ejercicio.historyKey, Value: Last Session Logs
   final bool showAdvancedOptions;
   final bool showTimerBar; // Mostrar/ocultar barra inactiva del timer
 
@@ -105,9 +107,9 @@ class TrainingState {
   /// siempre irá al primer set no completado en orden de lista, lo cual puede
   /// resultar en saltos de foco no intuitivos en algunos casos edge.
   ({int exerciseIndex, int setIndex})? get nextIncompleteSet {
-    for (int exIdx = 0; exIdx < exercises.length; exIdx++) {
+    for (var exIdx = 0; exIdx < exercises.length; exIdx++) {
       final exercise = exercises[exIdx];
-      for (int setIdx = 0; setIdx < exercise.logs.length; setIdx++) {
+      for (var setIdx = 0; setIdx < exercise.logs.length; setIdx++) {
         if (!exercise.logs[setIdx].completed) {
           return (exerciseIndex: exIdx, setIndex: setIdx);
         }
@@ -117,9 +119,9 @@ class TrainingState {
   }
 }
 
-class TrainingSessionNotifier extends StateNotifier<TrainingState> {
-  final Ref ref;
-  final ITrainingRepository _repository;
+class TrainingSessionNotifier extends Notifier<TrainingState> {
+  late ITrainingRepository _repository;
+  bool _initialized = false;
 
   /// Controlador de timer de descanso (delegación de responsabilidad)
   late final RestTimerController _timerController;
@@ -127,8 +129,18 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   /// Servicio de persistencia (delegación de responsabilidad)
   late final SessionPersistenceService _persistenceService;
 
-  TrainingSessionNotifier(this.ref, this._repository) : super(TrainingState()) {
-    _initializeServices();
+  @override
+  TrainingState build() {
+    _repository = ref.watch(trainingRepositoryProvider);
+    if (!_initialized) {
+      _initialized = true;
+      _initializeServices();
+    }
+    ref.onDispose(() {
+      _timerController.dispose();
+      _persistenceService.dispose();
+    });
+    return TrainingState();
   }
 
   /// Inicializa los servicios delegados
@@ -139,11 +151,11 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _timerController.onTimerFinishedWhileAway = () {
       // Timer terminó mientras app cerrada - el getter lo expondrá al UI
     };
-    await _timerController.initialize();
 
-    // Inicializar servicio de persistencia
     _persistenceService = SessionPersistenceService(_repository);
     _persistenceService.getSessionData = _getCurrentSessionData;
+
+    await _timerController.initialize();
   }
 
   /// Callback cuando el timer cambia de estado
@@ -174,52 +186,52 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     _timerController.clearTimerFinishedWhileAway();
   }
 
-  @override
-  void dispose() {
-    _timerController.dispose();
-    _persistenceService.dispose();
-    super.dispose();
-  }
-
-  Future<void> startSession(Rutina rutina, List<EjercicioEnRutina> routineExercises, {String? dayName, int? dayIndex}) async {
+  Future<void> startSession(
+      Rutina rutina, List<EjercicioEnRutina> routineExercises,
+      {String? dayName, int? dayIndex,}) async {
     // Map EjercicioEnRutina (Type 5) -> Ejercicio (Type 0, Session Model)
     final sessionExercises = routineExercises.map((e) {
       return Ejercicio(
         id: e.instanceId, // Use the stable Instance ID
-        libraryId: e.id,  // Reference to the library
+        libraryId: e.id, // Reference to the library
         nombre: e.nombre,
         musculosPrincipales: e.musculosPrincipales,
         musculosSecundarios: e.musculosSecundarios,
         series: e.series,
-        reps: int.tryParse(e.repsRange.split('-').first) ?? 0, // Best effort parse
-        peso: 0.0,
+        reps: int.tryParse(e.repsRange.split('-').first) ??
+            0, // Best effort parse
         notas: e.notas,
-        supersetId: e.supersetId, // Copiar superset para lógica de timer encadenado
+        supersetId:
+            e.supersetId, // Copiar superset para lógica de timer encadenado
         descansoSugeridoSeconds: e.descansoSugerido?.inSeconds,
-        logs: List.generate(e.series, (_) => SerieLog(
-          // ID is generated automatically in constructor
-          peso: 0.0,
-          reps: 0,
-          completed: false,
-        )),
+        logs: List.generate(
+          e.series,
+          (_) => SerieLog(
+            // ID is generated automatically in constructor
+            peso: 0.0,
+            reps: 0,
+            completed: false,
+          ),
+        ),
       );
     }).toList();
 
     // Build History Map
-    final Map<String, List<SerieLog>> historyMap = {};
+    final historyMap = <String, List<SerieLog>>{};
 
-    for (var ex in sessionExercises) {
-       final historyList = await _repository.getHistoryForExercise(ex.nombre);
-       if (historyList.isNotEmpty) {
-         // getHistoryForExercise returns sorted list (newest first)
-         final lastSession = historyList.first;
-         try {
-           final match = lastSession.ejerciciosCompletados.firstWhere((e) => e.nombre == ex.nombre);
-           historyMap[ex.historyKey] = match.logs;
-         } catch (e) {
-           // Should not happen if filtered correctly, but safety first
-         }
-       }
+    for (final ex in sessionExercises) {
+      final historyList = await _repository.getHistoryForExercise(ex.nombre);
+      if (historyList.isNotEmpty) {
+        // getHistoryForExercise returns sorted list (newest first)
+        final lastSession = historyList.first;
+        try {
+          final match = lastSession.ejerciciosCompletados
+              .firstWhere((e) => e.nombre == ex.nombre);
+          historyMap[ex.historyKey] = match.logs;
+        } catch (e) {
+          // Should not happen if filtered correctly, but safety first
+        }
+      }
     }
 
     state = TrainingState(
@@ -227,17 +239,19 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       dayName: dayName,
       dayIndex: dayIndex,
       exercises: sessionExercises,
-      targets: sessionExercises.map((e) => e.copyWith()).toList(), // Snapshot targets
+      targets: sessionExercises
+          .map((e) => e.copyWith())
+          .toList(), // Snapshot targets
       startTime: DateTime.now(),
-      defaultRestSeconds: 90,
-      isRestActive: false,
       history: historyMap,
       showAdvancedOptions: false,
     );
     _saveState();
   }
 
-  void updateLog(int exerciseIndex, int setIndex, {
+  void updateLog(
+    int exerciseIndex,
+    int setIndex, {
     double? peso,
     int? reps,
     bool? completed,
@@ -247,7 +261,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     bool? isFailure,
     bool? isDropset,
     bool? isWarmup,
-    bool skipToleranceCheck = false, // 🎯 Skip validation when user accepted a correction
+    bool skipToleranceCheck =
+        false, // 🎯 Skip validation when user accepted a correction
   }) {
     if (exerciseIndex < 0 || exerciseIndex >= state.exercises.length) {
       Logger().w('updateLog: invalid exerciseIndex $exerciseIndex');
@@ -257,7 +272,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
     if (setIndex < 0 || setIndex >= exercise.logs.length) {
-      Logger().w('updateLog: invalid setIndex $setIndex for exercise ${exercise.nombre}');
+      Logger().w(
+          'updateLog: invalid setIndex $setIndex for exercise ${exercise.nombre}',);
       return;
     }
     final logs = [...exercise.logs];
@@ -266,43 +282,47 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // ═══════════════════════════════════════════════════════════════════════
     // ERROR TOLERANCE: Validación tolerante de peso (nunca bloquea)
     // ═══════════════════════════════════════════════════════════════════════
-    double? validatedPeso = peso;
+    final validatedPeso = peso;
     ToleranceResult? toleranceResult;
-    
+
     // 🎯 FIX: Skip validation if user already accepted a correction (prevents infinite loop)
     if (peso != null && peso > 0 && !skipToleranceCheck) {
       final category = ExerciseCategory.inferFromName(exercise.nombre);
-      final lastKnownWeight = log.peso > 0 ? log.peso : _getLastKnownWeight(exercise);
-      
+      final lastKnownWeight =
+          log.peso > 0 ? log.peso : _getLastKnownWeight(exercise);
+
       toleranceResult = ErrorToleranceRules.evaluateDataEntry(
         enteredWeight: peso,
         lastKnownWeight: lastKnownWeight,
         exerciseName: exercise.nombre,
         category: category,
       );
-      
+
       // 🎯 ERROR TOLERANCE: Si es sospechoso, notificar al provider para mostrar diálogo
-      if (toleranceResult.severity == ToleranceSeverity.medium && 
+      if (toleranceResult.severity == ToleranceSeverity.medium &&
           toleranceResult.userMessage != null &&
           lastKnownWeight > 0) {
         // Calcular peso sugerido (detectar error de dedo: 500 → 50)
-        double suggestedWeight = lastKnownWeight;
+        var suggestedWeight = lastKnownWeight;
         if (peso > lastKnownWeight * 5) {
           suggestedWeight = peso / 10; // Probablemente un 0 de más
         } else if (peso < lastKnownWeight * 0.2) {
           suggestedWeight = peso * 10; // Probablemente falta un 0
         }
-        
+
         ref.read(suspiciousDataProvider.notifier).setSuspiciousData(
-          exerciseName: exercise.nombre,
-          enteredWeight: peso,
-          suggestedWeight: suggestedWeight,
-          exerciseIndex: exerciseIndex,
-          setIndex: setIndex,
-        );
-        Logger().w('Peso sospechoso en ${exercise.nombre}: $peso kg (sugerido: $suggestedWeight kg)');
-      } else if (toleranceResult.needsCorrection && toleranceResult.correctedValue != null) {
-        Logger().w('Peso sospechoso en ${exercise.nombre}: $peso kg (esperado ~$lastKnownWeight kg)');
+              exerciseName: exercise.nombre,
+              enteredWeight: peso,
+              suggestedWeight: suggestedWeight,
+              exerciseIndex: exerciseIndex,
+              setIndex: setIndex,
+            );
+        Logger().w(
+            'Peso sospechoso en ${exercise.nombre}: $peso kg (sugerido: $suggestedWeight kg)',);
+      } else if (toleranceResult.needsCorrection &&
+          toleranceResult.correctedValue != null) {
+        Logger().w(
+            'Peso sospechoso en ${exercise.nombre}: $peso kg (esperado ~$lastKnownWeight kg)',);
       }
     }
 
@@ -310,7 +330,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // HARD LIMITS: Forzar límites absolutos para proteger integridad de datos
     // Esto evita que outliers arruinen gráficas y análisis
     // ═══════════════════════════════════════════════════════════════════════
-    final finalPeso = ErrorToleranceRules.enforceWeightLimits(validatedPeso ?? log.peso);
+    final finalPeso =
+        ErrorToleranceRules.enforceWeightLimits(validatedPeso ?? log.peso);
     final finalReps = ErrorToleranceRules.enforceRepsLimits(reps ?? log.reps);
 
     final newLog = SerieLog(
@@ -333,7 +354,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     state = state.copyWith(exercises: exercises);
     _saveState();
   }
-  
+
   /// Obtiene el último peso conocido para un ejercicio (del historial)
   double _getLastKnownWeight(Ejercicio exercise) {
     final historyLogs = state.history[exercise.historyKey];
@@ -439,7 +460,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 
   /// Añade un ejercicio a la sesión activa desde la biblioteca
-  Future<void> addExerciseToSession(LibraryExercise libExercise, {int series = 3, int reps = 10}) async {
+  Future<void> addExerciseToSession(LibraryExercise libExercise,
+      {int series = 3, int reps = 10,}) async {
     final newExercise = Ejercicio(
       id: const Uuid().v4(),
       libraryId: libExercise.id.toString(),
@@ -448,18 +470,22 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       musculosSecundarios: libExercise.secondaryMuscles,
       series: series,
       reps: reps,
-      logs: List.generate(series, (_) => SerieLog(
-        peso: 0.0,
-        reps: 0,
-        completed: false,
-      )),
+      logs: List.generate(
+        series,
+        (_) => SerieLog(
+          peso: 0.0,
+          reps: 0,
+          completed: false,
+        ),
+      ),
     );
 
     final exercises = [...state.exercises, newExercise];
     final targets = [...state.targets, newExercise.copyWith()];
 
     final historyMap = Map<String, List<SerieLog>>.from(state.history);
-    final historyList = await _repository.getHistoryForExercise(newExercise.nombre);
+    final historyList =
+        await _repository.getHistoryForExercise(newExercise.nombre);
     if (historyList.isNotEmpty) {
       final lastSession = historyList.first;
       final match = lastSession.ejerciciosCompletados.firstWhereOrNull(
@@ -470,16 +496,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       }
     }
 
-    state = state.copyWith(exercises: exercises, targets: targets, history: historyMap);
+    state = state.copyWith(
+        exercises: exercises, targets: targets, history: historyMap,);
     _saveState();
   }
 
-  void toggleAdvancedOptions(bool show) {
+  void toggleAdvancedOptions({required bool show}) {
     state = state.copyWith(showAdvancedOptions: show);
     _saveState();
   }
 
-  void toggleTimerBar(bool show) {
+  void toggleTimerBar({required bool show}) {
     state = state.copyWith(showTimerBar: show);
     // No guardar en BD, es solo UI temporal
   }
@@ -502,16 +529,17 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   /// @return true si el timer se inició, false si estamos en medio de un superset
   bool startRestForExercise(int exerciseIndex, {int? setIndex}) {
     // Verificar lógica de superseries usando el controlador
-    if (setIndex != null && !_timerController.shouldStartTimerForSuperset(
-      exerciseIndex: exerciseIndex,
-      setIndex: setIndex,
-      exercises: state.exercises,
-    )) {
+    if (setIndex != null &&
+        !_timerController.shouldStartTimerForSuperset(
+          exerciseIndex: exerciseIndex,
+          setIndex: setIndex,
+          exercises: state.exercises,
+        )) {
       return false;
     }
 
     final exercise = state.exercises[exerciseIndex];
-    int restTime = _timerController.getSupersetRestTime(
+    var restTime = _timerController.getSupersetRestTime(
       exerciseIndex: exerciseIndex,
       exercises: state.exercises,
       defaultRestSeconds: state.defaultRestSeconds,
@@ -520,7 +548,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     // Fallback: buscar tiempo configurado en la rutina activa
     if (restTime == state.defaultRestSeconds && state.activeRutina != null) {
       for (final day in state.activeRutina!.dias) {
-        final match = day.ejercicios.firstWhereOrNull((e) => e.instanceId == exercise.id);
+        final match =
+            day.ejercicios.firstWhereOrNull((e) => e.instanceId == exercise.id);
         if (match != null && match.descansoSugerido != null) {
           restTime = match.descansoSugerido!.inSeconds;
           break;
@@ -549,7 +578,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
       final exerciseIndex = state.restTimer.lastCompletedExerciseIndex;
       final setIndex = state.restTimer.lastCompletedSetIndex;
       if (exerciseIndex != null && setIndex != null) {
-        final actualRestTime = _timerController.stop(saveRestTime: true);
+        final actualRestTime = _timerController.stop();
         if (actualRestTime != null && actualRestTime > 0) {
           _updateLogRestTime(exerciseIndex, setIndex, actualRestTime);
         }
@@ -607,7 +636,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
 
   void restartRest() {
     final lastIndex = state.restTimer.lastCompletedExerciseIndex;
-    int restTime = lastIndex != null
+    final restTime = lastIndex != null
         ? _timerController.getSupersetRestTime(
             exerciseIndex: lastIndex,
             exercises: state.exercises,
@@ -623,7 +652,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final exercises = [...state.exercises];
     final exercise = exercises[exerciseIndex];
 
-    exercises[exerciseIndex] = exercise.copyWith(descansoSugeridoSeconds: seconds);
+    exercises[exerciseIndex] =
+        exercise.copyWith(descansoSugeridoSeconds: seconds);
     state = state.copyWith(exercises: exercises);
     _saveState();
   }
@@ -654,8 +684,8 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     final durationSeconds = endTime.difference(state.startTime!).inSeconds;
 
     // Contar series completadas para feedback
-    int completedSets = 0;
-    int totalSets = 0;
+    var completedSets = 0;
+    var totalSets = 0;
     for (final ex in state.exercises) {
       for (final log in ex.logs) {
         totalSets++;
@@ -687,7 +717,7 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
     );
 
     state = TrainingState();
-    ref.read(bottomNavIndexProvider.notifier).state = 2;
+    ref.read(bottomNavIndexProvider.notifier).setIndex(2);
   }
 
   /// Descarta la sesión activa sin guardarla
@@ -734,7 +764,6 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
         targets: data.targets,
         startTime: data.startTime ?? DateTime.now(),
         defaultRestSeconds: data.defaultRestSeconds,
-        isRestActive: false,
         history: data.history,
         showAdvancedOptions: false,
       );
@@ -749,10 +778,10 @@ class TrainingSessionNotifier extends StateNotifier<TrainingState> {
   }
 }
 
-final trainingSessionProvider = StateNotifierProvider<TrainingSessionNotifier, TrainingState>((ref) {
-  final repo = ref.watch(trainingRepositoryProvider);
-  return TrainingSessionNotifier(ref, repo);
-});
+final trainingSessionProvider =
+    NotifierProvider<TrainingSessionNotifier, TrainingState>(
+  TrainingSessionNotifier.new,
+);
 
 /// Resultado del guardado de sesión para feedback visual
 class SessionSaveResult {
@@ -789,12 +818,13 @@ class SmartWorkoutSuggestion {
 
 /// Provider que calcula el próximo día sugerido basado en el historial.
 /// Lógica: Mira la última sesión de la rutina activa y sugiere el siguiente día.
-final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) async {
+final smartSuggestionProvider =
+    FutureProvider<SmartWorkoutSuggestion?>((ref) async {
   final rutinasAsync = ref.watch(rutinasStreamProvider);
   final sessionsAsync = ref.watch(sesionesHistoryStreamProvider);
 
-  final rutinas = rutinasAsync.valueOrNull ?? [];
-  final sessions = sessionsAsync.valueOrNull ?? [];
+  final rutinas = rutinasAsync.asData?.value ?? [];
+  final sessions = sessionsAsync.asData?.value ?? [];
 
   if (rutinas.isEmpty) return null;
 
@@ -803,7 +833,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) as
   Sesion? lastSession;
 
   for (final session in sessions) {
-    final matchingRutina = rutinas.firstWhereOrNull((r) => r.id == session.rutinaId);
+    final matchingRutina =
+        rutinas.firstWhereOrNull((r) => r.id == session.rutinaId);
     if (matchingRutina != null) {
       lastUsedRutina = matchingRutina;
       lastSession = session;
@@ -816,7 +847,8 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) as
     final firstRutina = rutinas.first;
     if (firstRutina.dias.isEmpty) return null;
     // Buscar primer día que tenga ejercicios
-    final firstValidDayIndex = firstRutina.dias.indexWhere((d) => d.ejercicios.isNotEmpty);
+    final firstValidDayIndex =
+        firstRutina.dias.indexWhere((d) => d.ejercicios.isNotEmpty);
     if (firstValidDayIndex == -1) return null; // No hay días con ejercicios
     return SmartWorkoutSuggestion(
       rutina: firstRutina,
@@ -832,16 +864,17 @@ final smartSuggestionProvider = FutureProvider<SmartWorkoutSuggestion?>((ref) as
     final totalDays = lastUsedRutina.dias.length;
 
     // Buscar siguiente día que tenga ejercicios (saltando días vacíos)
-    int nextDayIndex = (lastDayIndex + 1) % totalDays;
-    int attempts = 0;
-    while (lastUsedRutina.dias[nextDayIndex].ejercicios.isEmpty && attempts < totalDays) {
+    var nextDayIndex = (lastDayIndex + 1) % totalDays;
+    var attempts = 0;
+    while (lastUsedRutina.dias[nextDayIndex].ejercicios.isEmpty &&
+        attempts < totalDays) {
       nextDayIndex = (nextDayIndex + 1) % totalDays;
       attempts++;
     }
-    
+
     // Si todos los días están vacíos, no sugerir nada
     if (attempts >= totalDays) return null;
-    
+
     final nextDay = lastUsedRutina.dias[nextDayIndex];
 
     // Determinar razón

@@ -24,9 +24,9 @@ void main() {
     });
 
     test('alias: "dominadas" encuentra "pull up"', () {
-      final engine = ExerciseSearchEngine();
+      const engine = ExerciseSearchEngine();
       final exercises = [
-        _exercise(1, 'Pull Up', muscleGroup: 'Espalda', equipment: 'Barra'),
+        _exercise(1, 'Pull Up', muscleGroup: 'Espalda'),
         _exercise(2, 'Press de Banca'),
       ];
       final index = ExerciseSearchIndex.build(exercises);
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('typo: "benhc pres" encuentra "bench press"', () {
-      final engine = ExerciseSearchEngine();
+      const engine = ExerciseSearchEngine();
       final exercises = [
         _exercise(1, 'Bench Press'),
         _exercise(2, 'Incline Bench Press'),
@@ -50,7 +50,7 @@ void main() {
     });
 
     test('ranking: exact > prefix > tokens > fuzzy', () {
-      final engine = ExerciseSearchEngine();
+      const engine = ExerciseSearchEngine();
       final exercises = [
         _exercise(1, 'Bench Press'),
         _exercise(2, 'Bench Press Incline'),
@@ -68,12 +68,11 @@ void main() {
     });
 
     test('performance: 5000 ejercicios < 200ms', () {
-      final engine = ExerciseSearchEngine();
+      const engine = ExerciseSearchEngine();
       final exercises = List.generate(
         5000,
         (i) => _exercise(i, 'Exercise $i', muscleGroup: 'Grupo $i'),
-      )
-        ..add(_exercise(6000, 'Bench Press'));
+      )..add(_exercise(6000, 'Bench Press'));
 
       final index = ExerciseSearchIndex.build(exercises);
       final stopwatch = Stopwatch()..start();

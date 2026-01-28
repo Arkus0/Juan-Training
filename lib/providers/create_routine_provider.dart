@@ -1,33 +1,41 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'dart:io';
-import 'package:logger/logger.dart';
-import 'package:juan_training/models/rutina.dart';
+import 'dart:math';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:juan_training/models/detected_exercise_draft.dart';
 import 'package:juan_training/models/dia.dart';
 import 'package:juan_training/models/ejercicio_en_rutina.dart';
 import 'package:juan_training/models/library_exercise.dart';
-import 'package:juan_training/models/detected_exercise_draft.dart';
-import 'package:juan_training/repositories/i_training_repository.dart';
+import 'package:juan_training/models/rutina.dart';
 import 'package:juan_training/services/exercise_library_service.dart';
-import 'training_provider.dart';
+import 'package:logger/logger.dart';
+import 'package:uuid/uuid.dart';
 
+import 'training_provider.dart';
 
 // Provider family to initialize with existing routine or null
 final createRoutineProvider =
-    StateNotifierProvider.family<CreateRoutineNotifier, Rutina, Rutina?>(
-  (ref, existingRutina) {
-    final repository = ref.watch(trainingRepositoryProvider);
-    return CreateRoutineNotifier(repository, existingRutina);
-  },
+    NotifierProvider.family<CreateRoutineNotifier, Rutina, Rutina?>(
+  (existingRutina) => CreateRoutineNotifier(existingRutina),
 );
 
 // ⚡ OPTIMIZACIÓN: Provider separado para el estado de UI (expandedDayIndex)
 // Esto evita que cambiar qué día está expandido cause rebuild de toda la rutina
 // Solo los widgets que observen este provider se reconstruirán
-final routineExpandedDayProvider = StateProvider.family<int, String?>((ref, rutinaId) => 0);
+final routineExpandedDayProvider =
+    NotifierProvider.family<RoutineExpandedDayNotifier, int, String?>(
+  (rutinaId) => RoutineExpandedDayNotifier(),
+);
 
-class CreateRoutineNotifier extends StateNotifier<Rutina> {
-  final ITrainingRepository _repository;
+class RoutineExpandedDayNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+}
+
+class CreateRoutineNotifier extends Notifier<Rutina> {
+  CreateRoutineNotifier(this._existingRutina);
+
+  final Rutina? _existingRutina;
 
   /// 🎯 FIX CRÍTICO: Usar `deepCopy()` para evitar que los cambios
   /// durante la edición afecten la rutina original.
@@ -37,11 +45,17 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   ///
   /// AHORA: `deepCopy()` crea una copia profunda completamente independiente.
   /// Solo se persiste cuando el usuario pulsa "Guardar" explícitamente.
-  CreateRoutineNotifier(this._repository, Rutina? existingRutina)
-      : super(existingRutina?.deepCopy() ?? _createEmptyRoutine()) {
-    if (existingRutina == null) {
-      addDay();
+  @override
+  Rutina build() {
+    final base = _existingRutina?.deepCopy() ?? _createEmptyRoutine();
+    if (_existingRutina == null) {
+      final newDia = Dia(
+        nombre: 'DÃ­a ${base.dias.length + 1}',
+        ejercicios: [],
+      );
+      return base.copyWith(dias: [...base.dias, newDia]);
     }
+    return base;
   }
 
   // ⚠️ DEPRECADO: Usa routineExpandedDayProvider en su lugar
@@ -128,7 +142,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
       return ex.copyWith(
         instanceId: uuid.v4(),
-        supersetId: newSupersetId, // Null if original was null, new ID if original had ID
+        supersetId:
+            newSupersetId, // Null if original was null, new ID if original had ID
       );
     }).toList();
 
@@ -148,9 +163,10 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     }
 
     // Preserve an identifier for the currently expanded day (if any)
-    final String? expandedDayId = (_expandedDayIndex >= 0 && _expandedDayIndex < state.dias.length)
-        ? state.dias[_expandedDayIndex].id
-        : null;
+    final expandedDayId =
+        (_expandedDayIndex >= 0 && _expandedDayIndex < state.dias.length)
+            ? state.dias[_expandedDayIndex].id
+            : null;
 
     final newDias = [...state.dias];
     final item = newDias.removeAt(oldIndex);
@@ -197,17 +213,19 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       final series = i < seriesList.length ? seriesList[i] : 3;
       final repsRange = i < repsRangeList.length ? repsRangeList[i] : '8-12';
 
-      newExercises.add(EjercicioEnRutina(
-        id: libExercise.id.toString(),
-        nombre: libExercise.name,
-        descripcion: libExercise.description,
-        musculosPrincipales: libExercise.muscles,
-        musculosSecundarios: libExercise.secondaryMuscles,
-        equipo: libExercise.equipment,
-        localImagePath: libExercise.localImagePath,
-        series: series,
-        repsRange: repsRange,
-      ));
+      newExercises.add(
+        EjercicioEnRutina(
+          id: libExercise.id.toString(),
+          nombre: libExercise.name,
+          descripcion: libExercise.description,
+          musculosPrincipales: libExercise.muscles,
+          musculosSecundarios: libExercise.secondaryMuscles,
+          equipo: libExercise.equipment,
+          localImagePath: libExercise.localImagePath,
+          series: series,
+          repsRange: repsRange,
+        ),
+      );
     }
 
     final updatedDay = day.copyWith(
@@ -281,7 +299,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void addExerciseToDay(
-    int dayIndex, 
+    int dayIndex,
     LibraryExercise libExercise, {
     int? defaultSeries,
     String? defaultRepsRange,
@@ -312,12 +330,14 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
     // Asynchronously validate and update the image path if needed
     if (libExercise.localImagePath != null) {
-      _validateImagePathAsync(dayIndex, day.ejercicios.length, libExercise.localImagePath!);
+      _validateImagePathAsync(
+          dayIndex, day.ejercicios.length, libExercise.localImagePath!,);
     }
   }
 
   /// Validates image path asynchronously and updates exercise if path is invalid
-  Future<void> _validateImagePathAsync(int dayIndex, int exerciseIndex, String imagePath) async {
+  Future<void> _validateImagePathAsync(
+      int dayIndex, int exerciseIndex, String imagePath,) async {
     try {
       final file = File(imagePath);
       final exists = await file.exists();
@@ -325,7 +345,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         _clearImagePath(dayIndex, exerciseIndex);
         return;
       }
-      
+
       final length = await file.length();
       if (length == 0) {
         _clearImagePath(dayIndex, exerciseIndex);
@@ -370,15 +390,17 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
     // Check if we need to clean up the superset
     if (oldSupersetId != null) {
-        // Count remaining exercises with this supersetId
-        final remainingInSuperset = newEjercicios.where((e) => e.supersetId == oldSupersetId).toList();
-        if (remainingInSuperset.length == 1) {
-             // Only 1 left, so it's no longer a superset
-             final indexToFix = newEjercicios.indexOf(remainingInSuperset.first);
-             if (indexToFix != -1) {
-                 newEjercicios[indexToFix] = newEjercicios[indexToFix].copyWith(supersetId: null);
-             }
+      // Count remaining exercises with this supersetId
+      final remainingInSuperset =
+          newEjercicios.where((e) => e.supersetId == oldSupersetId).toList();
+      if (remainingInSuperset.length == 1) {
+        // Only 1 left, so it's no longer a superset
+        final indexToFix = newEjercicios.indexOf(remainingInSuperset.first);
+        if (indexToFix != -1) {
+          newEjercicios[indexToFix] =
+              newEjercicios[indexToFix].copyWith(supersetId: null);
         }
+      }
     }
 
     final updatedDay = day.copyWith(ejercicios: newEjercicios);
@@ -409,7 +431,7 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     if (exerciseIndex >= day.ejercicios.length) return;
 
     final original = day.ejercicios[exerciseIndex];
-    
+
     // Crear copia con nuevo instanceId y sin supersetId
     final duplicate = original.copyWith(
       instanceId: const Uuid().v4(),
@@ -427,12 +449,15 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
 
   // Helper to get visual groups
   // Returns list of lists. Each inner list is a "visual item" (can contain 1 or more exercises).
-  List<List<EjercicioEnRutina>> _getVisualGroups(List<EjercicioEnRutina> exercises) {
+  List<List<EjercicioEnRutina>> _getVisualGroups(
+      List<EjercicioEnRutina> exercises,) {
     if (exercises.isEmpty) return [];
 
     final groups = <List<EjercicioEnRutina>>[];
     final processedInstanceIds = <String>{};
-    final exerciseOrder = {for (var i = 0; i < exercises.length; i++) exercises[i].instanceId: i};
+    final exerciseOrder = {
+      for (var i = 0; i < exercises.length; i++) exercises[i].instanceId: i,
+    };
 
     for (final ex in exercises) {
       if (processedInstanceIds.contains(ex.instanceId)) {
@@ -440,9 +465,11 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
       }
 
       if (ex.supersetId != null) {
-        final group = exercises.where((e) => e.supersetId == ex.supersetId).toList();
+        final group =
+            exercises.where((e) => e.supersetId == ex.supersetId).toList();
         // Sort the group by their original order to maintain stability
-        group.sort((a, b) => exerciseOrder[a.instanceId]!.compareTo(exerciseOrder[b.instanceId]!));
+        group.sort((a, b) => exerciseOrder[a.instanceId]!
+            .compareTo(exerciseOrder[b.instanceId]!),);
         groups.add(group);
         for (final groupEx in group) {
           processedInstanceIds.add(groupEx.instanceId);
@@ -456,7 +483,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   /// Reorders visual items (which might be single exercises or superset blocks)
-  void reorderVisualExercises(int dayIndex, int oldVisualIndex, int newVisualIndex) {
+  void reorderVisualExercises(
+      int dayIndex, int oldVisualIndex, int newVisualIndex,) {
     final day = state.dias[dayIndex];
     final visualGroups = _getVisualGroups(day.ejercicios);
 
@@ -473,7 +501,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     // However, to be safe, we just filter them out.
     // Wait, relying on instance equality is safer if instanceId is unique.
     final idsToMove = exercisesToMove.map((e) => e.instanceId).toSet();
-    final remainingExercises = day.ejercicios.where((e) => !idsToMove.contains(e.instanceId)).toList();
+    final remainingExercises =
+        day.ejercicios.where((e) => !idsToMove.contains(e.instanceId)).toList();
 
     // Find insertion index in flat list
     // The newVisualIndex corresponds to a position in the `visualGroups` list (after removal).
@@ -482,11 +511,11 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     // Reconstruct visual groups from remaining exercises to match indices
     final remainingVisualGroups = _getVisualGroups(remainingExercises);
 
-    int flatInsertionIndex = 0;
-    for (int i = 0; i < newVisualIndex; i++) {
-        if (i < remainingVisualGroups.length) {
-            flatInsertionIndex += remainingVisualGroups[i].length;
-        }
+    var flatInsertionIndex = 0;
+    for (var i = 0; i < newVisualIndex; i++) {
+      if (i < remainingVisualGroups.length) {
+        flatInsertionIndex += remainingVisualGroups[i].length;
+      }
     }
 
     // Insert
@@ -500,11 +529,11 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void reorderExercises(int dayIndex, int oldIndex, int newIndex) {
-     // Deprecated or fallback for simple reorders if needed.
-     // But UI should use reorderVisualExercises now.
-     // Keeping this logic just in case, or forwarding it?
-     // Since UI will change to use reorderVisualExercises, we might not use this.
-     // But let's keep it as is for compatibility or direct flat reorders.
+    // Deprecated or fallback for simple reorders if needed.
+    // But UI should use reorderVisualExercises now.
+    // Keeping this logic just in case, or forwarding it?
+    // Since UI will change to use reorderVisualExercises, we might not use this.
+    // But let's keep it as is for compatibility or direct flat reorders.
     final day = state.dias[dayIndex];
     if (oldIndex < newIndex) {
       newIndex -= 1;
@@ -520,7 +549,10 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void updateExercise(
-      int dayIndex, int exerciseIndex, EjercicioEnRutina updated) {
+    int dayIndex,
+    int exerciseIndex,
+    EjercicioEnRutina updated,
+  ) {
     final day = state.dias[dayIndex];
     final newEjercicios = [...day.ejercicios];
     newEjercicios[exerciseIndex] = updated;
@@ -534,83 +566,87 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   // --- Superset Actions ---
 
   void createSuperset(int dayIndex, int indexA, int indexB) {
-      if (indexA < 0 || indexB < 0) return;
-      final day = state.dias[dayIndex];
-      if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length) return;
-      if (indexA == indexB) return; // Cannot create superset with self
+    if (indexA < 0 || indexB < 0) return;
+    final day = state.dias[dayIndex];
+    if (indexA >= day.ejercicios.length || indexB >= day.ejercicios.length) {
+      return;
+    }
+    if (indexA == indexB) return; // Cannot create superset with self
 
-      final exA = day.ejercicios[indexA];
-      final exB = day.ejercicios[indexB];
+    final exA = day.ejercicios[indexA];
+    final exB = day.ejercicios[indexB];
 
-      final newEjercicios = [...day.ejercicios];
-      final uuid = const Uuid().v4();
+    final newEjercicios = [...day.ejercicios];
+    final uuid = const Uuid().v4();
 
-      // Determine the superset ID to use
-      String idToUse = uuid;
-      if (exA.supersetId != null) {
-          idToUse = exA.supersetId!;
-      } else if (exB.supersetId != null) {
-          idToUse = exB.supersetId!;
+    // Determine the superset ID to use
+    var idToUse = uuid;
+    if (exA.supersetId != null) {
+      idToUse = exA.supersetId!;
+    } else if (exB.supersetId != null) {
+      idToUse = exB.supersetId!;
+    }
+
+    // If both have different IDs, merge all B's group into A's group
+    if (exA.supersetId != null &&
+        exB.supersetId != null &&
+        exA.supersetId != exB.supersetId) {
+      final idA = exA.supersetId!;
+      final idB = exB.supersetId!;
+      // Update all exercises with idB to have idA
+      for (var i = 0; i < newEjercicios.length; i++) {
+        if (newEjercicios[i].supersetId == idB) {
+          newEjercicios[i] = newEjercicios[i].copyWith(supersetId: idA);
+        }
       }
+    } else {
+      // Standard case: assign the superset ID to both exercises
+      newEjercicios[indexA] = exA.copyWith(supersetId: idToUse);
+      newEjercicios[indexB] = exB.copyWith(supersetId: idToUse);
+    }
 
-      // If both have different IDs, merge all B's group into A's group
-      if (exA.supersetId != null && exB.supersetId != null && exA.supersetId != exB.supersetId) {
-           final idA = exA.supersetId!;
-           final idB = exB.supersetId!;
-           // Update all exercises with idB to have idA
-           for (int i=0; i<newEjercicios.length; i++) {
-               if (newEjercicios[i].supersetId == idB) {
-                   newEjercicios[i] = newEjercicios[i].copyWith(supersetId: idA);
-               }
-           }
+    // Make exercises with the same supersetId contiguous
+    // Collect all exercises with this superset ID
+    final supersetExercises = <EjercicioEnRutina>[];
+    final otherExercises = <EjercicioEnRutina>[];
+
+    for (final ex in newEjercicios) {
+      if (ex.supersetId == idToUse) {
+        supersetExercises.add(ex);
       } else {
-          // Standard case: assign the superset ID to both exercises
-          newEjercicios[indexA] = exA.copyWith(supersetId: idToUse);
-          newEjercicios[indexB] = exB.copyWith(supersetId: idToUse);
+        otherExercises.add(ex);
       }
+    }
 
-      // Make exercises with the same supersetId contiguous
-      // Collect all exercises with this superset ID
-      final supersetExercises = <EjercicioEnRutina>[];
-      final otherExercises = <EjercicioEnRutina>[];
-      
-      for (final ex in newEjercicios) {
-        if (ex.supersetId == idToUse) {
-          supersetExercises.add(ex);
-        } else {
-          otherExercises.add(ex);
-        }
-      }
+    // Find the position to insert the superset block
+    // Use the minimum index of the two exercises as the insertion point
+    final minIndex = indexA < indexB ? indexA : indexB;
 
-      // Find the position to insert the superset block
-      // Use the minimum index of the two exercises as the insertion point
-      final minIndex = indexA < indexB ? indexA : indexB;
-      
-      // Rebuild the exercise list with superset exercises contiguous
-      final reorderedExercises = <EjercicioEnRutina>[];
-      int insertedCount = 0;
-      for (int i = 0; i < newEjercicios.length; i++) {
-        if (i == minIndex) {
-          // Insert all superset exercises here
-          reorderedExercises.addAll(supersetExercises);
-          insertedCount = supersetExercises.length;
-        }
-        
-        // Add the original exercise if it's not part of the superset
-        if (newEjercicios[i].supersetId != idToUse) {
-          reorderedExercises.add(newEjercicios[i]);
-        }
-      }
-      
-      // If we haven't inserted yet (minIndex >= length), append at end
-      if (insertedCount == 0) {
+    // Rebuild the exercise list with superset exercises contiguous
+    final reorderedExercises = <EjercicioEnRutina>[];
+    var insertedCount = 0;
+    for (var i = 0; i < newEjercicios.length; i++) {
+      if (i == minIndex) {
+        // Insert all superset exercises here
         reorderedExercises.addAll(supersetExercises);
+        insertedCount = supersetExercises.length;
       }
 
-      final updatedDay = day.copyWith(ejercicios: reorderedExercises);
-      final newDias = [...state.dias];
-      newDias[dayIndex] = updatedDay;
-      state = state.copyWith(dias: newDias);
+      // Add the original exercise if it's not part of the superset
+      if (newEjercicios[i].supersetId != idToUse) {
+        reorderedExercises.add(newEjercicios[i]);
+      }
+    }
+
+    // If we haven't inserted yet (minIndex >= length), append at end
+    if (insertedCount == 0) {
+      reorderedExercises.addAll(supersetExercises);
+    }
+
+    final updatedDay = day.copyWith(ejercicios: reorderedExercises);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   /// Move a whole superset block (by supersetId) to a new insertion index in the flat list
@@ -622,7 +658,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     if (block.isEmpty) return;
 
     // Remove block
-    final remaining = original.where((e) => e.supersetId != supersetId).toList();
+    final remaining =
+        original.where((e) => e.supersetId != supersetId).toList();
 
     // Clamp insertionIndex
     if (insertionIndex < 0) insertionIndex = 0;
@@ -638,36 +675,56 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
   }
 
   void removeFromSuperset(int dayIndex, int exerciseIndex) {
-      final day = state.dias[dayIndex];
-      final ex = day.ejercicios[exerciseIndex];
-      final oldSupersetId = ex.supersetId;
+    final day = state.dias[dayIndex];
+    final ex = day.ejercicios[exerciseIndex];
+    final oldSupersetId = ex.supersetId;
 
-      if (oldSupersetId == null) return;
+    if (oldSupersetId == null) return;
 
-      final newEjercicios = [...day.ejercicios];
-
-      // Remove ID from this exercise
-      newEjercicios[exerciseIndex] = ex.copyWith(supersetId: null);
-
-      // Check remaining members
-      final remaining = newEjercicios.where((e) => e.supersetId == oldSupersetId).toList();
-      if (remaining.length == 1) {
-          // Clean up the orphan
-          final orphanIndex = newEjercicios.indexOf(remaining.first);
-           if (orphanIndex != -1) {
-               newEjercicios[orphanIndex] = newEjercicios[orphanIndex].copyWith(supersetId: null);
-           }
+    final originalSupersetIndices = <int>[];
+    for (var i = 0; i < day.ejercicios.length; i++) {
+      if (day.ejercicios[i].supersetId == oldSupersetId) {
+        originalSupersetIndices.add(i);
       }
+    }
 
-      final updatedDay = day.copyWith(ejercicios: newEjercicios);
-      final newDias = [...state.dias];
-      newDias[dayIndex] = updatedDay;
-      state = state.copyWith(dias: newDias);
+    final newEjercicios = [...day.ejercicios];
+
+    // Remove ID from this exercise
+    newEjercicios[exerciseIndex] = ex.copyWith(supersetId: null);
+
+    // Check remaining members
+    final remaining =
+        newEjercicios.where((e) => e.supersetId == oldSupersetId).toList();
+    if (remaining.length == 1) {
+      // Clean up the orphan
+      final orphanIndex = newEjercicios.indexOf(remaining.first);
+      if (orphanIndex != -1) {
+        newEjercicios[orphanIndex] =
+            newEjercicios[orphanIndex].copyWith(supersetId: null);
+      }
+    } else if (remaining.length >= 2 && originalSupersetIndices.isNotEmpty) {
+      // Keep remaining superset exercises contiguous at the earliest original position.
+      final others =
+          newEjercicios.where((e) => e.supersetId != oldSupersetId).toList();
+      final insertionIndex =
+          originalSupersetIndices.reduce(min).clamp(0, others.length);
+      final reordered = [...others]..insertAll(insertionIndex, remaining);
+      newEjercicios
+        ..clear()
+        ..addAll(reordered);
+    }
+
+    final updatedDay = day.copyWith(ejercicios: newEjercicios);
+    final newDias = [...state.dias];
+    newDias[dayIndex] = updatedDay;
+    state = state.copyWith(dias: newDias);
   }
 
   /// Replaces an exercise with an alternative, preserving series, reps, rest, notes, and superset.
   /// Searches the library for the alternative by name (fuzzy match).
-  void replaceExercise(int dayIndex, int exerciseIndex, String alternativaNombre) {
+  void replaceExercise(
+      int dayIndex, int exerciseIndex, String alternativaNombre,) {
     if (dayIndex >= state.dias.length) return;
     final day = state.dias[dayIndex];
     if (exerciseIndex >= day.ejercicios.length) return;
@@ -741,8 +798,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
     if (state.dias.isEmpty) {
       return 'Añade al menos un día.';
     }
-    bool hasExercise = false;
-    for (var d in state.dias) {
+    var hasExercise = false;
+    for (final d in state.dias) {
       if (d.ejercicios.isNotEmpty) {
         hasExercise = true;
         break;
@@ -759,8 +816,12 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         return 'IDs de días duplicados. Reinicia y prueba de nuevo.';
       }
 
-      final allInstanceIds = state.dias.expand((d) => d.ejercicios.map((e) => e.instanceId)).toList();
-      if (allInstanceIds.isEmpty) return 'Añade al menos un ejercicio antes de guardar.';
+      final allInstanceIds = state.dias
+          .expand((d) => d.ejercicios.map((e) => e.instanceId))
+          .toList();
+      if (allInstanceIds.isEmpty) {
+        return 'Añade al menos un ejercicio antes de guardar.';
+      }
       if (allInstanceIds.length != allInstanceIds.toSet().length) {
         return 'IDs de ejercicios duplicados. Intenta reiniciar la app.';
       }
@@ -768,7 +829,8 @@ class CreateRoutineNotifier extends StateNotifier<Rutina> {
         return 'Encontrado ID de ejercicio vacío. Revisa los ejercicios.';
       }
 
-      await _repository.saveRutina(state);
+      final repository = ref.read(trainingRepositoryProvider);
+      await repository.saveRutina(state);
       return null;
     } catch (e, s) {
       _logger.e('Error guardando rutina', error: e, stackTrace: s);

@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:logger/logger.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/library_exercise.dart';
 
 // --- Top-Level Constants (Optimized for Isolate Access) ---
@@ -58,10 +60,10 @@ const Map<int, String> _muscleMap = {
 // --- Top-Level Isolate Function ---
 
 /// Decodes JSON and ensures strict Map typing in a separate thread.
-/// Returns a Map with 'results' (List<Map<String, dynamic>>) and 'next' (String? url).
+/// Returns a map with 'results' (list of maps) and 'next' (String? url).
 Map<String, dynamic> _decodeJsonBackground(Uint8List responseBytes) {
   // 1. Decode UTF-8
-  final String jsonStr = utf8.decode(responseBytes);
+  final jsonStr = utf8.decode(responseBytes);
 
   // 2. Decode JSON
   final Map<String, dynamic> data = jsonDecode(jsonStr);
@@ -69,7 +71,7 @@ Map<String, dynamic> _decodeJsonBackground(Uint8List responseBytes) {
   // 3. Strict Type Mapping
   // Ensure that each item in 'results' is explicitly cast to Map<String, dynamic>
   // This prevents 'Map<dynamic, dynamic>' issues that cause key access failures.
-  final List<Map<String, dynamic>> safeResults = (data['results'] as List)
+  final safeResults = (data['results'] as List)
       .map((e) => Map<String, dynamic>.from(e))
       .toList();
 
@@ -108,45 +110,50 @@ class ExerciseLibraryService {
   // --- Fallback Data (Offline/Error) ---
   static final List<LibraryExercise> _fallbackExercises = [
     LibraryExercise(
-        id: 1001,
-        name: 'Press de Banca',
-        muscleGroup: 'Pecho',
-        equipment: 'Barra',
-        description: 'Press básico de pecho',
-        muscles: ['Pectoral mayor'],
-        secondaryMuscles: ['Tríceps braquial', 'Deltoides anterior']),
+      id: 1001,
+      name: 'Press de Banca',
+      muscleGroup: 'Pecho',
+      equipment: 'Barra',
+      description: 'Press básico de pecho',
+      muscles: ['Pectoral mayor'],
+      secondaryMuscles: ['Tríceps braquial', 'Deltoides anterior'],
+    ),
     LibraryExercise(
-        id: 1002,
-        name: 'Sentadilla',
-        muscleGroup: 'Piernas',
-        equipment: 'Barra',
-        description: 'Sentadilla clásica',
-        muscles: ['Cuádriceps'],
-        secondaryMuscles: ['Glúteo mayor', 'Gemelos']),
+      id: 1002,
+      name: 'Sentadilla',
+      muscleGroup: 'Piernas',
+      equipment: 'Barra',
+      description: 'Sentadilla clásica',
+      muscles: ['Cuádriceps'],
+      secondaryMuscles: ['Glúteo mayor', 'Gemelos'],
+    ),
     LibraryExercise(
-        id: 1003,
-        name: 'Peso Muerto',
-        muscleGroup: 'Espalda',
-        equipment: 'Barra',
-        description: 'Peso muerto convencional',
-        muscles: ['Erectores', 'Glúteo mayor'],
-        secondaryMuscles: ['Isquios', 'Trapecio']),
+      id: 1003,
+      name: 'Peso Muerto',
+      muscleGroup: 'Espalda',
+      equipment: 'Barra',
+      description: 'Peso muerto convencional',
+      muscles: ['Erectores', 'Glúteo mayor'],
+      secondaryMuscles: ['Isquios', 'Trapecio'],
+    ),
     LibraryExercise(
-        id: 1004,
-        name: 'Dominadas',
-        muscleGroup: 'Espalda',
-        equipment: 'Barra dominadas',
-        description: 'Pull-ups',
-        muscles: ['Dorsal ancho'],
-        secondaryMuscles: ['Bíceps braquial']),
+      id: 1004,
+      name: 'Dominadas',
+      muscleGroup: 'Espalda',
+      equipment: 'Barra dominadas',
+      description: 'Pull-ups',
+      muscles: ['Dorsal ancho'],
+      secondaryMuscles: ['Bíceps braquial'],
+    ),
     LibraryExercise(
-        id: 1005,
-        name: 'Press Militar',
-        muscleGroup: 'Hombros',
-        equipment: 'Barra',
-        description: 'Press de hombros de pie',
-        muscles: ['Deltoides anterior'],
-        secondaryMuscles: ['Tríceps braquial']),
+      id: 1005,
+      name: 'Press Militar',
+      muscleGroup: 'Hombros',
+      equipment: 'Barra',
+      description: 'Press de hombros de pie',
+      muscles: ['Deltoides anterior'],
+      secondaryMuscles: ['Tríceps braquial'],
+    ),
   ];
 
   Future<File> get _localFile async {
@@ -186,7 +193,7 @@ class ExerciseLibraryService {
       final imagesDir = Directory('${directory.path}/ejercicios_images');
       if (await imagesDir.exists()) {
         final files = imagesDir.listSync();
-        for (var entity in files) {
+        for (final entity in files) {
           if (entity is File) {
             final length = await entity.length();
             if (length == 0) {
@@ -229,7 +236,8 @@ class ExerciseLibraryService {
         prefs.getBool('initial_library_sync_completed') ?? false;
 
     final connectivityResult = await Connectivity().checkConnectivity();
-    final isOnline = connectivityResult.any((r) => r != ConnectivityResult.none);
+    final isOnline =
+        connectivityResult.any((r) => r != ConnectivityResult.none);
 
     if (!isOnline) {
       _logger.d('Sentinel: Offline. Skipping sync check.');
@@ -271,7 +279,8 @@ class ExerciseLibraryService {
           await file.delete();
         }
       } catch (deleteError) {
-        _logger.e('Failed to delete corrupt exercises.json', error: deleteError);
+        _logger.e('Failed to delete corrupt exercises.json',
+            error: deleteError,);
       }
 
       if (_exercises.isEmpty) {
@@ -284,8 +293,7 @@ class ExerciseLibraryService {
   Future<void> _saveToFile() async {
     try {
       final file = await _localFile;
-      final String content =
-          jsonEncode(_exercises.map((e) => e.toJson()).toList());
+      final content = jsonEncode(_exercises.map((e) => e.toJson()).toList());
       await file.writeAsString(content);
     } catch (e, s) {
       _logger.e('Error saving library to file', error: e, stackTrace: s);
@@ -358,10 +366,11 @@ class ExerciseLibraryService {
       }
 
       // Initialize map with existing exercises
-      final Map<int, LibraryExercise> exercisesMap = {
-        for (var ex in _exercises) ex.id: ex
+      final exercisesMap = <int, LibraryExercise>{
+        for (final ex in _exercises) ex.id: ex,
       };
-      _logger.d('Initialized sync with ${exercisesMap.length} existing exercises.');
+      _logger.d(
+          'Initialized sync with ${exercisesMap.length} existing exercises.',);
 
       // --- PARALLEL FETCH ---
       // Fetch both languages concurrently to speed up the process.
@@ -378,7 +387,8 @@ class ExerciseLibraryService {
       _mergeExercises(exercisesMap, englishExercises, isPrimary: true);
       _mergeExercises(exercisesMap, spanishExercises, isPrimary: false);
 
-      _logger.i('Total exercises in map before final filtering: ${exercisesMap.length}');
+      _logger.i(
+          'Total exercises in map before final filtering: ${exercisesMap.length}',);
 
       // Update internal list from the map, filtering for validity
       final originalCount = exercisesMap.length;
@@ -387,30 +397,40 @@ class ExerciseLibraryService {
 
       if (exercisesMap.isNotEmpty && _exercises.isEmpty) {
         _logger.w(
-            'CRITICAL WARNING: All $originalCount exercises were discarded after name validation.',
-            error:
-                'Example invalid name: "${exercisesMap.values.first.name}"');
+          'CRITICAL WARNING: All $originalCount exercises were discarded after name validation.',
+          error: 'Example invalid name: "${exercisesMap.values.first.name}"',
+        );
       }
       _logger.i(
-          'Total unique, valid exercises after merge: ${_exercises.length}');
+        'Total unique, valid exercises after merge: ${_exercises.length}',
+      );
 
       // Phase 3: Parallel Image Downloads
       if (!kIsWeb && imagesDirPath != null) {
         final pendingDownloads = _exercises
-            .where((e) =>
-                e.imageUrls.isNotEmpty &&
-                (e.localImagePath == null ||
-                    !File(e.localImagePath!).existsSync()))
+            .where(
+              (e) =>
+                  e.imageUrls.isNotEmpty &&
+                  (e.localImagePath == null ||
+                      !File(e.localImagePath!).existsSync()),
+            )
             .toList();
 
-        _logger
-            .i('Found ${pendingDownloads.length} exercises with images to download.');
+        _logger.i(
+            'Found ${pendingDownloads.length} exercises with images to download.',);
         if (pendingDownloads.isNotEmpty) {
-            // Log a few sample URLs to help debugging network/image issues
-            final sample = pendingDownloads.take(5).map((e) => e.imageUrls.isNotEmpty ? e.imageUrls.first : '(no-url)').toList();
-            _logger.d('Sample image URLs: $sample');
+          // Log a few sample URLs to help debugging network/image issues
+          final sample = pendingDownloads
+              .take(5)
+              .map((e) =>
+                  e.imageUrls.isNotEmpty ? e.imageUrls.first : '(no-url)',)
+              .toList();
+          _logger.d('Sample image URLs: $sample');
           await _processImageDownloads(
-              pendingDownloads, imagesDirPath, exercisesMap);
+            pendingDownloads,
+            imagesDirPath,
+            exercisesMap,
+          );
         }
       }
 
@@ -454,10 +474,12 @@ class ExerciseLibraryService {
       }
 
       final pendingDownloads = _exercises
-          .where((e) =>
-              e.imageUrls.isNotEmpty &&
-              (e.localImagePath == null ||
-                  !File(e.localImagePath!).existsSync()))
+          .where(
+            (e) =>
+                e.imageUrls.isNotEmpty &&
+                (e.localImagePath == null ||
+                    !File(e.localImagePath!).existsSync()),
+          )
           .toList();
 
       if (pendingDownloads.isEmpty) {
@@ -465,30 +487,34 @@ class ExerciseLibraryService {
         return;
       }
 
-      _logger.i('🖼️ Downloading ${pendingDownloads.length} images for curated library...');
+      _logger.i(
+          '🖼️ Downloading ${pendingDownloads.length} images for curated library...',);
 
-      final exercisesMap = { for (var ex in _exercises) ex.id: ex };
-      await _processImageDownloads(pendingDownloads, imagesDir.path, exercisesMap);
+      final exercisesMap = {for (final ex in _exercises) ex.id: ex};
+      await _processImageDownloads(
+          pendingDownloads, imagesDir.path, exercisesMap,);
 
       _logger.i('✅ Image download for curated library completed.');
     } catch (e, s) {
-      _logger.w('Error downloading images for curated library', error: e, stackTrace: s);
+      _logger.w('Error downloading images for curated library',
+          error: e, stackTrace: s,);
     }
   }
 
   LibraryExercise? _parseExerciseFromApi(Map<String, dynamic> item) {
     if (item['name'] == null) {
       _logger.e(
-          'CRITICAL: Found exercise with NULL name. Item keys: ${item.keys.toList()}');
+        'CRITICAL: Found exercise with NULL name. Item keys: ${item.keys.toList()}',
+      );
       return null;
     }
 
     // Helper to extract nested IDs safely
-    int catId = (item['category'] is Map)
+    final int catId = (item['category'] is Map)
         ? item['category']['id']
         : item['category'] ?? 0;
 
-    int equipId = 7; // Default: Body weight
+    var equipId = 7; // Default: Body weight
     if (item['equipment'] is List && (item['equipment'] as List).isNotEmpty) {
       final firstEq = (item['equipment'] as List)[0];
       equipId = (firstEq is Map) ? firstEq['id'] : firstEq;
@@ -501,7 +527,7 @@ class ExerciseLibraryService {
     List<String> mapMuscles(String key) {
       if (item[key] is List) {
         return (item[key] as List).map((m) {
-          int mId = (m is Map) ? m['id'] : m as int;
+          final int mId = (m is Map) ? m['id'] : m as int;
           return _muscleMap[mId] ?? 'Músculo $mId';
         }).toList();
       }
@@ -519,10 +545,10 @@ class ExerciseLibraryService {
 
   Future<List<LibraryExercise>> _fetchLanguageExercises(int language) async {
     _logger.i('Phase: Fetching language $language...');
-    List<LibraryExercise> fetchedExercises = [];
+    final fetchedExercises = <LibraryExercise>[];
     String? url =
         'https://wger.de/api/v2/exerciseinfo/?language=$language&limit=200';
-    int fetchedCount = 0;
+    var fetchedCount = 0;
 
     while (url != null && url.isNotEmpty) {
       try {
@@ -530,21 +556,20 @@ class ExerciseLibraryService {
             await http.get(Uri.parse(url)).timeout(const Duration(seconds: 45));
         if (response.statusCode != 200) {
           _logger.e(
-              'API Error (lang $language): ${response.statusCode}, Body: ${response.body}');
+            'API Error (lang $language): ${response.statusCode}, Body: ${response.body}',
+          );
           break;
         }
 
         // --- ISOLATE IMPLEMENTATION ---
-        final Map<String, dynamic> result =
-            await compute(_decodeJsonBackground, response.bodyBytes);
+        final result = await compute(_decodeJsonBackground, response.bodyBytes);
 
-        final List<Map<String, dynamic>> rawExercises =
-            result['results'] as List<Map<String, dynamic>>;
-        final String? nextUrl = result['next'] as String?;
+        final rawExercises = result['results'] as List<Map<String, dynamic>>;
+        final nextUrl = result['next'] as String?;
 
         fetchedCount += rawExercises.length;
 
-        for (var item in rawExercises) {
+        for (final item in rawExercises) {
           final exercise = _parseExerciseFromApi(item);
           if (exercise != null) {
             fetchedExercises.add(exercise);
@@ -552,8 +577,11 @@ class ExerciseLibraryService {
         }
         url = nextUrl;
       } catch (e, s) {
-        _logger.e('Failed to fetch page for language $language',
-            error: e, stackTrace: s);
+        _logger.e(
+          'Failed to fetch page for language $language',
+          error: e,
+          stackTrace: s,
+        );
         break;
       }
     }
@@ -561,14 +589,16 @@ class ExerciseLibraryService {
     return fetchedExercises;
   }
 
-  void _mergeExercises(Map<int, LibraryExercise> exercisesMap,
-      List<LibraryExercise> newExercises,
-      {required bool isPrimary}) {
-    int addedCount = 0;
-    int mergedCount = 0;
-    int protectedCount = 0;
+  void _mergeExercises(
+    Map<int, LibraryExercise> exercisesMap,
+    List<LibraryExercise> newExercises, {
+    required bool isPrimary,
+  }) {
+    var addedCount = 0;
+    var mergedCount = 0;
+    var protectedCount = 0;
 
-    for (var exercise in newExercises) {
+    for (final exercise in newExercises) {
       final existing = exercisesMap[exercise.id];
 
       if (existing != null) {
@@ -578,7 +608,7 @@ class ExerciseLibraryService {
         if (existing.isCurated) {
           protectedCount++;
           // Solo permitir actualizar imageUrls y localImagePath de ejercicios curados
-          final Set<String> uniqueImages = {};
+          final uniqueImages = <String>{};
           uniqueImages.addAll(existing.imageUrls);
           uniqueImages.addAll(exercise.imageUrls);
 
@@ -599,11 +629,11 @@ class ExerciseLibraryService {
         // newName should use Lang 4 name (exercise.name) ONLY if it is valid.
         // If Lang 4 name is invalid ("Exercise", "Ejercicio sin nombre"), we keep existing (English).
 
-        final bool shouldUseNewName = isPrimary || _isValidName(exercise.name);
+        final shouldUseNewName = isPrimary || _isValidName(exercise.name);
         final newName = shouldUseNewName ? exercise.name : existing.name;
 
         // Merge and Deduplicate Images
-        final Set<String> uniqueImages = {};
+        final uniqueImages = <String>{};
         uniqueImages.addAll(existing.imageUrls);
         uniqueImages.addAll(exercise.imageUrls);
 
@@ -617,14 +647,13 @@ class ExerciseLibraryService {
               : existing.description,
           license: exercise.license ?? existing.license,
           imageUrls: uniqueImages.toList(),
-          localImagePath: existing.localImagePath, // Preserve existing local path
-          muscles: exercise.muscles.isNotEmpty
-              ? exercise.muscles
-              : existing.muscles,
+          localImagePath:
+              existing.localImagePath, // Preserve existing local path
+          muscles:
+              exercise.muscles.isNotEmpty ? exercise.muscles : existing.muscles,
           secondaryMuscles: exercise.secondaryMuscles.isNotEmpty
               ? exercise.secondaryMuscles
               : existing.secondaryMuscles,
-          isCurated: false, // Ejercicios de API NO son curados
         );
       } else {
         addedCount++;
@@ -634,7 +663,8 @@ class ExerciseLibraryService {
       }
     }
     _logger.i(
-        'Merge (isPrimary=$isPrimary): Added $addedCount new, Merged $mergedCount, Protected $protectedCount curated.');
+      'Merge (isPrimary=$isPrimary): Added $addedCount new, Merged $mergedCount, Protected $protectedCount curated.',
+    );
   }
 
   Future<void> _processImageDownloads(
@@ -642,27 +672,29 @@ class ExerciseLibraryService {
     String dirPath,
     Map<int, LibraryExercise> map,
   ) async {
-    const int batchSize = 10;
+    const batchSize = 10;
     for (var i = 0; i < items.length; i += batchSize) {
       final end = (i + batchSize < items.length) ? i + batchSize : items.length;
       final batch = items.sublist(i, end);
 
-      await Future.wait(batch.map((exercise) async {
-        for (final imageUrl in exercise.imageUrls) {
-          final localPath =
-              await _downloadImage(imageUrl, exercise.id.toString(), dirPath);
-          if (localPath != null) {
-            // Update the map; this will be persisted later.
-            map[exercise.id]?.localImagePath = localPath;
-            break; // Stop after one successful download for this exercise
-          } else {
-             // Ensure it is null if failed (though it should be null by default if not set)
-             // If it was previously set but validation failed, we might want to clear it?
-             // But here we are iterating *pendingDownloads* which means localImagePath was null or missing.
-             // So we don't need to explicitly set null.
+      await Future.wait(
+        batch.map((exercise) async {
+          for (final imageUrl in exercise.imageUrls) {
+            final localPath =
+                await _downloadImage(imageUrl, exercise.id.toString(), dirPath);
+            if (localPath != null) {
+              // Update the map; this will be persisted later.
+              map[exercise.id]?.localImagePath = localPath;
+              break; // Stop after one successful download for this exercise
+            } else {
+              // Ensure it is null if failed (though it should be null by default if not set)
+              // If it was previously set but validation failed, we might want to clear it?
+              // But here we are iterating *pendingDownloads* which means localImagePath was null or missing.
+              // So we don't need to explicitly set null.
+            }
           }
-        }
-      }));
+        }),
+      );
     }
     // Persist progress after all batches to reduce I/O
     await _saveToFile();
@@ -678,10 +710,10 @@ class ExerciseLibraryService {
       // Validate existing file
       if (await file.exists()) {
         if (await file.length() > 0) {
-           return filePath; // Valid existing file
+          return filePath; // Valid existing file
         } else {
-           _logger.w('Found 0-byte image file for $id, deleting and retrying.');
-           await file.delete();
+          _logger.w('Found 0-byte image file for $id, deleting and retrying.');
+          await file.delete();
         }
       }
 
@@ -694,22 +726,25 @@ class ExerciseLibraryService {
 
         // Double-check file integrity
         if (await file.length() > 0) {
-           _logger.d('Downloaded image: $filePath');
-           return filePath;
+          _logger.d('Downloaded image: $filePath');
+          return filePath;
         } else {
-           _logger.e('File write failed (0 bytes) for $filePath');
-           if (await file.exists()) await file.delete();
-           return null;
+          _logger.e('File write failed (0 bytes) for $filePath');
+          if (await file.exists()) await file.delete();
+          return null;
         }
       } else {
-         _logger.w('Failed to download image $url: status ${response.statusCode}, bytes: ${response.bodyBytes.length}');
-         return null;
+        _logger.w(
+            'Failed to download image $url: status ${response.statusCode}, bytes: ${response.bodyBytes.length}',);
+        return null;
       }
     } catch (e) {
       _logger.w('Error downloading image for $id from $url', error: e);
       // Clean up potentially corrupted file
       if (await file.exists()) {
-         try { await file.delete(); } catch (_) {}
+        try {
+          await file.delete();
+        } catch (_) {}
       }
       return null;
     }
@@ -717,7 +752,8 @@ class ExerciseLibraryService {
 
   Future<void> _updateLastSyncDate() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_library_sync', DateTime.now().toIso8601String());
+    await prefs.setString(
+        'last_library_sync', DateTime.now().toIso8601String(),);
   }
 
   Future<bool> shouldSync() async {
@@ -765,7 +801,8 @@ class ExerciseLibraryService {
   bool isFavorite(int exerciseId) {
     final exercise = _exercises.firstWhere(
       (e) => e.id == exerciseId,
-      orElse: () => LibraryExercise(id: -1, name: '', muscleGroup: '', equipment: ''),
+      orElse: () =>
+          LibraryExercise(id: -1, name: '', muscleGroup: '', equipment: ''),
     );
     return exercise.isFavorite;
   }
@@ -781,7 +818,7 @@ class ExerciseLibraryService {
     List<String> secondaryMuscles = const [],
   }) async {
     // Generar ID negativo único para ejercicios custom
-    int customId = -1;
+    var customId = -1;
     for (final ex in _exercises) {
       if (ex.id < 0 && ex.id <= customId) {
         customId = ex.id - 1;

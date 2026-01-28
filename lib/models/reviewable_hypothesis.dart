@@ -89,8 +89,6 @@ class ReviewableHypothesis {
       currentSeries: seriesReps.series?.value,
       currentRepsRange: seriesReps.repsRangeString,
       currentWeight: seriesReps.weight?.value,
-      wasModified: false,
-      timeInReview: Duration.zero,
       reviewStartedAt: DateTime.now(),
       orderIndex: orderIndex,
     );
@@ -195,7 +193,8 @@ class ReviewableHypothesis {
   // =========================================
 
   /// Selecciona un ejercicio de los candidatos
-  ReviewableHypothesis selectExercise(LibraryExercise exercise, double confidence) {
+  ReviewableHypothesis selectExercise(
+      LibraryExercise exercise, double confidence,) {
     return copyWith(
       currentSelection: ExerciseSelection(
         exercise: exercise,
@@ -416,10 +415,12 @@ class ReviewSession {
       hypotheses: hypotheses
           .asMap()
           .entries
-          .map((e) => ReviewableHypothesis.fromHypothesis(
-                e.value,
-                orderIndex: e.key,
-              ))
+          .map(
+            (e) => ReviewableHypothesis.fromHypothesis(
+              e.value,
+              orderIndex: e.key,
+            ),
+          )
           .toList(),
       startedAt: DateTime.now(),
     );
@@ -434,7 +435,8 @@ class ReviewSession {
 
   /// Hipótesis pendientes de revisión
   int get pendingCount => hypotheses
-      .where((h) => h.state != ReviewState.accepted && h.state != ReviewState.deleted)
+      .where((h) =>
+          h.state != ReviewState.accepted && h.state != ReviewState.deleted,)
       .length;
 
   /// Hipótesis aceptadas
@@ -466,7 +468,9 @@ class ReviewSession {
       currentIndex: currentIndex,
       startedAt: startedAt,
       isComplete: newList.every(
-          (h) => h.state == ReviewState.accepted || h.state == ReviewState.deleted),
+        (h) =>
+            h.state == ReviewState.accepted || h.state == ReviewState.deleted,
+      ),
     );
   }
 

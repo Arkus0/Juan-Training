@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
-import '../services/voice_input_service.dart';
-import '../services/routine_ocr_service.dart';
+
 import '../services/exercise_parsing_service.dart';
+import '../services/routine_ocr_service.dart';
+import '../services/voice_input_service.dart';
 import 'ejercicio_en_rutina.dart';
 import 'library_exercise.dart';
 
@@ -138,8 +139,7 @@ class DetectedExerciseDraft {
   bool get isValid => currentMatchedId != null;
 
   /// True si requiere revisión del usuario (baja confianza o editado)
-  bool get needsReview =>
-      !isVerified && (originalConfidence < 0.7 || !isValid);
+  bool get needsReview => !isVerified && (originalConfidence < 0.7 || !isValid);
 
   /// True si es parte de una superserie
   bool get isSuperset => supersetGroup > 0;
@@ -196,7 +196,7 @@ class DetectedExerciseDraft {
 
   /// Resumen corto para debug/logs
   String get summary =>
-      '${currentMatchedName ?? "NO MATCH"} ${series}x$repsRange ${weight != null ? "${weight}kg" : ""} [${confidenceLabel}]';
+      '${currentMatchedName ?? "NO MATCH"} ${series}x$repsRange ${weight != null ? "${weight}kg" : ""} [$confidenceLabel]';
 
   // ============================================
   // FACTORY CONSTRUCTORS
@@ -225,13 +225,7 @@ class DetectedExerciseDraft {
       weight: parsed.weight,
       notes: parsed.notes,
       supersetGroup: parsed.supersetGroup,
-      // Sin ediciones aún
-      wasManuallyEdited: false,
-      wasNameChanged: false,
-      wasSeriesRepsChanged: false,
-      lastEditedAt: null,
       orderIndex: orderIndex,
-      isVerified: false,
     );
   }
 
@@ -255,12 +249,7 @@ class DetectedExerciseDraft {
       weight: voice.weight,
       notes: voice.notes,
       supersetGroup: voice.supersetGroup,
-      wasManuallyEdited: false,
-      wasNameChanged: false,
-      wasSeriesRepsChanged: false,
-      lastEditedAt: null,
       orderIndex: orderIndex,
-      isVerified: false,
     );
   }
 
@@ -282,14 +271,7 @@ class DetectedExerciseDraft {
       series: ocr.series,
       repsRange: ocr.reps.toString(),
       weight: ocr.weight,
-      notes: null,
-      supersetGroup: 0,
-      wasManuallyEdited: false,
-      wasNameChanged: false,
-      wasSeriesRepsChanged: false,
-      lastEditedAt: null,
       orderIndex: orderIndex,
-      isVerified: false,
     );
   }
 
@@ -315,12 +297,6 @@ class DetectedExerciseDraft {
       series: series,
       repsRange: repsRange,
       weight: weight,
-      notes: null,
-      supersetGroup: 0,
-      wasManuallyEdited: false,
-      wasNameChanged: false,
-      wasSeriesRepsChanged: false,
-      lastEditedAt: null,
       orderIndex: orderIndex,
       isVerified: true, // Manual = siempre verificado
     );
@@ -458,7 +434,6 @@ class DetectedExerciseDraft {
       wasManuallyEdited: false,
       wasNameChanged: false,
       wasSeriesRepsChanged: false,
-      lastEditedAt: null,
       isVerified: false,
     );
   }

@@ -23,7 +23,6 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
   final _mediaService = MediaControlService.instance;
 
   bool _isVisible = false;
-  bool _isPlaying = false;
 
   StreamSubscription<MediaSessionInfo>? _sessionSubscription;
 
@@ -36,7 +35,8 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
   Future<void> _initializeMediaService() async {
     await _mediaService.initialize();
     _updateFromSession(_mediaService.currentSession);
-    _sessionSubscription = _mediaService.sessionStream.listen(_updateFromSession);
+    _sessionSubscription =
+        _mediaService.sessionStream.listen(_updateFromSession);
   }
 
   void _updateFromSession(MediaSessionInfo session) {
@@ -45,7 +45,6 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
       _isVisible = session.hasMedia ||
           session.playbackState == MediaPlaybackState.playing ||
           session.playbackState == MediaPlaybackState.paused;
-      _isPlaying = session.playbackState == MediaPlaybackState.playing;
     });
   }
 
@@ -60,7 +59,8 @@ class _MusicLauncherBarState extends State<MusicLauncherBar> {
     // 🎯 NEON IRON: No mostrar nada si no hay música activa
     if (!_isVisible) return const SizedBox.shrink();
 
-    return const SizedBox.shrink(); // Removido del body - ahora es AppBar action
+    return const SizedBox
+        .shrink(); // Removido del body - ahora es AppBar action
   }
 }
 
@@ -97,7 +97,8 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
   Future<void> _initializeMediaService() async {
     await _mediaService.initialize();
     _updateFromSession(_mediaService.currentSession);
-    _sessionSubscription = _mediaService.sessionStream.listen(_updateFromSession);
+    _sessionSubscription =
+        _mediaService.sessionStream.listen(_updateFromSession);
   }
 
   void _updateFromSession(MediaSessionInfo session) {
@@ -139,16 +140,18 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => _MusicControlSheet(
+      builder: (sheetContext) => _MusicControlSheet(
         isPlaying: _isPlaying,
         title: _currentTitle,
         onPlayPause: () async {
           await _onPlayPause();
-          if (mounted) Navigator.pop(context);
+          if (!sheetContext.mounted) return;
+          Navigator.pop(sheetContext);
         },
         onOpenSpotify: () async {
           await _openSpotify();
-          if (mounted) Navigator.pop(context);
+          if (!sheetContext.mounted) return;
+          Navigator.pop(sheetContext);
         },
         onPrevious: () async {
           HapticsController.instance.onMediaCommand();
@@ -169,7 +172,8 @@ class _MusicAppBarActionState extends State<MusicAppBarAction>
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, child) {
-        final pulseValue = _isPlaying ? 0.3 + (_pulseController.value * 0.2) : 0.5;
+        final pulseValue =
+            _isPlaying ? 0.3 + (_pulseController.value * 0.2) : 0.5;
         return IconButton(
           onPressed: _showMusicPopup,
           tooltip: 'Controles de música',

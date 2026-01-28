@@ -5,7 +5,8 @@ import 'package:juan_training/models/serie_log.dart';
 import 'package:juan_training/widgets/session/exercise_card.dart';
 
 void main() {
-  testWidgets('Focused set keys use exercise id to avoid ghost mismatches', (tester) async {
+  testWidgets('Focused set keys use exercise id to avoid ghost mismatches',
+      (tester) async {
     final exercise = Ejercicio(
       id: 'ex-1',
       libraryId: '1',
@@ -28,7 +29,7 @@ void main() {
             onShowOptions: () {},
             onUpdateWeight: (_, __) {},
             onUpdateReps: (_, __) {},
-            onUpdateCompleted: (_, __) {},
+            onUpdateCompleted: (_, {required bool? value}) {},
             onPlateCalc: (_, __) {},
             onSetLongPress: (_) {},
           ),

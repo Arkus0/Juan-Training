@@ -20,8 +20,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
     _searchController.addListener(() {
       setState(() {});
     });
-    ref.read(exerciseSearchQueryProvider.notifier).state =
-        _searchController.text;
+    ref
+        .read(exerciseSearchQueryProvider.notifier)
+        .setQuery(_searchController.text);
   }
 
   @override
@@ -48,7 +49,7 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
               controller: _searchController,
               style: const TextStyle(fontWeight: FontWeight.bold),
               onChanged: (value) {
-                ref.read(exerciseSearchQueryProvider.notifier).state = value;
+                ref.read(exerciseSearchQueryProvider.notifier).setQuery(value);
               },
               decoration: InputDecoration(
                 hintText: 'Buscar ejercicio...',
@@ -58,6 +59,9 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                         icon: const Icon(Icons.clear, color: Colors.grey),
                         onPressed: () {
                           _searchController.clear();
+                          ref
+                              .read(exerciseSearchQueryProvider.notifier)
+                              .setQuery('');
                         },
                       )
                     : null,
@@ -68,12 +72,14 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
             child: resultsAsync.when(
               data: (displayedExercises) {
                 if (displayedExercises.isEmpty) {
-                  final suggestions = suggestionsAsync.value ?? const <LibraryExercise>[];
+                  final suggestions =
+                      suggestionsAsync.value ?? const <LibraryExercise>[];
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off, size: 60, color: Colors.grey[800]),
+                        Icon(Icons.search_off,
+                            size: 60, color: Colors.grey[800],),
                         const SizedBox(height: 16),
                         const Text(
                           'NO SE ENCONTRÓ EL EJERCICIO',
@@ -104,10 +110,12 @@ class _SearchExerciseScreenState extends ConsumerState<SearchExerciseScreen> {
                   );
                 }
 
-                final topMatches =
-                    query.trim().isEmpty ? const <LibraryExercise>[] : displayedExercises.take(5).toList();
-                final remaining =
-                    query.trim().isEmpty ? displayedExercises : displayedExercises.skip(5).toList();
+                final topMatches = query.trim().isEmpty
+                    ? const <LibraryExercise>[]
+                    : displayedExercises.take(5).toList();
+                final remaining = query.trim().isEmpty
+                    ? displayedExercises
+                    : displayedExercises.skip(5).toList();
 
                 final rows = <_SearchRow>[];
                 if (topMatches.isNotEmpty) {

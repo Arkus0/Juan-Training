@@ -1,10 +1,11 @@
-import '../../utils/design_system.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Spider/Radar chart showing muscle volume balance
 class SymmetryRadar extends ConsumerWidget {
@@ -30,7 +31,7 @@ class SymmetryRadar extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha:0.2),
+                  color: Colors.purple.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -63,7 +64,7 @@ class SymmetryRadar extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha:0.2),
+                          color: Colors.amber.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -142,8 +143,9 @@ class SymmetryRadar extends ConsumerWidget {
         RadarChartData(
           dataSets: [
             RadarDataSet(
-              dataEntries: values.map((v) => RadarEntry(value: v * 100)).toList(),
-              fillColor: Colors.redAccent.withValues(alpha:0.3),
+              dataEntries:
+                  values.map((v) => RadarEntry(value: v * 100)).toList(),
+              fillColor: Colors.redAccent.withValues(alpha: 0.3),
               borderColor: Colors.redAccent,
               borderWidth: 2,
               entryRadius: 3,
@@ -158,11 +160,9 @@ class SymmetryRadar extends ConsumerWidget {
           ),
           tickBorderData: const BorderSide(
             color: AppColors.bgDeep,
-            width: 1,
           ),
           gridBorderData: const BorderSide(
             color: AppColors.bgDeep,
-            width: 1,
           ),
           titleTextStyle: GoogleFonts.montserrat(
             color: AppColors.textSecondary,
@@ -177,14 +177,13 @@ class SymmetryRadar extends ConsumerWidget {
                 : '';
             return RadarChartTitle(
               text: '$muscle$volumeStr',
-              angle: 0,
             );
           },
           titlePositionPercentageOffset: 0.15,
           radarBackgroundColor: Colors.transparent,
         ),
-        swapAnimationDuration: const Duration(milliseconds: 400),
-        swapAnimationCurve: Curves.easeInOutCubic,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
       ),
     );
   }
@@ -194,7 +193,7 @@ class SymmetryRadar extends ConsumerWidget {
       height: 250,
       child: Center(
         child: CircularProgressIndicator(
-          color: Colors.redAccent.withValues(alpha:0.5),
+          color: Colors.redAccent.withValues(alpha: 0.5),
           strokeWidth: 2,
         ),
       ),
@@ -265,16 +264,18 @@ class SymmetryRadarCompact extends ConsumerWidget {
                     dataSets: [
                       RadarDataSet(
                         dataEntries: kMuscleGroups
-                            .map((m) => RadarEntry(value: data.getNormalized(m) * 100))
+                            .map((m) =>
+                                RadarEntry(value: data.getNormalized(m) * 100),)
                             .toList(),
-                        fillColor: Colors.redAccent.withValues(alpha:0.3),
+                        fillColor: Colors.redAccent.withValues(alpha: 0.3),
                         borderColor: Colors.redAccent,
                         borderWidth: 1.5,
                         entryRadius: 2,
                       ),
                     ],
                     radarShape: RadarShape.polygon,
-                    radarBorderData: const BorderSide(color: Colors.transparent),
+                    radarBorderData:
+                        const BorderSide(color: Colors.transparent),
                     tickCount: 2,
                     ticksTextStyle: const TextStyle(color: Colors.transparent),
                     tickBorderData: const BorderSide(

@@ -19,7 +19,7 @@ Future<void> main(List<String> args) async {
     'placeholder_names': <int>[],
     'missing_images': <int>[],
     'invalid_images': <int>[],
-    'entries_checked': 0
+    'entries_checked': 0,
   };
 
   if (!await jsonFile.exists()) {
@@ -28,7 +28,8 @@ Future<void> main(List<String> args) async {
   }
 
   final content = await jsonFile.readAsString();
-  final list = (jsonDecode(content) as List<dynamic>).cast<Map<String, dynamic>>();
+  final list =
+      (jsonDecode(content) as List<dynamic>).cast<Map<String, dynamic>>();
   report['entries_checked'] = list.length;
 
   for (final entry in list) {
@@ -60,11 +61,12 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  await reportFile.writeAsString(const JsonEncoder.withIndent('  ').convert(report));
-  print('Asset check finished. Report written to ${reportFile.path}');
-  print('Placeholders: ${report['placeholder_names'].length}');
-  print('Missing images: ${report['missing_images'].length}');
-  print('Invalid images: ${report['invalid_images'].length}');
+  await reportFile
+      .writeAsString(const JsonEncoder.withIndent('  ').convert(report));
+  stdout.writeln('Asset check finished. Report written to ${reportFile.path}');
+  stdout.writeln('Placeholders: ${report['placeholder_names'].length}');
+  stdout.writeln('Missing images: ${report['missing_images'].length}');
+  stdout.writeln('Invalid images: ${report['invalid_images'].length}');
 
   // exit code 0 even on warnings; caller script may parse report
 }

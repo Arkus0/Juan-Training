@@ -28,7 +28,12 @@ class MockTrainingRepository implements ITrainingRepository {
 
   @override
   Stream<List<Rutina>> watchRutinas() {
-    return _rutinasController.stream.startWith(_rutinas);
+    return _rutinasStream();
+  }
+
+  Stream<List<Rutina>> _rutinasStream() async* {
+    yield _rutinas;
+    yield* _rutinasController.stream;
   }
 
   @override
@@ -62,14 +67,18 @@ class MockTrainingRepository implements ITrainingRepository {
   @override
   Future<List<Sesion>> getHistoryForExercise(String exerciseName) async {
     // Check both completed and target exercises for history matches
-    return _sesiones.where((s) =>
-      s.ejerciciosCompletados.any((e) => e.nombre == exerciseName) ||
-      s.ejerciciosObjetivo.any((e) => e.nombre == exerciseName),
-    ).toList();
+    return _sesiones
+        .where(
+          (s) =>
+              s.ejerciciosCompletados.any((e) => e.nombre == exerciseName) ||
+              s.ejerciciosObjetivo.any((e) => e.nombre == exerciseName),
+        )
+        .toList();
   }
 
   @override
-  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName, {int limit = 4}) async {
+  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName,
+      {int limit = 4,}) async {
     // Same as getHistoryForExercise but with limit
     final all = await getHistoryForExercise(exerciseName);
     return all.take(limit).toList();
@@ -107,26 +116,33 @@ class MockTrainingRepository implements ITrainingRepository {
 
   // Analysis methods (mock implementations)
   @override
-  Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async => {};
+  Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async =>
+      {};
 
   @override
-  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod({int days = 30}) async => {};
+  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod(
+          {int days = 30,}) async =>
+      {};
 
   @override
-  Future<List<PersonalRecord>> getPersonalRecords({List<String>? exerciseNames}) async => [];
+  Future<List<PersonalRecord>> getPersonalRecords(
+          {List<String>? exerciseNames,}) async =>
+      [];
 
   @override
   Future<Map<String, DateTime>> getLastTrainedDateByMuscle() async => {};
 
   @override
-  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName, {int months = 6}) async => [];
+  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName,
+          {int months = 6,}) async =>
+      [];
 
   @override
   Future<StreakData> getStreakData() async => StreakData(
-    currentStreak: 0,
-    longestStreak: 0,
-    lastTrainingDate: _sesiones.isNotEmpty ? _sesiones.last.fecha : null,
-  );
+        currentStreak: 0,
+        longestStreak: 0,
+        lastTrainingDate: _sesiones.isNotEmpty ? _sesiones.last.fecha : null,
+      );
 
   @override
   Future<DailySnapshot?> getDailySnapshot(DateTime date) async => null;
@@ -136,11 +152,4 @@ class MockTrainingRepository implements ITrainingRepository {
 
   @override
   Future<List<String>> getExerciseNames() async => [];
-}
-
-extension StreamExtensions<T> on Stream<T> {
-  Stream<T> startWith(T initial) async* {
-    yield initial;
-    yield* this;
-  }
 }

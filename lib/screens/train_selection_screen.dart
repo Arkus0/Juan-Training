@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/rutina.dart';
 import '../providers/training_provider.dart';
-import '../widgets/common/app_widgets.dart';
 import '../utils/design_system.dart';
+import '../widgets/common/app_widgets.dart';
 import 'training_session_screen.dart';
 
 /// ============================================================================
@@ -21,7 +22,8 @@ class TrainSelectionScreen extends ConsumerStatefulWidget {
   const TrainSelectionScreen({super.key});
 
   @override
-  ConsumerState<TrainSelectionScreen> createState() => _TrainSelectionScreenState();
+  ConsumerState<TrainSelectionScreen> createState() =>
+      _TrainSelectionScreenState();
 }
 
 class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
@@ -44,7 +46,8 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
             // ═══════════════════════════════════════════════════════════════
             // ESTADO 1: SESIÓN ACTIVA - "CONTINUAR" es la acción obvia
             // ═══════════════════════════════════════════════════════════════
-            if (activeSessionData != null && activeSessionData.activeRutina != null) {
+            if (activeSessionData != null &&
+                activeSessionData.activeRutina != null) {
               return _ActiveSessionState(
                 rutina: activeSessionData.activeRutina!,
                 startTime: activeSessionData.startTime,
@@ -73,13 +76,15 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
                   loading: () => const _LoadingState(),
                   error: (_, __) => _FallbackState(
                     rutinas: rutinas,
-                    onDaySelected: (rutina, dayIndex) => _startSession(context, ref, rutina, dayIndex),
+                    onDaySelected: (rutina, dayIndex) =>
+                        _startSession(context, ref, rutina, dayIndex),
                   ),
                   data: (suggestion) {
                     if (suggestion == null) {
                       return _FallbackState(
                         rutinas: rutinas,
-                        onDaySelected: (rutina, dayIndex) => _startSession(context, ref, rutina, dayIndex),
+                        onDaySelected: (rutina, dayIndex) =>
+                            _startSession(context, ref, rutina, dayIndex),
                       );
                     }
 
@@ -87,8 +92,10 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
                       suggestion: suggestion,
                       rutinas: rutinas,
                       showAlternatives: _showAlternatives,
-                      onStart: () => _startSession(context, ref, suggestion.rutina, suggestion.dayIndex),
-                      onToggleAlternatives: () => setState(() => _showAlternatives = !_showAlternatives),
+                      onStart: () => _startSession(
+                          context, ref, suggestion.rutina, suggestion.dayIndex,),
+                      onToggleAlternatives: () => setState(
+                          () => _showAlternatives = !_showAlternatives,),
                       onAlternativeSelected: (rutina, dayIndex) {
                         setState(() => _showAlternatives = false);
                         _startSession(context, ref, rutina, dayIndex);
@@ -105,23 +112,29 @@ class _TrainSelectionScreenState extends ConsumerState<TrainSelectionScreen> {
   }
 
   void _continueSession(BuildContext context, WidgetRef ref) {
-    try { HapticFeedback.mediumImpact(); } catch (_) {}
+    try {
+      HapticFeedback.mediumImpact();
+    } catch (_) {}
     ref.read(trainingSessionProvider.notifier).restoreFromStorage();
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const TrainingSessionScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const TrainingSessionScreen()),);
   }
 
-  void _startSession(BuildContext context, WidgetRef ref, Rutina rutina, int dayIndex) {
+  void _startSession(
+      BuildContext context, WidgetRef ref, Rutina rutina, int dayIndex,) {
     if (rutina.dias.isEmpty || dayIndex >= rutina.dias.length) return;
 
     final day = rutina.dias[dayIndex];
-    try { HapticFeedback.heavyImpact(); } catch (_) {}
+    try {
+      HapticFeedback.heavyImpact();
+    } catch (_) {}
 
     ref.read(trainingSessionProvider.notifier).startSession(
-      rutina,
-      day.ejercicios,
-      dayName: day.nombre,
-      dayIndex: dayIndex,
-    );
+          rutina,
+          day.ejercicios,
+          dayName: day.nombre,
+          dayIndex: dayIndex,
+        );
 
     Navigator.push(
       context,
@@ -232,8 +245,8 @@ class _ZeroThoughtHome extends StatelessWidget {
                     Text(
                       suggestion.dayName.toUpperCase(),
                       // 🎯 REDISEÑO: Usar tipografía del sistema
-                      style: showAlternatives 
-                          ? AppTypography.heroCompact 
+                      style: showAlternatives
+                          ? AppTypography.heroCompact
                           : AppTypography.hero,
                       textAlign: TextAlign.center,
                     ),
@@ -348,9 +361,8 @@ class _ActiveSessionState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = totalSets > 0 ? completedSets / totalSets : 0.0;
-    final elapsedMinutes = startTime != null
-        ? DateTime.now().difference(startTime!).inMinutes
-        : 0;
+    final elapsedMinutes =
+        startTime != null ? DateTime.now().difference(startTime!).inMinutes : 0;
 
     return Center(
       child: Padding(
@@ -454,7 +466,8 @@ class _ActiveSessionState extends StatelessWidget {
                 ),
                 child: Text(
                   'CONTINUAR',
-                  style: AppTypography.buttonPrimary.copyWith(color: AppColors.textOnAccent),
+                  style: AppTypography.buttonPrimary
+                      .copyWith(color: AppColors.textOnAccent),
                 ),
               ),
             ),
@@ -484,7 +497,7 @@ class _ActiveSessionState extends StatelessWidget {
               child: Text(
                 'TERMINAR SESION',
                 style: AppTypography.button.copyWith(
-                  color: AppColors.darkRed,  // #8B0000 urgencia
+                  color: AppColors.darkRed, // #8B0000 urgencia
                 ),
               ),
             ),
@@ -515,17 +528,13 @@ class _EmptyState extends StatelessWidget {
               size: 72,
               color: AppColors.textTertiary,
             ),
-
             const SizedBox(height: 32),
-
             Text(
               'CREA TU RUTINA',
               style: AppTypography.heroCompact,
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 12),
-
             Text(
               'Ve a la pestana Rutinas\npara empezar',
               style: AppTypography.label,
@@ -609,10 +618,10 @@ class _AlternativesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         // 🎯 REDISEÑO: Fondo del sistema
-        color: AppColors.bgElevated.withValues(alpha:0.8),
+        color: AppColors.bgElevated.withValues(alpha: 0.8),
         borderRadius: fullScreen
             ? null
             : const BorderRadius.vertical(top: Radius.circular(24)),
@@ -696,18 +705,20 @@ class _CompactRutinaCard extends StatelessWidget {
               children: rutina.dias.asMap().entries.map((entry) {
                 return InkWell(
                   onTap: () {
-                    try { HapticFeedback.selectionClick(); } catch (_) {}
+                    try {
+                      HapticFeedback.selectionClick();
+                    } catch (_) {}
                     onDaySelected(entry.key);
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.bgInteractive,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: AppColors.border,
-                        width: 1,
                       ),
                     ),
                     child: Text(

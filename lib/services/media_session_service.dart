@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'media_control_service.dart';
+
 import 'haptics_controller.dart';
+import 'media_control_service.dart';
 
 /// Servicio que gestiona la MediaSession propia de la app.
 ///
@@ -40,14 +42,16 @@ import 'haptics_controller.dart';
 /// MediaSessionManagerService.instance.stopMonitoring();
 /// ```
 class MediaSessionManagerService {
-  static final MediaSessionManagerService instance = MediaSessionManagerService._();
+  static final MediaSessionManagerService instance =
+      MediaSessionManagerService._();
   MediaSessionManagerService._();
 
   final _logger = Logger();
 
   // Platform channels
   static const _channel = MethodChannel('com.juantraining/media_session');
-  static const _eventsChannel = MethodChannel('com.juantraining/media_session_events');
+  static const _eventsChannel =
+      MethodChannel('com.juantraining/media_session_events');
 
   // Estado
   bool _isSessionActive = false;
@@ -150,7 +154,7 @@ class MediaSessionManagerService {
   }
 
   /// Actualiza si los controles están habilitados (desde settings)
-  void setEnabled(bool enabled) {
+  void setEnabled({required bool enabled}) {
     _isEnabled = enabled;
     if (!enabled && _isSessionActive) {
       _stopSession();
@@ -200,7 +204,7 @@ class MediaSessionManagerService {
 
   // Métodos legacy para compatibilidad
   Future<bool> startSession({String? trainingName}) async {
-    startMonitoring(trainingName: trainingName, enabled: true);
+    startMonitoring(trainingName: trainingName);
     return true;
   }
 
@@ -253,7 +257,8 @@ class MediaSessionManagerService {
 
   void _connectMediaListener() {
     _mediaSubscription?.cancel();
-    _mediaSubscription = MediaControlService.instance.sessionStream.listen(_handleMediaStateChange);
+    _mediaSubscription = MediaControlService.instance.sessionStream
+        .listen(_handleMediaStateChange);
   }
 
   /// Maneja cambios en el estado de la música
@@ -263,8 +268,8 @@ class MediaSessionManagerService {
 
     // Detectar si hay música REAL reproduciéndose
     // (No beeps del timer - esos no tienen packageName de app de música)
-    final hasMusicApp = session.packageName != null &&
-        _isMusicApp(session.packageName!);
+    final hasMusicApp =
+        session.packageName != null && _isMusicApp(session.packageName!);
 
     final isPlaying = session.playbackState == MediaPlaybackState.playing;
     final hasRealMusic = hasMusicApp && (isPlaying || session.hasMedia);
@@ -309,7 +314,8 @@ class MediaSessionManagerService {
       // Agregar más según sea necesario
     ];
 
-    return musicApps.any((app) => packageName.toLowerCase().contains(app.toLowerCase()));
+    return musicApps
+        .any((app) => packageName.toLowerCase().contains(app.toLowerCase()));
   }
 
   // Métodos legacy para compatibilidad
@@ -340,7 +346,8 @@ class MediaSessionManagerService {
 sealed class MediaSessionEvent {
   const MediaSessionEvent();
 
-  const factory MediaSessionEvent.playPause({required bool isPlaying}) = MediaSessionPlayPause;
+  const factory MediaSessionEvent.playPause({required bool isPlaying}) =
+      MediaSessionPlayPause;
   const factory MediaSessionEvent.next() = MediaSessionNext;
   const factory MediaSessionEvent.previous() = MediaSessionPrevious;
 }

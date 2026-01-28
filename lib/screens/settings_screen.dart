@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
 import '../services/media_control_service.dart';
 import '../services/timer_notification_service.dart';
@@ -38,7 +37,8 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Vibrar en los últimos 10 segundos',
             trailing: Switch(
               value: settings.timerVibrationEnabled,
-              onChanged: notifier.setTimerVibrationEnabled,
+              onChanged: (value) =>
+                  notifier.setTimerVibrationEnabled(value: value),
               activeThumbColor: AppColors.bloodRed,
             ),
           ),
@@ -49,7 +49,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Beep en los últimos 3 segundos',
             trailing: Switch(
               value: settings.timerSoundEnabled,
-              onChanged: notifier.setTimerSoundEnabled,
+              onChanged: (value) => notifier.setTimerSoundEnabled(value: value),
               activeThumbColor: AppColors.bloodRed,
             ),
           ),
@@ -58,7 +58,8 @@ class SettingsScreen extends ConsumerWidget {
 
           _LockScreenTimerTile(
             isEnabled: settings.lockScreenTimerEnabled,
-            onChanged: notifier.setLockScreenTimerEnabled,
+            onChanged: ({required bool value}) =>
+                notifier.setLockScreenTimerEnabled(value: value),
           ),
 
           _SettingsTile(
@@ -71,7 +72,8 @@ class SettingsScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.remove_circle_outline),
                   onPressed: settings.defaultRestSeconds > 10
-                      ? () => notifier.setDefaultRestSeconds(settings.defaultRestSeconds - 10)
+                      ? () => notifier.setDefaultRestSeconds(
+                          settings.defaultRestSeconds - 10,)
                       : null,
                   color: AppColors.metalGray,
                 ),
@@ -85,7 +87,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle_outline),
-                  onPressed: () => notifier.setDefaultRestSeconds(settings.defaultRestSeconds + 10),
+                  onPressed: () => notifier
+                      .setDefaultRestSeconds(settings.defaultRestSeconds + 10),
                   color: AppColors.bloodRed,
                 ),
               ],
@@ -124,7 +127,8 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Modal numpad grande al tocar KG/REPS',
             trailing: Switch(
               value: settings.useFocusedInputMode,
-              onChanged: notifier.setUseFocusedInputMode,
+              onChanged: (value) =>
+                  notifier.setUseFocusedInputMode(value: value),
               activeThumbColor: AppColors.completedGreen,
             ),
           ),
@@ -152,7 +156,8 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Mostrar badge cuando ejercicio está en superset',
             trailing: Switch(
               value: settings.showSupersetIndicator,
-              onChanged: notifier.setShowSupersetIndicator,
+              onChanged: (value) =>
+                  notifier.setShowSupersetIndicator(value: value),
               activeThumbColor: AppColors.bloodRed,
             ),
           ),
@@ -180,7 +185,8 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Reduce animaciones y vibraciones',
             trailing: Switch(
               value: settings.performanceModeEnabled,
-              onChanged: notifier.setPerformanceModeEnabled,
+              onChanged: (value) =>
+                  notifier.setPerformanceModeEnabled(value: value),
               activeThumbColor: AppColors.completedGreen,
             ),
           ),
@@ -192,18 +198,19 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: 'Desactiva sombras y transiciones',
               trailing: Switch(
                 value: settings.reduceAnimations,
-                onChanged: notifier.setReduceAnimations,
+                onChanged: (value) =>
+                    notifier.setReduceAnimations(value: value),
                 activeThumbColor: AppColors.bloodRed,
               ),
             ),
-
             _SettingsTile(
               icon: Icons.vibration,
               title: 'Reducir vibraciones',
               subtitle: 'Solo vibraciones esenciales',
               trailing: Switch(
                 value: settings.reduceVibrations,
-                onChanged: notifier.setReduceVibrations,
+                onChanged: (value) =>
+                    notifier.setReduceVibrations(value: value),
                 activeThumbColor: AppColors.bloodRed,
               ),
             ),
@@ -428,13 +435,13 @@ class _StorageTileState extends State<_StorageTile> {
       final directory = await getApplicationDocumentsDirectory();
       final imagesDir = Directory('${directory.path}/ejercicios_images');
 
-      int totalSize = 0;
-      int imageCount = 0;
+      var totalSize = 0;
+      var imageCount = 0;
 
       // Contar imágenes
       if (await imagesDir.exists()) {
         final files = imagesDir.listSync();
-        for (var entity in files) {
+        for (final entity in files) {
           if (entity is File) {
             totalSize += await entity.length();
             imageCount++;
@@ -602,7 +609,7 @@ class _StorageTileState extends State<_StorageTile> {
 /// Tile para timer en lock screen con solicitud de permisos
 class _LockScreenTimerTile extends StatefulWidget {
   final bool isEnabled;
-  final Future<void> Function(bool) onChanged;
+  final Future<void> Function({required bool value}) onChanged;
 
   const _LockScreenTimerTile({
     required this.isEnabled,
@@ -626,7 +633,8 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
   Future<void> _checkPermission() async {
     setState(() => _isChecking = true);
     try {
-      final hasPermission = await TimerNotificationService.instance.areNotificationsEnabled();
+      final hasPermission =
+          await TimerNotificationService.instance.areNotificationsEnabled();
       if (mounted) {
         setState(() {
           _hasPermission = hasPermission;
@@ -640,23 +648,23 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
     }
   }
 
-  Future<void> _handleToggle(bool value) async {
+  Future<void> _handleToggle({required bool value}) async {
     if (value && !_hasPermission) {
       // Solicitar permiso primero
       HapticFeedback.mediumImpact();
-      final granted = await TimerNotificationService.instance.requestPermissions();
+      final granted =
+          await TimerNotificationService.instance.requestPermissions();
+      if (!mounted) return;
 
       if (!granted) {
-        if (mounted) {
-          _showPermissionDeniedDialog();
-        }
+        _showPermissionDeniedDialog();
         return;
       }
 
       setState(() => _hasPermission = true);
     }
 
-    await widget.onChanged(value);
+    await widget.onChanged(value: value);
   }
 
   void _showPermissionDeniedDialog() {
@@ -703,7 +711,7 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
         border: !_hasPermission && widget.isEnabled
-            ? Border.all(color: Colors.orange.withValues(alpha: 0.5), width: 1)
+            ? Border.all(color: Colors.orange.withValues(alpha: 0.5))
             : null,
       ),
       child: Column(
@@ -741,10 +749,11 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                   )
                 : Switch(
                     value: widget.isEnabled,
-                    onChanged: _handleToggle,
+                    onChanged: (value) => _handleToggle(value: value),
                     activeThumbColor: Colors.redAccent[700],
                   ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           ),
           // Botón para reintentar si no tiene permiso
           if (!_hasPermission && widget.isEnabled)
@@ -754,7 +763,9 @@ class _LockScreenTimerTileState extends State<_LockScreenTimerTile> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final granted = await TimerNotificationService.instance.requestPermissions();
+                    final granted = await TimerNotificationService.instance
+                        .requestPermissions();
+                    if (!context.mounted) return;
                     if (granted) {
                       setState(() => _hasPermission = true);
                       if (mounted) {
@@ -867,9 +878,12 @@ class _MusicControlTileState extends State<_MusicControlTile> {
               ),
             ),
             const SizedBox(height: 16),
-            const _InstructionStep(number: '1', text: 'Abre Ajustes del teléfono'),
-            const _InstructionStep(number: '2', text: 'Ve a Apps > Acceso especial'),
-            const _InstructionStep(number: '3', text: 'Toca "Acceso a notificaciones"'),
+            const _InstructionStep(
+                number: '1', text: 'Abre Ajustes del teléfono',),
+            const _InstructionStep(
+                number: '2', text: 'Ve a Apps > Acceso especial',),
+            const _InstructionStep(
+                number: '3', text: 'Toca "Acceso a notificaciones"',),
             const _InstructionStep(number: '4', text: 'Activa "Juan Training"'),
             const SizedBox(height: 16),
             Container(
@@ -956,7 +970,8 @@ class _MusicControlTileState extends State<_MusicControlTile> {
                     _hasAccess ? Icons.check_circle : Icons.warning_amber,
                     color: _hasAccess ? Colors.cyan[400] : Colors.orange[400],
                   ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           ),
           if (!_hasAccess && !_isChecking)
             Padding(
@@ -1165,34 +1180,36 @@ void _showGuideDialog(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: bullets
-            .map((bullet) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: AppColors.bloodRed,
-                          shape: BoxShape.circle,
+            .map(
+              (bullet) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 6),
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.bloodRed,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        bullet,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey[300],
+                          fontSize: 14,
+                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          bullet,
-                          style: GoogleFonts.montserrat(
-                            color: Colors.grey[300],
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ))
+                    ),
+                  ],
+                ),
+              ),
+            )
             .toList(),
       ),
       actions: [

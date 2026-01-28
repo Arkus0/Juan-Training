@@ -1,10 +1,11 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
+
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 import 'daily_snapshot_card.dart';
 
 /// TableCalendar wrapper with training day markers
@@ -12,7 +13,8 @@ class AnalysisCalendarView extends ConsumerStatefulWidget {
   const AnalysisCalendarView({super.key});
 
   @override
-  ConsumerState<AnalysisCalendarView> createState() => _AnalysisCalendarViewState();
+  ConsumerState<AnalysisCalendarView> createState() =>
+      _AnalysisCalendarViewState();
 }
 
 class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
@@ -49,7 +51,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
   }
 
   Widget _buildCalendar(Set<DateTime> trainingDates, DateTime? selectedDate) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
@@ -63,7 +65,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
         selectedDayPredicate: (day) => isSameDay(selectedDate, day),
         onDaySelected: (selectedDay, focusedDay) {
           HapticFeedback.selectionClick();
-          ref.read(selectedCalendarDateProvider.notifier).state = selectedDay;
+          ref.read(selectedCalendarDateProvider.notifier).setDate(selectedDay);
           setState(() {
             _focusedDay = focusedDay;
           });
@@ -76,7 +78,7 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
         onPageChanged: (focusedDay) {
           _focusedDay = focusedDay;
           // Update year provider for heatmap sync
-          ref.read(selectedYearProvider.notifier).state = focusedDay.year;
+          ref.read(selectedYearProvider.notifier).setYear(focusedDay.year);
         },
         // Spanish locale
         locale: 'es_ES',
@@ -111,7 +113,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           },
           // Selected cell
           selectedBuilder: (context, day, focusedDay) {
-            return _buildDayCell(day, isSelected: true, isToday: isSameDay(day, DateTime.now()));
+            return _buildDayCell(day,
+                isSelected: true, isToday: isSameDay(day, DateTime.now()),);
           },
           // Outside cell (other months)
           outsideBuilder: (context, day, focusedDay) {
@@ -129,7 +132,6 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
         // Styling
         headerStyle: HeaderStyle(
           titleCentered: true,
-          formatButtonVisible: true,
           formatButtonShowsNext: false,
           formatButtonDecoration: BoxDecoration(
             border: Border.all(color: AppColors.border),
@@ -144,8 +146,10 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
-          leftChevronIcon: const Icon(Icons.chevron_left, color: AppColors.textSecondary),
-          rightChevronIcon: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          leftChevronIcon:
+              const Icon(Icons.chevron_left, color: AppColors.textSecondary),
+          rightChevronIcon:
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: GoogleFonts.montserrat(
@@ -160,7 +164,6 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
           ),
         ),
         calendarStyle: CalendarStyle(
-          outsideDaysVisible: true,
           cellMargin: const EdgeInsets.all(4),
           // Default
           defaultTextStyle: GoogleFonts.montserrat(
@@ -197,7 +200,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
     );
   }
 
-  Widget _buildDayCell(DateTime day, {required bool isSelected, required bool isToday}) {
+  Widget _buildDayCell(DateTime day,
+      {required bool isSelected, required bool isToday,}) {
     return Container(
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -217,7 +221,8 @@ class _AnalysisCalendarViewState extends ConsumerState<AnalysisCalendarView> {
                 : isToday
                     ? Colors.white
                     : Colors.grey[300],
-            fontWeight: isSelected || isToday ? FontWeight.w600 : FontWeight.w400,
+            fontWeight:
+                isSelected || isToday ? FontWeight.w600 : FontWeight.w400,
             fontSize: 14,
           ),
         ),

@@ -70,11 +70,12 @@ class ImagePrecacheService {
       }
 
       _logger.i(
-          'ImagePrecacheService: Precaching ${exercisesToPrecache.length} images');
+        'ImagePrecacheService: Precaching ${exercisesToPrecache.length} images',
+      );
 
       // Pre-cargar en lotes para no saturar
       const batchSize = 10;
-      int successCount = 0;
+      var successCount = 0;
 
       for (var i = 0; i < exercisesToPrecache.length; i += batchSize) {
         if (!context.mounted) break;
@@ -85,7 +86,6 @@ class ImagePrecacheService {
         // Cargar batch en paralelo
         final results = await Future.wait(
           batch.map((exercise) => _precacheExerciseImage(context, exercise)),
-          eagerError: false,
         );
 
         successCount += results.where((r) => r).length;
@@ -96,12 +96,16 @@ class ImagePrecacheService {
 
       _hasPrecached = true;
       _logger.i(
-          'ImagePrecacheService: Precached $successCount/${exercisesToPrecache.length} images');
+        'ImagePrecacheService: Precached $successCount/${exercisesToPrecache.length} images',
+      );
 
       _precacheCompleter!.complete();
     } catch (e, s) {
-      _logger.e('ImagePrecacheService: Error during precache',
-          error: e, stackTrace: s);
+      _logger.e(
+        'ImagePrecacheService: Error during precache',
+        error: e,
+        stackTrace: s,
+      );
       _precacheCompleter!.completeError(e);
     } finally {
       _precacheCompleter = null;
@@ -182,7 +186,9 @@ class ImagePrecacheService {
 
   /// Pre-carga imágenes de una lista de ejercicios (ej: al abrir rutina)
   Future<void> precacheExercises(
-      BuildContext context, List<int> exerciseIds) async {
+    BuildContext context,
+    List<int> exerciseIds,
+  ) async {
     if (!context.mounted) return;
 
     for (final id in exerciseIds) {

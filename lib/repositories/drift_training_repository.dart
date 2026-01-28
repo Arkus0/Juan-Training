@@ -1,11 +1,11 @@
 import '../database/database.dart';
+import '../models/analysis_models.dart';
 import '../models/rutina.dart';
 import '../models/sesion.dart';
-import '../models/analysis_models.dart';
+import 'analytics_repository.dart';
 import 'i_training_repository.dart';
 import 'routine_repository.dart';
 import 'session_repository.dart';
-import 'analytics_repository.dart';
 
 /// Repositorio principal que implementa ITrainingRepository.
 /// Delega operaciones a repositorios especializados para mejor separación de responsabilidades.
@@ -53,8 +53,10 @@ class DriftTrainingRepository implements ITrainingRepository {
       _sessionRepo.getHistoryForExercise(exerciseName);
 
   @override
-  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName,
-          {int limit = 4}) =>
+  Future<List<Sesion>> getExpandedHistoryForExercise(
+    String exerciseName, {
+    int limit = 4,
+  }) =>
       _sessionRepo.getExpandedHistoryForExercise(exerciseName, limit: limit);
 
   @override
@@ -97,7 +99,8 @@ class DriftTrainingRepository implements ITrainingRepository {
       _analyticsRepo.getMuscleVolumePeriod(days: days);
 
   @override
-  Future<List<PersonalRecord>> getPersonalRecords({List<String>? exerciseNames}) =>
+  Future<List<PersonalRecord>> getPersonalRecords(
+          {List<String>? exerciseNames,}) =>
       _analyticsRepo.getPersonalRecords(exerciseNames: exerciseNames);
 
   @override
@@ -105,8 +108,10 @@ class DriftTrainingRepository implements ITrainingRepository {
       _analyticsRepo.getLastTrainedDateByMuscle();
 
   @override
-  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName,
-          {int months = 6}) =>
+  Future<List<StrengthDataPoint>> getStrengthTrend(
+    String exerciseName, {
+    int months = 6,
+  }) =>
       _analyticsRepo.getStrengthTrend(exerciseName, months: months);
 
   @override

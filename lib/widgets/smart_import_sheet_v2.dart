@@ -41,8 +41,6 @@ class SmartImportSheetV2 extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: true,
-      enableDrag: true,
       builder: (ctx) => SmartImportSheetV2(
         onConfirm: onConfirm,
         onCancel: () => Navigator.of(ctx).pop(),
@@ -157,7 +155,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
 
   Widget _buildHeader(SmartImportState state) {
     final notifier = ref.read(smartImportProvider.notifier);
-    final showBackButton = state.isEditing || state.isListening || state.isProcessing;
+    final showBackButton =
+        state.isEditing || state.isListening || state.isProcessing;
 
     return Row(
       children: [
@@ -181,8 +180,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         // Título
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                showBackButton ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            crossAxisAlignment: showBackButton
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
               Text(
                 _getTitle(state),
@@ -440,7 +440,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_outline, size: 16, color: AppColors.warning),
+              const Icon(Icons.lightbulb_outline,
+                  size: 16, color: AppColors.warning,),
               const SizedBox(width: 6),
               Text(
                 'Ejemplos:',
@@ -520,7 +521,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(
                   'MÁS',
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 11),
+                  style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold, fontSize: 11,),
                 ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.neonCyan,
@@ -552,7 +554,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
             itemBuilder: (ctx, index) {
               final draft = state.drafts[index];
               return _DraftExerciseCard(
-                key: ValueKey('draft_${draft.orderIndex}_${draft.originalRawText}'),
+                key: ValueKey(
+                    'draft_${draft.orderIndex}_${draft.originalRawText}',),
                 draft: draft,
                 index: index,
                 seriesController: _getSeriesController(index, draft.series),
@@ -572,7 +575,9 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
                 onDuplicate: () => notifier.duplicateDraft(index),
                 onChangeExercise: () => _showExerciseSearchSheet(index, draft),
                 onVerify: () => notifier.verifyDraft(index),
-                onReset: draft.wasManuallyEdited ? () => notifier.resetDraft(index) : null,
+                onReset: draft.wasManuallyEdited
+                    ? () => notifier.resetDraft(index)
+                    : null,
               );
             },
           ),
@@ -664,7 +669,8 @@ class _SmartImportSheetV2State extends ConsumerState<SmartImportSheetV2> {
   // SHEET DE BÚSQUEDA DE EJERCICIOS
   // ============================================
 
-  Future<void> _showExerciseSearchSheet(int index, DetectedExerciseDraft draft) async {
+  Future<void> _showExerciseSearchSheet(
+      int index, DetectedExerciseDraft draft,) async {
     final notifier = ref.read(smartImportProvider.notifier);
 
     // Buscar alternativas iniciales
@@ -806,17 +812,23 @@ class _DraftExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isValid = draft.isValid;
-    final sourceIcon = draft.source == DetectionSource.voice ? Icons.mic : Icons.document_scanner;
-    final sourceColor = draft.source == DetectionSource.voice ? Colors.blue : Colors.green;
+    final sourceIcon = draft.source == DetectionSource.voice
+        ? Icons.mic
+        : Icons.document_scanner;
+    final sourceColor =
+        draft.source == DetectionSource.voice ? Colors.blue : Colors.green;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgDeep : AppColors.live.withValues(alpha: 0.15),
+        color:
+            isValid ? AppColors.bgDeep : AppColors.live.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isValid
-              ? (draft.wasManuallyEdited ? AppColors.neonCyan.withValues(alpha: 0.5) : AppColors.border)
+              ? (draft.wasManuallyEdited
+                  ? AppColors.neonCyan.withValues(alpha: 0.5)
+                  : AppColors.border)
               : AppColors.error.withValues(alpha: 0.7),
           width: draft.wasManuallyEdited ? 1.5 : 1,
         ),
@@ -865,14 +877,16 @@ class _DraftExerciseCard extends StatelessWidget {
                                 draft.currentMatchedName ?? 'Sin match',
                                 style: GoogleFonts.montserrat(
                                   fontWeight: FontWeight.bold,
-                                  color: isValid ? Colors.white : AppColors.neonPrimary,
+                                  color: isValid
+                                      ? Colors.white
+                                      : AppColors.neonPrimary,
                                   fontSize: 14,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Icon(
+                            const Icon(
                               Icons.edit,
                               size: 12,
                               color: Colors.white38,
@@ -913,16 +927,20 @@ class _DraftExerciseCard extends StatelessWidget {
                         break;
                     }
                   },
-                  icon: const Icon(Icons.more_vert, color: Colors.white54, size: 20),
+                  icon: const Icon(Icons.more_vert,
+                      color: Colors.white54, size: 20,),
                   color: AppColors.bgElevated,
                   itemBuilder: (ctx) => [
                     PopupMenuItem(
                       value: 'duplicate',
                       child: Row(
                         children: [
-                          const Icon(Icons.copy, size: 18, color: Colors.white70),
+                          const Icon(Icons.copy,
+                              size: 18, color: Colors.white70,),
                           const SizedBox(width: 8),
-                          Text('Duplicar', style: GoogleFonts.montserrat(color: Colors.white)),
+                          Text('Duplicar',
+                              style:
+                                  GoogleFonts.montserrat(color: Colors.white),),
                         ],
                       ),
                     ),
@@ -931,9 +949,12 @@ class _DraftExerciseCard extends StatelessWidget {
                         value: 'reset',
                         child: Row(
                           children: [
-                            const Icon(Icons.restore, size: 18, color: Colors.white70),
+                            const Icon(Icons.restore,
+                                size: 18, color: Colors.white70,),
                             const SizedBox(width: 8),
-                            Text('Restaurar original', style: GoogleFonts.montserrat(color: Colors.white)),
+                            Text('Restaurar original',
+                                style: GoogleFonts.montserrat(
+                                    color: Colors.white,),),
                           ],
                         ),
                       ),
@@ -941,9 +962,12 @@ class _DraftExerciseCard extends StatelessWidget {
                       value: 'remove',
                       child: Row(
                         children: [
-                          const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                          const Icon(Icons.delete_outline,
+                              size: 18, color: AppColors.error,),
                           const SizedBox(width: 8),
-                          Text('Eliminar', style: GoogleFonts.montserrat(color: AppColors.error)),
+                          Text('Eliminar',
+                              style: GoogleFonts.montserrat(
+                                  color: AppColors.error,),),
                         ],
                       ),
                     ),
@@ -981,7 +1005,8 @@ class _DraftExerciseCard extends StatelessWidget {
                 if (draft.weight != null) ...[
                   const SizedBox(width: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.bgElevated,
                       borderRadius: BorderRadius.circular(6),
@@ -1171,16 +1196,21 @@ class _ModeToggleChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? activeColor.withValues(alpha: 0.2) : AppColors.bgDeep,
+          color:
+              isActive ? activeColor.withValues(alpha: 0.2) : AppColors.bgDeep,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isActive ? activeColor.withValues(alpha: 0.6) : AppColors.border,
+            color: isActive
+                ? activeColor.withValues(alpha: 0.6)
+                : AppColors.border,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isActive ? activeColor : AppColors.textTertiary),
+            Icon(icon,
+                size: 16,
+                color: isActive ? activeColor : AppColors.textTertiary,),
             const SizedBox(width: 6),
             Text(
               label,

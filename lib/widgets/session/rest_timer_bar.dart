@@ -47,7 +47,8 @@ class _TimerStyles {
 /// - Mínimo uso de setState
 class RestTimerBar extends ConsumerStatefulWidget {
   final RestTimerState timerState;
-  final bool showInactiveBar; // Mostrar barra inactiva (configurable desde AppBar)
+  final bool
+      showInactiveBar; // Mostrar barra inactiva (configurable desde AppBar)
   final VoidCallback onStartRest;
   final VoidCallback onStopRest;
   final VoidCallback onPauseRest;
@@ -56,7 +57,8 @@ class RestTimerBar extends ConsumerStatefulWidget {
   final ValueChanged<int> onAddTime;
   final TimerFinishedCallback onTimerFinished;
   final VoidCallback? onDiscardSession; // Nuevo: borrar sesión
-  final VoidCallback? onRestartRest; // Nuevo: reiniciar descanso dentro de la sesión
+  final VoidCallback?
+      onRestartRest; // Nuevo: reiniciar descanso dentro de la sesión
 
   const RestTimerBar({
     super.key,
@@ -94,7 +96,8 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   );
 
   // Lock screen notification service
-  final TimerNotificationService _notificationService = TimerNotificationService.instance;
+  final TimerNotificationService _notificationService =
+      TimerNotificationService.instance;
 
   @override
   void initState() {
@@ -134,7 +137,9 @@ class _RestTimerBarState extends ConsumerState<RestTimerBar>
   /// Setup callbacks for notification button actions
   void _setupNotificationCallbacks() {
     _notificationService.onPausePressed = () {
-      if (mounted && widget.timerState.isActive && !widget.timerState.isPaused) {
+      if (mounted &&
+          widget.timerState.isActive &&
+          !widget.timerState.isPaused) {
         widget.onPauseRest();
       }
     };
@@ -443,7 +448,7 @@ class _InactiveTimerBar extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.bgElevated,
         border: Border(
-          top: BorderSide(color: AppColors.bgDeep, width: 1),
+          top: BorderSide(color: AppColors.bgDeep),
         ),
       ),
       child: SafeArea(
@@ -451,7 +456,6 @@ class _InactiveTimerBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // ═══════════════════════════════════════════════════════
               // IZQUIERDA: Selector de duración
@@ -489,7 +493,10 @@ class _InactiveTimerBar extends StatelessWidget {
               const SizedBox(width: 12),
 
               // Start - PRIMARIO (más grande, destacado)
-              _StartRestButton(onTap: onStartRest, size: _startButtonSize),
+              _StartRestButton(
+                onTap: onStartRest,
+                size: _startButtonSize,
+              ),
             ],
           ),
         ),
@@ -517,7 +524,8 @@ class _InactiveTimerBar extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
+            child:
+                const Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
           ),
         ],
       ),
@@ -635,9 +643,9 @@ class _ActiveTimerBar extends StatelessWidget {
             top: false,
             // 🎯 GRID HORIZONTAL: Padding simétrico + Row con alineación central
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: _horizontalPadding),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // ═══════════════════════════════════════════════════════
                   // IZQUIERDA: Timer circular (DOMINANTE)
@@ -681,7 +689,6 @@ class _ActiveTimerBar extends StatelessWidget {
   Widget _buildControlsGroup(BuildContext context, bool isPaused) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Delete/Restart - TERCIARIO (más pequeño, discreto)
         if (onDiscardSession != null)
@@ -702,7 +709,8 @@ class _ActiveTimerBar extends StatelessWidget {
             },
           )
         else
-          SizedBox(width: _deleteButtonSize), // Mantener espacio para alineación
+          const SizedBox(
+              width: _deleteButtonSize,), // Mantener espacio para alineación
 
         const SizedBox(width: 8),
 
@@ -753,7 +761,8 @@ class _ActiveTimerBar extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
+            child:
+                const Text('SÍ', style: TextStyle(color: AppColors.bloodRed)),
           ),
         ],
       ),
@@ -775,7 +784,7 @@ class _TimerStateLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 🎯 NUEVO: Usar teal brillante para estado activo
-    final activeColor = const Color(0xFF00CED1);
+    const activeColor = Color(0xFF00CED1);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -825,11 +834,11 @@ class _TimeDurationSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'DESCANSO',
-          style: _TimerStyles.labelSmall.copyWith(color: AppColors.textTertiary),
+          style:
+              _TimerStyles.labelSmall.copyWith(color: AppColors.textTertiary),
         ),
         const SizedBox(width: 12),
         _CircleButton(
@@ -865,7 +874,7 @@ class _StartRestButton extends StatelessWidget {
 
   const _StartRestButton({
     required this.onTap,
-    this.size = 48.0,
+    required this.size,
   });
 
   @override
@@ -914,7 +923,7 @@ class _CircularTimerProgress extends StatefulWidget {
     required this.seconds,
     required this.isCritical,
     required this.isPaused,
-    this.size = 52.0,
+    required this.size,
   });
 
   @override

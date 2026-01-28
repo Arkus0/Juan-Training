@@ -1,14 +1,15 @@
-import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
+
 import '../database/database.dart';
-import '../models/rutina.dart';
-import '../models/sesion.dart';
-import '../models/ejercicio.dart';
-import '../models/serie_log.dart';
 import '../models/dia.dart';
+import '../models/ejercicio.dart';
 import '../models/ejercicio_en_rutina.dart';
 import '../models/progression_type.dart';
+import '../models/rutina.dart';
+import '../models/serie_log.dart';
+import '../models/sesion.dart';
 import 'i_training_repository.dart';
 
 /// Repositorio especializado para operaciones de Sesiones.
@@ -21,8 +22,11 @@ class SessionRepository {
   // --- Mappers ---
 
   /// Mapper interno para sesiones. Convierte rows de BD a modelo Sesion.
-  Sesion _mapSesion(Session sessionRow, List<SessionExercise> sessionExercises,
-      List<WorkoutSet> sets) {
+  Sesion _mapSesion(
+    Session sessionRow,
+    List<SessionExercise> sessionExercises,
+    List<WorkoutSet> sets,
+  ) {
     final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
 
     // Split exercises into Completed and Target
@@ -45,21 +49,22 @@ class SessionRepository {
           musculosSecundarios: row.musclesSecondary,
           series: exerciseSets.length,
           reps: 0,
-          peso: 0,
           notas: row.notes,
           logs: exerciseSets
-              .map((s) => SerieLog(
-                    id: s.id,
-                    peso: s.weight,
-                    reps: s.reps,
-                    completed: s.completed,
-                    rpe: s.rpe,
-                    notas: s.notes,
-                    restSeconds: s.restSeconds,
-                    isFailure: s.isFailure,
-                    isDropset: s.isDropset,
-                    isWarmup: s.isWarmup,
-                  ))
+              .map(
+                (s) => SerieLog(
+                  id: s.id,
+                  peso: s.weight,
+                  reps: s.reps,
+                  completed: s.completed,
+                  rpe: s.rpe,
+                  notas: s.notes,
+                  restSeconds: s.restSeconds,
+                  isFailure: s.isFailure,
+                  isDropset: s.isDropset,
+                  isWarmup: s.isWarmup,
+                ),
+              )
               .toList(),
         );
       }).toList();
@@ -80,7 +85,10 @@ class SessionRepository {
 
   /// Mapper interno para rutinas (usado solo en getActiveSession para reconstruir contexto).
   Rutina _mapRutina(
-      Routine row, List<RoutineDay> days, List<RoutineExercise> exercises) {
+    Routine row,
+    List<RoutineDay> days,
+    List<RoutineExercise> exercises,
+  ) {
     final exercisesByDay = exercises.groupListsBy((e) => e.dayId);
 
     final dias = days.map((dayRow) {
@@ -92,26 +100,28 @@ class SessionRepository {
         nombre: dayRow.name,
         progressionType: dayRow.progressionType,
         ejercicios: dayExercises
-            .map((e) => EjercicioEnRutina(
-                  instanceId: e.id,
-                  id: e.libraryId,
-                  nombre: e.name,
-                  descripcion: e.description,
-                  musculosPrincipales: e.musclesPrimary,
-                  musculosSecundarios: e.musclesSecondary,
-                  equipo: e.equipment,
-                  localImagePath: e.localImagePath,
-                  series: e.series,
-                  repsRange: e.repsRange,
-                  descansoSugerido: e.suggestedRestSeconds != null
-                      ? Duration(seconds: e.suggestedRestSeconds!)
-                      : null,
-                  notas: e.notes,
-                  supersetId: e.supersetId,
-                  progressionType: ProgressionType.fromString(e.progressionType),
-                  weightIncrement: e.weightIncrement,
-                  targetRpe: e.targetRpe,
-                ))
+            .map(
+              (e) => EjercicioEnRutina(
+                instanceId: e.id,
+                id: e.libraryId,
+                nombre: e.name,
+                descripcion: e.description,
+                musculosPrincipales: e.musclesPrimary,
+                musculosSecundarios: e.musclesSecondary,
+                equipo: e.equipment,
+                localImagePath: e.localImagePath,
+                series: e.series,
+                repsRange: e.repsRange,
+                descansoSugerido: e.suggestedRestSeconds != null
+                    ? Duration(seconds: e.suggestedRestSeconds!)
+                    : null,
+                notas: e.notes,
+                supersetId: e.supersetId,
+                progressionType: ProgressionType.fromString(e.progressionType),
+                weightIncrement: e.weightIncrement,
+                targetRpe: e.targetRpe,
+              ),
+            )
             .toList(),
       );
     }).toList();
@@ -139,13 +149,15 @@ class SessionRepository {
           ..where((s) => s.completedAt.isNotNull())
           ..limit(limit))
         .join([
-      leftOuterJoin(db.sessionExercises,
-          db.sessionExercises.sessionId.equalsExp(db.sessions.id)),
-      leftOuterJoin(db.workoutSets,
-          db.workoutSets.sessionExerciseId.equalsExp(db.sessionExercises.id)),
-    ]))
-        .watch()
-        .map((rows) {
+      leftOuterJoin(
+        db.sessionExercises,
+        db.sessionExercises.sessionId.equalsExp(db.sessions.id),
+      ),
+      leftOuterJoin(
+        db.workoutSets,
+        db.workoutSets.sessionExerciseId.equalsExp(db.sessionExercises.id),
+      ),
+    ])).watch().map((rows) {
       final sessions = <String, Session>{};
       final exercises = <String, SessionExercise>{};
       final sets = <String, WorkoutSet>{};
@@ -187,22 +199,28 @@ class SessionRepository {
     });
   }
 
-  Future<void> _saveSessionInternal(Sesion sesion,
-      {required bool isCompleted}) async {
+  Future<void> _saveSessionInternal(
+    Sesion sesion, {
+    required bool isCompleted,
+  }) async {
     // 1. Upsert Session
-    await db.into(db.sessions).insertOnConflictUpdate(SessionsCompanion.insert(
-          id: sesion.id,
-          routineId: Value(sesion.rutinaId),
-          dayName: Value(sesion.dayName),
-          dayIndex: Value(sesion.dayIndex),
-          startTime: sesion.fecha,
-          durationSeconds: Value(sesion.durationSeconds),
-          isBadDay: Value(sesion.isBadDay),
-          completedAt: isCompleted
-              ? Value(sesion.fecha
-                  .add(Duration(seconds: sesion.durationSeconds ?? 0)))
-              : const Value(null),
-        ));
+    await db.into(db.sessions).insertOnConflictUpdate(
+          SessionsCompanion.insert(
+            id: sesion.id,
+            routineId: Value(sesion.rutinaId),
+            dayName: Value(sesion.dayName),
+            dayIndex: Value(sesion.dayIndex),
+            startTime: sesion.fecha,
+            durationSeconds: Value(sesion.durationSeconds),
+            isBadDay: Value(sesion.isBadDay),
+            completedAt: isCompleted
+                ? Value(
+                    sesion.fecha
+                        .add(Duration(seconds: sesion.durationSeconds ?? 0)),
+                  )
+                : const Value(null),
+          ),
+        );
 
     // 2. Track what we are saving to handle deletions
     final visitedExerciseIds = <String>{};
@@ -217,7 +235,10 @@ class SessionRepository {
       return id;
     }
 
-    Future<void> processExercises(List<Ejercicio> list, bool isTarget) async {
+    Future<void> processExercises(
+      List<Ejercicio> list, {
+      required bool isTarget,
+    }) async {
       for (var i = 0; i < list.length; i++) {
         final ex = list[i];
         // Normalize base ID to strip any existing suffix before applying target marker
@@ -258,7 +279,6 @@ class SessionRepository {
                   notes: Value(log.notas),
                   restSeconds: Value(log.restSeconds),
                   isFailure: Value(log.isFailure),
-                  isDropset: const Value.absent(),
                   isWarmup: Value(log.isWarmup),
                 ),
               );
@@ -266,21 +286,25 @@ class SessionRepository {
       }
     }
 
-    await processExercises(sesion.ejerciciosCompletados, false);
-    await processExercises(sesion.ejerciciosObjetivo, true);
+    await processExercises(sesion.ejerciciosCompletados, isTarget: false);
+    await processExercises(sesion.ejerciciosObjetivo, isTarget: true);
 
     // 3. Clean up orphans
     await (db.delete(db.sessionExercises)
-          ..where((e) =>
-              e.sessionId.equals(sesion.id) &
-              e.id.isNotIn(visitedExerciseIds)))
+          ..where(
+            (e) =>
+                e.sessionId.equals(sesion.id) &
+                e.id.isNotIn(visitedExerciseIds),
+          ))
         .go();
 
     if (visitedExerciseIds.isNotEmpty) {
       await (db.delete(db.workoutSets)
-            ..where((s) =>
-                s.sessionExerciseId.isIn(visitedExerciseIds) &
-                s.id.isNotIn(visitedSetIds)))
+            ..where(
+              (s) =>
+                  s.sessionExerciseId.isIn(visitedExerciseIds) &
+                  s.id.isNotIn(visitedSetIds),
+            ))
           .go();
     }
   }
@@ -289,11 +313,15 @@ class SessionRepository {
     // 1. Get top 5 most recent sessions containing this exercise
     final distinctSessions =
         await (db.select(db.sessions, distinct: true).join([
-      innerJoin(db.sessionExercises,
-          db.sessionExercises.sessionId.equalsExp(db.sessions.id))
+      innerJoin(
+        db.sessionExercises,
+        db.sessionExercises.sessionId.equalsExp(db.sessions.id),
+      ),
     ])
-              ..where(db.sessionExercises.name.equals(exerciseName) &
-                  db.sessionExercises.isTarget.equals(false))
+              ..where(
+                db.sessionExercises.name.equals(exerciseName) &
+                    db.sessionExercises.isTarget.equals(false),
+              )
               ..orderBy([OrderingTerm.desc(db.sessions.startTime)])
               ..limit(5))
             .map((r) => r.readTable(db.sessions))
@@ -306,7 +334,8 @@ class SessionRepository {
     // 2. Fetch only the relevant exercises for these sessions
     final relevantExercises = await (db.select(db.sessionExercises)
           ..where(
-              (e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName)))
+            (e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName),
+          ))
         .get();
 
     final relevantExerciseIds = relevantExercises.map((e) => e.id).toList();
@@ -332,17 +361,23 @@ class SessionRepository {
     return result;
   }
 
-  Future<List<Sesion>> getExpandedHistoryForExercise(String exerciseName,
-      {int limit = 4}) async {
+  Future<List<Sesion>> getExpandedHistoryForExercise(
+    String exerciseName, {
+    int limit = 4,
+  }) async {
     // 1. Get most recent sessions containing this exercise
     final distinctSessions =
         await (db.select(db.sessions, distinct: true).join([
-      innerJoin(db.sessionExercises,
-          db.sessionExercises.sessionId.equalsExp(db.sessions.id))
+      innerJoin(
+        db.sessionExercises,
+        db.sessionExercises.sessionId.equalsExp(db.sessions.id),
+      ),
     ])
-              ..where(db.sessionExercises.name.equals(exerciseName) &
-                  db.sessionExercises.isTarget.equals(false) &
-                  db.sessions.completedAt.isNotNull())
+              ..where(
+                db.sessionExercises.name.equals(exerciseName) &
+                    db.sessionExercises.isTarget.equals(false) &
+                    db.sessions.completedAt.isNotNull(),
+              )
               ..orderBy([OrderingTerm.desc(db.sessions.startTime)])
               ..limit(limit))
             .map((r) => r.readTable(db.sessions))
@@ -355,7 +390,8 @@ class SessionRepository {
     // 2. Fetch exercises for these sessions
     final relevantExercises = await (db.select(db.sessionExercises)
           ..where(
-              (e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName)))
+            (e) => e.sessionId.isIn(sessionIds) & e.name.equals(exerciseName),
+          ))
         .get();
 
     final relevantExerciseIds = relevantExercises.map((e) => e.id).toList();
@@ -447,7 +483,7 @@ class SessionRepository {
     }
 
     // Reconstruct history map for each exercise to preserve 'ghost text' on restore
-    final Map<String, List<SerieLog>> historyMap = {};
+    final historyMap = <String, List<SerieLog>>{};
     for (final ex in tempSession.ejerciciosCompletados) {
       final historyList = await getHistoryForExercise(ex.nombre);
       if (historyList.isNotEmpty) {
@@ -503,9 +539,10 @@ class SessionRepository {
 
   Future<void> saveNote(String exerciseName, String note) async {
     await db.into(db.exerciseNotes).insertOnConflictUpdate(
-        ExerciseNotesCompanion.insert(
-      exerciseName: exerciseName,
-      note: note,
-    ));
+          ExerciseNotesCompanion.insert(
+            exerciseName: exerciseName,
+            note: note,
+          ),
+        );
   }
 }

@@ -1,9 +1,10 @@
-import 'package:drift/drift.dart';
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
@@ -42,9 +43,11 @@ class Routines extends Table {
 // 2. Routine Days
 class RoutineDays extends Table {
   TextColumn get id => text()();
-  TextColumn get routineId => text().references(Routines, #id, onDelete: KeyAction.cascade)();
+  TextColumn get routineId =>
+      text().references(Routines, #id, onDelete: KeyAction.cascade)();
   TextColumn get name => text()();
-  TextColumn get progressionType => text().withDefault(const Constant('none'))(); // 'none', 'lineal', 'double', 'percentage1RM'
+  TextColumn get progressionType => text().withDefault(
+      const Constant('none'),)(); // 'none', 'lineal', 'double', 'percentage1RM'
   IntColumn get dayIndex => integer()();
 
   @override
@@ -54,7 +57,8 @@ class RoutineDays extends Table {
 // 3. Routine Exercises
 class RoutineExercises extends Table {
   TextColumn get id => text()(); // instanceId
-  TextColumn get dayId => text().references(RoutineDays, #id, onDelete: KeyAction.cascade)();
+  TextColumn get dayId =>
+      text().references(RoutineDays, #id, onDelete: KeyAction.cascade)();
 
   // Library Data Embed
   TextColumn get libraryId => text()();
@@ -75,7 +79,8 @@ class RoutineExercises extends Table {
   IntColumn get exerciseIndex => integer()();
 
   // Progression Config (v3)
-  TextColumn get progressionType => text().withDefault(const Constant('none'))();
+  TextColumn get progressionType =>
+      text().withDefault(const Constant('none'))();
   RealColumn get weightIncrement => real().withDefault(const Constant(2.5))();
   IntColumn get targetRpe => integer().nullable()();
 
@@ -86,12 +91,15 @@ class RoutineExercises extends Table {
 // 4. Sessions
 class Sessions extends Table {
   TextColumn get id => text()();
-  TextColumn get routineId => text().nullable()(); // Can be null if ad-hoc or deleted routine
+  TextColumn get routineId =>
+      text().nullable()(); // Can be null if ad-hoc or deleted routine
   TextColumn get dayName => text().nullable()(); // Name of the day trained (v3)
-  IntColumn get dayIndex => integer().nullable()(); // Index of day in routine for smart suggestions (v3)
+  IntColumn get dayIndex => integer()
+      .nullable()(); // Index of day in routine for smart suggestions (v3)
   DateTimeColumn get startTime => dateTime()();
   IntColumn get durationSeconds => integer().nullable()();
-  BoolColumn get isBadDay => boolean().withDefault(const Constant(false))(); // Flag para día malo (v4)
+  BoolColumn get isBadDay =>
+      boolean().withDefault(const Constant(false))(); // Flag para día malo (v4)
 
   // Active Session Flag: If completedAt is null, it's an active session.
   DateTimeColumn get completedAt => dateTime().nullable()();
@@ -104,7 +112,8 @@ class Sessions extends Table {
 @TableIndex(name: 'session_exercises_name_idx', columns: {#name})
 class SessionExercises extends Table {
   TextColumn get id => text()();
-  TextColumn get sessionId => text().references(Sessions, #id, onDelete: KeyAction.cascade)();
+  TextColumn get sessionId =>
+      text().references(Sessions, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get libraryId => text().nullable()();
   TextColumn get name => text()();
@@ -127,7 +136,8 @@ class SessionExercises extends Table {
 // 6. Sets
 class WorkoutSets extends Table {
   TextColumn get id => text()(); // Changed from Int to Text (UUID)
-  TextColumn get sessionExerciseId => text().references(SessionExercises, #id, onDelete: KeyAction.cascade)();
+  TextColumn get sessionExerciseId =>
+      text().references(SessionExercises, #id, onDelete: KeyAction.cascade)();
 
   IntColumn get setIndex => integer()();
 
@@ -163,15 +173,17 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [
-  Routines,
-  RoutineDays,
-  RoutineExercises,
-  Sessions,
-  SessionExercises,
-  WorkoutSets,
-  ExerciseNotes,
-])
+@DriftDatabase(
+  tables: [
+    Routines,
+    RoutineDays,
+    RoutineExercises,
+    Sessions,
+    SessionExercises,
+    WorkoutSets,
+    ExerciseNotes,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -192,8 +204,10 @@ class AppDatabase extends _$AppDatabase {
           // Migration path to version 3: add progression columns and session day info
           if (from < 3) {
             try {
-              await m.addColumn(routineExercises, routineExercises.progressionType);
-              await m.addColumn(routineExercises, routineExercises.weightIncrement);
+              await m.addColumn(
+                  routineExercises, routineExercises.progressionType,);
+              await m.addColumn(
+                  routineExercises, routineExercises.weightIncrement,);
               await m.addColumn(routineExercises, routineExercises.targetRpe);
               await m.addColumn(sessions, sessions.dayName);
               await m.addColumn(sessions, sessions.dayIndex);

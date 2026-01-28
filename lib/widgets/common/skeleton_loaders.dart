@@ -1,5 +1,6 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
+
+import '../../utils/design_system.dart';
 import '../../utils/performance_utils.dart';
 
 /// Skeleton loaders optimizados para Juan Training
@@ -114,8 +115,6 @@ class SkeletonBox extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
             gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
               colors: [base, highlight, base],
               stops: [
                 _clamp(shimmer.animation.value - 0.3),
@@ -172,8 +171,6 @@ class SkeletonCircle extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
               colors: [base, highlight, base],
               stops: [
                 _clamp(shimmer.animation.value - 0.3),
@@ -219,7 +216,6 @@ class ExerciseListItemSkeleton extends StatelessWidget {
           SkeletonBox(
             width: height - 16,
             height: height - 16,
-            borderRadius: 8,
           ),
           const SizedBox(width: 12),
           // Texto skeleton
@@ -327,9 +323,9 @@ class ExerciseCardSkeleton extends StatelessWidget {
                   SizedBox(width: 8),
                   SkeletonBox(width: 52, height: 40, borderRadius: 6),
                   SizedBox(width: 8),
-                  Expanded(child: SkeletonBox(width: 70, height: 44, borderRadius: 8)),
+                  Expanded(child: SkeletonBox(width: 70, height: 44)),
                   SizedBox(width: 8),
-                  Expanded(child: SkeletonBox(width: 70, height: 44, borderRadius: 8)),
+                  Expanded(child: SkeletonBox(width: 70, height: 44)),
                   SizedBox(width: 8),
                   SkeletonBox(width: 40, height: 40, borderRadius: 4),
                 ],
@@ -356,7 +352,8 @@ class TrainingSessionSkeleton extends StatelessWidget {
           // Progress bar skeleton
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SkeletonBox(width: double.infinity, height: 24, borderRadius: 12),
+            child: SkeletonBox(
+                width: double.infinity, height: 24, borderRadius: 12,),
           ),
           // Exercise cards
           ExerciseCardSkeleton(),

@@ -1,15 +1,17 @@
-import '../../utils/design_system.dart';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../models/sesion.dart';
+
 import '../../models/rutina.dart';
-import '../../screens/session_detail_screen.dart';
+import '../../models/sesion.dart';
 import '../../providers/training_provider.dart';
+import '../../screens/session_detail_screen.dart';
+import '../../utils/design_system.dart';
 import '../../widgets/common/app_widgets.dart';
 
 /// Session history list grouped by week - refactored from HistoryScreen
@@ -37,7 +39,8 @@ class SessionListView extends ConsumerWidget {
             child: EmptyStateWidget(
               icon: Icons.history_toggle_off,
               title: 'SIN ENTRENAMIENTOS',
-              subtitle: 'Completa tu primer entrenamiento para ver el historial.',
+              subtitle:
+                  'Completa tu primer entrenamiento para ver el historial.',
             ),
           );
         }
@@ -48,7 +51,7 @@ class SessionListView extends ConsumerWidget {
             child: ErrorStateWidget(message: 'Error: $err'),
           ),
           data: (rutinas) {
-            final rutinasMap = {for (var r in rutinas) r.id: r};
+            final rutinasMap = {for (final r in rutinas) r.id: r};
             final groupedSessions = _groupSessionsByWeek(sessions);
 
             return SliverList(
@@ -85,7 +88,9 @@ class SessionListView extends ConsumerWidget {
       } else if (diff < 30) {
         label = 'ESTE MES';
       } else {
-        final monthLabel = DateFormat('MMMM yyyy', 'es_ES').format(session.fecha).toUpperCase();
+        final monthLabel = DateFormat('MMMM yyyy', 'es_ES')
+            .format(session.fecha)
+            .toUpperCase();
         label = monthLabel;
       }
 
@@ -132,16 +137,19 @@ class WeekSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '$totalSessions sesiones • ${(totalVolume / 1000).toStringAsFixed(1)}t vol',
-                style: const TextStyle(color: AppColors.textTertiary, fontSize: 11),
+                style: const TextStyle(
+                    color: AppColors.textTertiary, fontSize: 11,),
               ),
             ],
           ),
         ),
-        ...sessions.map((session) => SessionTile(
-          key: ValueKey(session.id),
-          session: session,
-          rutinasMap: rutinasMap,
-        )),
+        ...sessions.map(
+          (session) => SessionTile(
+            key: ValueKey(session.id),
+            session: session,
+            rutinasMap: rutinasMap,
+          ),
+        ),
         const SizedBox(height: 8),
       ],
     );
@@ -171,12 +179,13 @@ class _SessionTileState extends State<SessionTile> {
     final rutina = widget.rutinasMap[widget.session.rutinaId];
     final rutinaName = rutina?.nombre ?? 'RUTINA ELIMINADA';
 
-    final dateStr = DateFormat('d MMM', 'es_ES').format(widget.session.fecha).toUpperCase();
+    final dateStr =
+        DateFormat('d MMM', 'es_ES').format(widget.session.fecha).toUpperCase();
     final timeStr = DateFormat('HH:mm').format(widget.session.fecha);
 
     final durationText = widget.session.durationSeconds != null
-       ? '${(widget.session.durationSeconds! / 60).toStringAsFixed(0)} MIN'
-       : 'N/A';
+        ? '${(widget.session.durationSeconds! / 60).toStringAsFixed(0)} MIN'
+        : 'N/A';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -194,7 +203,8 @@ class _SessionTileState extends State<SessionTile> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SessionDetailScreen(sesion: widget.session),
+                  builder: (context) =>
+                      SessionDetailScreen(sesion: widget.session),
                 ),
               );
             },
@@ -224,7 +234,9 @@ class _SessionTileState extends State<SessionTile> {
                           ),
                         ),
                         Text(
-                          dateStr.split(' ').length > 1 ? dateStr.split(' ')[1] : '',
+                          dateStr.split(' ').length > 1
+                              ? dateStr.split(' ')[1]
+                              : '',
                           style: GoogleFonts.montserrat(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -256,9 +268,10 @@ class _SessionTileState extends State<SessionTile> {
                             ),
                             if (widget.session.dayName != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2,),
                                 decoration: BoxDecoration(
-                                  color: AppColors.live.withValues(alpha:0.3),
+                                  color: AppColors.live.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -275,7 +288,8 @@ class _SessionTileState extends State<SessionTile> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.access_time, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.access_time,
+                                size: 12, color: AppColors.textTertiary,),
                             const SizedBox(width: 3),
                             Text(
                               timeStr,
@@ -285,7 +299,8 @@ class _SessionTileState extends State<SessionTile> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Icon(Icons.timer_outlined, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.timer_outlined,
+                                size: 12, color: AppColors.textTertiary,),
                             const SizedBox(width: 3),
                             Text(
                               durationText,
@@ -295,7 +310,8 @@ class _SessionTileState extends State<SessionTile> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            const Icon(Icons.fitness_center, size: 12, color: AppColors.textTertiary),
+                            const Icon(Icons.fitness_center,
+                                size: 12, color: AppColors.textTertiary,),
                             const SizedBox(width: 3),
                             Text(
                               '${(widget.session.totalVolume / 1000).toStringAsFixed(1)}t',
@@ -323,7 +339,9 @@ class _SessionTileState extends State<SessionTile> {
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: _buildExpandedContent(),
-            crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
         ],
@@ -341,7 +359,8 @@ class _SessionTileState extends State<SessionTile> {
           const SizedBox(height: 10),
           // Exercise list
           ...widget.session.ejerciciosCompletados.take(5).map((ejercicio) {
-            final completedSets = ejercicio.logs.where((l) => l.completed).length;
+            final completedSets =
+                ejercicio.logs.where((l) => l.completed).length;
             final maxWeight = ejercicio.logs
                 .where((l) => l.completed)
                 .fold(0.0, (max, l) => l.peso > max ? l.peso : max);
@@ -401,7 +420,8 @@ class _SessionTileState extends State<SessionTile> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SessionDetailScreen(sesion: widget.session),
+                        builder: (context) =>
+                            SessionDetailScreen(sesion: widget.session),
                       ),
                     );
                   },
@@ -426,7 +446,8 @@ class _SessionTileState extends State<SessionTile> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent[200],
                   side: const BorderSide(color: AppColors.live),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   textStyle: GoogleFonts.montserrat(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -445,28 +466,34 @@ class _SessionTileState extends State<SessionTile> {
 
     final buffer = StringBuffer();
     buffer.writeln('=== JUAN TRAINING ===');
-    buffer.writeln('Fecha: ${DateFormat('dd/MM/yyyy HH:mm', 'es_ES').format(session.fecha)}');
+    buffer.writeln(
+        'Fecha: ${DateFormat('dd/MM/yyyy HH:mm', 'es_ES').format(session.fecha)}',);
     if (session.dayName != null) buffer.writeln('Día: ${session.dayName}');
     buffer.writeln('Duración: ${session.formattedDuration}');
-    buffer.writeln('Volumen Total: ${(session.totalVolume / 1000).toStringAsFixed(1)} toneladas');
-    buffer.writeln('');
+    buffer.writeln(
+        'Volumen Total: ${(session.totalVolume / 1000).toStringAsFixed(1)} toneladas',);
+    buffer.writeln();
     buffer.writeln('--- EJERCICIOS ---');
 
     for (final ejercicio in session.ejerciciosCompletados) {
-      buffer.writeln('');
+      buffer.writeln();
       buffer.writeln('${ejercicio.nombre}:');
       for (var i = 0; i < ejercicio.logs.length; i++) {
         final log = ejercicio.logs[i];
         if (log.completed) {
           final rpeStr = log.rpe != null ? ' RPE:${log.rpe}' : '';
-          buffer.writeln('  Serie ${i + 1}: ${log.peso}kg x ${log.reps}$rpeStr');
+          buffer
+              .writeln('  Serie ${i + 1}: ${log.peso}kg x ${log.reps}$rpeStr');
         }
       }
     }
 
-    Share.share(
-      buffer.toString(),
-      subject: 'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}',
+    SharePlus.instance.share(
+      ShareParams(
+        text: buffer.toString(),
+        subject:
+            'Juan Training - Sesión ${DateFormat('dd/MM').format(session.fecha)}',
+      ),
     );
   }
 }
@@ -482,9 +509,11 @@ void exportAllSessions(BuildContext context, List<Sesion> sessions) {
   final data = sessions.map((s) => sessionToMap(s)).toList();
   final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
 
-  Share.share(
-    jsonStr,
-    subject: 'Juan Training - Historial Completo',
+  SharePlus.instance.share(
+    ShareParams(
+      text: jsonStr,
+      subject: 'Juan Training - Historial Completo',
+    ),
   );
 }
 
@@ -493,17 +522,27 @@ Map<String, dynamic> sessionToMap(Sesion session) {
   return {
     'id': session.id,
     'fecha': session.fecha.toIso8601String(),
-    'duracionMin': session.durationSeconds != null ? (session.durationSeconds! / 60).round() : null,
+    'duracionMin': session.durationSeconds != null
+        ? (session.durationSeconds! / 60).round()
+        : null,
     'volumenTotal': session.totalVolume,
     'seriesCompletadas': session.completedSetsCount,
-    'ejercicios': session.ejerciciosCompletados.map((e) => {
-      'nombre': e.nombre,
-      'series': e.logs.map((l) => {
-        'peso': l.peso,
-        'reps': l.reps,
-        'completado': l.completed,
-        'rpe': l.rpe,
-      }).toList(),
-    }).toList(),
+    'ejercicios': session.ejerciciosCompletados
+        .map(
+          (e) => {
+            'nombre': e.nombre,
+            'series': e.logs
+                .map(
+                  (l) => {
+                    'peso': l.peso,
+                    'reps': l.reps,
+                    'completado': l.completed,
+                    'rpe': l.rpe,
+                  },
+                )
+                .toList(),
+          },
+        )
+        .toList(),
   };
 }

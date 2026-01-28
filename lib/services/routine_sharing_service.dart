@@ -1,9 +1,11 @@
 import 'dart:convert';
+
 import 'package:fuzzy/fuzzy.dart';
 import 'package:share_plus/share_plus.dart';
-import '../models/rutina.dart';
+
 import '../models/ejercicio_en_rutina.dart';
 import '../models/library_exercise.dart';
+import '../models/rutina.dart';
 import 'exercise_library_service.dart';
 
 /// Service for exporting and importing routines as JSON.
@@ -19,9 +21,11 @@ class RoutineSharingService {
   /// Shares a routine using the system share dialog.
   Future<void> shareRoutine(Rutina rutina) async {
     final jsonStr = exportRoutineToJson(rutina);
-    await Share.share(
-      jsonStr,
-      subject: 'Juan Training - ${rutina.nombre}',
+    await SharePlus.instance.share(
+      ShareParams(
+        text: jsonStr,
+        subject: 'Juan Training - ${rutina.nombre}',
+      ),
     );
   }
 
@@ -38,7 +42,8 @@ class RoutineSharingService {
       // Attempt to parse JSON
       final dynamic decoded = jsonDecode(cleanJson);
       if (decoded is! Map<String, dynamic>) {
-        return RoutineImportResult.error('Formato JSON inválido: se esperaba un objeto');
+        return RoutineImportResult.error(
+            'Formato JSON inválido: se esperaba un objeto',);
       }
 
       // Validate structure
@@ -85,7 +90,7 @@ class RoutineSharingService {
     final updatedDias = rutina.dias.map((dia) {
       final updatedEjercicios = dia.ejercicios.map((ejercicio) {
         // Try exact match first
-        LibraryExercise? match = _findExactMatch(library, ejercicio.nombre);
+        var match = _findExactMatch(library, ejercicio.nombre);
 
         // If no exact match, try fuzzy match
         if (match == null) {
@@ -107,9 +112,8 @@ class RoutineSharingService {
             musculosSecundarios: match.secondaryMuscles.isNotEmpty
                 ? match.secondaryMuscles
                 : ejercicio.musculosSecundarios,
-            equipo: match.equipment.isNotEmpty
-                ? match.equipment
-                : ejercicio.equipo,
+            equipo:
+                match.equipment.isNotEmpty ? match.equipment : ejercicio.equipo,
             localImagePath: match.localImagePath,
             // Preserve routine-specific data
             series: ejercicio.series,
@@ -147,10 +151,10 @@ class RoutineSharingService {
 
   /// Gets statistics about an imported routine for preview.
   RoutineImportStats getImportStats(Rutina rutina) {
-    int totalExercises = 0;
-    int totalSeries = 0;
+    var totalExercises = 0;
+    var totalSeries = 0;
     final muscleGroups = <String>{};
-    int supersetsCount = 0;
+    var supersetsCount = 0;
     final supersetIds = <String>{};
 
     for (final dia in rutina.dias) {

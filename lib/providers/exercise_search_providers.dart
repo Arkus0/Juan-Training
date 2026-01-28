@@ -29,13 +29,27 @@ final exercisesProvider = StreamProvider<List<LibraryExercise>>((ref) {
   return controller.stream;
 });
 
-final exerciseSearchIndexProvider = Provider.autoDispose<ExerciseSearchIndex>((ref) {
+final exerciseSearchIndexProvider =
+    Provider.autoDispose<ExerciseSearchIndex>((ref) {
   ref.keepAlive();
-  final exercises = ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
+  final exercises =
+      ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
   return ExerciseSearchIndex.build(exercises);
 });
 
-final exerciseSearchQueryProvider = StateProvider<String>((ref) => '');
+final exerciseSearchQueryProvider =
+    NotifierProvider<ExerciseSearchQueryNotifier, String>(
+  ExerciseSearchQueryNotifier.new,
+);
+
+class ExerciseSearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void setQuery(String value) {
+    state = value;
+  }
+}
 
 class ExerciseSearchFiltersState {
   final String? muscleGroup;
@@ -62,8 +76,9 @@ class ExerciseSearchFiltersState {
 }
 
 class ExerciseSearchFiltersNotifier
-    extends StateNotifier<ExerciseSearchFiltersState> {
-  ExerciseSearchFiltersNotifier() : super(const ExerciseSearchFiltersState());
+    extends Notifier<ExerciseSearchFiltersState> {
+  @override
+  ExerciseSearchFiltersState build() => const ExerciseSearchFiltersState();
 
   void setMuscleGroup(String? value) {
     state = state.copyWith(muscleGroup: value);
@@ -73,7 +88,7 @@ class ExerciseSearchFiltersNotifier
     state = state.copyWith(equipment: value);
   }
 
-  void setFavoritesOnly(bool value) {
+  void setFavoritesOnly({required bool value}) {
     state = state.copyWith(favoritesOnly: value);
   }
 
@@ -83,19 +98,21 @@ class ExerciseSearchFiltersNotifier
 }
 
 final exerciseSearchFiltersProvider =
-    StateNotifierProvider<ExerciseSearchFiltersNotifier, ExerciseSearchFiltersState>(
-  (ref) => ExerciseSearchFiltersNotifier(),
+    NotifierProvider<ExerciseSearchFiltersNotifier, ExerciseSearchFiltersState>(
+  ExerciseSearchFiltersNotifier.new,
 );
 
 final availableMuscleGroupsProvider = Provider<List<String>>((ref) {
-  final exercises = ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
+  final exercises =
+      ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
   final groups = exercises.map((e) => e.muscleGroup).toSet().toList();
   groups.sort();
   return groups;
 });
 
 final availableEquipmentProvider = Provider<List<String>>((ref) {
-  final exercises = ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
+  final exercises =
+      ref.watch(exercisesProvider).value ?? const <LibraryExercise>[];
   final equipment = exercises.map((e) => e.equipment).toSet().toList();
   equipment.sort();
   return equipment;
@@ -150,6 +167,5 @@ final exerciseSearchSuggestionsProvider =
       equipment: filtersState.equipment,
       favoritesOnly: filtersState.favoritesOnly,
     ),
-    limit: 3,
   );
 });

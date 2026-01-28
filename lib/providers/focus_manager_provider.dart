@@ -87,8 +87,9 @@ class FocusManagerState {
 /// - Auto-focus al siguiente input cuando se completa una serie
 /// - Vibración suave como feedback
 /// - Gestión del estado del teclado
-class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
-  FocusManagerNotifier() : super(const FocusManagerState());
+class FocusManagerNotifier extends Notifier<FocusManagerState> {
+  @override
+  FocusManagerState build() => const FocusManagerState();
 
   /// Solicita focus en un campo específico
   /// Se usa cuando el timer termina o se completa una serie
@@ -140,19 +141,20 @@ class FocusManagerNotifier extends StateNotifier<FocusManagerState> {
   }
 
   /// Actualiza el estado de visibilidad del teclado
-  void setKeyboardVisible(bool visible) {
+  void setKeyboardVisible({required bool visible}) {
     state = state.copyWith(isKeyboardVisible: visible);
   }
 
   /// Habilita/deshabilita vibración en focus
-  void setVibrateOnFocus(bool enabled) {
+  void setVibrateOnFocus({required bool enabled}) {
     state = state.copyWith(vibrateOnFocus: enabled);
   }
 }
 
 /// Provider global para el FocusManager
-final focusManagerProvider = StateNotifierProvider<FocusManagerNotifier, FocusManagerState>(
-  (ref) => FocusManagerNotifier(),
+final focusManagerProvider =
+    NotifierProvider<FocusManagerNotifier, FocusManagerState>(
+  FocusManagerNotifier.new,
 );
 
 /// Provider de conveniencia para obtener solo el target actual

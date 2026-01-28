@@ -114,7 +114,8 @@ class VoiceUndoSnackbar {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+            const Icon(Icons.warning_amber_rounded,
+                color: Colors.orange, size: 20,),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -162,9 +163,6 @@ class VoiceUndoSnackbar {
         return Icons.add_circle;
       case VoiceActionType.removeExercise:
         return Icons.remove_circle;
-      default:
-        // Fallback seguro (no debería llegar aquí si enum es exhaustivo)
-        return Icons.help_outline;
     }
   }
 }

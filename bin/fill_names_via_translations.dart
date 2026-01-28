@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 Future<void> main(List<String> args) async {
@@ -9,12 +10,14 @@ Future<void> main(List<String> args) async {
   const fallbackLang = 2; // English
 
   for (final id in ids) {
-    print('\n--- ID $id ---');
+    stdout.writeln('\n--- ID $id ---');
     try {
       final infoUrl = 'https://wger.de/api/v2/exerciseinfo/$id/';
-      final infoResp = await http.get(Uri.parse(infoUrl)).timeout(const Duration(seconds: 8));
+      final infoResp = await http
+          .get(Uri.parse(infoUrl))
+          .timeout(const Duration(seconds: 8));
       if (infoResp.statusCode != 200) {
-        print('exerciseinfo $id -> status ${infoResp.statusCode}');
+        stdout.writeln('exerciseinfo $id -> status ${infoResp.statusCode}');
         continue;
       }
       final infoJson = jsonDecode(infoResp.body) as Map<String, dynamic>;
@@ -22,7 +25,7 @@ Future<void> main(List<String> args) async {
       // direct name on exerciseinfo
       final directName = (infoJson['name'] as String?)?.trim();
       if (directName != null && directName.isNotEmpty) {
-        print('Name (exerciseinfo direct): $directName');
+        stdout.writeln('Name (exerciseinfo direct): $directName');
         continue;
       }
 
@@ -50,7 +53,7 @@ Future<void> main(List<String> args) async {
       }
 
       if (chosenName != null) {
-        print('Name from translations: $chosenName');
+        stdout.writeln('Name from translations: $chosenName');
         continue;
       }
 
@@ -58,42 +61,48 @@ Future<void> main(List<String> args) async {
       if (chosenTransId != null) {
         final exUrl = 'https://wger.de/api/v2/exercise/$chosenTransId/';
         try {
-          final exResp = await http.get(Uri.parse(exUrl)).timeout(const Duration(seconds: 8));
+          final exResp = await http
+              .get(Uri.parse(exUrl))
+              .timeout(const Duration(seconds: 8));
           if (exResp.statusCode == 200 && exResp.body.isNotEmpty) {
             final exJson = jsonDecode(exResp.body) as Map<String, dynamic>;
             final exName = (exJson['name'] as String?)?.trim();
             if (exName != null && exName.isNotEmpty) {
-              print('Name from /exercise/ (trans id $chosenTransId): $exName');
+              stdout.writeln(
+                  'Name from /exercise/ (trans id $chosenTransId): $exName',);
               continue;
             }
           } else {
-            print('/exercise/$chosenTransId -> status ${exResp.statusCode}');
+            stdout.writeln(
+                '/exercise/$chosenTransId -> status ${exResp.statusCode}',);
           }
         } catch (e) {
-          print('Error fetching /exercise/$chosenTransId: $e');
+          stdout.writeln('Error fetching /exercise/$chosenTransId: $e');
         }
       }
 
       // As a last attempt, try /exercise/$id/ directly
       try {
-        final exResp2 = await http.get(Uri.parse('https://wger.de/api/v2/exercise/$id/')).timeout(const Duration(seconds: 8));
+        final exResp2 = await http
+            .get(Uri.parse('https://wger.de/api/v2/exercise/$id/'))
+            .timeout(const Duration(seconds: 8));
         if (exResp2.statusCode == 200 && exResp2.body.isNotEmpty) {
           final exJson2 = jsonDecode(exResp2.body) as Map<String, dynamic>;
           final exName2 = (exJson2['name'] as String?)?.trim();
           if (exName2 != null && exName2.isNotEmpty) {
-            print('Name from /exercise/$id/: $exName2');
+            stdout.writeln('Name from /exercise/$id/: $exName2');
             continue;
           }
         } else {
-          print('/exercise/$id -> status ${exResp2.statusCode}');
+          stdout.writeln('/exercise/$id -> status ${exResp2.statusCode}');
         }
       } catch (e) {
-        print('Error fetching /exercise/$id: $e');
+        stdout.writeln('Error fetching /exercise/$id: $e');
       }
 
-      print('No name found for ID $id via translations or /exercise.');
+      stdout.writeln('No name found for ID $id via translations or /exercise.');
     } catch (e) {
-      print('Error processing $id: $e');
+      stdout.writeln('Error processing $id: $e');
     }
     await Future.delayed(const Duration(milliseconds: 200));
   }

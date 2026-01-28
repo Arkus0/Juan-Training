@@ -47,7 +47,8 @@ class UserSettings {
   final bool mediaControlsEnabled;
 
   const UserSettings({
-    this.timerSoundEnabled = false, // Desactivado por defecto (gym = sin sonido)
+    this.timerSoundEnabled =
+        false, // Desactivado por defecto (gym = sin sonido)
     this.timerVibrationEnabled = true,
     this.autoStartTimer = true,
     this.defaultRestSeconds = 90,
@@ -77,15 +78,19 @@ class UserSettings {
   }) {
     return UserSettings(
       timerSoundEnabled: timerSoundEnabled ?? this.timerSoundEnabled,
-      timerVibrationEnabled: timerVibrationEnabled ?? this.timerVibrationEnabled,
+      timerVibrationEnabled:
+          timerVibrationEnabled ?? this.timerVibrationEnabled,
       autoStartTimer: autoStartTimer ?? this.autoStartTimer,
       defaultRestSeconds: defaultRestSeconds ?? this.defaultRestSeconds,
-      showSupersetIndicator: showSupersetIndicator ?? this.showSupersetIndicator,
-      performanceModeEnabled: performanceModeEnabled ?? this.performanceModeEnabled,
+      showSupersetIndicator:
+          showSupersetIndicator ?? this.showSupersetIndicator,
+      performanceModeEnabled:
+          performanceModeEnabled ?? this.performanceModeEnabled,
       reduceAnimations: reduceAnimations ?? this.reduceAnimations,
       reduceVibrations: reduceVibrations ?? this.reduceVibrations,
       barWeight: barWeight ?? this.barWeight,
-      lockScreenTimerEnabled: lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
+      lockScreenTimerEnabled:
+          lockScreenTimerEnabled ?? this.lockScreenTimerEnabled,
       useFocusedInputMode: useFocusedInputMode ?? this.useFocusedInputMode,
       mediaControlsEnabled: mediaControlsEnabled ?? this.mediaControlsEnabled,
     );
@@ -93,15 +98,18 @@ class UserSettings {
 }
 
 /// Notifier para manejar settings con persistencia en SharedPreferences
-class SettingsNotifier extends StateNotifier<UserSettings> {
-  SettingsNotifier() : super(const UserSettings()) {
+class SettingsNotifier extends Notifier<UserSettings> {
+  @override
+  UserSettings build() {
     _loadSettings();
+    return const UserSettings();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final performanceMode = prefs.getBool(SettingsKeys.performanceModeEnabled) ?? false;
+    final performanceMode =
+        prefs.getBool(SettingsKeys.performanceModeEnabled) ?? false;
     final reduceAnims = prefs.getBool(SettingsKeys.reduceAnimations) ?? false;
     final reduceVibes = prefs.getBool(SettingsKeys.reduceVibrations) ?? false;
 
@@ -112,33 +120,38 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
 
     state = UserSettings(
       timerSoundEnabled: prefs.getBool(SettingsKeys.timerSoundEnabled) ?? false,
-      timerVibrationEnabled: prefs.getBool(SettingsKeys.timerVibrationEnabled) ?? true,
+      timerVibrationEnabled:
+          prefs.getBool(SettingsKeys.timerVibrationEnabled) ?? true,
       autoStartTimer: prefs.getBool(SettingsKeys.autoStartTimer) ?? true,
       defaultRestSeconds: prefs.getInt(SettingsKeys.defaultRestSeconds) ?? 90,
-      showSupersetIndicator: prefs.getBool(SettingsKeys.showSupersetIndicator) ?? true,
+      showSupersetIndicator:
+          prefs.getBool(SettingsKeys.showSupersetIndicator) ?? true,
       performanceModeEnabled: performanceMode,
       reduceAnimations: reduceAnims,
       reduceVibrations: reduceVibes,
       barWeight: prefs.getDouble(SettingsKeys.barWeightKg) ?? 20.0,
-      lockScreenTimerEnabled: prefs.getBool(SettingsKeys.lockScreenTimerEnabled) ?? true,
-      useFocusedInputMode: prefs.getBool(SettingsKeys.useFocusedInputMode) ?? true,
-      mediaControlsEnabled: prefs.getBool(SettingsKeys.mediaControlsEnabled) ?? true,
+      lockScreenTimerEnabled:
+          prefs.getBool(SettingsKeys.lockScreenTimerEnabled) ?? true,
+      useFocusedInputMode:
+          prefs.getBool(SettingsKeys.useFocusedInputMode) ?? true,
+      mediaControlsEnabled:
+          prefs.getBool(SettingsKeys.mediaControlsEnabled) ?? true,
     );
   }
 
-  Future<void> setTimerSoundEnabled(bool value) async {
+  Future<void> setTimerSoundEnabled({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.timerSoundEnabled, value);
     state = state.copyWith(timerSoundEnabled: value);
   }
 
-  Future<void> setTimerVibrationEnabled(bool value) async {
+  Future<void> setTimerVibrationEnabled({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.timerVibrationEnabled, value);
     state = state.copyWith(timerVibrationEnabled: value);
   }
 
-  Future<void> setAutoStartTimer(bool value) async {
+  Future<void> setAutoStartTimer({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.autoStartTimer, value);
     state = state.copyWith(autoStartTimer: value);
@@ -150,7 +163,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     state = state.copyWith(defaultRestSeconds: value);
   }
 
-  Future<void> setShowSupersetIndicator(bool value) async {
+  Future<void> setShowSupersetIndicator({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.showSupersetIndicator, value);
     state = state.copyWith(showSupersetIndicator: value);
@@ -158,12 +171,12 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
 
   /// Activar/desactivar el modo performance completo
   /// Esto activa todas las optimizaciones de rendimiento
-  Future<void> setPerformanceModeEnabled(bool value) async {
+  Future<void> setPerformanceModeEnabled({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.performanceModeEnabled, value);
 
     // Sincronizar con PerformanceMode singleton
-    PerformanceMode.instance.setPerformanceMode(value);
+    PerformanceMode.instance.setPerformanceMode(enabled: value);
 
     state = state.copyWith(
       performanceModeEnabled: value,
@@ -179,7 +192,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
   }
 
   /// Reducir animaciones (independiente del modo performance)
-  Future<void> setReduceAnimations(bool value) async {
+  Future<void> setReduceAnimations({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.reduceAnimations, value);
 
@@ -189,7 +202,7 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
   }
 
   /// Reducir vibraciones (independiente del modo performance)
-  Future<void> setReduceVibrations(bool value) async {
+  Future<void> setReduceVibrations({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.reduceVibrations, value);
 
@@ -206,21 +219,21 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
   }
 
   /// Activar/desactivar el timer en pantalla de bloqueo
-  Future<void> setLockScreenTimerEnabled(bool value) async {
+  Future<void> setLockScreenTimerEnabled({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.lockScreenTimerEnabled, value);
     state = state.copyWith(lockScreenTimerEnabled: value);
   }
 
   /// Activar/desactivar el modo de entrada focalizada (modal numpad)
-  Future<void> setUseFocusedInputMode(bool value) async {
+  Future<void> setUseFocusedInputMode({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.useFocusedInputMode, value);
     state = state.copyWith(useFocusedInputMode: value);
   }
 
   /// Activar/desactivar controles de media (solo cuando hay música)
-  Future<void> setMediaControlsEnabled(bool value) async {
+  Future<void> setMediaControlsEnabled({required bool value}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(SettingsKeys.mediaControlsEnabled, value);
     state = state.copyWith(mediaControlsEnabled: value);
@@ -228,9 +241,9 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
 }
 
 /// Provider global de settings
-final settingsProvider = StateNotifierProvider<SettingsNotifier, UserSettings>((ref) {
-  return SettingsNotifier();
-});
+final settingsProvider = NotifierProvider<SettingsNotifier, UserSettings>(
+  SettingsNotifier.new,
+);
 
 /// Providers de conveniencia para seleccionar settings específicos
 final timerSoundEnabledProvider = Provider<bool>((ref) {

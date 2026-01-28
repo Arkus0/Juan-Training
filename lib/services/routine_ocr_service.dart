@@ -106,7 +106,7 @@ class RoutineOcrService {
   /// Devuelve las líneas de texto crudo extraídas.
   Future<List<String>> scanImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(
+      final image = await _picker.pickImage(
         source: source,
         imageQuality: 85, // Buena calidad sin ser excesivo
         maxWidth: 2000,
@@ -119,13 +119,13 @@ class RoutineOcrService {
       }
 
       final inputImage = InputImage.fromFile(File(image.path));
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final textRecognizer = TextRecognizer();
 
       try {
-        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        final recognizedText = await textRecognizer.processImage(inputImage);
 
         // Extraer líneas de texto (cada bloque puede tener múltiples líneas)
-        final List<String> lines = [];
+        final lines = <String>[];
         for (final block in recognizedText.blocks) {
           for (final line in block.lines) {
             final trimmed = line.text.trim();
@@ -137,11 +137,9 @@ class RoutineOcrService {
 
         _logger.i('OCR extrajo ${lines.length} líneas de texto');
         return lines;
-
       } finally {
         await textRecognizer.close();
       }
-
     } catch (e, s) {
       _logger.e('Error en OCR', error: e, stackTrace: s);
       rethrow;
@@ -158,7 +156,7 @@ class RoutineOcrService {
   /// - "Curl 4x12 20kg" -> 4 series, 12 reps, 20kg
   /// - "Peso muerto 5x5 100kg" -> 5 series, 5 reps, 100kg
   Future<List<ParsedExerciseCandidate>> parseLines(List<String> lines) async {
-    final List<ParsedExerciseCandidate> candidates = [];
+    final candidates = <ParsedExerciseCandidate>[];
 
     for (final line in lines) {
       final candidate = await _parseSingleLine(line);
@@ -167,7 +165,8 @@ class RoutineOcrService {
       }
     }
 
-    _logger.i('Parseados ${candidates.length} ejercicios de ${lines.length} líneas');
+    _logger.i(
+        'Parseados ${candidates.length} ejercicios de ${lines.length} líneas',);
     return candidates;
   }
 
@@ -181,8 +180,6 @@ class RoutineOcrService {
     // Usar el servicio de parsing unificado
     final parsed = await _parsingService.parseSingleLine(
       line,
-      source: ParseSource.ocr,
-      validate: true,
     );
 
     if (parsed == null) return null;
@@ -214,7 +211,8 @@ class RoutineOcrService {
 
   /// Busca ejercicios alternativos para un nombre dado.
   /// Útil para mostrar sugerencias cuando el match no es seguro.
-  Future<List<ExerciseMatchResult>> searchAlternatives(String query, {int limit = 5}) async {
+  Future<List<ExerciseMatchResult>> searchAlternatives(String query,
+      {int limit = 5,}) async {
     return _matchingService.matchMultiple(query, limit: limit);
   }
 

@@ -1,12 +1,13 @@
-import '../../utils/design_system.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 // ⚡ OPTIMIZACIÓN: Estilos pre-computados para evitar GoogleFonts en build
 class _TrendStyles {
@@ -102,7 +103,7 @@ class StrengthTrend extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha:0.2),
+                  color: Colors.green.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -127,7 +128,8 @@ class StrengthTrend extends ConsumerWidget {
               if (exerciseNames.isEmpty) {
                 return const SizedBox.shrink();
               }
-              return _buildExerciseSelector(ref, selectedExercise, exerciseNames);
+              return _buildExerciseSelector(
+                  ref, selectedExercise, exerciseNames,);
             },
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
@@ -174,7 +176,8 @@ class StrengthTrend extends ConsumerWidget {
             'Selecciona ejercicio',
             style: _TrendStyles.dropdownHint,
           ),
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textTertiary),
+          icon: const Icon(Icons.keyboard_arrow_down,
+              color: AppColors.textTertiary,),
           dropdownColor: const Color(0xFF252525),
           isExpanded: true,
           items: exerciseNames.map((name) {
@@ -189,7 +192,9 @@ class StrengthTrend extends ConsumerWidget {
           onChanged: (value) {
             if (value != null) {
               HapticFeedback.selectionClick();
-              ref.read(selectedTrendExerciseProvider.notifier).state = value;
+              ref
+                  .read(selectedTrendExerciseProvider.notifier)
+                  .setExercise(value);
             }
           },
         ),
@@ -233,7 +238,6 @@ class StrengthTrend extends ConsumerWidget {
               minY: minY,
               maxY: maxY,
               gridData: FlGridData(
-                drawHorizontalLine: true,
                 drawVerticalLine: false,
                 horizontalInterval: (maxY - minY) / 4,
                 getDrawingHorizontalLine: (value) {
@@ -277,12 +281,8 @@ class StrengthTrend extends ConsumerWidget {
                     },
                   ),
                 ),
-                topTitles: const AxisTitles(
-                  
-                ),
-                rightTitles: const AxisTitles(
-                  
-                ),
+                topTitles: const AxisTitles(),
+                rightTitles: const AxisTitles(),
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
@@ -307,8 +307,8 @@ class StrengthTrend extends ConsumerWidget {
                     show: true,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.redAccent.withValues(alpha:0.3),
-                        Colors.redAccent.withValues(alpha:0.0),
+                        Colors.redAccent.withValues(alpha: 0.3),
+                        Colors.redAccent.withValues(alpha: 0.0),
                       ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -322,17 +322,20 @@ class StrengthTrend extends ConsumerWidget {
                     return touchedSpots.map((spot) {
                       final index = spot.spotIndex;
                       final point = dataPoints[index];
-                      final dateStr = DateFormat('d MMM', 'es_ES').format(point.date);
+                      final dateStr =
+                          DateFormat('d MMM', 'es_ES').format(point.date);
                       return LineTooltipItem(
                         '$dateStr\n',
                         _TrendStyles.tooltipDate,
                         children: [
                           TextSpan(
-                            text: '1RM: ${point.estimated1RM.toStringAsFixed(1)}kg',
+                            text:
+                                '1RM: ${point.estimated1RM.toStringAsFixed(1)}kg',
                             style: _TrendStyles.tooltipValue,
                           ),
                           TextSpan(
-                            text: '\n${point.actualMax.toStringAsFixed(1)}kg x${point.repsAtMax}',
+                            text:
+                                '\n${point.actualMax.toStringAsFixed(1)}kg x${point.repsAtMax}',
                             style: _TrendStyles.tooltipSubtext,
                           ),
                         ],
@@ -367,10 +370,11 @@ class StrengthTrend extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: (isPositive ? Colors.green : Colors.red).withValues(alpha:0.1),
+        color: (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: (isPositive ? Colors.green : Colors.red).withValues(alpha:0.3),
+          color:
+              (isPositive ? Colors.green : Colors.red).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -435,7 +439,7 @@ class StrengthTrend extends ConsumerWidget {
       height: 200,
       child: Center(
         child: CircularProgressIndicator(
-          color: Colors.redAccent.withValues(alpha:0.5),
+          color: Colors.redAccent.withValues(alpha: 0.5),
           strokeWidth: 2,
         ),
       ),

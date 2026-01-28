@@ -22,10 +22,24 @@ import '../widgets/voice/voice_training_button.dart';
 
 /// Provider para comunicar el auto-focus cuando el timer termina
 /// (Mantenido para compatibilidad, ahora usa FocusManagerProvider internamente)
-final timerFinishedFocusProvider =
-    StateProvider<({int exerciseIndex, int setIndex})?>(
-  (ref) => null,
+final timerFinishedFocusProvider = NotifierProvider<TimerFinishedFocusNotifier,
+    ({int exerciseIndex, int setIndex})?>(
+  TimerFinishedFocusNotifier.new,
 );
+
+class TimerFinishedFocusNotifier
+    extends Notifier<({int exerciseIndex, int setIndex})?> {
+  @override
+  ({int exerciseIndex, int setIndex})? build() => null;
+
+  void setFocus(({int exerciseIndex, int setIndex})? value) {
+    state = value;
+  }
+
+  void clear() {
+    state = null;
+  }
+}
 
 class TrainingSessionScreen extends ConsumerStatefulWidget {
   const TrainingSessionScreen({super.key});
@@ -123,11 +137,13 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 20),
+              const Icon(Icons.check_circle,
+                  color: AppColors.textOnAccent, size: 20,),
               const SizedBox(width: 8),
               Text(
                 '¡Sesión guardada!',
-                style: AppTypography.labelEmphasis.copyWith(color: AppColors.textOnAccent),
+                style: AppTypography.labelEmphasis
+                    .copyWith(color: AppColors.textOnAccent),
               ),
             ],
           ),
@@ -142,7 +158,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     }
 
     // Mensaje de confirmación según el progreso
-    String confirmMessage =
+    var confirmMessage =
         '¿Estás seguro de que quieres terminar el entrenamiento?';
     if (progress.percentage < 0.5) {
       confirmMessage +=
@@ -216,11 +232,13 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.textOnAccent, size: 20),
+              const Icon(Icons.check_circle,
+                  color: AppColors.textOnAccent, size: 20,),
               const SizedBox(width: 8),
               Text(
                 '¡Sesión guardada!',
-                style: AppTypography.labelEmphasis.copyWith(color: AppColors.textOnAccent),
+                style: AppTypography.labelEmphasis
+                    .copyWith(color: AppColors.textOnAccent),
               ),
             ],
           ),
@@ -253,12 +271,10 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       ref.read(focusManagerProvider.notifier).requestFocus(
             exerciseIndex: nextSet.exerciseIndex,
             setIndex: nextSet.setIndex,
-            field: FocusField.weight,
-            vibrate: true,
           );
 
       // También actualizar el provider legacy para compatibilidad
-      ref.read(timerFinishedFocusProvider.notifier).state = nextSet;
+      ref.read(timerFinishedFocusProvider.notifier).setFocus(nextSet);
 
       // Scroll hacia el ejercicio si es necesario
       _scrollToExercise(nextSet.exerciseIndex);
@@ -267,7 +283,7 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 150), () {
           if (mounted) {
-            ref.read(timerFinishedFocusProvider.notifier).state = null;
+            ref.read(timerFinishedFocusProvider.notifier).clear();
             ref.read(focusManagerProvider.notifier).clearFocus();
           }
         });
@@ -368,177 +384,182 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     return HapticsObserver(
       child: Scaffold(
         appBar: AppBar(
-        title: Text(
-          (activeRutinaName ?? 'Entrenando').toUpperCase(),
-          style:
-              Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 20),
-        ),
-        actions: [
-          // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
-          const MusicAppBarAction(),
-          // Botón de voz en AppBar (al lado de terminar)
-          // Incluye contexto de la serie activa para feedback claro
-          voiceAvailable.when(
-            data: (available) => available
-                ? VoiceTrainingButton(
-                    enabled: true,
-                    onCommand: (command) =>
-                        _handleVoiceCommand(command, notifier),
-                    context: _buildVoiceContext(),
-                  )
-                : const SizedBox.shrink(),
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+          title: Text(
+            (activeRutinaName ?? 'Entrenando').toUpperCase(),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontSize: 20),
           ),
-          IconButton(
-            icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),
-            onPressed: () => notifier.toggleTimerBar(!showTimerBar),
-            tooltip: 'Mostrar/ocultar timer',
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: TextButton(
-              onPressed: _onFinishSession,
-              style: TextButton.styleFrom(
-                // 🎯 NEON IRON: Gold celebración al completar, sutil cuando en progreso
-                backgroundColor: progress.isComplete
-                    ? AppColors.goldAccent
-                    : AppColors.bgElevated,
-                foregroundColor: progress.isComplete
-                    ? AppColors.bgDeep
-                    : AppColors.textPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                  side: progress.isComplete
-                      ? BorderSide.none
-                      : const BorderSide(color: AppColors.border),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (progress.isComplete)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 4),
-                      child: Icon(Icons.check, size: 16),
-                    ),
-                  Text(
-                    'TERMINAR',
-                    style: AppTypography.button.copyWith(
-                      color: progress.isComplete
-                          ? AppColors.bgDeep
-                          : AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
+          actions: [
+            // 🎯 NEON IRON: Control de música compacto (antes era barra completa)
+            const MusicAppBarAction(),
+            // Botón de voz en AppBar (al lado de terminar)
+            // Incluye contexto de la serie activa para feedback claro
+            voiceAvailable.when(
+              data: (available) => available
+                  ? VoiceTrainingButton(
+                      onCommand: (command) =>
+                          _handleVoiceCommand(command, notifier),
+                      context: _buildVoiceContext(),
+                    )
+                  : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
             ),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // 🎯 NEON IRON: Barra de progreso ultra-mínima (4px)
-              const SessionProgressBar(),
-
-              // Lista de ejercicios (MusicLauncherBar movido a AppBar)
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(
-                      8, 8, 8, 80), // Espacio para timer compacto
-                  itemCount: exercisesLength + 1, // +1 para el botón de añadir ejercicio
-                  // ⚡ OPTIMIZACIÓN: Pre-renderizar items cercanos para scroll más suave
-                  cacheExtent: 300,
-                  // ⚡ OPTIMIZACIÓN: Física optimizada para listas cortas (4-8 ejercicios típicos)
-                  physics: const BouncingScrollPhysics(
-                    decelerationRate: ScrollDecelerationRate.fast,
+            IconButton(
+              icon: Icon(showTimerBar ? Icons.timer : Icons.timer_outlined),
+              onPressed: () => notifier.toggleTimerBar(show: !showTimerBar),
+              tooltip: 'Mostrar/ocultar timer',
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: TextButton(
+                onPressed: _onFinishSession,
+                style: TextButton.styleFrom(
+                  // 🎯 NEON IRON: Gold celebración al completar, sutil cuando en progreso
+                  backgroundColor: progress.isComplete
+                      ? AppColors.goldAccent
+                      : AppColors.bgElevated,
+                  foregroundColor: progress.isComplete
+                      ? AppColors.bgDeep
+                      : AppColors.textPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    side: progress.isComplete
+                        ? BorderSide.none
+                        : const BorderSide(color: AppColors.border),
                   ),
-                  itemBuilder: (context, index) {
-                    // 🆕 Último item: botón para añadir ejercicio
-                    if (index == exercisesLength) {
-                      return const AddExerciseButton();
-                    }
-                    
-                    // ⚡ Bolt Optimization: Extracted to smart widget
-                    final exercises =
-                        ref.read(trainingSessionProvider).exercises;
-                    final id = exercises.length > index
-                        ? exercises[index].id
-                        : index.toString();
-                    final key =
-                        _exerciseKeys.putIfAbsent(id, () => GlobalKey());
-                    // ⚡ OPTIMIZACIÓN: RepaintBoundary para aislar repintura de cada card
-                    return RepaintBoundary(
-                      child: Container(
-                        key: key,
-                        child: ExerciseCardContainer(exerciseIndex: index),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (progress.isComplete)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 4),
+                        child: Icon(Icons.check, size: 16),
                       ),
-                    );
-                  },
+                    Text(
+                      'TERMINAR',
+                      style: AppTypography.button.copyWith(
+                        color: progress.isComplete
+                            ? AppColors.bgDeep
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                // 🎯 NEON IRON: Barra de progreso ultra-mínima (4px)
+                const SessionProgressBar(),
 
-              // Nuevo Timer Bar no invasivo
-              RestTimerBar(
-                timerState: restTimerState,
-                showInactiveBar: showTimerBar,
-                onStartRest: notifier.startRest,
-                onStopRest: notifier.stopRest,
-                onPauseRest: notifier.pauseRest,
-                onResumeRest: notifier.resumeRest,
-                onDurationChange: notifier.setRestDuration,
-                onAddTime: notifier.addRestTime,
-                onTimerFinished: _onTimerFinished,
-                onRestartRest: notifier.restartRest,
-              ),
-            ],
-          ),
+                // Lista de ejercicios (MusicLauncherBar movido a AppBar)
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      8,
+                      8,
+                      8,
+                      80,
+                    ), // Espacio para timer compacto
+                    itemCount: exercisesLength +
+                        1, // +1 para el botón de añadir ejercicio
+                    // ⚡ OPTIMIZACIÓN: Pre-renderizar items cercanos para scroll más suave
+                    cacheExtent: 300,
+                    // ⚡ OPTIMIZACIÓN: Física optimizada para listas cortas (4-8 ejercicios típicos)
+                    physics: const BouncingScrollPhysics(
+                      decelerationRate: ScrollDecelerationRate.fast,
+                    ),
+                    itemBuilder: (context, index) {
+                      // 🆕 Último item: botón para añadir ejercicio
+                      if (index == exercisesLength) {
+                        return const AddExerciseButton();
+                      }
 
-          // 🎯 FEEDBACK: Overlay de ejercicio completado
-          if (completionInfo != null)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 100, // Encima del timer bar
-              child: GestureDetector(
-                onTap: () =>
-                    ref.read(exerciseCompletionProvider.notifier).dismiss(),
-                child: AnimatedSlide(
-                  offset: Offset.zero,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  child: ExerciseSummaryFeedback(
-                    completedSets: completionInfo.completedSets,
-                    targetSets: completionInfo.targetSets,
-                    totalReps: completionInfo.totalReps,
-                    metTarget: completionInfo.metTarget,
-                    nextSessionHint: completionInfo.nextSessionHint,
+                      // ⚡ Bolt Optimization: Extracted to smart widget
+                      final exercises =
+                          ref.read(trainingSessionProvider).exercises;
+                      final id = exercises.length > index
+                          ? exercises[index].id
+                          : index.toString();
+                      final key =
+                          _exerciseKeys.putIfAbsent(id, () => GlobalKey());
+                      // ⚡ OPTIMIZACIÓN: RepaintBoundary para aislar repintura de cada card
+                      return RepaintBoundary(
+                        child: Container(
+                          key: key,
+                          child: ExerciseCardContainer(exerciseIndex: index),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Nuevo Timer Bar no invasivo
+                RestTimerBar(
+                  timerState: restTimerState,
+                  showInactiveBar: showTimerBar,
+                  onStartRest: notifier.startRest,
+                  onStopRest: notifier.stopRest,
+                  onPauseRest: notifier.pauseRest,
+                  onResumeRest: notifier.resumeRest,
+                  onDurationChange: notifier.setRestDuration,
+                  onAddTime: notifier.addRestTime,
+                  onTimerFinished: _onTimerFinished,
+                  onRestartRest: notifier.restartRest,
+                ),
+              ],
+            ),
+
+            // 🎯 FEEDBACK: Overlay de ejercicio completado
+            if (completionInfo != null)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 100, // Encima del timer bar
+                child: GestureDetector(
+                  onTap: () =>
+                      ref.read(exerciseCompletionProvider.notifier).dismiss(),
+                  child: AnimatedSlide(
+                    offset: Offset.zero,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    child: ExerciseSummaryFeedback(
+                      completedSets: completionInfo.completedSets,
+                      targetSets: completionInfo.targetSets,
+                      totalReps: completionInfo.totalReps,
+                      metTarget: completionInfo.metTarget,
+                      nextSessionHint: completionInfo.nextSessionHint,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-          // 🎯 ERROR TOLERANCE: Banner de bienvenida tras días sin entrenar
-          if (toleranceState.shouldShowWelcome &&
-              toleranceState.sessionGapResult != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: WelcomeBackBanner(
-                result: toleranceState.sessionGapResult!,
-                onDismiss: () => ref
-                    .read(sessionToleranceProvider.notifier)
-                    .markWelcomeShown(),
+            // 🎯 ERROR TOLERANCE: Banner de bienvenida tras días sin entrenar
+            if (toleranceState.shouldShowWelcome &&
+                toleranceState.sessionGapResult != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: WelcomeBackBanner(
+                  result: toleranceState.sessionGapResult!,
+                  onDismiss: () => ref
+                      .read(sessionToleranceProvider.notifier)
+                      .markWelcomeShown(),
+                ),
               ),
-            ),
-
-        ],
-      ),
+          ],
+        ),
       ), // End of HapticsObserver
     );
   }
@@ -548,7 +569,8 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
     final sessionState = ref.read(trainingSessionProvider);
     final nextSet = sessionState.nextIncompleteSet;
 
-    if (nextSet == null || nextSet.exerciseIndex >= sessionState.exercises.length) {
+    if (nextSet == null ||
+        nextSet.exerciseIndex >= sessionState.exercises.length) {
       return null;
     }
 
@@ -655,8 +677,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.note_add,
-                  color: AppColors.textPrimary, size: 20),
+              const Icon(
+                Icons.note_add,
+                color: AppColors.textPrimary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -688,8 +713,11 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle,
-                  color: AppColors.textPrimary, size: 20),
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.textPrimary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 '¡Serie completada!',
@@ -714,8 +742,6 @@ class _TrainingSessionScreenState extends ConsumerState<TrainingSessionScreen> {
       ref.read(focusManagerProvider.notifier).requestFocus(
             exerciseIndex: nextSet.exerciseIndex,
             setIndex: nextSet.setIndex,
-            field: FocusField.weight,
-            vibrate: true,
           );
     }
   }

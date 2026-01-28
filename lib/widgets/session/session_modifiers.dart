@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../models/library_exercise.dart';
+
 import '../../models/ejercicio_en_rutina.dart';
+import '../../models/library_exercise.dart';
 import '../../providers/training_provider.dart';
 import '../../screens/create_routine/widgets/biblioteca_bottom_sheet.dart';
 import '../../utils/design_system.dart';
@@ -24,13 +25,16 @@ class AddSetButton extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           HapticFeedback.lightImpact();
-          ref.read(trainingSessionProvider.notifier).addSetToExercise(exerciseIndex);
-          
+          ref
+              .read(trainingSessionProvider.notifier)
+              .addSetToExercise(exerciseIndex);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
+                  const Icon(Icons.add_circle_outline,
+                      color: Colors.white, size: 18,),
                   const SizedBox(width: 8),
                   Text(
                     'Serie añadida',
@@ -50,16 +54,14 @@ class AddSetButton extends ConsumerWidget {
           decoration: BoxDecoration(
             border: Border.all(
               color: AppColors.border,
-              style: BorderStyle.solid,
             ),
             borderRadius: BorderRadius.circular(8),
             color: AppColors.bgInteractive.withValues(alpha: 0.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.max,
             children: [
-              Icon(
+              const Icon(
                 Icons.add_rounded,
                 color: AppColors.textSecondary,
                 size: 18,
@@ -101,7 +103,6 @@ class AddExerciseButton extends ConsumerWidget {
               border: Border.all(
                 color: AppColors.techCyan.withValues(alpha: 0.5),
                 width: 2,
-                style: BorderStyle.solid,
               ),
               borderRadius: BorderRadius.circular(12),
               color: AppColors.bgElevated.withValues(alpha: 0.3),
@@ -109,7 +110,7 @@ class AddExerciseButton extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.add_circle_outline_rounded,
                   color: AppColors.techCyan,
                   size: 24,
@@ -134,7 +135,7 @@ class AddExerciseButton extends ConsumerWidget {
 
   void _showAddExerciseSheet(BuildContext context, WidgetRef ref) {
     HapticFeedback.mediumImpact();
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -157,7 +158,8 @@ class AddExerciseButton extends ConsumerWidget {
     );
   }
 
-  void _showAddOptionDialog(BuildContext context, WidgetRef ref, LibraryExercise exercise) {
+  void _showAddOptionDialog(
+      BuildContext context, WidgetRef ref, LibraryExercise exercise,) {
     showDialog(
       context: context,
       builder: (dialogContext) => AddExerciseOptionDialog(
@@ -165,13 +167,16 @@ class AddExerciseButton extends ConsumerWidget {
         onSessionOnly: () {
           Navigator.pop(dialogContext);
           // Añadir solo a esta sesión
-          ref.read(trainingSessionProvider.notifier).addExerciseToSession(exercise);
-          
+          ref
+              .read(trainingSessionProvider.notifier)
+              .addExerciseToSession(exercise);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                  const Icon(Icons.check_circle_outline,
+                      color: Colors.white, size: 18,),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -190,17 +195,19 @@ class AddExerciseButton extends ConsumerWidget {
         },
         onAddToRoutine: () async {
           Navigator.pop(dialogContext);
-          
+
           // Añadir a sesión actual
-          ref.read(trainingSessionProvider.notifier).addExerciseToSession(exercise);
-          
+          ref
+              .read(trainingSessionProvider.notifier)
+              .addExerciseToSession(exercise);
+
           // También añadir a la rutina (si hay una activa con día conocido)
           final state = ref.read(trainingSessionProvider);
           if (state.activeRutina != null && state.dayIndex != null) {
             // Usar el repositorio directamente para actualizar la rutina
             final rutina = state.activeRutina!;
             final dayIndex = state.dayIndex!;
-            
+
             // Crear una copia de la rutina con el ejercicio añadido
             if (dayIndex < rutina.dias.length) {
               final newExercise = EjercicioEnRutina(
@@ -211,27 +218,28 @@ class AddExerciseButton extends ConsumerWidget {
                 musculosSecundarios: exercise.secondaryMuscles,
                 equipo: exercise.equipment,
                 localImagePath: exercise.localImagePath,
-                series: 3,
-                repsRange: '8-12',
               );
-              
+
               final updatedDay = rutina.dias[dayIndex].copyWith(
                 ejercicios: [...rutina.dias[dayIndex].ejercicios, newExercise],
               );
-              
+
               final newDias = [...rutina.dias];
               newDias[dayIndex] = updatedDay;
               final updatedRutina = rutina.copyWith(dias: newDias);
-              
-              await ref.read(trainingRepositoryProvider).saveRutina(updatedRutina);
+
+              await ref
+                  .read(trainingRepositoryProvider)
+                  .saveRutina(updatedRutina);
             }
-            
+
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Row(
                     children: [
-                      const Icon(Icons.library_add_check, color: Colors.white, size: 18),
+                      const Icon(Icons.library_add_check,
+                          color: Colors.white, size: 18,),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -255,7 +263,8 @@ class AddExerciseButton extends ConsumerWidget {
                 SnackBar(
                   content: Row(
                     children: [
-                      const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                      const Icon(Icons.check_circle_outline,
+                          color: Colors.white, size: 18,),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -299,7 +308,7 @@ class AddExerciseOptionDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.fitness_center_rounded,
             color: AppColors.techCyan,
             size: 40,
@@ -315,13 +324,13 @@ class AddExerciseOptionDialog extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          const Text(
             '¿Dónde quieres añadir este ejercicio?',
             style: TextStyle(color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          
+
           // Opción 1: Solo esta sesión
           _OptionTile(
             icon: Icons.today_rounded,
@@ -330,9 +339,9 @@ class AddExerciseOptionDialog extends StatelessWidget {
             color: AppColors.textSecondary,
             onTap: onSessionOnly,
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Opción 2: Añadir a la rutina
           _OptionTile(
             icon: Icons.library_add_rounded,
@@ -349,7 +358,7 @@ class AddExerciseOptionDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(
+          child: const Text(
             'CANCELAR',
             style: TextStyle(color: AppColors.textTertiary),
           ),
@@ -379,9 +388,7 @@ class _OptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: highlighted 
-          ? color.withValues(alpha: 0.1) 
-          : AppColors.bgDeep,
+      color: highlighted ? color.withValues(alpha: 0.1) : AppColors.bgDeep,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -424,7 +431,7 @@ class _OptionTile extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textTertiary,
                       ),

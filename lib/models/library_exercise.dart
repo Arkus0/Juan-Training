@@ -40,9 +40,9 @@ class LibraryExercise {
     List<String> detailedSecondaryMuscles,
   ) {
     // Extract images
-    List<String> images = [];
+    final images = <String>[];
     if (json['images'] != null) {
-      for (var img in json['images']) {
+      for (final img in json['images']) {
         if (img['image'] != null) {
           images.add(img['image']);
         }
@@ -89,26 +89,33 @@ class LibraryExercise {
     List<String> normalizeStringList(dynamic val, {String? defaultKey}) {
       if (val == null) return [];
       if (val is List) {
-        return val.map((e) {
-          if (e == null) return '';
-          if (e is String) return e;
-          if (e is Map) {
-            if (e['name'] != null) return e['name'].toString();
-            if (e['name_en'] != null) return e['name_en'].toString();
-            if (defaultKey != null && e[defaultKey] != null) return e[defaultKey].toString();
-            // Fallback: try to find any string value inside the map
-            for (final v in e.values) {
-              if (v is String) return v;
-            }
-            return '';
-          }
-          return e.toString();
-        }).where((s) => s.isNotEmpty).toList();
+        return val
+            .map((e) {
+              if (e == null) return '';
+              if (e is String) return e;
+              if (e is Map) {
+                if (e['name'] != null) return e['name'].toString();
+                if (e['name_en'] != null) return e['name_en'].toString();
+                if (defaultKey != null && e[defaultKey] != null) {
+                  return e[defaultKey].toString();
+                }
+                // Fallback: try to find any string value inside the map
+                for (final v in e.values) {
+                  if (v is String) return v;
+                }
+                return '';
+              }
+              return e.toString();
+            })
+            .where((s) => s.isNotEmpty)
+            .toList();
       }
       return [];
     }
 
-    final int id = json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '') ?? 0;
+    final id = json['id'] is int
+        ? json['id'] as int
+        : int.tryParse(json['id']?.toString() ?? '') ?? 0;
     final name = (json['name'] as String?) ?? json['name']?.toString() ?? '';
 
     return LibraryExercise(
@@ -119,11 +126,15 @@ class LibraryExercise {
       description: json['description'] as String?,
       license: json['license'] as String?,
       imageUrls: (json['imageUrls'] is List)
-          ? (json['imageUrls'] as List).map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList()
+          ? (json['imageUrls'] as List)
+              .map((e) => e?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList()
           : [],
       localImagePath: json['localImagePath'] as String?,
       muscles: normalizeStringList(json['muscles'], defaultKey: 'name'),
-      secondaryMuscles: normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
+      secondaryMuscles:
+          normalizeStringList(json['secondaryMuscles'], defaultKey: 'name'),
       isFavorite: json['isFavorite'] as bool? ?? false,
       // CRÍTICO: Ejercicios del JSON bundled son curados por defecto (true).
       // Solo son false si explícitamente vienen de la API y se marca como tal.

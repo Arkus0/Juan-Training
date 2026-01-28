@@ -25,33 +25,34 @@ dependencies:
   logger: ^2.5.0
 
   # UI & UX
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.2.0
 
   # Charts & Analytics UI
-  fl_chart: ^0.69.2
+  fl_chart: ^1.1.1
   table_calendar: ^3.2.0
   percent_indicator: ^4.2.3
-  google_fonts: ^6.3.3
-  connectivity_plus: ^6.1.5
+  google_fonts: ^8.0.0
+  connectivity_plus: ^7.0.0
   fuzzy: ^0.5.1
-  share_plus: ^10.1.4
+  share_plus: ^12.0.1
   screenshot: ^3.0.0
   url_launcher: ^6.3.1
 
   # OCR & Image Import
-  google_mlkit_text_recognition: ^0.14.0  # google_mlkit_commons actualizado a 0.9.0
+  google_mlkit_text_recognition: ^0.15.0  # google_mlkit_commons actualizado a 0.9.0
   image_picker: ^1.1.2
   image: ^4.0.17
 
   # Speech Recognition (on-device, offline-first para dictado de rutinas)
   speech_to_text: ^7.0.0
+  just_audio: ^0.9.34
 
   # Notifications & Background Timer (lock screen timer)
-  flutter_local_notifications: ^18.0.1
-  permission_handler: ^11.3.1
+  flutter_local_notifications: ^20.0.0
+  permission_handler: ^12.0.1
 
   # Swipe Actions (para duplicar/eliminar ejercicios en editor)
-  flutter_slidable: ^3.1.1
+  flutter_slidable: ^4.0.3
 
   # Icons
   cupertino_icons: ^1.0.8
@@ -59,10 +60,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   build_runner: ^2.4.13
   drift_dev: ^2.22.0
 
+  path_provider_platform_interface: any
 flutter:
   uses-material-design: true
   assets:

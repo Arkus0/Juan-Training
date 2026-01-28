@@ -1,10 +1,11 @@
-import 'package:drift/drift.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart';
+
 import '../database/database.dart';
-import '../models/sesion.dart';
+import '../models/analysis_models.dart';
 import '../models/ejercicio.dart';
 import '../models/serie_log.dart';
-import '../models/analysis_models.dart';
+import '../models/sesion.dart';
 
 /// Repositorio especializado para operaciones de Análisis y Estadísticas.
 /// Extraído de DriftTrainingRepository para mejor separación de responsabilidades.
@@ -16,8 +17,11 @@ class AnalyticsRepository {
   // --- Mapper interno ---
 
   /// Mapper para sesiones (usado en getSessionsForDate y getDailySnapshot).
-  Sesion _mapSesion(Session sessionRow, List<SessionExercise> sessionExercises,
-      List<WorkoutSet> sets) {
+  Sesion _mapSesion(
+    Session sessionRow,
+    List<SessionExercise> sessionExercises,
+    List<WorkoutSet> sets,
+  ) {
     final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
 
     final completedRows = sessionExercises.where((e) => !e.isTarget).toList();
@@ -39,21 +43,22 @@ class AnalyticsRepository {
           musculosSecundarios: row.musclesSecondary,
           series: exerciseSets.length,
           reps: 0,
-          peso: 0,
           notas: row.notes,
           logs: exerciseSets
-              .map((s) => SerieLog(
-                    id: s.id,
-                    peso: s.weight,
-                    reps: s.reps,
-                    completed: s.completed,
-                    rpe: s.rpe,
-                    notas: s.notes,
-                    restSeconds: s.restSeconds,
-                    isFailure: s.isFailure,
-                    isDropset: s.isDropset,
-                    isWarmup: s.isWarmup,
-                  ))
+              .map(
+                (s) => SerieLog(
+                  id: s.id,
+                  peso: s.weight,
+                  reps: s.reps,
+                  completed: s.completed,
+                  rpe: s.rpe,
+                  notas: s.notes,
+                  restSeconds: s.restSeconds,
+                  isFailure: s.isFailure,
+                  isDropset: s.isDropset,
+                  isWarmup: s.isWarmup,
+                ),
+              )
               .toList(),
         );
       }).toList();
@@ -75,8 +80,8 @@ class AnalyticsRepository {
   // --- Analysis Methods ---
 
   Future<Map<DateTime, DailyActivity>> getYearlyActivityMap(int year) async {
-    final startOfYear = DateTime(year, 1, 1);
-    final endOfYear = DateTime(year + 1, 1, 1);
+    final startOfYear = DateTime(year);
+    final endOfYear = DateTime(year + 1);
 
     final sessions = await (db.select(db.sessions)
           ..where((s) => s.completedAt.isNotNull())
@@ -115,11 +120,16 @@ class AnalyticsRepository {
 
     for (final session in sessions) {
       final date = DateTime(
-          session.startTime.year, session.startTime.month, session.startTime.day);
+        session.startTime.year,
+        session.startTime.month,
+        session.startTime.day,
+      );
 
       final sessionExercises = exercisesBySession[session.id] ?? [];
       final sessionVolume = sessionExercises.fold<double>(
-          0, (sum, e) => sum + (volumeByExercise[e.id] ?? 0));
+        0,
+        (sum, e) => sum + (volumeByExercise[e.id] ?? 0),
+      );
 
       final durationMinutes = (session.durationSeconds ?? 0) ~/ 60;
 
@@ -144,7 +154,8 @@ class AnalyticsRepository {
     return result;
   }
 
-  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod({int days = 30}) async {
+  Future<Map<String, MuscleVolume>> getMuscleVolumePeriod(
+      {int days = 30,}) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: days));
 
     final sessions = await (db.select(db.sessions)
@@ -170,7 +181,7 @@ class AnalyticsRepository {
 
     final setsByExercise = sets.groupListsBy((s) => s.sessionExerciseId);
 
-    final sessionById = {for (var s in sessions) s.id: s};
+    final sessionById = {for (final s in sessions) s.id: s};
 
     final muscleVolumes = <String, _MuscleVolumeAccumulator>{};
 
@@ -182,7 +193,9 @@ class AnalyticsRepository {
       if (exerciseSets.isEmpty) continue;
 
       final volume = exerciseSets.fold<double>(
-          0, (sum, set) => sum + (set.weight * set.reps));
+        0,
+        (sum, set) => sum + (set.weight * set.reps),
+      );
       final setsCount = exerciseSets.length;
 
       final session = sessionById[exercise.sessionId];
@@ -194,7 +207,9 @@ class AnalyticsRepository {
         final acc = muscleVolumes.putIfAbsent(
           normalized,
           () => _MuscleVolumeAccumulator(
-              normalized, getMuscleDisplayName(muscle)),
+            normalized,
+            getMuscleDisplayName(muscle),
+          ),
         );
         acc.addVolume(volume, setsCount, sessionDate);
       }
@@ -203,8 +218,9 @@ class AnalyticsRepository {
     return muscleVolumes.map((key, acc) => MapEntry(key, acc.toMuscleVolume()));
   }
 
-  Future<List<PersonalRecord>> getPersonalRecords(
-      {List<String>? exerciseNames}) async {
+  Future<List<PersonalRecord>> getPersonalRecords({
+    List<String>? exerciseNames,
+  }) async {
     final sessions = await (db.select(db.sessions)
           ..where((s) => s.completedAt.isNotNull())
           ..orderBy([(s) => OrderingTerm.desc(s.startTime)]))
@@ -213,7 +229,7 @@ class AnalyticsRepository {
     if (sessions.isEmpty) return [];
 
     final sessionIds = sessions.map((s) => s.id).toList();
-    final sessionById = {for (var s in sessions) s.id: s};
+    final sessionById = {for (final s in sessions) s.id: s};
 
     final exercisesQuery = db.select(db.sessionExercises)
       ..where((e) => e.sessionId.isIn(sessionIds))
@@ -305,7 +321,7 @@ class AnalyticsRepository {
     if (sessions.isEmpty) return {};
 
     final sessionIds = sessions.map((s) => s.id).toList();
-    final sessionById = {for (var s in sessions) s.id: s};
+    final sessionById = {for (final s in sessions) s.id: s};
 
     final exercises = await (db.select(db.sessionExercises)
           ..where((e) => e.sessionId.isIn(sessionIds))
@@ -330,8 +346,10 @@ class AnalyticsRepository {
     return lastTrained;
   }
 
-  Future<List<StrengthDataPoint>> getStrengthTrend(String exerciseName,
-      {int months = 6}) async {
+  Future<List<StrengthDataPoint>> getStrengthTrend(
+    String exerciseName, {
+    int months = 6,
+  }) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: months * 30));
 
     final sessions = await (db.select(db.sessions)
@@ -343,7 +361,7 @@ class AnalyticsRepository {
     if (sessions.isEmpty) return [];
 
     final sessionIds = sessions.map((s) => s.id).toList();
-    final sessionById = {for (var s in sessions) s.id: s};
+    final sessionById = {for (final s in sessions) s.id: s};
 
     final exercises = await (db.select(db.sessionExercises)
           ..where((e) => e.sessionId.isIn(sessionIds))
@@ -387,7 +405,7 @@ class AnalyticsRepository {
 
       double maxEstimated1RM = 0;
       double maxWeight = 0;
-      int repsAtMax = 0;
+      var repsAtMax = 0;
 
       for (final set in exerciseSets) {
         final e1RM = estimateOneRepMax(set.weight, set.reps);
@@ -398,8 +416,11 @@ class AnalyticsRepository {
         }
       }
 
-      final date = DateTime(session.startTime.year, session.startTime.month,
-          session.startTime.day);
+      final date = DateTime(
+        session.startTime.year,
+        session.startTime.month,
+        session.startTime.day,
+      );
 
       final existing = dataPointsByDate[date];
       if (existing == null || maxEstimated1RM > existing.estimated1RM) {
@@ -447,8 +468,8 @@ class AnalyticsRepository {
 
     final lastTrainingDate = sortedDates.first;
 
-    int currentStreak = 0;
-    DateTime checkDate = todayNormalized;
+    var currentStreak = 0;
+    var checkDate = todayNormalized;
 
     if (!trainingDates.contains(todayNormalized)) {
       final yesterday = todayNormalized.subtract(const Duration(days: 1));
@@ -471,8 +492,8 @@ class AnalyticsRepository {
       }
     }
 
-    int longestStreak = 0;
-    int tempStreak = 0;
+    var longestStreak = 0;
+    var tempStreak = 0;
     DateTime? previousDate;
 
     for (final date in sortedDates.reversed) {
@@ -496,7 +517,7 @@ class AnalyticsRepository {
     }
 
     final recentDates = <DateTime>[];
-    for (int i = 6; i >= 0; i--) {
+    for (var i = 6; i >= 0; i--) {
       final date = todayNormalized.subtract(Duration(days: i));
       if (trainingDates.contains(date)) {
         recentDates.add(date);
@@ -516,8 +537,8 @@ class AnalyticsRepository {
     if (sessions.isEmpty) return null;
 
     double totalVolume = 0;
-    int totalDuration = 0;
-    int totalSets = 0;
+    var totalDuration = 0;
+    var totalSets = 0;
     BestSetInfo? bestSet;
     double bestSetVolume = 0;
     final exerciseNames = <String>{};
@@ -592,8 +613,9 @@ class AnalyticsRepository {
     return sessionRows.map((s) {
       final sExercises = exercises.where((e) => e.sessionId == s.id).toList();
       final sExerciseIds = sExercises.map((e) => e.id).toSet();
-      final sSets =
-          sets.where((st) => sExerciseIds.contains(st.sessionExerciseId)).toList();
+      final sSets = sets
+          .where((st) => sExerciseIds.contains(st.sessionExerciseId))
+          .toList();
       return _mapSesion(s, sExercises, sSets);
     }).toList();
   }

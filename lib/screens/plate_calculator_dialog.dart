@@ -14,7 +14,8 @@ class PlateCalculatorDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PlateCalculatorDialog> createState() => _PlateCalculatorDialogState();
+  ConsumerState<PlateCalculatorDialog> createState() =>
+      _PlateCalculatorDialogState();
 }
 
 class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
@@ -27,7 +28,8 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
   @override
   void initState() {
     super.initState();
-    _weightController = TextEditingController(text: widget.currentWeight.toString());
+    _weightController =
+        TextEditingController(text: widget.currentWeight.toString());
 
     // Read persisted bar weight from settings after first frame and recalculate
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -36,7 +38,8 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
       setState(() {
         _barWeight = defaultBar;
       });
-      _calculatePlates(double.tryParse(_weightController.text) ?? widget.currentWeight);
+      _calculatePlates(
+          double.tryParse(_weightController.text) ?? widget.currentWeight,);
     });
 
     // Initial calculation based on passed weight
@@ -116,129 +119,146 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Text(
-              'CALCULADORA DE PLACAS',
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Bar Representation
-            Tooltip(
-              message: _getAccessibilityLabel(),
-              child: Semantics(
-                label: _getAccessibilityLabel(),
-                child: Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[800]!),
-                  ),
-                  child: Center(
-                    child: _calculatedPlates.isNotEmpty
-                        ? SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(width: 16),
-                                // Left side plates (mirror)
-                                ..._calculatedPlates.reversed.map((plate) => _buildPlateWidget(plate)),
-                                const SizedBox(width: 8),
-                                // Bar center (flexible)
-                                Container(
-                                  height: 12,
-                                  width: 220,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(width: 8),
-                                // Right side plates
-                                ..._calculatedPlates.map((plate) => _buildPlateWidget(plate)),
-                                const SizedBox(width: 16),
-                              ],
-                            ),
-                          )
-                        : Center(child: Text('BARRA VACÍA', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold))),
-                  ),
+              Text(
+                'CALCULADORA DE PLACAS',
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _weightController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'PESO TOTAL (KG)',
-                      filled: true,
-                      fillColor: Colors.black,
-                      border: OutlineInputBorder(borderSide: BorderSide(color: Colors.redAccent[700]!)),
+              const SizedBox(height: 20),
+              // Bar Representation
+              Tooltip(
+                message: _getAccessibilityLabel(),
+                child: Semantics(
+                  label: _getAccessibilityLabel(),
+                  child: Container(
+                    height: 120,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[800]!),
                     ),
-                    onChanged: _updateWeight,
+                    child: Center(
+                      child: _calculatedPlates.isNotEmpty
+                          ? SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(width: 16),
+                                  // Left side plates (mirror)
+                                  ..._calculatedPlates.reversed
+                                      .map((plate) => _buildPlateWidget(plate)),
+                                  const SizedBox(width: 8),
+                                  // Bar center (flexible)
+                                  Container(
+                                    height: 12,
+                                    width: 220,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Right side plates
+                                  ..._calculatedPlates
+                                      .map((plate) => _buildPlateWidget(plate)),
+                                  const SizedBox(width: 16),
+                                ],
+                              ),
+                            )
+                          : Center(
+                              child: Text('BARRA VACÍA',
+                                  style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.bold,),),),
+                    ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Barra: ${_barWeight}kg', style: const TextStyle(color: Colors.white70)),
-                Semantics(
-                  label: 'Peso de la barra',
-                  value: '${_barWeight}kg',
-                  hint: 'Toca para cambiar entre 10kg y 20kg',
-                  child: Switch(
-                    value: _barWeight == 20.0,
-                    activeThumbColor: Colors.redAccent[700],
-                    onChanged: (val) {
-                      setState(() {
-                        _barWeight = val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
-                        _updateWeight(_weightController.text);
-                      });
-                      // Persist the selection in settings
-                      ref.read(settingsProvider.notifier).setBarWeight(_barWeight);
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _weightController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,),
+                      decoration: InputDecoration(
+                        labelText: 'PESO TOTAL (KG)',
+                        filled: true,
+                        fillColor: Colors.black,
+                        border: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(color: Colors.redAccent[700]!),),
+                      ),
+                      onChanged: _updateWeight,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Barra: ${_barWeight}kg',
+                      style: const TextStyle(color: Colors.white70),),
+                  Semantics(
+                    label: 'Peso de la barra',
+                    value: '${_barWeight}kg',
+                    hint: 'Toca para cambiar entre 10kg y 20kg',
+                    child: Switch(
+                      value: _barWeight == 20.0,
+                      activeThumbColor: Colors.redAccent[700],
+                      onChanged: (val) {
+                        setState(() {
+                          _barWeight =
+                              val ? 20.0 : 10.0; // Toggle 20kg / 10kg bar
+                          _updateWeight(_weightController.text);
+                        });
+                        // Persist the selection in settings
+                        ref
+                            .read(settingsProvider.notifier)
+                            .setBarWeight(_barWeight);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('CANCELAR',
+                        style: TextStyle(color: Colors.white),),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      final w = double.tryParse(_weightController.text);
+                      if (w != null) {
+                        // Llamar el callback opcional y devolver el valor
+                        widget.onWeightSelected?.call(w);
+                        Navigator.of(context).pop(w);
+                      }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[900],
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('APLICAR'),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('CANCELAR', style: TextStyle(color: Colors.white)),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    final w = double.tryParse(_weightController.text);
-                    if (w != null) {
-                      // Llamar el callback opcional y devolver el valor
-                      widget.onWeightSelected?.call(w);
-                      Navigator.of(context).pop(w);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[900],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('APLICAR'),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -248,12 +268,25 @@ class _PlateCalculatorDialogState extends ConsumerState<PlateCalculatorDialog> {
     Color color = Colors.grey;
 
     // Plate colors/sizes (approx)
-    if (weight >= 20) { height = 90; color = Colors.red; }
-    else if (weight >= 15) { height = 80; color = Colors.blue; }
-    else if (weight >= 10) { height = 70; color = Colors.yellow; }
-    else if (weight >= 5) { height = 55; color = Colors.green; }
-    else if (weight >= 2) { height = 45; color = Colors.white; }
-    else { height = 36; color = Colors.grey; }
+    if (weight >= 20) {
+      height = 90;
+      color = Colors.red;
+    } else if (weight >= 15) {
+      height = 80;
+      color = Colors.blue;
+    } else if (weight >= 10) {
+      height = 70;
+      color = Colors.yellow;
+    } else if (weight >= 5) {
+      height = 55;
+      color = Colors.green;
+    } else if (weight >= 2) {
+      height = 45;
+      color = Colors.white;
+    } else {
+      height = 36;
+      color = Colors.grey;
+    }
 
     String label;
     if ((weight % 1) == 0) {

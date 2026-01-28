@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/progression_type.dart';
 import '../models/progression_engine_models.dart';
+import '../models/progression_type.dart';
 import '../services/progression_controller.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -9,13 +9,13 @@ import '../services/progression_controller.dart';
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Provider familia para controladores por ejercicio
-/// 
+///
 /// Cada ejercicio tiene su propio controlador con su propio estado.
 /// El modelo y umbrales pueden cambiar sin perder el estado.
-final exerciseControllerProvider = Provider.family<ProgressionController, String>(
+final exerciseControllerProvider =
+    Provider.family<ProgressionController, String>(
   (ref, exerciseId) {
     return ProgressionController(
-      initialState: ControllerState.calibrating,
       model: const DoubleProgressionModel(),
       thresholds: ProgressionThresholds.defaults,
     );
@@ -23,17 +23,30 @@ final exerciseControllerProvider = Provider.family<ProgressionController, String
 );
 
 /// Provider para modelo de progresión seleccionado globalmente
-final globalProgressionModelProvider = StateProvider<ProgressionModel>((ref) {
-  return const DoubleProgressionModel();
-});
+final globalProgressionModelProvider =
+    NotifierProvider<GlobalProgressionModelNotifier, ProgressionModel>(
+  GlobalProgressionModelNotifier.new,
+);
+
+class GlobalProgressionModelNotifier extends Notifier<ProgressionModel> {
+  @override
+  ProgressionModel build() => const DoubleProgressionModel();
+}
 
 /// Provider para umbrales globales
-final globalThresholdsProvider = StateProvider<ProgressionThresholds>((ref) {
-  return ProgressionThresholds.defaults;
-});
+final globalThresholdsProvider =
+    NotifierProvider<GlobalThresholdsNotifier, ProgressionThresholds>(
+  GlobalThresholdsNotifier.new,
+);
+
+class GlobalThresholdsNotifier extends Notifier<ProgressionThresholds> {
+  @override
+  ProgressionThresholds build() => ProgressionThresholds.defaults;
+}
 
 /// Crear modelo desde ProgressionType
-final progressionModelFromTypeProvider = Provider.family<ProgressionModel, ProgressionType>(
+final progressionModelFromTypeProvider =
+    Provider.family<ProgressionModel, ProgressionType>(
   (ref, type) => createProgressionModel(type),
 );
 
@@ -53,7 +66,7 @@ class ExecutionDataBuilder {
     int weeksAtCurrentWeight = 0,
   }) {
     final category = ExerciseCategory.inferFromName(exerciseName);
-    
+
     final sessionHistory = rawSessionHistory.map((session) {
       final sets = (session['sets'] as List<dynamic>? ?? []).map((set) {
         return SetExecutionData(
@@ -64,14 +77,15 @@ class ExecutionDataBuilder {
           rpe: (set['rpe'] as num?)?.toDouble(),
         );
       }).toList();
-      
+
       return SessionExecutionData(
-        date: DateTime.tryParse(session['date'] as String? ?? '') ?? DateTime.now(),
+        date: DateTime.tryParse(session['date'] as String? ?? '') ??
+            DateTime.now(),
         weight: (session['weight'] as num?)?.toDouble() ?? currentWeight,
         sets: sets,
       );
     }).toList();
-    
+
     return ExecutionData(
       exerciseName: exerciseName,
       category: category,
@@ -81,7 +95,7 @@ class ExecutionDataBuilder {
       weeksAtCurrentWeight: weeksAtCurrentWeight,
     );
   }
-  
+
   /// Construye desde SerieLog list (formato actual de la app)
   static SessionExecutionData buildSessionFromSeries({
     required DateTime date,
@@ -92,13 +106,17 @@ class ExecutionDataBuilder {
     return SessionExecutionData(
       date: date,
       weight: weight,
-      sets: series.map((s) => SetExecutionData(
-        reps: s.reps,
-        weight: weight,
-        targetReps: targetReps,
-        completed: s.completed,
-        rpe: s.rpe,
-      )).toList(),
+      sets: series
+          .map(
+            (s) => SetExecutionData(
+              reps: s.reps,
+              weight: weight,
+              targetReps: targetReps,
+              completed: s.completed,
+              rpe: s.rpe,
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -110,67 +128,67 @@ class ExecutionDataBuilder {
 extension ControllerStateUI on ControllerState {
   /// Color del estado para UI
   String get colorHex => switch (this) {
-    ControllerState.calibrating => '#9E9E9E',  // Gris
-    ControllerState.progressing => '#4CAF50',  // Verde
-    ControllerState.confirming => '#2196F3',   // Azul
-    ControllerState.plateau => '#FF9800',      // Naranja
-    ControllerState.deloading => '#9C27B0',    // Morado
-    ControllerState.fatigued => '#F44336',     // Rojo
-    ControllerState.regression => '#795548',   // Marrón
-  };
-  
+        ControllerState.calibrating => '#9E9E9E', // Gris
+        ControllerState.progressing => '#4CAF50', // Verde
+        ControllerState.confirming => '#2196F3', // Azul
+        ControllerState.plateau => '#FF9800', // Naranja
+        ControllerState.deloading => '#9C27B0', // Morado
+        ControllerState.fatigued => '#F44336', // Rojo
+        ControllerState.regression => '#795548', // Marrón
+      };
+
   /// Descripción corta para tooltip
   String get tooltip => switch (this) {
-    ControllerState.calibrating => 'Recopilando datos iniciales',
-    ControllerState.progressing => 'Progresión normal',
-    ControllerState.confirming => 'Esperando confirmación',
-    ControllerState.plateau => 'Estancamiento detectado',
-    ControllerState.deloading => 'Fase de deload',
-    ControllerState.fatigued => 'Fatiga acumulada',
-    ControllerState.regression => 'Necesita bajar peso',
-  };
-  
+        ControllerState.calibrating => 'Recopilando datos iniciales',
+        ControllerState.progressing => 'Progresión normal',
+        ControllerState.confirming => 'Esperando confirmación',
+        ControllerState.plateau => 'Estancamiento detectado',
+        ControllerState.deloading => 'Fase de deload',
+        ControllerState.fatigued => 'Fatiga acumulada',
+        ControllerState.regression => 'Necesita bajar peso',
+      };
+
   /// ¿Debería mostrar alerta al usuario?
   bool get requiresAttention => switch (this) {
-    ControllerState.plateau => true,
-    ControllerState.fatigued => true,
-    ControllerState.regression => true,
-    _ => false,
-  };
+        ControllerState.plateau => true,
+        ControllerState.fatigued => true,
+        ControllerState.regression => true,
+        _ => false,
+      };
 }
 
 extension ProgressionActionUI on ProgressionAction {
   /// Icono del action
   String get icon => switch (this) {
-    ProgressionAction.increaseWeight => '⬆️',
-    ProgressionAction.increaseReps => '📈',
-    ProgressionAction.maintain => '➡️',
-    ProgressionAction.decreaseWeight => '⬇️',
-    ProgressionAction.decreaseReps => '📉',
-  };
-  
+        ProgressionAction.increaseWeight => '⬆️',
+        ProgressionAction.increaseReps => '📈',
+        ProgressionAction.maintain => '➡️',
+        ProgressionAction.decreaseWeight => '⬇️',
+        ProgressionAction.decreaseReps => '📉',
+      };
+
   /// Verbo para mensaje
   String get verb => switch (this) {
-    ProgressionAction.increaseWeight => 'Sube',
-    ProgressionAction.increaseReps => 'Añade',
-    ProgressionAction.maintain => 'Mantén',
-    ProgressionAction.decreaseWeight => 'Baja',
-    ProgressionAction.decreaseReps => 'Reduce',
-  };
+        ProgressionAction.increaseWeight => 'Sube',
+        ProgressionAction.increaseReps => 'Añade',
+        ProgressionAction.maintain => 'Mantén',
+        ProgressionAction.decreaseWeight => 'Baja',
+        ProgressionAction.decreaseReps => 'Reduce',
+      };
 }
 
 extension ProgressionConfidenceUI on ProgressionConfidence {
   /// Barra de confianza visual
   String get bar => switch (this) {
-    ProgressionConfidence.high => '███',
-    ProgressionConfidence.medium => '██░',
-    ProgressionConfidence.low => '█░░',
-  };
-  
+        ProgressionConfidence.high => '███',
+        ProgressionConfidence.medium => '██░',
+        ProgressionConfidence.low => '█░░',
+      };
+
   /// Porcentaje aproximado
   int get percentage => switch (this) {
-    ProgressionConfidence.high => 90,
-    ProgressionConfidence.medium => 70,
-    ProgressionConfidence.low => 40,
-  };
+        ProgressionConfidence.high => 90,
+        ProgressionConfidence.medium => 70,
+        ProgressionConfidence.low => 40,
+      };
 }

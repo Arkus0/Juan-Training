@@ -36,9 +36,9 @@ class WelcomeBackBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = result.message ?? '¡De vuelta!';
-    final showButtons = result.isReductionSuggested && 
-                        result.originalWeight != null &&
-                        result.originalWeight! > 0;
+    final showButtons = result.isReductionSuggested &&
+        result.originalWeight != null &&
+        result.originalWeight! > 0;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -47,12 +47,11 @@ class WelcomeBackBanner extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.success.withValues(alpha:0.3),
-          width: 1,
+          color: AppColors.success.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.success.withValues(alpha:0.1),
+            color: AppColors.success.withValues(alpha: 0.1),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -67,7 +66,7 @@ class WelcomeBackBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha:0.2),
+                  color: AppColors.success.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -172,7 +171,8 @@ class WelcomeBackBanner extends StatelessWidget {
     );
   }
 
-  String _fmt(double w) => w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
+  String _fmt(double w) =>
+      w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
 }
 
 /// Diálogo de confirmación para datos sospechosos
@@ -274,7 +274,8 @@ class SuspiciousDataDialog extends StatelessWidget {
     );
   }
 
-  String _fmt(double w) => w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
+  String _fmt(double w) =>
+      w == w.roundToDouble() ? w.toInt().toString() : w.toStringAsFixed(1);
 }
 
 class _WeightOption extends StatelessWidget {
@@ -298,13 +299,13 @@ class _WeightOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: isRecommended 
-              ? AppColors.success.withValues(alpha:0.15)
+          color: isRecommended
+              ? AppColors.success.withValues(alpha: 0.15)
               : AppColors.bgInteractive,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isRecommended 
-                ? AppColors.success.withValues(alpha:0.5)
+            color: isRecommended
+                ? AppColors.success.withValues(alpha: 0.5)
                 : AppColors.border,
             width: isRecommended ? 2 : 1,
           ),
@@ -316,7 +317,8 @@ class _WeightOption extends StatelessWidget {
               style: GoogleFonts.montserrat(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: isRecommended ? AppColors.success : AppColors.textPrimary,
+                color:
+                    isRecommended ? AppColors.success : AppColors.textPrimary,
               ),
             ),
             Text(
@@ -324,7 +326,8 @@ class _WeightOption extends StatelessWidget {
               style: GoogleFonts.montserrat(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isRecommended ? AppColors.success : AppColors.textSecondary,
+                color:
+                    isRecommended ? AppColors.success : AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 4),
@@ -364,8 +367,7 @@ class DifficultDayBanner extends StatelessWidget {
         color: AppColors.bgElevated,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.textTertiary.withValues(alpha:0.2),
-          width: 1,
+          color: AppColors.textTertiary.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -411,7 +413,8 @@ class DifficultDayBanner extends StatelessWidget {
 }
 
 /// Snackbar helper para mostrar mensajes de tolerancia
-void showToleranceSnackBar(BuildContext context, String message, {bool isPositive = true}) {
+void showToleranceSnackBar(BuildContext context, String message,
+    {bool isPositive = true,}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(

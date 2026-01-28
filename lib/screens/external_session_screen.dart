@@ -24,7 +24,8 @@ class ExternalSessionScreen extends ConsumerStatefulWidget {
   const ExternalSessionScreen({super.key});
 
   @override
-  ConsumerState<ExternalSessionScreen> createState() => _ExternalSessionScreenState();
+  ConsumerState<ExternalSessionScreen> createState() =>
+      _ExternalSessionScreenState();
 }
 
 class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
@@ -356,10 +357,12 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        ...exercises.map((e) => _ParsedExerciseTile(
-              exercise: e,
-              onAdd: () => _addExerciseFromVoice(e),
-            )),
+        ...exercises.map(
+          (e) => _ParsedExerciseTile(
+            exercise: e,
+            onAdd: () => _addExerciseFromVoice(e),
+          ),
+        ),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -389,7 +392,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+          const Icon(Icons.warning_amber_rounded,
+              color: Colors.orange, size: 20,),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -462,11 +466,13 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ..._exercises.asMap().entries.map((entry) => _ExerciseTile(
-              exercise: entry.value,
-              onEdit: () => _editExercise(entry.key),
-              onDelete: () => _deleteExercise(entry.key),
-            )),
+        ..._exercises.asMap().entries.map(
+              (entry) => _ExerciseTile(
+                exercise: entry.value,
+                onEdit: () => _editExercise(entry.key),
+                onDelete: () => _deleteExercise(entry.key),
+              ),
+            ),
       ],
     );
   }
@@ -535,7 +541,7 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           Switch(
             value: _includeInStats,
             onChanged: (value) => setState(() => _includeInStats = value),
-            activeColor: AppColors.neonCyan,
+            activeThumbColor: AppColors.neonCyan,
           ),
         ],
       ),
@@ -586,13 +592,15 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     if (!parsed.isValid) return;
 
     setState(() {
-      _exercises.add(_ExternalExercise(
-        name: parsed.matchedName!,
-        sets: parsed.series,
-        reps: parsed.repsRange,
-        weight: parsed.weight,
-        notes: parsed.notes,
-      ));
+      _exercises.add(
+        _ExternalExercise(
+          name: parsed.matchedName!,
+          sets: parsed.series,
+          reps: parsed.repsRange,
+          weight: parsed.weight,
+          notes: parsed.notes,
+        ),
+      );
     });
 
     HapticFeedback.lightImpact();
@@ -611,13 +619,15 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
 
     setState(() {
       for (final e in valid) {
-        _exercises.add(_ExternalExercise(
-          name: e.matchedName!,
-          sets: e.series,
-          reps: e.repsRange,
-          weight: e.weight,
-          notes: e.notes,
-        ));
+        _exercises.add(
+          _ExternalExercise(
+            name: e.matchedName!,
+            sets: e.series,
+            reps: e.repsRange,
+            weight: e.weight,
+            notes: e.notes,
+          ),
+        );
       }
     });
 
@@ -666,16 +676,20 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
     }
 
     // Convertir ejercicios locales a ExternalExercise
-    final externalExercises = _exercises.map((e) => ExternalExercise(
-      name: e.name,
-      libraryId: null, // No tenemos el ID de biblioteca en este punto
-      series: e.sets,
-      repsRange: e.reps,
-      weight: e.weight,
-      notes: e.notes,
-      confidence: 1.0, // Usuario lo añadió manualmente
-      rawInput: '${e.name} ${e.sets}x${e.reps}${e.weight != null ? ' ${e.weight}kg' : ''}',
-    )).toList();
+    final externalExercises = _exercises
+        .map(
+          (e) => ExternalExercise(
+            name: e.name,
+            series: e.sets,
+            repsRange: e.reps,
+            weight: e.weight,
+            notes: e.notes,
+            confidence: 1.0, // Usuario lo añadió manualmente
+            rawInput:
+                '${e.name} ${e.sets}x${e.reps}${e.weight != null ? ' ${e.weight}kg' : ''}',
+          ),
+        )
+        .toList();
 
     // Crear la sesión externa
     final externalSession = ExternalSession.create(
@@ -706,7 +720,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
           backgroundColor: AppColors.bgElevated,
           title: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+              const Icon(Icons.check_circle,
+                  color: AppColors.success, size: 28,),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -744,7 +759,8 @@ class _ExternalSessionScreenState extends ConsumerState<ExternalSessionScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.upload_file, color: AppColors.neonCyan, size: 18),
+                    const Icon(Icons.upload_file,
+                        color: AppColors.neonCyan, size: 18,),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -894,10 +910,12 @@ class _ParsedExerciseTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgDeep : Colors.orange.withValues(alpha: 0.1),
+        color:
+            isValid ? AppColors.bgDeep : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isValid ? AppColors.border : Colors.orange.withValues(alpha: 0.3),
+          color:
+              isValid ? AppColors.border : Colors.orange.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -1001,7 +1019,8 @@ class _ExerciseTile extends StatelessWidget {
           ),
           IconButton(
             onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+            icon: const Icon(Icons.delete_outline,
+                color: AppColors.error, size: 20,),
             tooltip: 'Eliminar',
           ),
         ],

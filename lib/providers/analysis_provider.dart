@@ -8,32 +8,87 @@ import 'training_provider.dart';
 // =============================================================================
 
 /// Current tab index (0 = BITÁCORA, 1 = LABORATORIO)
-final analysisTabIndexProvider = StateProvider<int>((ref) => 0);
+final analysisTabIndexProvider =
+    NotifierProvider<AnalysisTabIndexNotifier, int>(
+  AnalysisTabIndexNotifier.new,
+);
+
+class AnalysisTabIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void setIndex(int index) {
+    state = index;
+  }
+}
 
 /// View mode for BITÁCORA tab
 enum BitacoraViewMode { calendar, list }
 
-final bitacoraViewModeProvider = StateProvider<BitacoraViewMode>(
-  (ref) => BitacoraViewMode.calendar,
+final bitacoraViewModeProvider =
+    NotifierProvider<BitacoraViewModeNotifier, BitacoraViewMode>(
+  BitacoraViewModeNotifier.new,
 );
+
+class BitacoraViewModeNotifier extends Notifier<BitacoraViewMode> {
+  @override
+  BitacoraViewMode build() => BitacoraViewMode.calendar;
+
+  void setMode(BitacoraViewMode mode) {
+    state = mode;
+  }
+}
 
 /// Selected year for heatmap
-final selectedYearProvider = StateProvider<int>((ref) => DateTime.now().year);
+final selectedYearProvider =
+    NotifierProvider<SelectedYearNotifier, int>(SelectedYearNotifier.new);
+
+class SelectedYearNotifier extends Notifier<int> {
+  @override
+  int build() => DateTime.now().year;
+
+  void setYear(int year) {
+    state = year;
+  }
+}
 
 /// Selected date for calendar detail view
-final selectedCalendarDateProvider = StateProvider<DateTime?>((ref) => null);
+final selectedCalendarDateProvider =
+    NotifierProvider<SelectedCalendarDateNotifier, DateTime?>(
+  SelectedCalendarDateNotifier.new,
+);
+
+class SelectedCalendarDateNotifier extends Notifier<DateTime?> {
+  @override
+  DateTime? build() => null;
+
+  void setDate(DateTime? date) {
+    state = date;
+  }
+}
 
 /// Selected exercise for strength trend
-final selectedTrendExerciseProvider = StateProvider<String?>(
-  (ref) => 'Press de Banca',
+final selectedTrendExerciseProvider =
+    NotifierProvider<SelectedTrendExerciseNotifier, String?>(
+  SelectedTrendExerciseNotifier.new,
 );
+
+class SelectedTrendExerciseNotifier extends Notifier<String?> {
+  @override
+  String? build() => 'Press de Banca';
+
+  void setExercise(String? name) {
+    state = name;
+  }
+}
 
 // =============================================================================
 // DATA PROVIDERS
 // =============================================================================
 
 /// Yearly activity data for heatmap - cached per year
-final yearlyActivityProvider = FutureProvider.family<Map<DateTime, DailyActivity>, int>(
+final yearlyActivityProvider =
+    FutureProvider.family<Map<DateTime, DailyActivity>, int>(
   (ref, year) async {
     final repo = ref.watch(trainingRepositoryProvider);
     return repo.getYearlyActivityMap(year);
@@ -47,7 +102,8 @@ final streakDataProvider = FutureProvider<StreakData>((ref) async {
 });
 
 /// Muscle recovery data - sorted by days since training
-final muscleRecoveryProvider = FutureProvider<List<MuscleRecovery>>((ref) async {
+final muscleRecoveryProvider =
+    FutureProvider<List<MuscleRecovery>>((ref) async {
   final repo = ref.watch(trainingRepositoryProvider);
   final lastTrained = await repo.getLastTrainedDateByMuscle();
 
@@ -56,11 +112,13 @@ final muscleRecoveryProvider = FutureProvider<List<MuscleRecovery>>((ref) async 
 
   for (final group in kMuscleGroups) {
     final date = lastTrained[group];
-    recoveries.add(MuscleRecovery.fromLastTrained(
-      muscleName: group,
-      displayName: group,
-      lastTrained: date,
-    ));
+    recoveries.add(
+      MuscleRecovery.fromLastTrained(
+        muscleName: group,
+        displayName: group,
+        lastTrained: date,
+      ),
+    );
   }
 
   // Sort by days since training (ascending - needs attention first)
@@ -70,9 +128,10 @@ final muscleRecoveryProvider = FutureProvider<List<MuscleRecovery>>((ref) async 
 });
 
 /// Muscle volume for symmetry radar (last 30 days)
-final muscleVolumeProvider = FutureProvider<Map<String, MuscleVolume>>((ref) async {
+final muscleVolumeProvider =
+    FutureProvider<Map<String, MuscleVolume>>((ref) async {
   final repo = ref.watch(trainingRepositoryProvider);
-  return repo.getMuscleVolumePeriod(days: 30);
+  return repo.getMuscleVolumePeriod();
 });
 
 /// Symmetry data with imbalance detection
@@ -114,32 +173,37 @@ final symmetryDataProvider = FutureProvider<SymmetryData>((ref) async {
 });
 
 /// Personal records for Hall of Fame
-final personalRecordsProvider = FutureProvider<List<PersonalRecord>>((ref) async {
+final personalRecordsProvider =
+    FutureProvider<List<PersonalRecord>>((ref) async {
   final repo = ref.watch(trainingRepositoryProvider);
   // Get PRs for big lifts only
-  return repo.getPersonalRecords(exerciseNames: [
-    'Press de Banca',
-    'Sentadilla',
-    'Peso Muerto',
-    'Press Militar',
-    'Dominadas',
-    'Remo con Barra',
-  ]);
+  return repo.getPersonalRecords(
+    exerciseNames: [
+      'Press de Banca',
+      'Sentadilla',
+      'Peso Muerto',
+      'Press Militar',
+      'Dominadas',
+      'Remo con Barra',
+    ],
+  );
 });
 
 /// All personal records (not limited to big lifts)
-final allPersonalRecordsProvider = FutureProvider<List<PersonalRecord>>((ref) async {
+final allPersonalRecordsProvider =
+    FutureProvider<List<PersonalRecord>>((ref) async {
   final repo = ref.watch(trainingRepositoryProvider);
   return repo.getPersonalRecords();
 });
 
 /// Strength trend for selected exercise
-final strengthTrendProvider = FutureProvider<List<StrengthDataPoint>>((ref) async {
+final strengthTrendProvider =
+    FutureProvider<List<StrengthDataPoint>>((ref) async {
   final exerciseName = ref.watch(selectedTrendExerciseProvider);
   if (exerciseName == null || exerciseName.isEmpty) return [];
 
   final repo = ref.watch(trainingRepositoryProvider);
-  return repo.getStrengthTrend(exerciseName, months: 6);
+  return repo.getStrengthTrend(exerciseName);
 });
 
 /// Daily snapshot for selected date

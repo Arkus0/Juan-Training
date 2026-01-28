@@ -1,7 +1,9 @@
-import '../../utils/design_system.dart';
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../utils/design_system.dart';
 
 class RestTimerPanel extends StatefulWidget {
   final bool isRestActive;
@@ -25,7 +27,8 @@ class RestTimerPanel extends StatefulWidget {
   State<RestTimerPanel> createState() => _RestTimerPanelState();
 }
 
-class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObserver {
+class _RestTimerPanelState extends State<RestTimerPanel>
+    with WidgetsBindingObserver {
   Timer? _timer;
   double _currentSeconds = 0;
   DateTime? _endTime;
@@ -58,8 +61,10 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && widget.isRestActive && _endTime != null) {
-       _updateTime();
+    if (state == AppLifecycleState.resumed &&
+        widget.isRestActive &&
+        _endTime != null) {
+      _updateTime();
     }
   }
 
@@ -76,19 +81,19 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
   }
 
   void _updateTime() {
-     if (_endTime == null) return;
-     final now = DateTime.now();
-     final remaining = _endTime!.difference(now).inMilliseconds / 1000.0;
+    if (_endTime == null) return;
+    final now = DateTime.now();
+    final remaining = _endTime!.difference(now).inMilliseconds / 1000.0;
 
-     if (remaining <= 0) {
-       _stopTimer();
-       widget.onTimerFinished();
-       widget.onStopRest();
-     } else {
-       setState(() {
-         _currentSeconds = remaining;
-       });
-     }
+    if (remaining <= 0) {
+      _stopTimer();
+      widget.onTimerFinished();
+      widget.onStopRest();
+    } else {
+      setState(() {
+        _currentSeconds = remaining;
+      });
+    }
   }
 
   void _stopTimer() {
@@ -119,7 +124,7 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
                 minimumSize: const Size(200, 50),
               ),
               child: const Text('¡A LA CARGA! (SALTAR)'),
-            )
+            ),
           ],
         ),
       );
@@ -129,7 +134,8 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        border: const Border(top: BorderSide(color: AppColors.neonPrimary, width: 2)),
+        border: const Border(
+            top: BorderSide(color: AppColors.neonPrimary, width: 2),),
       ),
       child: SafeArea(
         child: Row(
@@ -146,7 +152,8 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
                       icon: const Icon(Icons.remove_circle, color: Colors.grey),
                       onPressed: () {
                         if (widget.defaultRestSeconds > 10) {
-                          widget.onDurationChange(widget.defaultRestSeconds - 10);
+                          widget
+                              .onDurationChange(widget.defaultRestSeconds - 10);
                         }
                       },
                     ),
@@ -155,7 +162,8 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add_circle, color: AppColors.neonPrimary),
+                      icon: const Icon(Icons.add_circle,
+                          color: AppColors.neonPrimary,),
                       onPressed: () {
                         widget.onDurationChange(widget.defaultRestSeconds + 10);
                       },
@@ -168,7 +176,8 @@ class _RestTimerPanelState extends State<RestTimerPanel> with WidgetsBindingObse
               onPressed: widget.onStartRest,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.neonPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
               child: const Text('DESCANSAR'),
             ),
@@ -185,10 +194,12 @@ class _AggressiveTimerDisplay extends StatefulWidget {
   const _AggressiveTimerDisplay({required this.seconds});
 
   @override
-  State<_AggressiveTimerDisplay> createState() => _AggressiveTimerDisplayState();
+  State<_AggressiveTimerDisplay> createState() =>
+      _AggressiveTimerDisplayState();
 }
 
-class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with SingleTickerProviderStateMixin {
+class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -225,8 +236,8 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with S
 
   @override
   Widget build(BuildContext context) {
-    final int seconds = widget.seconds.ceil();
-    final bool isCritical = seconds <= 10;
+    final seconds = widget.seconds.ceil();
+    final isCritical = seconds <= 10;
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
@@ -242,10 +253,12 @@ class _AggressiveTimerDisplayState extends State<_AggressiveTimerDisplay> with S
               shadows: [
                 Shadow(
                   // 🎯 NEON IRON: Usar colores del sistema
-                  color: (isCritical ? AppColors.neonPrimaryGlow : AppColors.liveGlow).withValues(alpha: 0.8),
+                  color: (isCritical
+                          ? AppColors.neonPrimaryGlow
+                          : AppColors.liveGlow)
+                      .withValues(alpha: 0.8),
                   blurRadius: isCritical ? 20 : 10,
-                  offset: const Offset(0, 0),
-                )
+                ),
               ],
             ),
             textAlign: TextAlign.center,

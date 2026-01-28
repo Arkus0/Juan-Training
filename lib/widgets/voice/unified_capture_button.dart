@@ -107,7 +107,9 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
         _expandController.reverse();
       }
     });
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
   }
 
   void _selectType(CaptureType type) {
@@ -116,7 +118,9 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
       _isExpanded = false;
     });
     _expandController.reverse();
-    try { HapticFeedback.mediumImpact(); } catch (_) {}
+    try {
+      HapticFeedback.mediumImpact();
+    } catch (_) {}
     widget.onCapture(type);
   }
 
@@ -164,7 +168,8 @@ class _UnifiedCaptureButtonState extends State<UnifiedCaptureButton>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _currentType.color.withValues(alpha: 0.15),
-              border: Border.all(color: _currentType.color.withValues(alpha: 0.5)),
+              border:
+                  Border.all(color: _currentType.color.withValues(alpha: 0.5)),
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -318,7 +323,9 @@ class CaptureMethodSelector extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
           child: GestureDetector(
             onTap: () {
-              try { HapticFeedback.selectionClick(); } catch (_) {}
+              try {
+                HapticFeedback.selectionClick();
+              } catch (_) {}
               onSelect(type);
             },
             child: AnimatedContainer(
@@ -353,7 +360,8 @@ class CaptureMethodSelector extends StatelessWidget {
                       type.label,
                       style: GoogleFonts.montserrat(
                         fontSize: 10,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected ? type.color : Colors.white54,
                       ),
                     ),
@@ -380,7 +388,8 @@ class MultiCaptureFloatingButton extends StatefulWidget {
   });
 
   @override
-  State<MultiCaptureFloatingButton> createState() => _MultiCaptureFloatingButtonState();
+  State<MultiCaptureFloatingButton> createState() =>
+      _MultiCaptureFloatingButtonState();
 }
 
 class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
@@ -412,7 +421,9 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
         _controller.reverse();
       }
     });
-    try { HapticFeedback.selectionClick(); } catch (_) {}
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
   }
 
   void _select(CaptureType type) {
@@ -440,10 +451,12 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
                   position: Tween<Offset>(
                     begin: const Offset(0, 0.5),
                     end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: _controller,
-                    curve: Curves.easeOut,
-                  )),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _controller,
+                      curve: Curves.easeOut,
+                    ),
+                  ),
                   child: FadeTransition(
                     opacity: _controller,
                     child: Padding(
@@ -452,7 +465,8 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6,),
                             decoration: BoxDecoration(
                               color: AppColors.bgElevated,
                               borderRadius: BorderRadius.circular(8),
@@ -485,7 +499,8 @@ class _MultiCaptureFloatingButtonState extends State<MultiCaptureFloatingButton>
         // FAB principal
         FloatingActionButton(
           heroTag: 'fab_main_capture',
-          backgroundColor: _isExpanded ? AppColors.bgElevated : widget.defaultType.color,
+          backgroundColor:
+              _isExpanded ? AppColors.bgElevated : widget.defaultType.color,
           onPressed: _toggle,
           child: AnimatedRotation(
             turns: _isExpanded ? 0.125 : 0,

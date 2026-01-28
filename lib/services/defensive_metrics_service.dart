@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
 /// Sistema de métricas DEFENSIVAS para OCR y Voz
 ///
@@ -177,7 +178,8 @@ class DefensiveMetricsService {
     if (summary.abandonmentRate > 0.3 || summary.frustratedSessionRate > 0.25) {
       return SystemHealth.poor;
     }
-    if (summary.abandonmentRate > 0.15 || summary.frustratedSessionRate > 0.15) {
+    if (summary.abandonmentRate > 0.15 ||
+        summary.frustratedSessionRate > 0.15) {
       return SystemHealth.needsAttention;
     }
     if (summary.acceptanceRate >= 0.6 && summary.abandonmentRate < 0.1) {
@@ -329,7 +331,6 @@ class ImportSession {
       acceptedConfidences: acceptedConfidences,
       deletedCount: deletedCount,
       outcome: SessionOutcome.completed,
-      abandonmentReason: null,
       userFeedback: userFeedback,
     );
   }
@@ -453,15 +454,18 @@ class AggregatedMetrics {
 
   /// Incorpora una sesión nueva
   AggregatedMetrics incorporateSession(ImportSession session) {
-    final newCorrectionsByType = Map<CorrectionType, int>.from(correctionsByType);
+    final newCorrectionsByType =
+        Map<CorrectionType, int>.from(correctionsByType);
     for (final c in session.corrections) {
       newCorrectionsByType[c.type] = (newCorrectionsByType[c.type] ?? 0) + 1;
     }
 
     final newSessionsBySource = Map<ImportSource, int>.from(sessionsBySource);
-    newSessionsBySource[session.source] = (newSessionsBySource[session.source] ?? 0) + 1;
+    newSessionsBySource[session.source] =
+        (newSessionsBySource[session.source] ?? 0) + 1;
 
-    final newAbandonmentsBySource = Map<ImportSource, int>.from(abandonmentsBySource);
+    final newAbandonmentsBySource =
+        Map<ImportSource, int>.from(abandonmentsBySource);
     if (session.outcome == SessionOutcome.abandoned) {
       newAbandonmentsBySource[session.source] =
           (newAbandonmentsBySource[session.source] ?? 0) + 1;
@@ -469,10 +473,10 @@ class AggregatedMetrics {
 
     return AggregatedMetrics(
       totalSessions: totalSessions + 1,
-      completedSessions:
-          completedSessions + (session.outcome == SessionOutcome.completed ? 1 : 0),
-      abandonedSessions:
-          abandonedSessions + (session.outcome == SessionOutcome.abandoned ? 1 : 0),
+      completedSessions: completedSessions +
+          (session.outcome == SessionOutcome.completed ? 1 : 0),
+      abandonedSessions: abandonedSessions +
+          (session.outcome == SessionOutcome.abandoned ? 1 : 0),
       frustratedSessions: frustratedSessions + (session.wasFrustrating ? 1 : 0),
       totalCorrections: totalCorrections + session.correctionCount,
       totalAcceptances: totalAcceptances + session.acceptedConfidences.length,
@@ -512,24 +516,29 @@ class AggregatedMetrics {
       totalDeletions: json['totalDeletions'] ?? 0,
       totalCorrectionTime:
           Duration(milliseconds: json['totalCorrectionTimeMs'] ?? 0),
-      correctionsByType: (json['correctionsByType'] as Map<String, dynamic>?)
-              ?.map((k, v) => MapEntry(
-                    CorrectionType.values.firstWhere((e) => e.name == k),
-                    v as int,
-                  )) ??
-          {},
-      sessionsBySource: (json['sessionsBySource'] as Map<String, dynamic>?)
-              ?.map((k, v) => MapEntry(
-                    ImportSource.values.firstWhere((e) => e.name == k),
-                    v as int,
-                  )) ??
-          {},
+      correctionsByType:
+          (json['correctionsByType'] as Map<String, dynamic>?)?.map(
+                (k, v) => MapEntry(
+                  CorrectionType.values.firstWhere((e) => e.name == k),
+                  v as int,
+                ),
+              ) ??
+              {},
+      sessionsBySource:
+          (json['sessionsBySource'] as Map<String, dynamic>?)?.map(
+                (k, v) => MapEntry(
+                  ImportSource.values.firstWhere((e) => e.name == k),
+                  v as int,
+                ),
+              ) ??
+              {},
       abandonmentsBySource:
-          (json['abandonmentsBySource'] as Map<String, dynamic>?)?.map((k, v) =>
-                  MapEntry(
-                    ImportSource.values.firstWhere((e) => e.name == k),
-                    v as int,
-                  )) ??
+          (json['abandonmentsBySource'] as Map<String, dynamic>?)?.map(
+                (k, v) => MapEntry(
+                  ImportSource.values.firstWhere((e) => e.name == k),
+                  v as int,
+                ),
+              ) ??
               {},
     );
   }

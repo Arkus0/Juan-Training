@@ -116,11 +116,14 @@ class InputContextRestrictionsService {
       if (topCandidate != null) {
         final exerciseId = topCandidate.exercise.id.toString();
         if (!_isExerciseAllowedInActiveWorkout(exerciseId)) {
-          violations.add(RestrictionViolation(
-            type: ViolationType.exerciseNotVisible,
-            message: 'Este ejercicio no está visible en el entrenamiento actual',
-            severity: ViolationSeverity.block,
-          ));
+          violations.add(
+            const RestrictionViolation(
+              type: ViolationType.exerciseNotVisible,
+              message:
+                  'Este ejercicio no está visible en el entrenamiento actual',
+              severity: ViolationSeverity.block,
+            ),
+          );
         }
       }
     }
@@ -132,12 +135,16 @@ class InputContextRestrictionsService {
         if (topCandidate != null) {
           final exerciseId = topCandidate.exercise.id.toString();
           if (exerciseId != _activeExerciseId) {
-            violations.add(RestrictionViolation(
-              type: ViolationType.differentExercise,
-              message: 'Se detectó un ejercicio diferente al que está editando',
-              severity: ViolationSeverity.warn,
-              suggestion: '¿Quizás quiso editar ${topCandidate.exercise.name}?',
-            ));
+            violations.add(
+              RestrictionViolation(
+                type: ViolationType.differentExercise,
+                message:
+                    'Se detectó un ejercicio diferente al que está editando',
+                severity: ViolationSeverity.warn,
+                suggestion:
+                    '¿Quizás quiso editar ${topCandidate.exercise.name}?',
+              ),
+            );
           }
         }
       }
@@ -146,12 +153,15 @@ class InputContextRestrictionsService {
     // Validación 4: Verificar que no hay valores absurdos
     final seriesReps = hypothesis.seriesRepsHypothesis;
     if (seriesReps.series?.value != null && seriesReps.series!.value > 10) {
-      violations.add(RestrictionViolation(
-        type: ViolationType.suspiciousValue,
-        message: '${seriesReps.series!.value} series parece excesivo',
-        severity: ViolationSeverity.warn,
-        suggestion: '¿Quizás el número de series es ${seriesReps.series!.value % 10}?',
-      ));
+      violations.add(
+        RestrictionViolation(
+          type: ViolationType.suspiciousValue,
+          message: '${seriesReps.series!.value} series parece excesivo',
+          severity: ViolationSeverity.warn,
+          suggestion:
+              '¿Quizás el número de series es ${seriesReps.series!.value % 10}?',
+        ),
+      );
     }
 
     return RestrictionValidation(
@@ -163,7 +173,9 @@ class InputContextRestrictionsService {
 
   /// Verifica si un ejercicio está permitido en entrenamiento activo
   bool _isExerciseAllowedInActiveWorkout(String exerciseId) {
-    if (_visibleExerciseIds.isEmpty) return true; // Sin restricción si no hay info
+    if (_visibleExerciseIds.isEmpty) {
+      return true; // Sin restricción si no hay info
+    }
     return _visibleExerciseIds.contains(exerciseId);
   }
 
@@ -179,7 +191,8 @@ class InputContextRestrictionsService {
         break;
       case InputMode.routineCreation:
         restrictions.add('Cada ejercicio requiere confirmación');
-        restrictions.add('Máximo ${context.maxExercisesAllowed} ejercicios por escaneo');
+        restrictions.add(
+            'Máximo ${context.maxExercisesAllowed} ejercicios por escaneo',);
         break;
       case InputMode.singleExerciseEdit:
         restrictions.add('Solo se puede editar este ejercicio');

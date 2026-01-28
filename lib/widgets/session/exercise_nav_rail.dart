@@ -39,7 +39,7 @@ class ExerciseNavRail extends StatelessWidget {
       child: Container(
         width: 24,
         decoration: BoxDecoration(
-          color: AppColors.bgElevated.withValues(alpha:0.8),
+          color: AppColors.bgElevated.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -71,18 +71,20 @@ class ExerciseNavRail extends StatelessWidget {
                           : isActive
                               ? AppColors.bloodRed
                               : hasStarted
-                                  ? AppColors.warning.withValues(alpha:0.7)
-                                  : AppColors.textDisabled.withValues(alpha:0.4),
+                                  ? AppColors.warning.withValues(alpha: 0.7)
+                                  : AppColors.textDisabled
+                                      .withValues(alpha: 0.4),
                       border: isActive
                           ? Border.all(color: Colors.white, width: 2)
                           : null,
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: AppColors.bloodRed.withValues(alpha:0.5),
+                                color:
+                                    AppColors.bloodRed.withValues(alpha: 0.5),
                                 blurRadius: 6,
                                 spreadRadius: 1,
-                              )
+                              ),
                             ]
                           : null,
                     ),
@@ -125,7 +127,7 @@ class ExerciseNavRailCompact extends StatelessWidget {
       width: 24,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.bgDeep.withValues(alpha:0.9),
+        color: AppColors.bgDeep.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -159,7 +161,7 @@ class ExerciseNavRailCompact extends StatelessWidget {
                         : isActive
                             ? AppColors.bloodRed
                             : hasStarted
-                                ? AppColors.warning.withValues(alpha:0.6)
+                                ? AppColors.warning.withValues(alpha: 0.6)
                                 : AppColors.border,
                     border: isActive
                         ? Border.all(color: Colors.white, width: 2)
@@ -167,9 +169,9 @@ class ExerciseNavRailCompact extends StatelessWidget {
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color: AppColors.bloodRed.withValues(alpha:0.5),
+                              color: AppColors.bloodRed.withValues(alpha: 0.5),
                               blurRadius: 4,
-                            )
+                            ),
                           ]
                         : null,
                   ),

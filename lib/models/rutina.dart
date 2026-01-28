@@ -91,7 +91,7 @@ class Rutina {
       return 'La rutina debe tener al menos un día';
     }
 
-    for (int i = 0; i < dias.length; i++) {
+    for (var i = 0; i < dias.length; i++) {
       if (dias[i] is! Map) {
         return 'Día ${i + 1} tiene formato inválido';
       }

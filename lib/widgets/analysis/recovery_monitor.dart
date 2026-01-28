@@ -1,11 +1,12 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+
 import '../../models/analysis_models.dart';
 import '../../providers/analysis_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Horizontal list showing muscle group recovery status
 class RecoveryMonitor extends ConsumerWidget {
@@ -26,7 +27,7 @@ class RecoveryMonitor extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha:0.2),
+                  color: Colors.blue.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
@@ -169,7 +170,7 @@ class _RecoveryCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              status.color.withValues(alpha:0.15),
+              status.color.withValues(alpha: 0.15),
               const Color(0xFF1A1A1A),
             ],
             begin: Alignment.topCenter,
@@ -177,7 +178,7 @@ class _RecoveryCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: status.color.withValues(alpha:0.3),
+            color: status.color.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -199,7 +200,7 @@ class _RecoveryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: status.color.withValues(alpha:0.5),
+                        color: status.color.withValues(alpha: 0.5),
                         blurRadius: 6,
                       ),
                     ],
@@ -233,7 +234,7 @@ class _RecoveryCard extends StatelessWidget {
               backgroundColor: AppColors.bgDeep,
               linearGradient: LinearGradient(
                 colors: [
-                  status.color.withValues(alpha:0.7),
+                  status.color.withValues(alpha: 0.7),
                   status.color,
                 ],
               ),
@@ -376,10 +377,10 @@ class _RecoveryCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: status.color.withValues(alpha:0.1),
+                  color: status.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: status.color.withValues(alpha:0.3),
+                    color: status.color.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(

@@ -1,9 +1,10 @@
-import '../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/rutina.dart';
 import '../services/routine_sharing_service.dart';
+import '../utils/design_system.dart';
 
 /// Dialog to preview an imported routine before adding it to the database.
 class RoutineImportPreviewDialog extends StatefulWidget {
@@ -132,7 +133,8 @@ class _RoutineImportPreviewDialogState
                           borderSide: const BorderSide(color: AppColors.live),
                         ),
                         hintText: 'Nombre de la rutina',
-                        hintStyle: const TextStyle(color: AppColors.textTertiary),
+                        hintStyle:
+                            const TextStyle(color: AppColors.textTertiary),
                       ),
                       onChanged: _updateName,
                     ),
@@ -185,7 +187,8 @@ class _RoutineImportPreviewDialogState
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                        style:
+                            GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -196,7 +199,9 @@ class _RoutineImportPreviewDialogState
                       onPressed: _nameController.text.trim().isEmpty
                           ? null
                           : () {
-                              try { HapticFeedback.vibrate(); } catch (_) {}
+                              try {
+                                HapticFeedback.vibrate();
+                              } catch (_) {}
                               Navigator.of(context).pop(_editedRutina);
                               widget.onConfirm();
                             },
@@ -277,9 +282,10 @@ class _RoutineImportPreviewDialogState
               runSpacing: 4,
               children: stats.muscleGroups.take(5).map((muscle) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.live.withValues(alpha:0.3),
+                    color: AppColors.live.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -334,7 +340,7 @@ class _RoutineImportPreviewDialogState
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.bgElevated.withValues(alpha:0.5),
+        color: AppColors.bgElevated.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.bgDeep),
       ),
@@ -346,7 +352,7 @@ class _RoutineImportPreviewDialogState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.live.withValues(alpha:0.5),
+                  color: AppColors.live.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -471,7 +477,9 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
         _jsonController.text = data!.text!;
         _errorMessage = null;
       });
-      try { HapticFeedback.selectionClick(); } catch (_) {}
+      try {
+        HapticFeedback.selectionClick();
+      } catch (_) {}
     }
   }
 
@@ -481,19 +489,23 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
       _errorMessage = null;
     });
 
-    final result = RoutineSharingService.instance
-        .parseRoutineJson(_jsonController.text);
+    final result =
+        RoutineSharingService.instance.parseRoutineJson(_jsonController.text);
 
     setState(() {
       _isLoading = false;
     });
 
     if (result.isSuccess) {
-      try { HapticFeedback.vibrate(); } catch (_) {}
+      try {
+        HapticFeedback.vibrate();
+      } catch (_) {}
 
       Navigator.of(context).pop(result.rutina);
     } else {
-      try { HapticFeedback.vibrate(); } catch (_) {}
+      try {
+        HapticFeedback.vibrate();
+      } catch (_) {}
       setState(() {
         _errorMessage = result.error;
       });
@@ -585,11 +597,13 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                           fillColor: AppColors.bgElevated,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -605,13 +619,16 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.live.withValues(alpha:0.3),
+                          color: AppColors.live.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline,
-                                color: Colors.red, size: 18),
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -653,7 +670,8 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                       ),
                       child: Text(
                         'CANCELAR',
-                        style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+                        style:
+                            GoogleFonts.montserrat(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -661,9 +679,10 @@ class _RoutineImportInputDialogState extends State<RoutineImportInputDialog> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
-                      onPressed: _jsonController.text.trim().isEmpty || _isLoading
-                          ? null
-                          : _parseAndContinue,
+                      onPressed:
+                          _jsonController.text.trim().isEmpty || _isLoading
+                              ? null
+                              : _parseAndContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.live,
                         foregroundColor: Colors.white,

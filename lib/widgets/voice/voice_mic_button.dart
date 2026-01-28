@@ -1,12 +1,13 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../providers/voice_input_provider.dart';
+import '../../utils/design_system.dart';
 
 /// Botón de micrófono con animación de onda cuando está escuchando
-/// 
+///
 /// Usa el tema gym oscuro con rojo primario (#B71C1C)
 /// Vibra al inicio/fin de escucha
 class VoiceMicButton extends ConsumerStatefulWidget {
@@ -189,7 +190,8 @@ class _PulsingDotState extends State<_PulsingDot>
           height: widget.size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.red[600]!.withValues(alpha: 0.5 + _controller.value * 0.5),
+            color: Colors.red[600]!
+                .withValues(alpha: 0.5 + _controller.value * 0.5),
           ),
           child: Center(
             child: Container(
@@ -237,7 +239,7 @@ class VoiceTranscriptPreview extends ConsumerWidget {
         color: AppColors.bgElevated.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: voiceState.isListening 
+          color: voiceState.isListening
               ? AppColors.error.withValues(alpha: 0.5)
               : AppColors.border,
         ),
@@ -263,13 +265,15 @@ class VoiceTranscriptPreview extends ConsumerWidget {
             ),
           if (voiceState.isListening) const SizedBox(height: 8),
           Text(
-            text.isEmpty ? 'Di algo como: "Añade sentadilla 5 series de 5..."' : text,
+            text.isEmpty
+                ? 'Di algo como: "Añade sentadilla 5 series de 5..."'
+                : text,
             style: GoogleFonts.montserrat(
               fontSize: fontSize,
               fontWeight: text.isEmpty ? FontWeight.w400 : FontWeight.w500,
               // Gris clarito para transcripción en progreso
-              color: text.isEmpty 
-                  ? Colors.white30 
+              color: text.isEmpty
+                  ? Colors.white30
                   : (voiceState.isListening ? Colors.white54 : Colors.white),
               fontStyle: text.isEmpty ? FontStyle.italic : FontStyle.normal,
             ),

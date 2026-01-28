@@ -523,7 +523,8 @@ class _AnimatedMicIconState extends State<_AnimatedMicIcon>
       builder: (context, child) {
         return Icon(
           Icons.mic,
-          color: AppColors.error.withValues(alpha: 0.5 + _controller.value * 0.5),
+          color:
+              AppColors.error.withValues(alpha: 0.5 + _controller.value * 0.5),
           size: 20,
         );
       },
@@ -580,7 +581,8 @@ class VoiceLimitsInfo extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.info_outline, color: AppColors.neonCyan, size: 18),
+              const Icon(Icons.info_outline,
+                  color: AppColors.neonCyan, size: 18,),
               const SizedBox(width: 8),
               Text(
                 'Qué puede hacer la voz',
@@ -600,7 +602,8 @@ class VoiceLimitsInfo extends StatelessWidget {
           const SizedBox(height: 8),
           const Divider(color: AppColors.border),
           const SizedBox(height: 8),
-          _buildCapability(Icons.close, 'Detalles avanzados (editar después)', false),
+          _buildCapability(
+              Icons.close, 'Detalles avanzados (editar después)', false,),
           _buildCapability(Icons.close, 'Ejercicios muy específicos', false),
         ],
       ),

@@ -106,8 +106,11 @@ class _PercentageText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isComplete ? AppColors.fireRed :
-                  percentage >= 0.75 ? AppColors.bloodRed : AppColors.textPrimary;
+    final color = isComplete
+        ? AppColors.fireRed
+        : percentage >= 0.75
+            ? AppColors.bloodRed
+            : AppColors.textPrimary;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: percentage * 100),
@@ -197,9 +200,14 @@ class _AnimatedProgressFill extends StatelessWidget {
                   widthFactor: percentage.clamp(0.0, 1.0),
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+                      gradient: LinearGradient(
+                          colors: [color, color.withValues(alpha: 0.7)],),
                       boxShadow: isComplete
-                          ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8)]
+                          ? [
+                              BoxShadow(
+                                  color: color.withValues(alpha: 0.5),
+                                  blurRadius: 8,),
+                            ]
                           : null,
                     ),
                   ),
@@ -275,32 +283,41 @@ class SessionProgressBarExpanded extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 4),
-            ...progress.supersets.map((ss) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        ss.isComplete ? Icons.check_circle : Icons.radio_button_unchecked,
-                        size: 12,
-                        color: ss.isComplete ? AppColors.neonCyan : AppColors.textTertiary,
+            ...progress.supersets.map(
+              (ss) => Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      ss.isComplete
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      size: 12,
+                      color: ss.isComplete
+                          ? AppColors.neonCyan
+                          : AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        ss.exerciseNames.join(' + '),
+                        style: AppTypography.meta
+                            .copyWith(color: AppColors.textSecondary),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          ss.exerciseNames.join(' + '),
-                          style: AppTypography.meta.copyWith(color: AppColors.textSecondary),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    ),
+                    Text(
+                      '${ss.completedRounds}/${ss.totalRounds}',
+                      style: AppTypography.labelEmphasis.copyWith(
+                        color: ss.isComplete
+                            ? AppColors.neonCyan
+                            : AppColors.textTertiary,
                       ),
-                      Text(
-                        '${ss.completedRounds}/${ss.totalRounds}',
-                        style: AppTypography.labelEmphasis.copyWith(
-                          color: ss.isComplete ? AppColors.neonCyan : AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ],
       ),

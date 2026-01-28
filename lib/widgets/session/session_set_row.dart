@@ -13,6 +13,8 @@ import 'log_input.dart';
 // PRE-COMPUTED CONST STYLES (Avoid GoogleFonts in build methods)
 // ============================================================================
 
+typedef NullableBoolChanged = void Function({required bool? value});
+
 class _SetRowStyles {
   static final setNumberText = GoogleFonts.montserrat(
     fontSize: 11,
@@ -79,7 +81,7 @@ class SessionSetRow extends StatefulWidget {
   final ProgressionSuggestion? suggestion;
   final Function(String) onWeightChanged;
   final Function(String) onRepsChanged;
-  final Function(bool?) onCompleted;
+  final NullableBoolChanged onCompleted;
   final Function(double) onPlateCalc;
   final VoidCallback onLongPress;
   final bool showAdvanced;
@@ -162,7 +164,6 @@ class _SessionSetRowState extends State<SessionSetRow> {
     try {
       HapticFeedback.selectionClick();
     } catch (_) {}
-
   }
 
   void _openPlateCalc() async {
@@ -190,11 +191,11 @@ class _SessionSetRowState extends State<SessionSetRow> {
     }
   }
 
-  void _handleComplete(bool? value) {
+  void _handleComplete({required bool? value}) {
     if (value == true && !PerformanceMode.instance.reduceVibrations) {
       HapticFeedback.mediumImpact();
     }
-    widget.onCompleted(value);
+    widget.onCompleted(value: value);
   }
 
   /// 🎯 P0: Auto-completar serie si peso > 0 y reps > 0 y no está completada
@@ -202,7 +203,7 @@ class _SessionSetRowState extends State<SessionSetRow> {
     if (widget.log.completed) return; // Ya completada
     if (widget.log.peso > 0 && widget.log.reps > 0) {
       // Marcar como completada automáticamente
-      _handleComplete(true);
+      _handleComplete(value: true);
     }
   }
 
@@ -460,7 +461,9 @@ class _PrevValueColumn extends StatelessWidget {
                       Icon(
                         Icons.touch_app,
                         size: 8,
-                        color: isImprovement ? AppColors.success : Colors.grey[500],
+                        color: isImprovement
+                            ? AppColors.success
+                            : Colors.grey[500],
                       ),
                       const SizedBox(width: 2),
                       Text(
@@ -485,9 +488,8 @@ class _PrevValueColumn extends StatelessWidget {
                   Text(
                     'x${suggestion!.suggestedReps}',
                     style: _SetRowStyles.sugReps.copyWith(
-                      color: isImprovement
-                          ? AppColors.success
-                          : Colors.grey[400],
+                      color:
+                          isImprovement ? AppColors.success : Colors.grey[400],
                     ),
                   ),
                 ],
@@ -570,7 +572,7 @@ class _PrevValueColumn extends StatelessWidget {
 /// Checkbox de completado con estilo mejorado - 🎯 REDISEÑO: Verde
 class _CompletedCheckbox extends StatelessWidget {
   final bool isCompleted;
-  final Function(bool?) onChanged;
+  final NullableBoolChanged onChanged;
 
   const _CompletedCheckbox({
     required this.isCompleted,
@@ -589,7 +591,7 @@ class _CompletedCheckbox extends StatelessWidget {
           // 🎯 REDISEÑO: Verde para completado (match modelo mental)
           activeColor: AppColors.success,
           checkColor: Colors.white,
-          onChanged: onChanged,
+          onChanged: (value) => onChanged(value: value),
           side: BorderSide(
             color: isCompleted ? AppColors.success : Colors.grey[600]!,
             width: 2,

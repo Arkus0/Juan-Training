@@ -13,7 +13,8 @@ import 'native_beep_service.dart';
 /// - Error de reconocimiento
 /// - Ejercicio encontrado con alta/baja confianza
 class VoiceAudioFeedbackService {
-  static final VoiceAudioFeedbackService instance = VoiceAudioFeedbackService._();
+  static final VoiceAudioFeedbackService instance =
+      VoiceAudioFeedbackService._();
   VoiceAudioFeedbackService._();
 
   final NativeBeepService _nativeBeep = NativeBeepService.instance;

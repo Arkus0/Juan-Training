@@ -129,7 +129,6 @@ class ExternalSession {
         (i) => SerieLog(
           peso: ex.weight ?? 0.0,
           reps: reps,
-          completed: true,
         ),
       );
 
@@ -137,8 +136,6 @@ class ExternalSession {
         id: const Uuid().v4(),
         libraryId: ex.libraryId?.toString() ?? ex.name,
         nombre: ex.name,
-        musculosPrincipales: const [],
-        musculosSecundarios: const [],
         series: ex.series,
         reps: reps,
         peso: ex.weight ?? 0.0,
@@ -151,12 +148,11 @@ class ExternalSession {
       id: id,
       rutinaId: 'external', // Marca como sesión externa
       dayName: 'Sesión Externa (${source.displayName})',
-      dayIndex: null,
       fecha: sessionDate,
       ejerciciosCompletados: ejerciciosCompletados,
       ejerciciosObjetivo: [], // Las sesiones externas no tienen objetivos predefinidos
-      durationSeconds: null,
-      isBadDay: !includeInProgression, // Si no incluye en progresión, es como un "día malo"
+      isBadDay:
+          !includeInProgression, // Si no incluye en progresión, es como un "día malo"
     );
   }
 
@@ -254,9 +250,9 @@ class ExternalExercise {
 
 /// Fuente de captura de la sesión externa
 enum ExternalSessionSource {
-  voice,  // Dictado por voz
-  ocr,    // Escaneado con cámara
-  text,   // Escrito manualmente
+  voice, // Dictado por voz
+  ocr, // Escaneado con cámara
+  text, // Escrito manualmente
   manual, // Formulario manual
 }
 
@@ -296,9 +292,9 @@ class IconDataWrapper {
 
 /// Nivel de confianza para UI
 enum ConfidenceLevel {
-  high,   // >= 80% - Verde
+  high, // >= 80% - Verde
   medium, // 60-79% - Amarillo
-  low,    // < 60% - Rojo
+  low, // < 60% - Rojo
 }
 
 extension ConfidenceLevelExt on ConfidenceLevel {

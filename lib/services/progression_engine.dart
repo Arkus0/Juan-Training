@@ -3,7 +3,7 @@ import '../models/progression_type.dart';
 import '../models/serie_log.dart';
 
 /// Motor de progresión determinista v2
-/// 
+///
 /// Calcula sugerencias de progresión basadas en:
 /// - Resultado de sesión COMPLETA (no serie individual)
 /// - Historial de últimas 4 sesiones
@@ -27,7 +27,7 @@ class ProgressionEngine {
         userMessage: 'Progresión manual',
       );
     }
-    
+
     // Fase de calibración: primeras 2 sesiones
     if (!context.hasEnoughData) {
       return ProgressionDecision.calibrating(
@@ -36,21 +36,19 @@ class ProgressionEngine {
         sessionNumber: context.recentSessions.length + 1,
       );
     }
-    
+
     // Evaluar la última sesión
     final lastSession = context.lastSession!;
     final sessionResult = lastSession.evaluate();
-    
+
     // Aplicar modelo de progresión específico
     return switch (model) {
-      ProgressionType.dobleRepsFirst => 
+      ProgressionType.dobleRepsFirst =>
         _calculateDoubleProgression(context, sessionResult),
-      ProgressionType.lineal => 
+      ProgressionType.lineal =>
         _calculateLinearProgression(context, sessionResult),
-      ProgressionType.rpe => 
-        _calculateRpeProgression(context, sessionResult),
-      ProgressionType.none => 
-        ProgressionDecision.maintain(
+      ProgressionType.rpe => _calculateRpeProgression(context, sessionResult),
+      ProgressionType.none => ProgressionDecision.maintain(
           weight: context.confirmedWeight,
           reps: context.targetReps,
         ),
@@ -93,17 +91,20 @@ class ProgressionEngine {
         suggestedWeight: newWeight,
         suggestedReps: minReps,
         reason: 'Todas las series a $maxReps reps (Lyle McDonald)',
-        userMessage: '¡Sube a ${_formatWeight(newWeight)}kg! Empieza con $minReps reps.',
+        userMessage:
+            '¡Sube a ${_formatWeight(newWeight)}kg! Empieza con $minReps reps.',
         confidence: ProgressionConfidence.high,
         isImprovement: true,
-        nextStepPreview: 'Siguiente: ${_formatWeight(newWeight)}kg × ${minReps + 1} reps',
+        nextStepPreview:
+            'Siguiente: ${_formatWeight(newWeight)}kg × ${minReps + 1} reps',
       );
     }
 
     // ══════════════════════════════════════════════════════════════════════
     // CASO 2: Sesión exitosa pero NO todas las series en max → subir reps
     // ══════════════════════════════════════════════════════════════════════
-    if (lastResult == SessionResult.complete || lastResult == SessionResult.acceptable) {
+    if (lastResult == SessionResult.complete ||
+        lastResult == SessionResult.acceptable) {
       // Calcular siguiente objetivo de reps
       // Usamos el mínimo de reps de la sesión + 1 para subir gradualmente
       final minRepsInSession = lastSession.minReps;
@@ -118,8 +119,8 @@ class ProgressionEngine {
           reason: 'Casi todas en max, repetir para consolidar',
           userMessage: 'Intenta $maxReps reps en TODAS las series.',
           confidence: ProgressionConfidence.high,
-          isImprovement: false,
-          nextStepPreview: 'Si todas a $maxReps: subir a ${_formatWeight(context.confirmedWeight + increment)}kg',
+          nextStepPreview:
+              'Si todas a $maxReps: subir a ${_formatWeight(context.confirmedWeight + increment)}kg',
         );
       }
 
@@ -140,21 +141,25 @@ class ProgressionEngine {
     // ══════════════════════════════════════════════════════════════════════
     // CASO 3: Sesión PARCIAL o FALLIDA
     // ══════════════════════════════════════════════════════════════════════
-    if (lastResult == SessionResult.partial || lastResult == SessionResult.failed) {
+    if (lastResult == SessionResult.partial ||
+        lastResult == SessionResult.failed) {
       // Usar stall detection basado en peso actual (no fallos genéricos)
       if (context.failuresAtCurrentWeight >= 2) {
         // DELOAD: 10% según Lyle McDonald
-        final deloadAmount = _calculateDeload(context.confirmedWeight, context.category);
-        final newWeight = (context.confirmedWeight - deloadAmount).clamp(0.0, double.infinity);
+        final deloadAmount =
+            _calculateDeload(context.confirmedWeight, context.category);
+        final newWeight = (context.confirmedWeight - deloadAmount)
+            .clamp(0.0, double.infinity);
         return ProgressionDecision(
           action: ProgressionAction.decreaseWeight,
           suggestedWeight: newWeight,
           suggestedReps: maxReps,
           reason: '2 sesiones difíciles al mismo peso → deload 10%',
-          userMessage: 'Deload: ${_formatWeight(newWeight)}kg × $maxReps. Reconstruir desde ahí.',
+          userMessage:
+              'Deload: ${_formatWeight(newWeight)}kg × $maxReps. Reconstruir desde ahí.',
           confidence: ProgressionConfidence.high,
-          isImprovement: false,
-          nextStepPreview: 'Objetivo: volver a ${_formatWeight(context.confirmedWeight)}kg en ~3 semanas',
+          nextStepPreview:
+              'Objetivo: volver a ${_formatWeight(context.confirmedWeight)}kg en ~3 semanas',
         );
       }
 
@@ -165,7 +170,6 @@ class ProgressionEngine {
         suggestedReps: context.targetReps,
         reason: 'Día difícil, mantener',
         userMessage: 'Repite el objetivo. Un día malo no cambia nada.',
-        confidence: ProgressionConfidence.medium,
       );
     }
 
@@ -203,17 +207,20 @@ class ProgressionEngine {
     // — Starting Strength, p.303
     if (context.isStall) {
       // DELOAD: 10% según Rippetoe/StrongLifts
-      final deloadAmount = _calculateDeload(context.confirmedWeight, context.category);
-      final newWeight = (context.confirmedWeight - deloadAmount).clamp(0.0, double.infinity);
+      final deloadAmount =
+          _calculateDeload(context.confirmedWeight, context.category);
+      final newWeight =
+          (context.confirmedWeight - deloadAmount).clamp(0.0, double.infinity);
       return ProgressionDecision(
         action: ProgressionAction.decreaseWeight,
         suggestedWeight: newWeight,
         suggestedReps: context.targetReps,
         reason: 'Stall: 3 fallos al mismo peso → deload 10% (Rippetoe)',
-        userMessage: 'Estancamiento. Deload a ${_formatWeight(newWeight)}kg y vuelve a subir.',
+        userMessage:
+            'Estancamiento. Deload a ${_formatWeight(newWeight)}kg y vuelve a subir.',
         confidence: ProgressionConfidence.high,
-        isImprovement: false,
-        nextStepPreview: 'Volverás a ${_formatWeight(context.confirmedWeight)}kg en ~3 semanas',
+        nextStepPreview:
+            'Volverás a ${_formatWeight(context.confirmedWeight)}kg en ~3 semanas',
       );
     }
 
@@ -246,8 +253,8 @@ class ProgressionEngine {
         suggestedWeight: context.confirmedWeight,
         suggestedReps: context.targetReps,
         reason: 'Casi completa, repetir',
-        userMessage: 'Repite ${_formatWeight(context.confirmedWeight)}kg. Casi lo tienes.',
-        confidence: ProgressionConfidence.medium,
+        userMessage:
+            'Repite ${_formatWeight(context.confirmedWeight)}kg. Casi lo tienes.',
         nextStepPreview: 'Si completas todas: +${_formatWeight(increment)}kg',
       );
     }
@@ -261,8 +268,8 @@ class ProgressionEngine {
       suggestedWeight: context.confirmedWeight,
       suggestedReps: context.targetReps,
       reason: 'Fallo ${context.failuresAtCurrentWeight}/3, reintentar',
-      userMessage: 'Repite ${_formatWeight(context.confirmedWeight)}kg. Fallo ${context.failuresAtCurrentWeight}/3.',
-      confidence: ProgressionConfidence.medium,
+      userMessage:
+          'Repite ${_formatWeight(context.confirmedWeight)}kg. Fallo ${context.failuresAtCurrentWeight}/3.',
       nextStepPreview: context.failuresAtCurrentWeight >= 2
           ? 'Si fallas de nuevo: deload 10%'
           : 'Si fallas 2 veces más: deload',
@@ -321,7 +328,8 @@ class ProgressionEngine {
         suggestedWeight: newWeight,
         suggestedReps: context.targetReps,
         reason: 'RPE ${avgRpe.toStringAsFixed(1)} < 7 (muy fácil)',
-        userMessage: '¡Sube a ${_formatWeight(newWeight)}kg! RPE ${avgRpe.toStringAsFixed(1)} es muy bajo.',
+        userMessage:
+            '¡Sube a ${_formatWeight(newWeight)}kg! RPE ${avgRpe.toStringAsFixed(1)} es muy bajo.',
         confidence: ProgressionConfidence.high,
         isImprovement: true,
         nextStepPreview: 'Objetivo: RPE 8-9',
@@ -340,8 +348,10 @@ class ProgressionEngine {
           action: ProgressionAction.increaseWeight,
           suggestedWeight: newWeight,
           suggestedReps: context.targetReps,
-          reason: 'RPE ${avgRpe.toStringAsFixed(1)} consistente, listo para subir',
-          userMessage: '¡Sube a ${_formatWeight(newWeight)}kg! RPE ${avgRpe.toStringAsFixed(1)} estable.',
+          reason:
+              'RPE ${avgRpe.toStringAsFixed(1)} consistente, listo para subir',
+          userMessage:
+              '¡Sube a ${_formatWeight(newWeight)}kg! RPE ${avgRpe.toStringAsFixed(1)} estable.',
           confidence: ProgressionConfidence.high,
           isImprovement: true,
         );
@@ -353,7 +363,8 @@ class ProgressionEngine {
         suggestedWeight: context.confirmedWeight,
         suggestedReps: context.targetReps,
         reason: 'RPE ${avgRpe.toStringAsFixed(1)} en zona óptima (7-9)',
-        userMessage: 'RPE ${avgRpe.toStringAsFixed(1)} perfecto. Mantén para consolidar.',
+        userMessage:
+            'RPE ${avgRpe.toStringAsFixed(1)} perfecto. Mantén para consolidar.',
         confidence: ProgressionConfidence.high,
         nextStepPreview: 'Si RPE baja a ~7: considerar subir peso',
       );
@@ -366,17 +377,20 @@ class ProgressionEngine {
     // No bajar inmediatamente - puede ser un día malo
     if (avgRpe > 9) {
       // Si es consistente (2+ sesiones con RPE > 9), bajar peso
-      if (context.failuresAtCurrentWeight >= 2 || context.consecutiveFailures >= 2) {
-        final deloadAmount = _calculateDeload(context.confirmedWeight, context.category);
-        final newWeight = (context.confirmedWeight - deloadAmount).clamp(0.0, double.infinity);
+      if (context.failuresAtCurrentWeight >= 2 ||
+          context.consecutiveFailures >= 2) {
+        final deloadAmount =
+            _calculateDeload(context.confirmedWeight, context.category);
+        final newWeight = (context.confirmedWeight - deloadAmount)
+            .clamp(0.0, double.infinity);
         return ProgressionDecision(
           action: ProgressionAction.decreaseWeight,
           suggestedWeight: newWeight,
           suggestedReps: context.targetReps,
           reason: 'RPE > 9 consistente → fatiga acumulada',
-          userMessage: 'Deload a ${_formatWeight(newWeight)}kg. RPE > 9 indica fatiga.',
+          userMessage:
+              'Deload a ${_formatWeight(newWeight)}kg. RPE > 9 indica fatiga.',
           confidence: ProgressionConfidence.high,
-          isImprovement: false,
           nextStepPreview: 'Objetivo: volver a RPE 8',
         );
       }
@@ -387,8 +401,8 @@ class ProgressionEngine {
         suggestedWeight: context.confirmedWeight,
         suggestedReps: context.targetReps,
         reason: 'RPE ${avgRpe.toStringAsFixed(1)} alto (1 sesión)',
-        userMessage: 'RPE alto hoy. Repite peso para evaluar si es fatiga o día malo.',
-        confidence: ProgressionConfidence.medium,
+        userMessage:
+            'RPE alto hoy. Repite peso para evaluar si es fatiga o día malo.',
         nextStepPreview: 'Si RPE sigue > 9: considerar deload',
       );
     }
@@ -450,17 +464,18 @@ class ProgressionEngine {
   }) {
     if (progressionType == ProgressionType.none) return null;
     if (previousLogs == null || previousLogs.isEmpty) return null;
-    
+
     // Construir contexto mínimo desde datos legacy
-    final category = exerciseName != null 
+    final category = exerciseName != null
         ? ExerciseCategory.inferFromName(exerciseName)
         : ExerciseCategory.isolation;
-    
+
     // Calcular resultado de la sesión anterior
-    final completedSets = previousLogs.where((l) => l.completed && l.reps >= targetReps).length;
+    final completedSets =
+        previousLogs.where((l) => l.completed && l.reps >= targetReps).length;
     final totalSets = previousLogs.length;
     final successRate = totalSets > 0 ? completedSets / totalSets : 0.0;
-    
+
     SessionResult sessionResult;
     if (successRate >= 1.0) {
       sessionResult = SessionResult.complete;
@@ -471,11 +486,12 @@ class ProgressionEngine {
     } else {
       sessionResult = SessionResult.failed;
     }
-    
+
     // Usar el log específico para la serie
-    final SerieLog? prevLog = setIndex < previousLogs.length ? previousLogs[setIndex] : null;
+    final prevLog =
+        setIndex < previousLogs.length ? previousLogs[setIndex] : null;
     if (prevLog == null) return null;
-    
+
     // Construir contexto simplificado
     final context = ExerciseProgressionContext(
       exerciseId: '',
@@ -484,13 +500,17 @@ class ProgressionEngine {
       recentSessions: [
         SessionSummary(
           date: DateTime.now().subtract(const Duration(days: 7)),
-          sets: previousLogs.map((l) => SetSummary(
-            weight: l.peso,
-            reps: l.reps,
-            targetReps: targetReps,
-            completed: l.completed,
-            rpe: l.rpe,
-          )).toList(),
+          sets: previousLogs
+              .map(
+                (l) => SetSummary(
+                  weight: l.peso,
+                  reps: l.reps,
+                  targetReps: targetReps,
+                  completed: l.completed,
+                  rpe: l.rpe,
+                ),
+              )
+              .toList(),
           targetReps: targetReps,
           weight: prevLog.peso,
         ),
@@ -502,7 +522,7 @@ class ProgressionEngine {
       confirmedWeight: prevLog.peso,
       repsRange: (targetReps, maxReps),
     );
-    
+
     // Usar el motor nuevo con contexto legacy
     return calculateNextSession(
       context: context,

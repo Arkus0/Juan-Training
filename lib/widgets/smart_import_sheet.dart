@@ -13,9 +13,9 @@ import 'voice/voice_mic_button.dart';
 /// Tipo de import seleccionado
 enum SmartImportMode {
   selection, // Pantalla de selección inicial
-  voice,     // Dictado por voz
-  camera,    // OCR desde cámara
-  gallery,   // OCR desde galería
+  voice, // Dictado por voz
+  camera, // OCR desde cámara
+  gallery, // OCR desde galería
 }
 
 /// Modelo unificado para ejercicios importados (de voz u OCR)
@@ -96,7 +96,7 @@ class SmartImportedExercise {
 enum SmartImportSource { voice, ocr }
 
 /// Sheet unificado para importación inteligente (Voz + OCR)
-/// 
+///
 /// Flujo:
 /// 1. Usuario elige método: Voz, Cámara, o Galería
 /// 2. Se captura el input según el método
@@ -177,8 +177,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
 
   Future<void> _startOcrImport(ImageSource source) async {
     setState(() {
-      _mode = source == ImageSource.camera 
-          ? SmartImportMode.camera 
+      _mode = source == ImageSource.camera
+          ? SmartImportMode.camera
           : SmartImportMode.gallery;
       _isProcessing = true;
       _errorMessage = null;
@@ -198,9 +198,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       final candidates = await _ocrService.parseLines(lines);
 
       setState(() {
-        _importedExercises = candidates
-            .map((c) => SmartImportedExercise.fromOcr(c))
-            .toList();
+        _importedExercises =
+            candidates.map((c) => SmartImportedExercise.fromOcr(c)).toList();
         _isProcessing = false;
       });
     } catch (e) {
@@ -258,7 +257,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
     if (series == null || series <= 0) return;
 
     setState(() {
-      _importedExercises[index] = _importedExercises[index].copyWith(series: series);
+      _importedExercises[index] =
+          _importedExercises[index].copyWith(series: series);
     });
   }
 
@@ -266,7 +266,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
     if (value.isEmpty) return;
 
     setState(() {
-      _importedExercises[index] = _importedExercises[index].copyWith(repsRange: value);
+      _importedExercises[index] =
+          _importedExercises[index].copyWith(repsRange: value);
     });
   }
 
@@ -324,8 +325,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
-                    textAlign: _mode == SmartImportMode.selection 
-                        ? TextAlign.center 
+                    textAlign: _mode == SmartImportMode.selection
+                        ? TextAlign.center
                         : TextAlign.left,
                   ),
                 ),
@@ -417,7 +418,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         _ImportOptionCard(
           icon: Icons.mic,
           title: 'Dictar por Voz',
-          subtitle: 'Di los ejercicios: "Sentadilla 5x5, luego press banca 4x10"',
+          subtitle:
+              'Di los ejercicios: "Sentadilla 5x5, luego press banca 4x10"',
           color: Colors.blue,
           onTap: _startVoiceImport,
         ),
@@ -450,7 +452,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: AppColors.neonPrimary, size: 20),
+                const Icon(Icons.error_outline,
+                    color: AppColors.neonPrimary, size: 20,),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -471,7 +474,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
 
   /// Vista de dictado por voz (integra VoiceInputSheet)
   Widget _buildVoiceView() {
-    final VoiceInputState voiceState = ref.watch(voiceInputProvider);
+    final voiceState = ref.watch(voiceInputProvider);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -479,7 +482,7 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         // Botón de micrófono
         VoiceMicButton(
           onTap: () async {
-            final VoiceInputNotifier notifier = ref.read(voiceInputProvider.notifier);
+            final notifier = ref.read(voiceInputProvider.notifier);
             if (voiceState.isListening) {
               final exercises = await notifier.stopListening();
               _onVoiceComplete(exercises);
@@ -594,7 +597,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle, color: AppColors.neonCyan, size: 20),
+              const Icon(Icons.check_circle,
+                  color: AppColors.neonCyan, size: 20,),
               const SizedBox(width: 8),
               Text(
                 '${_importedExercises.where((e) => e.isValid).length} ejercicios detectados',
@@ -693,7 +697,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.warning),
+              const Icon(Icons.lightbulb_outline,
+                  size: 18, color: AppColors.warning,),
               const SizedBox(width: 8),
               Text(
                 'Ejemplos de comandos:',
@@ -720,7 +725,8 @@ class _SmartImportSheetState extends ConsumerState<SmartImportSheet> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          const Icon(Icons.format_quote, size: 14, color: AppColors.textTertiary),
+          const Icon(Icons.format_quote,
+              size: 14, color: AppColors.textTertiary,),
           const SizedBox(width: 8),
           Flexible(
             child: Text(
@@ -837,18 +843,19 @@ class _SmartExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isValid = exercise.isValid;
-    final sourceIcon = exercise.source == SmartImportSource.voice 
-        ? Icons.mic 
+    final sourceIcon = exercise.source == SmartImportSource.voice
+        ? Icons.mic
         : Icons.document_scanner;
-    final sourceColor = exercise.source == SmartImportSource.voice 
-        ? Colors.blue 
-        : Colors.green;
+    final sourceColor =
+        exercise.source == SmartImportSource.voice ? Colors.blue : Colors.green;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isValid ? AppColors.bgElevated : AppColors.live.withValues(alpha: 0.2),
+        color: isValid
+            ? AppColors.bgElevated
+            : AppColors.live.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isValid ? AppColors.border : AppColors.error,
@@ -907,9 +914,11 @@ class _SmartExerciseCard extends StatelessWidget {
               // Confidence
               if (isValid)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _getConfidenceColor(exercise.confidence).withValues(alpha: 0.2),
+                    color: _getConfidenceColor(exercise.confidence)
+                        .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -924,7 +933,8 @@ class _SmartExerciseCard extends StatelessWidget {
               const SizedBox(width: 4),
               IconButton(
                 onPressed: onRemove,
-                icon: const Icon(Icons.close, color: AppColors.neonPrimary, size: 18),
+                icon: const Icon(Icons.close,
+                    color: AppColors.neonPrimary, size: 18,),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
               ),
@@ -953,7 +963,8 @@ class _SmartExerciseCard extends StatelessWidget {
               if (exercise.weight != null) ...[
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.bgDeep,
                     borderRadius: BorderRadius.circular(6),

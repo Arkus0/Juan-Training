@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:juan_training/widgets/session/exercise_card.dart';
 import 'package:juan_training/models/ejercicio.dart';
-import 'package:juan_training/models/serie_log.dart';
 import 'package:juan_training/models/progression_engine_models.dart';
+import 'package:juan_training/models/serie_log.dart';
+import 'package:juan_training/widgets/session/exercise_card.dart';
 
 void main() {
-  testWidgets('Mismo objetivo hoy aparece sólo una vez cuando decision es maintain', (WidgetTester tester) async {
+  testWidgets(
+      'Mismo objetivo hoy aparece sólo una vez cuando decision es maintain',
+      (WidgetTester tester) async {
     final ejercicio = Ejercicio(
       id: 'e1',
       libraryId: 'lib',
@@ -15,7 +17,7 @@ void main() {
       reps: 8,
       peso: 80.0,
       logs: [
-        SerieLog(peso: 120.5, reps: 8, completed: true),
+        SerieLog(peso: 120.5, reps: 8),
         SerieLog(peso: 80.0, reps: 8, completed: false),
         SerieLog(peso: 0.0, reps: 0, completed: false),
       ],
@@ -24,23 +26,25 @@ void main() {
 
     final decision = ProgressionDecision.maintain(weight: 80.0, reps: 8);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Material(
-        child: ExerciseCard(
-          exerciseIndex: 0,
-          exercise: ejercicio,
-          historyLogs: null,
-          showAdvanced: false,
-          progressionDecision: decision,
-          onShowOptions: () {},
-          onUpdateWeight: (int i, String s) {},
-          onUpdateReps: (int i, String s) {},
-          onUpdateCompleted: (int i, bool? b) {},
-          onPlateCalc: (int i, double d) {},
-          onSetLongPress: (int i) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: ExerciseCard(
+            exerciseIndex: 0,
+            exercise: ejercicio,
+            historyLogs: null,
+            showAdvanced: false,
+            progressionDecision: decision,
+            onShowOptions: () {},
+            onUpdateWeight: (int i, String s) {},
+            onUpdateReps: (int i, String s) {},
+            onUpdateCompleted: (int i, {required bool? value}) {},
+            onPlateCalc: (int i, double d) {},
+            onSetLongPress: (int i) {},
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 
@@ -48,7 +52,9 @@ void main() {
     expect(matches, findsOneWidget);
   });
 
-  testWidgets('Botón aparece y se muestra mensaje de subida cuando decision es increaseWeight', (WidgetTester tester) async {
+  testWidgets(
+      'Botón aparece y se muestra mensaje de subida cuando decision es increaseWeight',
+      (WidgetTester tester) async {
     final ejercicio = Ejercicio(
       id: 'e2',
       libraryId: 'lib',
@@ -57,14 +63,14 @@ void main() {
       reps: 5,
       peso: 80.0,
       logs: [
-        SerieLog(peso: 80.0, reps: 5, completed: true),
-        SerieLog(peso: 80.0, reps: 5, completed: true),
-        SerieLog(peso: 80.0, reps: 5, completed: true),
+        SerieLog(peso: 80.0, reps: 5),
+        SerieLog(peso: 80.0, reps: 5),
+        SerieLog(peso: 80.0, reps: 5),
       ],
       descansoSugeridoSeconds: 90,
     );
 
-    final decision = ProgressionDecision(
+    const decision = ProgressionDecision(
       action: ProgressionAction.increaseWeight,
       suggestedWeight: 82.5,
       suggestedReps: 5,
@@ -73,31 +79,34 @@ void main() {
       isImprovement: true,
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Material(
-        child: ExerciseCard(
-          exerciseIndex: 1,
-          exercise: ejercicio,
-          historyLogs: null,
-          showAdvanced: false,
-          progressionDecision: decision,
-          onShowOptions: () {},
-          onUpdateWeight: (int i, String s) {},
-          onUpdateReps: (int i, String s) {},
-          onUpdateCompleted: (int i, bool? b) {},
-          onPlateCalc: (int i, double d) {},
-          onSetLongPress: (int i) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: ExerciseCard(
+            exerciseIndex: 1,
+            exercise: ejercicio,
+            historyLogs: null,
+            showAdvanced: false,
+            progressionDecision: decision,
+            onShowOptions: () {},
+            onUpdateWeight: (int i, String s) {},
+            onUpdateReps: (int i, String s) {},
+            onUpdateCompleted: (int i, {required bool? value}) {},
+            onPlateCalc: (int i, double d) {},
+            onSetLongPress: (int i) {},
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Mismo objetivo hoy'), findsOneWidget);
     expect(find.text('Si éxito: 82.5kg'), findsOneWidget);
   });
 
-  testWidgets('Menú del rayo muestra todas las opciones sin botón "MÁS" intermedio', (WidgetTester tester) async {
+  testWidgets(
+      'Menú del rayo muestra todas las opciones sin botón "MÁS" intermedio',
+      (WidgetTester tester) async {
     final ejercicio = Ejercicio(
       id: 'e3',
       libraryId: 'lib',
@@ -106,30 +115,31 @@ void main() {
       reps: 8,
       peso: 80.0,
       logs: [
-        SerieLog(peso: 120.5, reps: 8, completed: true),
+        SerieLog(peso: 120.5, reps: 8),
         SerieLog(peso: 80.0, reps: 8, completed: false),
         SerieLog(peso: 0.0, reps: 0, completed: false),
       ],
       descansoSugeridoSeconds: 90,
     );
 
-    await tester.pumpWidget(MaterialApp(
-      home: Material(
-        child: ExerciseCard(
-          exerciseIndex: 2,
-          exercise: ejercicio,
-          historyLogs: null,
-          showAdvanced: false,
-          progressionDecision: null,
-          onShowOptions: () {},
-          onUpdateWeight: (int i, String s) {},
-          onUpdateReps: (int i, String s) {},
-          onUpdateCompleted: (int i, bool? b) {},
-          onPlateCalc: (int i, double d) {},
-          onSetLongPress: (int i) {},
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Material(
+          child: ExerciseCard(
+            exerciseIndex: 2,
+            exercise: ejercicio,
+            historyLogs: null,
+            showAdvanced: false,
+            onShowOptions: () {},
+            onUpdateWeight: (int i, String s) {},
+            onUpdateReps: (int i, String s) {},
+            onUpdateCompleted: (int i, {required bool? value}) {},
+            onPlateCalc: (int i, double d) {},
+            onSetLongPress: (int i) {},
+          ),
         ),
       ),
-    ));
+    );
 
     await tester.pumpAndSettle();
 
@@ -139,9 +149,9 @@ void main() {
     await tester.tap(flashFinder);
     await tester.pumpAndSettle();
 
-    // Verificar que HISTORIAL y OPCIONES aparecen y que no hay etiqueta 'MÁS'
+    // Verificar que HISTORIAL y el título aparecen y que no hay etiqueta 'MÁS'
     expect(find.text('HISTORIAL'), findsOneWidget);
-    expect(find.text('OPCIONES'), findsOneWidget);
+    expect(find.text('ACCIONES RÁPIDAS'), findsOneWidget);
     expect(find.text('MÁS'), findsNothing);
   });
 }

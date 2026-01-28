@@ -1,8 +1,9 @@
-import '../../utils/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../providers/training_provider.dart';
+import '../../utils/design_system.dart';
 
 class AdvancedOptionsModal extends ConsumerStatefulWidget {
   final int exerciseIndex;
@@ -11,11 +12,12 @@ class AdvancedOptionsModal extends ConsumerStatefulWidget {
   const AdvancedOptionsModal({
     super.key,
     required this.exerciseIndex,
-    required this.setIndex
+    required this.setIndex,
   });
 
   @override
-  ConsumerState<AdvancedOptionsModal> createState() => _AdvancedOptionsModalState();
+  ConsumerState<AdvancedOptionsModal> createState() =>
+      _AdvancedOptionsModalState();
 }
 
 class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
@@ -54,16 +56,22 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(child: Container(width: 40, height: 4, color: AppColors.border)),
+          Center(
+              child: Container(width: 40, height: 4, color: AppColors.border),),
           const SizedBox(height: 16),
-          Text('OPCIONES PRO', style: GoogleFonts.montserrat(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.goldAccent)),
+          Text('OPCIONES PRO',
+              style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: AppColors.goldAccent,),),
           const SizedBox(height: 16),
 
           // RPE Slider con feedback de color
           _RpeSliderWithColorFeedback(
             rpeValue: log.rpe,
             onChanged: (val) {
-              notifier.updateLog(widget.exerciseIndex, widget.setIndex, rpe: val == 0 ? null : val.toInt());
+              notifier.updateLog(widget.exerciseIndex, widget.setIndex,
+                  rpe: val == 0 ? null : val.toInt(),);
             },
           ),
 
@@ -73,14 +81,18 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
               FilterChip(
                 label: const Text('FALLO MUSCULAR'),
                 selected: log.isFailure,
-                onSelected: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, isFailure: val),
+                onSelected: (val) => notifier.updateLog(
+                    widget.exerciseIndex, widget.setIndex,
+                    isFailure: val,),
                 selectedColor: AppColors.techCyan,
               ),
               const SizedBox(width: 8),
               FilterChip(
                 label: const Text('DROPSET'),
                 selected: log.isDropset,
-                onSelected: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, isDropset: val),
+                onSelected: (val) => notifier.updateLog(
+                    widget.exerciseIndex, widget.setIndex,
+                    isDropset: val,),
                 selectedColor: AppColors.goldAccent,
               ),
             ],
@@ -89,8 +101,11 @@ class _AdvancedOptionsModalState extends ConsumerState<AdvancedOptionsModal> {
           const SizedBox(height: 16),
           TextField(
             controller: _notesController,
-            decoration: const InputDecoration(labelText: 'Notas de la serie', prefixIcon: Icon(Icons.edit_note)),
-            onChanged: (val) => notifier.updateLog(widget.exerciseIndex, widget.setIndex, notas: val),
+            decoration: const InputDecoration(
+                labelText: 'Notas de la serie',
+                prefixIcon: Icon(Icons.edit_note),),
+            onChanged: (val) => notifier
+                .updateLog(widget.exerciseIndex, widget.setIndex, notas: val),
           ),
           const SizedBox(height: 16),
         ],
@@ -203,7 +218,6 @@ class _RpeSliderWithColorFeedback extends StatelessWidget {
           ),
           child: Slider(
             value: rpe.toDouble(),
-            min: 0,
             max: 10,
             divisions: 10,
             label: rpe > 0 ? '$rpe' : null,

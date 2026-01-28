@@ -62,7 +62,8 @@ class Ejercicio {
       notas: notas ?? this.notas,
       logs: logs ?? this.logs,
       supersetId: clearSupersetId ? null : (supersetId ?? this.supersetId),
-      descansoSugeridoSeconds: descansoSugeridoSeconds ?? this.descansoSugeridoSeconds,
+      descansoSugeridoSeconds:
+          descansoSugeridoSeconds ?? this.descansoSugeridoSeconds,
     );
   }
 

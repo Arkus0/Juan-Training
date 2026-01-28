@@ -134,7 +134,8 @@ abstract class AppColors {
   /// Hex: #FF3333 | RGB: 255, 51, 51
   /// Usar con glow: box-shadow: 0 0 10px #FF0000
   static const Color fireRed = Color(0xFFFF3333);
-  static const Color fireRedGlow = Color(0x80FF0000); // 50% opacity para glow intenso
+  static const Color fireRedGlow =
+      Color(0x80FF0000); // 50% opacity para glow intenso
   static const Color fireRedSubtle = Color(0x26FF3333);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -265,7 +266,7 @@ abstract class AppColors {
   /// Gold → ahora rojo (PRs, celebraciones, thumbs-up)
   static const Color goldAccent = bloodRed;
   static const Color goldBright = bloodRedHover;
-  static const Color goldDark = darkRed;  // #8B0000 para fondos oscuros
+  static const Color goldDark = darkRed; // #8B0000 para fondos oscuros
   static const Color goldSubtle = bloodRedSubtle;
   static const Color goldGlow = bloodRedGlow;
 
@@ -426,46 +427,46 @@ abstract class AppTypography {
 
   /// Números gigantes para modales de input (numpad)
   static TextStyle get dataGiant => GoogleFonts.montserrat(
-    fontSize: 64,
-    fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
-    fontFeatures: [const FontFeature.tabularFigures()],
-    letterSpacing: -1.0,
-  );
+        fontSize: 64,
+        fontWeight: FontWeight.w900,
+        color: AppColors.textPrimary,
+        fontFeatures: [const FontFeature.tabularFigures()],
+        letterSpacing: -1.0,
+      );
 
   /// Timer countdown - GRANDE y prominente
   static TextStyle get timer => GoogleFonts.montserrat(
-    fontSize: 32,
-    fontWeight: FontWeight.w900,
-    color: AppColors.techCyan,
-    fontFeatures: [const FontFeature.tabularFigures()],
-    letterSpacing: 2.0,
-  );
+        fontSize: 32,
+        fontWeight: FontWeight.w900,
+        color: AppColors.techCyan,
+        fontFeatures: [const FontFeature.tabularFigures()],
+        letterSpacing: 2.0,
+      );
 
   /// Timer compacto para barra
   static TextStyle get timerCompact => GoogleFonts.montserrat(
-    fontSize: 22,
-    fontWeight: FontWeight.w800,
-    color: AppColors.techCyan,
-    fontFeatures: [const FontFeature.tabularFigures()],
-    letterSpacing: 1.0,
-  );
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+        color: AppColors.techCyan,
+        fontFeatures: [const FontFeature.tabularFigures()],
+        letterSpacing: 1.0,
+      );
 
   /// Datos grandes (serie activa: KG/REPS)
   static TextStyle get dataLarge => GoogleFonts.montserrat(
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
-    fontFeatures: [const FontFeature.tabularFigures()],
-  );
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
 
   /// Para inputs de datos
   static TextStyle get dataInput => GoogleFonts.montserrat(
-    fontSize: 20,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    fontFeatures: [const FontFeature.tabularFigures()],
-  );
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NIVEL 2: SECTION TITLE (Prominencia media)
@@ -474,50 +475,50 @@ abstract class AppTypography {
 
   /// Hero - Solo para título de día (uso muy limitado)
   static TextStyle get hero => GoogleFonts.montserrat(
-    fontSize: 28,
-    fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.5,
-    height: 1.2,
-  );
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+        letterSpacing: 0.5,
+        height: 1.2,
+      );
 
   /// Versión compacta
   static TextStyle get heroCompact => GoogleFonts.montserrat(
-    fontSize: 22,
-    fontWeight: FontWeight.w800,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.5,
-    height: 1.2,
-  );
+        fontSize: 22,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textPrimary,
+        letterSpacing: 0.5,
+        height: 1.2,
+      );
 
   /// Hero neon eliminado - No usar gradientes en texto
   static TextStyle get heroNeon => hero;
 
   /// Título de sección (nombre ejercicio)
   static TextStyle get sectionTitle => GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    height: 1.3,
-    letterSpacing: 0.3,
-  );
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        height: 1.3,
+        letterSpacing: 0.3,
+      );
 
   /// Para listas donde el espacio es limitado
   static TextStyle get sectionTitleSmall => GoogleFonts.montserrat(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.2,
-  );
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        letterSpacing: 0.2,
+      );
 
   /// Título con acento (cyan para serie activa)
   static TextStyle get sectionTitleAccent => GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.techCyan,
-    height: 1.3,
-    letterSpacing: 0.3,
-  );
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.techCyan,
+        height: 1.3,
+        letterSpacing: 0.3,
+      );
 
   /// Números gigantes para modales de input - REMOVIDO (duplicado)
   // dataGiant ya está definido arriba
@@ -528,43 +529,43 @@ abstract class AppTypography {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static TextStyle get label => GoogleFonts.montserrat(
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
-    letterSpacing: 0.3,
-  );
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.3,
+      );
 
   /// Labels con énfasis (ej: "KG", "REPS" en headers) - MUY sutil
   static TextStyle get labelEmphasis => GoogleFonts.montserrat(
-    fontSize: 10,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textTertiary,
-    letterSpacing: 0.8,
-  );
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textTertiary,
+        letterSpacing: 0.8,
+      );
 
   /// Para botones secundarios
   static TextStyle get button => GoogleFonts.montserrat(
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    letterSpacing: 0.3,
-  );
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: 0.3,
+      );
 
   /// Botón CTA primario (texto sobre cyan)
   static TextStyle get buttonPrimary => GoogleFonts.montserrat(
-    fontSize: 16,
-    fontWeight: FontWeight.w800,
-    color: AppColors.textOnAccent,
-    letterSpacing: 0.5,
-  );
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textOnAccent,
+        letterSpacing: 0.5,
+      );
 
   /// Botón CTA pequeño
   static TextStyle get buttonSmall => GoogleFonts.montserrat(
-    fontSize: 12,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textOnAccent,
-    letterSpacing: 0.3,
-  );
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textOnAccent,
+        letterSpacing: 0.3,
+      );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NIVEL 4: META (Casi invisible - contexto mínimo)
@@ -572,42 +573,42 @@ abstract class AppTypography {
   // ═══════════════════════════════════════════════════════════════════════════
 
   static TextStyle get meta => GoogleFonts.montserrat(
-    fontSize: 10,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textTertiary,
-  );
+        fontSize: 10,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textTertiary,
+      );
 
   /// Para hints en inputs
   static TextStyle get hint => GoogleFonts.montserrat(
-    fontSize: 11,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textTertiary,
-  );
+        fontSize: 11,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textTertiary,
+      );
 
   /// Para badges y chips
   static TextStyle get badge => GoogleFonts.montserrat(
-    fontSize: 9,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textOnAccent,
-    letterSpacing: 0.3,
-  );
+        fontSize: 9,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textOnAccent,
+        letterSpacing: 0.3,
+      );
 
   /// Para valor previo/ghost en inputs
   static TextStyle get ghost => GoogleFonts.montserrat(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textTertiary,
-    fontFeatures: [const FontFeature.tabularFigures()],
-  );
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textTertiary,
+        fontFeatures: [const FontFeature.tabularFigures()],
+      );
 
   /// Body text - Párrafos y contenido general
   static TextStyle get body => GoogleFonts.montserrat(
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-    height: 1.5,
-    letterSpacing: 0.1,
-  );
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+        height: 1.5,
+        letterSpacing: 0.1,
+      );
 }
 
 /// ============================================================================
@@ -645,29 +646,29 @@ abstract class AppRadius {
 abstract class AppShadows {
   /// Sombra sutil para cards
   static List<BoxShadow> get card => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha:0.2),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
-    ),
-  ];
-  
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.2),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ];
+
   /// Sombra para elementos elevados (modals, FAB)
   static List<BoxShadow> get elevated => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha:0.3),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
-    ),
-  ];
-  
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
   /// Glow sutil para estados activos
   static List<BoxShadow> glow(Color color) => [
-    BoxShadow(
-      color: color.withValues(alpha:0.3),
-      blurRadius: 12,
-    ),
-  ];
+        BoxShadow(
+          color: color.withValues(alpha: 0.3),
+          blurRadius: 12,
+        ),
+      ];
 }
 
 /// ============================================================================
@@ -1044,7 +1045,8 @@ ThemeData buildAppTheme() {
       selectedTileColor: AppColors.neonPrimarySubtle,
       iconColor: AppColors.textSecondary,
       textColor: AppColors.textPrimary,
-      titleTextStyle: AppTypography.label.copyWith(color: AppColors.textPrimary),
+      titleTextStyle:
+          AppTypography.label.copyWith(color: AppColors.textPrimary),
       subtitleTextStyle: AppTypography.meta,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: RoundedRectangleBorder(
@@ -1190,9 +1192,9 @@ abstract class AppAccessibility {
   }
 
   static double _relativeLuminance(Color color) {
-    final r = _linearize(color.red / 255);
-    final g = _linearize(color.green / 255);
-    final b = _linearize(color.blue / 255);
+    final r = _linearize(color.r);
+    final g = _linearize(color.g);
+    final b = _linearize(color.b);
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
 
@@ -1396,7 +1398,8 @@ class NeonButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: showGlow ? AppDecorations.primaryButtonGlow : const BoxDecoration(),
+      decoration:
+          showGlow ? AppDecorations.primaryButtonGlow : const BoxDecoration(),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(

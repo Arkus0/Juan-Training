@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../models/sesion.dart';
+
 import '../models/ejercicio.dart';
+import '../models/sesion.dart';
 import '../providers/training_provider.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
@@ -24,16 +25,20 @@ class SessionDetailScreen extends ConsumerWidget {
       ),
       body: sessionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        error: (err, stack) => Center(
+            child:
+                Text('Error: $err', style: const TextStyle(color: Colors.red)),),
         data: (sessions) {
           final previousSession = _findPreviousSession(sessions);
 
           return rutinasAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => const SizedBox(), // Just don't show routine name if error
+            error: (err, stack) =>
+                const SizedBox(), // Just don't show routine name if error
             data: (rutinas) {
-              final rutinasMap = {for (var r in rutinas) r.id: r};
-              final rutinaName = rutinasMap[sesion.rutinaId]?.nombre ?? 'Rutina eliminada';
+              final rutinasMap = {for (final r in rutinas) r.id: r};
+              final rutinaName =
+                  rutinasMap[sesion.rutinaId]?.nombre ?? 'Rutina eliminada';
 
               final dateFormat = DateFormat('EEE, d MMM yyyy HH:mm', 'es_ES');
               final durationText = sesion.durationSeconds != null
@@ -59,22 +64,30 @@ class SessionDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today, size: 16, color: Colors.grey[400]),
+                                Icon(Icons.calendar_today,
+                                    size: 16, color: Colors.grey[400],),
                                 const SizedBox(width: 6),
                                 Text(
                                   dateFormat.format(sesion.fecha).toUpperCase(),
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: Colors.grey[400]),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.timer, size: 16, color: Colors.grey[400]),
+                                Icon(Icons.timer,
+                                    size: 16, color: Colors.grey[400],),
                                 const SizedBox(width: 6),
                                 Text(
                                   'DURACIÓN: $durationText',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400]),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: Colors.grey[400]),
                                 ),
                               ],
                             ),
@@ -90,8 +103,8 @@ class SessionDetailScreen extends ConsumerWidget {
                       child: Text(
                         'EJERCICIOS EJECUTADOS',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.redAccent[700],
-                        ),
+                              color: Colors.redAccent[700],
+                            ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -99,18 +112,22 @@ class SessionDetailScreen extends ConsumerWidget {
                       return _buildExerciseCard(
                         context,
                         ejercicio,
-                        _findExerciseById(sesion.ejerciciosObjetivo, ejercicio.id),
+                        _findExerciseById(
+                            sesion.ejerciciosObjetivo, ejercicio.id,),
                         previousSession != null
-                            ? _findExerciseById(previousSession.ejerciciosCompletados, ejercicio.id)
+                            ? _findExerciseById(
+                                previousSession.ejerciciosCompletados,
+                                ejercicio.id,)
                             : null,
                       );
                     }),
 
                     if (sesion.ejerciciosCompletados.isEmpty)
-                       const Padding(
-                         padding: EdgeInsets.all(16.0),
-                         child: Text('No se registraron ejercicios en esta sesión.'),
-                       ),
+                      const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                            'No se registraron ejercicios en esta sesión.',),
+                      ),
                   ],
                 ),
               );
@@ -123,10 +140,12 @@ class SessionDetailScreen extends ConsumerWidget {
 
   Sesion? _findPreviousSession(List<Sesion> sessions) {
     // Filter by same routine and date strictly before current session
-    final history = sessions.where((s) =>
-      s.rutinaId == sesion.rutinaId &&
-      s.fecha.isBefore(sesion.fecha)
-    ).toList();
+    final history = sessions
+        .where(
+          (s) =>
+              s.rutinaId == sesion.rutinaId && s.fecha.isBefore(sesion.fecha),
+        )
+        .toList();
 
     if (history.isEmpty) return null;
 
@@ -147,13 +166,13 @@ class SessionDetailScreen extends ConsumerWidget {
     BuildContext context,
     Ejercicio real,
     Ejercicio? target,
-    Ejercicio? prev
+    Ejercicio? prev,
   ) {
     // Determine max sets to display rows
     final maxSets = [
       real.series,
       target?.series ?? 0,
-      prev?.series ?? 0
+      prev?.series ?? 0,
     ].reduce((curr, next) => curr > next ? curr : next);
 
     return Card(
@@ -166,33 +185,40 @@ class SessionDetailScreen extends ConsumerWidget {
             Text(
               real.nombre.toUpperCase(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
             ),
             const SizedBox(height: 16),
             Table(
               columnWidths: const {
                 0: FixedColumnWidth(30), // Set #
-                1: FlexColumnWidth(),    // Target
-                2: FlexColumnWidth(),    // Real
-                3: FlexColumnWidth(),    // Prev
+                1: FlexColumnWidth(), // Target
+                2: FlexColumnWidth(), // Real
+                3: FlexColumnWidth(), // Prev
               },
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
                 // Header
                 TableRow(
                   decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.redAccent[700]!, width: 2)),
+                    border: Border(
+                        bottom: BorderSide(
+                            color: Colors.redAccent[700]!, width: 2,),),
                   ),
                   children: [
                     _buildHeaderCell(context, '#'),
                     _buildHeaderCell(context, 'META'),
                     _buildHeaderCell(context, 'REAL'),
                     _buildHeaderCell(context, 'PREV'),
-                  ]
+                  ],
                 ),
-                const TableRow(children: [SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8), SizedBox(height: 8)]),
+                const TableRow(children: [
+                  SizedBox(height: 8),
+                  SizedBox(height: 8),
+                  SizedBox(height: 8),
+                  SizedBox(height: 8),
+                ],),
                 // Rows
                 for (int i = 0; i < maxSets; i++)
                   TableRow(
@@ -204,8 +230,8 @@ class SessionDetailScreen extends ConsumerWidget {
                       _buildDataCell(context, real, i, isReal: true),
                       // Prev
                       _buildDataCell(context, prev, i, isPrev: true),
-                    ]
-                  )
+                    ],
+                  ),
               ],
             ),
           ],
@@ -220,9 +246,9 @@ class SessionDetailScreen extends ConsumerWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Colors.redAccent[700],
-        ),
+              fontWeight: FontWeight.bold,
+              color: Colors.redAccent[700],
+            ),
         textAlign: TextAlign.center,
       ),
     );
@@ -239,7 +265,9 @@ class SessionDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDataCell(BuildContext context, Ejercicio? ejercicio, int setIndex, {bool isReal = false, bool isPrev = false}) {
+  Widget _buildDataCell(
+      BuildContext context, Ejercicio? ejercicio, int setIndex,
+      {bool isReal = false, bool isPrev = false,}) {
     if (ejercicio == null || setIndex >= ejercicio.series) {
       return _buildCell('-');
     }

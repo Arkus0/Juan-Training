@@ -1,5 +1,5 @@
 /// Motor de progresión determinista v2
-/// 
+///
 /// Principios:
 /// 1. Decisiones basadas en sesión completa, no serie individual
 /// 2. Confirmación de 2 sesiones antes de subir peso
@@ -11,24 +11,24 @@ library;
 enum ProgressionState {
   /// Fase inicial: Recopilando datos (primeras 2 sesiones)
   calibrating('calibrating', 'Calibrando'),
-  
+
   /// Progresión normal: Siguiendo el modelo
   progressing('progressing', 'Progresando'),
-  
+
   /// Confirmación: Esperando 2da sesión exitosa
   confirming('confirming', 'Confirmando'),
-  
+
   /// Estancamiento: 3+ semanas sin progreso
   plateau('plateau', 'Estancado'),
-  
+
   /// Deload planificado
   deloading('deloading', 'Deload');
 
   final String value;
   final String label;
-  
+
   const ProgressionState(this.value, this.label);
-  
+
   static ProgressionState fromString(String? value) {
     if (value == null) return ProgressionState.calibrating;
     for (final state in ProgressionState.values) {
@@ -43,23 +43,23 @@ enum ExerciseCategory {
   /// Compuestos pesados: Sentadilla, Peso Muerto, Press Banca
   /// Incremento: 2.5kg (>60kg) o 1.25kg (<60kg)
   heavyCompound('heavy_compound', 'Compuesto Pesado'),
-  
+
   /// Compuestos ligeros: Remo, Press Militar, Dominadas
   /// Incremento: 2.5kg (>40kg) o 1.25kg (<40kg)
   lightCompound('light_compound', 'Compuesto Ligero'),
-  
+
   /// Aislamiento: Curls, Extensiones, Laterales
   /// Incremento: 1.25kg o +1 rep preferido
   isolation('isolation', 'Aislamiento'),
-  
+
   /// Máquinas: Incrementos fijos de la máquina
   machine('machine', 'Máquina');
 
   final String value;
   final String label;
-  
+
   const ExerciseCategory(this.value, this.label);
-  
+
   static ExerciseCategory fromString(String? value) {
     if (value == null) return ExerciseCategory.isolation;
     for (final cat in ExerciseCategory.values) {
@@ -67,51 +67,66 @@ enum ExerciseCategory {
     }
     return ExerciseCategory.isolation;
   }
-  
+
   /// Auto-detecta la categoría basándose en el nombre del ejercicio
   static ExerciseCategory inferFromName(String exerciseName) {
     final name = exerciseName.toLowerCase();
-    
+
     // Compuestos pesados
     const heavyKeywords = [
-      'sentadilla', 'squat',
-      'peso muerto', 'deadlift',
-      'press banca', 'bench press', 'press de banca',
+      'sentadilla',
+      'squat',
+      'peso muerto',
+      'deadlift',
+      'press banca',
+      'bench press',
+      'press de banca',
       'hip thrust',
     ];
     for (final kw in heavyKeywords) {
       if (name.contains(kw)) return ExerciseCategory.heavyCompound;
     }
-    
+
     // Compuestos ligeros
     const lightKeywords = [
-      'remo', 'row',
-      'press militar', 'overhead press', 'press hombro',
-      'dominada', 'pull up', 'chin up',
-      'fondos', 'dips',
-      'peso muerto rumano', 'romanian',
-      'zancada', 'lunge',
+      'remo',
+      'row',
+      'press militar',
+      'overhead press',
+      'press hombro',
+      'dominada',
+      'pull up',
+      'chin up',
+      'fondos',
+      'dips',
+      'peso muerto rumano',
+      'romanian',
+      'zancada',
+      'lunge',
     ];
     for (final kw in lightKeywords) {
       if (name.contains(kw)) return ExerciseCategory.lightCompound;
     }
-    
+
     // Máquinas
     const machineKeywords = [
-      'máquina', 'machine',
-      'polea', 'cable',
+      'máquina',
+      'machine',
+      'polea',
+      'cable',
       'smith',
-      'prensa', 'leg press',
+      'prensa',
+      'leg press',
       'hack',
     ];
     for (final kw in machineKeywords) {
       if (name.contains(kw)) return ExerciseCategory.machine;
     }
-    
+
     // Default: aislamiento
     return ExerciseCategory.isolation;
   }
-  
+
   /// Obtiene el incremento de peso apropiado para esta categoría
   double getIncrement(double currentWeight) {
     switch (this) {
@@ -131,13 +146,13 @@ enum ExerciseCategory {
 enum SessionResult {
   /// 100% de sets completaron objetivo
   complete,
-  
+
   /// ≥80% de sets completaron objetivo
   acceptable,
-  
+
   /// 50-79% de sets completaron objetivo
   partial,
-  
+
   /// <50% de sets completaron objetivo
   failed,
 }
@@ -146,16 +161,16 @@ enum SessionResult {
 enum ProgressionAction {
   /// Subir peso
   increaseWeight,
-  
+
   /// Subir reps (mismo peso)
   increaseReps,
-  
+
   /// Mantener peso y reps
   maintain,
-  
+
   /// Bajar peso (deload o regresión)
   decreaseWeight,
-  
+
   /// Bajar reps (consolidar)
   decreaseReps,
 }
@@ -164,10 +179,10 @@ enum ProgressionAction {
 enum ProgressionConfidence {
   /// Alta: Patrón claro, decisión segura
   high,
-  
+
   /// Media: Datos suficientes pero no concluyentes
   medium,
-  
+
   /// Baja: Pocos datos o patrón ambiguo
   low,
 }
@@ -176,28 +191,28 @@ enum ProgressionConfidence {
 class ProgressionDecision {
   /// Acción recomendada
   final ProgressionAction action;
-  
+
   /// Peso sugerido
   final double suggestedWeight;
-  
+
   /// Reps sugeridas
   final int suggestedReps;
-  
+
   /// Razón técnica (para logs/debug)
   final String reason;
-  
+
   /// Mensaje amigable para el usuario
   final String userMessage;
-  
+
   /// Nivel de confianza
   final ProgressionConfidence confidence;
-  
+
   /// Si representa una mejora respecto al estado actual
   final bool isImprovement;
-  
+
   /// Qué pasará después si el usuario tiene éxito
   final String? nextStepPreview;
-  
+
   const ProgressionDecision({
     required this.action,
     required this.suggestedWeight,
@@ -208,7 +223,7 @@ class ProgressionDecision {
     this.isImprovement = false,
     this.nextStepPreview,
   });
-  
+
   /// Decisión de mantener (convenience constructor)
   factory ProgressionDecision.maintain({
     required double weight,
@@ -222,10 +237,9 @@ class ProgressionDecision {
       suggestedReps: reps,
       reason: reason ?? 'Mantener actual',
       userMessage: userMessage ?? 'Repite el mismo objetivo',
-      confidence: ProgressionConfidence.medium,
     );
   }
-  
+
   /// Decisión de calibración (primeras sesiones)
   factory ProgressionDecision.calibrating({
     required double weight,
@@ -237,13 +251,15 @@ class ProgressionDecision {
       suggestedWeight: weight,
       suggestedReps: reps,
       reason: 'Calibración $sessionNumber/2',
-      userMessage: 'Sesión $sessionNumber de calibración. Establece tu baseline.',
+      userMessage:
+          'Sesión $sessionNumber de calibración. Establece tu baseline.',
       confidence: ProgressionConfidence.low,
     );
   }
-  
+
   @override
-  String toString() => 'ProgressionDecision($action: ${suggestedWeight}kg x $suggestedReps - $reason)';
+  String toString() =>
+      'ProgressionDecision($action: ${suggestedWeight}kg x $suggestedReps - $reason)';
 }
 
 /// Resumen de una serie para análisis
@@ -253,7 +269,7 @@ class SetSummary {
   final int targetReps;
   final bool completed;
   final int? rpe;
-  
+
   const SetSummary({
     required this.weight,
     required this.reps,
@@ -261,10 +277,10 @@ class SetSummary {
     required this.completed,
     this.rpe,
   });
-  
+
   /// Si esta serie alcanzó el objetivo de reps
   bool get hitTarget => reps >= targetReps;
-  
+
   /// Si esta serie superó el objetivo
   bool get exceededTarget => reps > targetReps;
 }
@@ -423,7 +439,7 @@ class ExerciseProgressionContext {
   /// consecutive workouts at the same weight."
   /// — Starting Strength, 3rd Edition, p.303
   int get failuresAtCurrentWeight {
-    int count = 0;
+    var count = 0;
     for (final session in recentSessions) {
       // Solo contar si el peso es el mismo que el confirmado
       if ((session.weight - confirmedWeight).abs() > 0.1) break;

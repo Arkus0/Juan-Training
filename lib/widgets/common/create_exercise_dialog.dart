@@ -16,10 +16,12 @@ class CreateExerciseDialog extends StatefulWidget {
   });
 
   /// Muestra el diálogo y retorna el ejercicio creado/editado o null si se cancela
-  static Future<LibraryExercise?> show(BuildContext context, {LibraryExercise? exerciseToEdit}) {
+  static Future<LibraryExercise?> show(BuildContext context,
+      {LibraryExercise? exerciseToEdit,}) {
     return showDialog<LibraryExercise>(
       context: context,
-      builder: (context) => CreateExerciseDialog(exerciseToEdit: exerciseToEdit),
+      builder: (context) =>
+          CreateExerciseDialog(exerciseToEdit: exerciseToEdit),
     );
   }
 
@@ -31,11 +33,11 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   String _selectedMuscleGroup = 'Pecho';
   String _selectedEquipment = 'Barra';
   List<String> _selectedMuscles = [];
-  
+
   bool _isLoading = false;
 
   bool get _isEditing => widget.exerciseToEdit != null;
@@ -69,10 +71,20 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   static const Map<String, List<String>> _musclesByGroup = {
     'Pecho': ['Pectoral mayor', 'Pectoral menor'],
     'Espalda': ['Dorsal ancho', 'Trapecio', 'Romboides', 'Erectores'],
-    'Hombros': ['Deltoides anterior', 'Deltoides lateral', 'Deltoides posterior'],
+    'Hombros': [
+      'Deltoides anterior',
+      'Deltoides lateral',
+      'Deltoides posterior',
+    ],
     'Bíceps': ['Bíceps braquial', 'Braquial'],
     'Tríceps': ['Tríceps braquial'],
-    'Piernas': ['Cuádriceps', 'Isquiotibiales', 'Gemelos', 'Aductores', 'Abductores'],
+    'Piernas': [
+      'Cuádriceps',
+      'Isquiotibiales',
+      'Gemelos',
+      'Aductores',
+      'Abductores',
+    ],
     'Glúteos': ['Glúteo mayor', 'Glúteo medio', 'Glúteo menor'],
     'Core': ['Recto abdominal', 'Oblicuos', 'Transverso'],
     'Cardio': [],
@@ -86,12 +98,10 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       final ex = widget.exerciseToEdit!;
       _nameController.text = ex.name;
       _descriptionController.text = ex.description ?? '';
-      _selectedMuscleGroup = _muscleGroups.contains(ex.muscleGroup) 
-          ? ex.muscleGroup 
-          : 'Pecho';
-      _selectedEquipment = _equipmentOptions.contains(ex.equipment)
-          ? ex.equipment
-          : 'Otro';
+      _selectedMuscleGroup =
+          _muscleGroups.contains(ex.muscleGroup) ? ex.muscleGroup : 'Pecho';
+      _selectedEquipment =
+          _equipmentOptions.contains(ex.equipment) ? ex.equipment : 'Otro';
       _selectedMuscles = List.from(ex.muscles);
     }
   }
@@ -118,8 +128,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           name: _nameController.text.trim(),
           muscleGroup: _selectedMuscleGroup,
           equipment: _selectedEquipment,
-          description: _descriptionController.text.trim().isNotEmpty 
-              ? _descriptionController.text.trim() 
+          description: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
               : null,
           muscles: _selectedMuscles,
         );
@@ -129,8 +139,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           name: _nameController.text.trim(),
           muscleGroup: _selectedMuscleGroup,
           equipment: _selectedEquipment,
-          description: _descriptionController.text.trim().isNotEmpty 
-              ? _descriptionController.text.trim() 
+          description: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
               : null,
           muscles: _selectedMuscles,
         );
@@ -195,7 +205,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: const Icon(Icons.fitness_center, color: Colors.grey),
+                    prefixIcon:
+                        const Icon(Icons.fitness_center, color: Colors.grey),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -237,7 +248,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                     if (value != null) {
                       setState(() {
                         _selectedMuscleGroup = value;
-                        _selectedMuscles = []; // Reset muscles when group changes
+                        _selectedMuscles =
+                            []; // Reset muscles when group changes
                       });
                     }
                   },
@@ -277,7 +289,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 const SizedBox(height: 16),
 
                 // Músculos específicos (opcional)
-                if (_musclesByGroup[_selectedMuscleGroup]?.isNotEmpty == true) ...[
+                if (_musclesByGroup[_selectedMuscleGroup]?.isNotEmpty ==
+                    true) ...[
                   const Text(
                     'Músculos trabajados (opcional)',
                     style: TextStyle(
@@ -289,7 +302,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: _musclesByGroup[_selectedMuscleGroup]!.map((muscle) {
+                    children:
+                        _musclesByGroup[_selectedMuscleGroup]!.map((muscle) {
                       final isSelected = _selectedMuscles.contains(muscle);
                       return FilterChip(
                         label: Text(

@@ -156,8 +156,8 @@ class ExerciseParsingService {
     final segments = _splitIntoExerciseSegments(normalized);
     final exercises = <ParsedExercise>[];
 
-    int supersetGroup = 0;
-    bool inSuperset = false;
+    var supersetGroup = 0;
+    var inSuperset = false;
 
     for (final segment in segments) {
       // Detectar inicio de superserie
@@ -183,7 +183,8 @@ class ExerciseParsingService {
         // Validar si está habilitado
         if (validateResults) {
           final validationResult = _validationService.validate(exercise);
-          exercise = exercise.copyWith(validationErrors: validationResult.errors);
+          exercise =
+              exercise.copyWith(validationErrors: validationResult.errors);
         }
 
         exercises.add(exercise);
@@ -199,19 +200,23 @@ class ExerciseParsingService {
     ParseSource source = ParseSource.ocr,
     bool validate = true,
   }) async {
-    final results = await parseText(line, source: source, validateResults: validate);
+    final results =
+        await parseText(line, source: source, validateResults: validate);
     return results.isEmpty ? null : results.first;
   }
 
   /// Re-matchea un ejercicio parseado con un nuevo nombre
   /// Útil para correcciones manuales del usuario
-  Future<ParsedExercise> rematch(ParsedExercise original, String newName) async {
+  Future<ParsedExercise> rematch(
+      ParsedExercise original, String newName,) async {
     final matchResult = await _matchingService.match(newName);
 
     return original.copyWith(
       matchedName: matchResult.exercise?.name,
       matchedId: matchResult.exercise?.id,
-      confidence: matchResult.isValid ? 1.0 : matchResult.confidence, // Corrección manual = alta confianza
+      confidence: matchResult.isValid
+          ? 1.0
+          : matchResult.confidence, // Corrección manual = alta confianza
       matchSource: matchResult.source,
       rawText: '${original.rawText} → $newName',
     );
@@ -228,9 +233,7 @@ class ExerciseParsingService {
     normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
 
     // Normalizar "x" para series
-    normalized = normalized
-        .replaceAll('×', 'x')
-        .replaceAll('*', 'x');
+    normalized = normalized.replaceAll('×', 'x').replaceAll('*', 'x');
 
     // Normalizar números hablados (más importante para voz)
     if (source == ParseSource.voice) {
@@ -278,7 +281,8 @@ class ExerciseParsingService {
 
     var working = text;
     for (final connector in connectors) {
-      working = working.replaceAll(RegExp(connector, caseSensitive: false), '|||');
+      working =
+          working.replaceAll(RegExp(connector, caseSensitive: false), '|||');
     }
 
     return working
@@ -289,11 +293,13 @@ class ExerciseParsingService {
   }
 
   bool _isSupersetIndicator(String segment) {
-    return RegExp(r'super\s*serie\s+(?:con|de)?', caseSensitive: false).hasMatch(segment);
+    return RegExp(r'super\s*serie\s+(?:con|de)?', caseSensitive: false)
+        .hasMatch(segment);
   }
 
   bool _isSupersetEnd(String segment) {
-    return segment.contains('fin superserie') || segment.contains('fin de superserie');
+    return segment.contains('fin superserie') ||
+        segment.contains('fin de superserie');
   }
 
   // ========================================
@@ -305,17 +311,17 @@ class ExerciseParsingService {
     required ParseSource source,
   }) async {
     // Remover comandos de control
-    var text = segment
-        .replaceFirst(RegExp(r'^(?:añade|agrega|pon)\s+', caseSensitive: false), '');
+    final text = segment.replaceFirst(
+        RegExp(r'^(?:añade|agrega|pon)\s+', caseSensitive: false), '',);
 
     if (text.length < 3) return null;
 
     // Variables a extraer
-    int series = 3;
-    String repsRange = '10';
+    var series = 3;
+    var repsRange = '10';
     double? weight;
     String? notes;
-    String exercisePart = text;
+    var exercisePart = text;
 
     // ========================================
     // ORDEN DE EXTRACCIÓN (CRÍTICO)

@@ -46,21 +46,19 @@ enum ProgressionType {
 
   /// Descripción científica del tipo de progresión
   String get scientificDescription => switch (this) {
-    ProgressionType.none =>
-      'Progresión manual. El usuario decide cuándo subir peso.',
-    ProgressionType.lineal =>
-      'Basada en Starting Strength/StrongLifts 5x5. '
-      'Sube peso cada sesión exitosa. '
-      'Tras 3 fallos al mismo peso: deload 10%.',
-    ProgressionType.dobleRepsFirst =>
-      'Basada en Lyle McDonald. '
-      'Primero sube reps hasta el máximo del rango en todas las series, '
-      'luego sube peso y reinicia reps.',
-    ProgressionType.rpe =>
-      'Autoregulación por esfuerzo percibido. '
-      'RPE 8 = 2 repeticiones en reserva. '
-      'Ajusta peso según fatiga real.',
-  };
+        ProgressionType.none =>
+          'Progresión manual. El usuario decide cuándo subir peso.',
+        ProgressionType.lineal =>
+          'Basada en Starting Strength/StrongLifts 5x5. '
+              'Sube peso cada sesión exitosa. '
+              'Tras 3 fallos al mismo peso: deload 10%.',
+        ProgressionType.dobleRepsFirst => 'Basada en Lyle McDonald. '
+            'Primero sube reps hasta el máximo del rango en todas las series, '
+            'luego sube peso y reinicia reps.',
+        ProgressionType.rpe => 'Autoregulación por esfuerzo percibido. '
+            'RPE 8 = 2 repeticiones en reserva. '
+            'Ajusta peso según fatiga real.',
+      };
 }
 
 /// Datos de sugerencia de progresión para una serie.

@@ -2,7 +2,7 @@ import '../models/library_exercise.dart';
 import 'exercise_library_service.dart';
 
 /// Servicio para manejar sinónimos de ejercicios
-/// 
+///
 /// Permite que "banco plano" → "Press de banca", "dominadas" → "Pull-up", etc.
 /// Los sinónimos se normalizan a minúsculas sin acentos para matching robusto.
 class ExerciseSynonymsService {
@@ -57,9 +57,9 @@ class ExerciseSynonymsService {
     'plancha': 'plancha de antebrazo',
     'abdominales': 'abdominales',
     'abdominal': 'abdominales',
-    
+
     // ===== ESPAÑOL → NOMBRES EN BD (muchos en inglés) =====
-    
+
     // -- PECHO --
     'banco plano': 'press de banca',
     'banco inclinado': 'incline dumbbell fly',
@@ -82,7 +82,7 @@ class ExerciseSynonymsService {
     'push-up': 'incline push up',
     'lagartijas': 'incline push up',
     'flexiones diamante': 'diamond push ups',
-    
+
     // -- ESPALDA --
     'dominadas': 'dominadas',
     'pull up': 'dominadas',
@@ -124,7 +124,7 @@ class ExerciseSynonymsService {
     'jalon a la cara': 'jalón a la cara',
     'tiron de cara': 'jalón a la cara',
     'pullover': 'pullover con mancuerna',
-    
+
     // -- PIERNAS --
     'sentadillas': 'sentadilla con disco',
     'squat': 'sentadilla con disco',
@@ -159,7 +159,7 @@ class ExerciseSynonymsService {
     'elevacion de gemelos': 'gemelos en prensa',
     'sentadilla hack': 'sentadilla hack con barra',
     'hack squat': 'sentadilla hack con barra',
-    
+
     // -- HOMBROS --
     'press militar': 'press militar',
     'overhead press': 'press militar',
@@ -180,7 +180,7 @@ class ExerciseSynonymsService {
     'encogimientos': 'encogimientos con piernas elevadas',
     'shrugs': 'encogimientos con piernas elevadas',
     'trapecio': 'encogimientos con piernas elevadas',
-    
+
     // -- BÍCEPS --
     'curl biceps': 'curl con barra',
     'curl bíceps': 'curl con barra',
@@ -208,7 +208,7 @@ class ExerciseSynonymsService {
     'curl polea': 'curl de bíceps en polea',
     'cable curl': 'curl de bíceps en polea',
     'curl inclinado': 'curl inclinado con mancuernas',
-    
+
     // -- TRÍCEPS --
     'extension triceps': 'extensión de triceps',
     'extensión tríceps': 'extensión de triceps',
@@ -239,7 +239,7 @@ class ExerciseSynonymsService {
     'press cerrado': 'press de banca con agarre cerrado',
     'close grip bench': 'press de banca con agarre cerrado',
     'press agarre cerrado': 'press de banca con agarre cerrado',
-    
+
     // -- CORE / ABDOMINALES --
     'abs': 'abdominales',
     'crunch': 'abdominales',
@@ -275,7 +275,7 @@ class ExerciseSynonymsService {
     'leñadores': 'leñadores en polea',
     'woodchop': 'leñadores en polea',
     'wood chop': 'leñadores en polea',
-    
+
     // -- CARDIO / FUNCIONAL --
     'burpee': 'burpees',
     'burpees': 'burpees',
@@ -297,7 +297,7 @@ class ExerciseSynonymsService {
     'trotar': 'jogging',
     'ciclismo': 'ciclismo',
     'bicicleta': 'ciclismo',
-    
+
     // -- OTROS EJERCICIOS COMUNES --
     'remo con polea baja': 'remo con polea',
     'renegade row': 'renegade row',
@@ -307,7 +307,7 @@ class ExerciseSynonymsService {
     'rack pull': 'rack deadlift',
     'pendlay row': 'pendelay rows',
     'pendlay': 'pendelay rows',
-    
+
     // -- PALABRAS SUELTAS QUE MAPEAN A EJERCICIOS POPULARES --
     'pecho': 'press de banca',
     'espalda': 'dominadas',
@@ -347,8 +347,9 @@ class ExerciseSynonymsService {
       final normalized = _normalizeText(canonicalName);
       try {
         return library.exercises.firstWhere(
-          (e) => _normalizeText(e.name).contains(normalized) ||
-                 normalized.contains(_normalizeText(e.name)),
+          (e) =>
+              _normalizeText(e.name).contains(normalized) ||
+              normalized.contains(_normalizeText(e.name)),
         );
       } catch (_) {
         return null;
@@ -358,10 +359,7 @@ class ExerciseSynonymsService {
 
   /// Normaliza texto (minúsculas, sin acentos extra)
   String _normalizeText(String text) {
-    return text
-        .toLowerCase()
-        .trim()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return text.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   /// Agrega sinónimos personalizados en runtime
@@ -377,9 +375,9 @@ class ExerciseSynonymsService {
   List<MapEntry<String, String>> searchSynonyms(String query) {
     final normalized = _normalizeText(query);
     return _synonyms.entries
-        .where((e) => 
-            e.key.contains(normalized) || 
-            e.value.contains(normalized))
+        .where(
+          (e) => e.key.contains(normalized) || e.value.contains(normalized),
+        )
         .toList();
   }
 }

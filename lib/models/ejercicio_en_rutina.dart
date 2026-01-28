@@ -21,7 +21,8 @@ class EjercicioEnRutina {
 
   // Progression Configuration
   final ProgressionType progressionType;
-  final double weightIncrement; // Incremento de peso para progresión lineal (ej: 2.5kg)
+  final double
+      weightIncrement; // Incremento de peso para progresión lineal (ej: 2.5kg)
   final int? targetRpe; // RPE objetivo para progresión basada en RPE
 
   EjercicioEnRutina({
@@ -90,9 +91,8 @@ class EjercicioEnRutina {
     return EjercicioEnRutina(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
-      descripcion: descripcion == _sentinel
-          ? this.descripcion
-          : descripcion as String?,
+      descripcion:
+          descripcion == _sentinel ? this.descripcion : descripcion as String?,
       musculosPrincipales: musculosPrincipales ?? this.musculosPrincipales,
       musculosSecundarios: musculosSecundarios ?? this.musculosSecundarios,
       equipo: equipo ?? this.equipo,
@@ -106,9 +106,8 @@ class EjercicioEnRutina {
           : descansoSugerido as Duration?,
       notas: notas == _sentinel ? this.notas : notas as String?,
       instanceId: instanceId ?? this.instanceId,
-      supersetId: supersetId == _sentinel
-          ? this.supersetId
-          : supersetId as String?,
+      supersetId:
+          supersetId == _sentinel ? this.supersetId : supersetId as String?,
       progressionType: progressionType ?? this.progressionType,
       weightIncrement: weightIncrement ?? this.weightIncrement,
       targetRpe: targetRpe == _sentinel ? this.targetRpe : targetRpe as int?,
@@ -139,7 +138,8 @@ class EjercicioEnRutina {
 
   /// Creates an EjercicioEnRutina from a JSON map (for import).
   /// Note: instanceId will be regenerated with new UUID for imported routines.
-  factory EjercicioEnRutina.fromJson(Map<String, dynamic> json, {String? newInstanceId, String? newSupersetId}) {
+  factory EjercicioEnRutina.fromJson(Map<String, dynamic> json,
+      {String? newInstanceId, String? newSupersetId,}) {
     // Parse descansoSugerido from seconds
     Duration? descanso;
     if (json['descansoSugeridoSeconds'] != null) {
@@ -166,7 +166,8 @@ class EjercicioEnRutina {
       notas: json['notas'] as String?,
       instanceId: newInstanceId, // Will generate new UUID if null
       supersetId: newSupersetId ?? json['supersetId'] as String?,
-      progressionType: ProgressionType.fromString(json['progressionType'] as String?),
+      progressionType:
+          ProgressionType.fromString(json['progressionType'] as String?),
       weightIncrement: (json['weightIncrement'] as num?)?.toDouble() ?? 2.5,
       targetRpe: json['targetRpe'] as int?,
     );

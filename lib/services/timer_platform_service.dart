@@ -31,7 +31,8 @@ class TimerPlatformState {
     if (isPaused) return totalSeconds.toDouble();
     if (endTime == null) return totalSeconds.toDouble();
 
-    final remaining = endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
+    final remaining =
+        endTime!.difference(DateTime.now()).inMilliseconds / 1000.0;
     return remaining > 0 ? remaining : 0;
   }
 
@@ -80,12 +81,14 @@ class TimerPlatformState {
       isPaused: json['isPaused'] == true,
       totalSeconds: (json['totalSeconds'] as num?)?.toInt() ?? 90,
       endTime: json['endTimeMs'] != null
-          ? DateTime.fromMillisecondsSinceEpoch((json['endTimeMs'] as num).toInt())
+          ? DateTime.fromMillisecondsSinceEpoch(
+              (json['endTimeMs'] as num).toInt(),)
           : null,
       exerciseIndex: (json['exerciseIndex'] as num?)?.toInt(),
       setIndex: (json['setIndex'] as num?)?.toInt(),
       lastUpdated: json['lastUpdatedMs'] != null
-          ? DateTime.fromMillisecondsSinceEpoch((json['lastUpdatedMs'] as num).toInt())
+          ? DateTime.fromMillisecondsSinceEpoch(
+              (json['lastUpdatedMs'] as num).toInt(),)
           : null,
     );
   }
@@ -194,18 +197,20 @@ class TimerPlatformService {
   }) async {
     if (!Platform.isAndroid) {
       // En iOS, solo mantener estado local por ahora
-      _updateState(TimerPlatformState(
-        isActive: true,
-        isPaused: false,
-        totalSeconds: seconds,
-        endTime: DateTime.now().add(Duration(seconds: seconds)),
-        exerciseIndex: exerciseIndex,
-        setIndex: setIndex,
-      ));
+      _updateState(
+        TimerPlatformState(
+          isActive: true,
+          totalSeconds: seconds,
+          endTime: DateTime.now().add(Duration(seconds: seconds)),
+          exerciseIndex: exerciseIndex,
+          setIndex: setIndex,
+        ),
+      );
       return true;
     }
 
-    final endTimeMillis = DateTime.now().add(Duration(seconds: seconds)).millisecondsSinceEpoch;
+    final endTimeMillis =
+        DateTime.now().add(Duration(seconds: seconds)).millisecondsSinceEpoch;
 
     try {
       await _timerChannel.invokeMethod('startTimerService', {
@@ -214,14 +219,15 @@ class TimerPlatformService {
         'isPaused': false,
       });
 
-      _updateState(TimerPlatformState(
-        isActive: true,
-        isPaused: false,
-        totalSeconds: seconds,
-        endTime: DateTime.fromMillisecondsSinceEpoch(endTimeMillis),
-        exerciseIndex: exerciseIndex,
-        setIndex: setIndex,
-      ));
+      _updateState(
+        TimerPlatformState(
+          isActive: true,
+          totalSeconds: seconds,
+          endTime: DateTime.fromMillisecondsSinceEpoch(endTimeMillis),
+          exerciseIndex: exerciseIndex,
+          setIndex: setIndex,
+        ),
+      );
 
       _logger.d('Timer iniciado: ${seconds}s');
       return true;
@@ -250,11 +256,13 @@ class TimerPlatformService {
       }
     }
 
-    _updateState(_state.copyWith(
-      isPaused: true,
-      totalSeconds: remainingSeconds,
-      clearEndTime: true,
-    ));
+    _updateState(
+      _state.copyWith(
+        isPaused: true,
+        totalSeconds: remainingSeconds,
+        clearEndTime: true,
+      ),
+    );
 
     _logger.d('Timer pausado con $remainingSeconds segundos restantes');
     return true;
@@ -278,10 +286,12 @@ class TimerPlatformService {
       }
     }
 
-    _updateState(_state.copyWith(
-      isPaused: false,
-      endTime: endTime,
-    ));
+    _updateState(
+      _state.copyWith(
+        isPaused: false,
+        endTime: endTime,
+      ),
+    );
 
     _logger.d('Timer reanudado');
     return true;
@@ -310,10 +320,12 @@ class TimerPlatformService {
         }
       }
 
-      _updateState(_state.copyWith(
-        totalSeconds: newTotal,
-        endTime: newEndTime,
-      ));
+      _updateState(
+        _state.copyWith(
+          totalSeconds: newTotal,
+          endTime: newEndTime,
+        ),
+      );
     }
 
     _logger.d('Añadidos $seconds segundos');
@@ -339,7 +351,8 @@ class TimerPlatformService {
 
     // Calcular tiempo real descansado para analytics
     if (previousState.exerciseIndex != null && previousState.setIndex != null) {
-      final actualRestTime = previousState.totalSeconds - previousState.remainingSeconds.ceil();
+      final actualRestTime =
+          previousState.totalSeconds - previousState.remainingSeconds.ceil();
       _logger.d('Tiempo real descansado: ${actualRestTime}s');
     }
 
